@@ -221,7 +221,24 @@ class SpineSpectra(SpineArtist):
         -------
         None.
         """
-        if fit_type == 'crystal_ball':
+        if fit_type == 'mpv':
+            # Find the bin with the maximum value
+            max_index = np.argmax(data)
+            mpv = bin_centers[max_index]
+            ax.axvline(mpv, color='black', linestyle='--', label=f'MPV={mpv:.2f}')
+
+        elif fit_type == 'mpv_sigma':
+            # Find the bin with the maximum value
+            max_index = np.argmax(data)
+            mpv = bin_centers[max_index]
+            
+            # Find the width
+            sigma = np.sqrt(np.average((bin_centers - mpv)**2, weights=data))
+            label = f'MPV={mpv:.2f}$\\pm${sigma:.2f}'
+
+            ax.axvline(mpv, color='black', linestyle='--', label=label)
+    
+        elif fit_type == 'crystal_ball':
             # Crystal Ball fit
             # First, estimate the parameters "reasonably" well to avoid
             # the fit getting stuck in a weird place.
