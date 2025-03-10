@@ -151,6 +151,8 @@ class Sample:
         ----------
         variables : list[str]
             The names of the variables to retrieve.
+        with_mask : str, optional
+            A mask formula to apply to the variable. The default is None.
 
         Returns
         -------
@@ -162,8 +164,6 @@ class Sample:
             The weights for the requested variable in the sample. The
             weights are stored as a dictionary with the category as the
             key and the weights (a pandas Series) as the value.
-        with_mask : str, optional
-            A mask formula to apply to the variable. The default is None.
         """
         data = {}
         weights = {}
