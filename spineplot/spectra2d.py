@@ -269,6 +269,7 @@ class SpineSpectra2D(SpineSpectra):
                     histtype='barstacked', label=labels, color=colors, stacked=True)
             ax.set_xlabel('(Y-X)/X' if self._xtitle is None else self._xtitle)
             ax.set_ylabel('Entries')
+            ax.set_xlim(-1, 1) if self._xrange is None else ax.set_xlim(self._xrange)
 
             if fit_type is not None:
                 super().fit_with_function(ax, bincenters[0], np.sum(data, axis=0), self._binedges_diagonal[labels[0]], fit_type, range=(-1,1) if self._xrange is None else self._xrange)
