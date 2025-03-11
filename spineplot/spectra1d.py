@@ -25,6 +25,13 @@ class SpineSpectra1D(SpineSpectra):
     _xtitle : str
         The label for the x-axis. If None, the label will be taken
         from the Variable object.
+    _yrange : tuple, or float, optional
+        If this is a tuple, it is the range of the y-axis for the
+        spectrum. If this is a float, it will scale the maximum value
+        of the histogram by this factor. If None, the range will be
+        determined by the range of the histogram.
+    _ytitle : str
+        The label for the y-axis. If None, the label will be 'Candidates'.
     _variable : Variable
         The Variable object for the spectrum.
     _categories : dict
@@ -44,7 +51,8 @@ class SpineSpectra1D(SpineSpectra):
         that category.
     """
     def __init__(self, variable, categories, colors, category_types,
-                 title=None, xrange=None, xtitle=None) -> None:
+                 title=None, xrange=None, xtitle=None,
+                 yrange=None, ytitle=None) -> None:
         """
         Initializes the SpineSpectra1D.
 
@@ -82,12 +90,22 @@ class SpineSpectra1D(SpineSpectra):
         xtitle : str, optional
             The label for the x-axis. If None, the label will be taken
             from the Variable object. The default is None.
+        yrange : tuple, or float, optional
+            If this is a tuple, it is the range of the y-axis for the
+            spectrum. If this is a float, it will scale the maximum
+            value of the histogram by this factor. If None, the range
+            will be determined by the range of the histogram. The
+            default is None.
+        ytitle : str, optional
+            The label for the y-axis. If None, the label will be
+            'Candidates'. The default is None.
 
         Returns
         -------
         None.
         """
-        super().__init__([variable,], categories, colors, title, xrange, xtitle)
+        super().__init__([variable,], categories, colors, title,
+                         xrange, xtitle, yrange, ytitle)
         self._variable = self._variables[0]
         self._category_types = category_types
 
@@ -235,6 +253,12 @@ class SpineSpectra1D(SpineSpectra):
             self.mark_pot(ax, style.mark_pot_horizontal)
         if style.mark_preliminary is not None:
             self.mark_preliminary(ax, style.mark_preliminary)
+
+        if isinstance(self._yrange, (tuple, list)):
+            ax.set_ylim(*self._yrange)
+        elif isinstance(self._yrange, (int, float)):
+            yl = ax.get_ylim()[1]
+            ax.set_ylim(None, yl * self._yrange)
 
         # Set the axis to be logarithmic if requested.
         if logx:

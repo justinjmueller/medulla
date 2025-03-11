@@ -115,9 +115,8 @@ class SpineSpectra2D(SpineSpectra):
         -------
         None.
         """
-        super().__init__(variables, categories, colors, title, xrange, xtitle)
-        self._yrange = yrange
-        self._ytitle = ytitle
+        super().__init__(variables, categories, colors, title,
+                         xrange, xtitle, yrange, ytitle)
         self._category_types = category_types
         self._plotdata_diagonal = None
         self._binedges_diagonal = None

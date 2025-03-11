@@ -29,6 +29,14 @@ class SpineSpectra(SpineArtist):
     _xtitle : str
         The title of the x-axis for the spectra. If None, the title will
         be set to the default title for the SpineSpectra.
+    _yrange : tuple, or float, optional
+        If this is a tuple, it is the range of the y-axis for the
+        spectrum. If this is a float, it will scale the maximum value
+        of the histogram by this factor. If None, the range will be
+        determined by the range of the histogram.
+    _ytitle : str, optional
+        The title of the y-axis for the spectra. If None, the title will
+        be set to the default title for the SpineSpectra.
     _variables : list
         The list of Variable objects for the spectra.
     _categories : dict
@@ -56,7 +64,7 @@ class SpineSpectra(SpineArtist):
         for the histogram data for that category.
     """
     def __init__(self, variables, categories, colors, title=None,
-                 xrange=None, xtitle=None) -> None:
+                 xrange=None, xtitle=None, yrange=None, ytitle=None) -> None:
         """
         Initializes the SpineSpectra object with the given kwargs.
 
@@ -86,6 +94,8 @@ class SpineSpectra(SpineArtist):
         super().__init__(title)
         self._xrange = xrange
         self._xtitle = xtitle
+        self._yrange = yrange
+        self._ytitle = ytitle
         self._variables = variables
         self._categories = categories
         self._colors = colors
