@@ -114,7 +114,8 @@ class Analysis:
                             # Create the artist
                             art = SpineSpectra1D(self._variables[x['variable']], restrict_categories,
                                                  self._colors, self._category_types, x.get('title', None),
-                                                 x.get('xrange', None), x.get('xtitle', None))
+                                                 x.get('xrange', None), x.get('xtitle', None),
+                                                 x.get('yrange', None), x.get('ytitle', None))
                             self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
                             self._artists.append(art)
                         elif x['type'] == 'SpineSpectra2D':
