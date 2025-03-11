@@ -136,7 +136,15 @@ class SpineEfficiency(SpineArtist):
         """
         ax.set_title(self._title)
 
-        groups = list(set([v for v in self._categories.values()]))
+        # Get a list of the groups, while respecting the order of the
+        # groups as they are configured in the analysis block. It is
+        # possible that duplicates exist (multiple categories within
+        # the same group), so care must be taken to ensure that the
+        # groups are unique AND in the correct order.
+        groups = list()
+        for category in self._categories.values():
+            if category not in groups:
+                groups.append(category)
 
         if show_option == 'table':
             # Lambda formatter to round the values to two decimal
