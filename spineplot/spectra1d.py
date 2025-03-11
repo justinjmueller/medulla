@@ -249,10 +249,6 @@ class SpineSpectra1D(SpineSpectra):
                 h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
                 l.append('MC Statistical Uncertainty')
             ax.legend(h, l)
-        if style.mark_pot:
-            self.mark_pot(ax, style.mark_pot_horizontal)
-        if style.mark_preliminary is not None:
-            self.mark_preliminary(ax, style.mark_preliminary)
 
         if isinstance(self._yrange, (tuple, list)):
             ax.set_ylim(*self._yrange)
@@ -274,3 +270,8 @@ class SpineSpectra1D(SpineSpectra):
             ax.set_xscale('log')
         if logy:
             ax.set_yscale('log')
+
+        if style.mark_pot:
+            self.mark_pot(ax, style.mark_pot_horizontal)
+        if style.mark_preliminary is not None:
+            self.mark_preliminary(ax, style.mark_preliminary)
