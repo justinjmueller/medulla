@@ -7,6 +7,7 @@ from figure import SpineFigure, SimpleFigure
 from spectra1d import SpineSpectra1D
 from spectra2d import SpineSpectra2D
 from efficiency import SpineEfficiency
+from roc import ROCCurve
 from style import Style
 from variable import Variable
 
@@ -144,6 +145,20 @@ class Analysis:
                                                   x.get('xtitle', None), show_option, npts)
                             self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
                             self._artists.append(art)
+
+                        elif x['type'] == 'ROCCurve':
+                            # Check if the discriminant scores are present in all samples
+                            if not all([self._variables[disc]._validity_check.values() for disc in x['discriminant_scores']]):
+                                missing_samples = [k for k, v in self._variables[disc]._validity_check.items() if not v for disc in x['discriminant_scores']]
+                                raise ConfigException(f"Variable '{disc}' not found in all samples ({' '.join(missing_samples)}).")
+                            
+                            # Create the artist
+                            disc = {g : self._variables[x['discriminant_scores'][i]] for i, g in enumerate(x['groups'])}
+                            art = ROCCurve(restrict_categories, x['labels'], x['pos_label'], disc,
+                                           x.get('background', None), x.get('title', None))
+                            self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
+                            self._artists.append(art)
+                            
 
     def override_exposure(self, sample_name, exposure, exposure_type='pot') -> None:
         """
