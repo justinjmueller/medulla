@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from spectra import SpineSpectra
 from style import Style
 from variable import Variable
+from utilities import mark_pot, mark_preliminary, draw_error_boxes
 
 class SpineSpectra2D(SpineSpectra):
     """
@@ -278,7 +279,7 @@ class SpineSpectra2D(SpineSpectra):
                 y = np.sum(data, axis=0)
                 xerr = np.diff(self._binedges_diagonal[labels[0]]) / 2
                 yerr = np.sqrt(y)
-                SpineSpectra.draw_error_boxes(ax, x, y, xerr, yerr, facecolor='gray', edgecolor='none', alpha=0.5, hatch='///')
+                draw_error_boxes(ax, x, y, xerr, yerr, facecolor='gray', edgecolor='none', alpha=0.5, hatch='///')
 
             if invert_stack_order:
                 h, l = ax.get_legend_handles_labels()
@@ -293,9 +294,9 @@ class SpineSpectra2D(SpineSpectra):
                     l.append('MC Statistical Uncertainty')
                 ax.legend(h, l)        
         if style.mark_pot:
-            self.mark_pot(ax, style.mark_pot_horizontal)
+            mark_pot(ax, self._exposure, style.mark_pot_horizontal)
         if style.mark_preliminary is not None:
-            self.mark_preliminary(ax, style.mark_preliminary)
+            mark_preliminary(ax, style.mark_preliminary)
 
         # Set the axis to be logarithmic if requested.
         if logx:

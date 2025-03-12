@@ -6,6 +6,7 @@ from sklearn.metrics import roc_curve, auc
 from artists import SpineArtist
 from style import Style
 from variable import Variable
+from utilities import mark_pot, mark_preliminary
 
 class ROCCurve(SpineArtist):
     """
@@ -126,7 +127,7 @@ class ROCCurve(SpineArtist):
 
     def draw(self, ax, style=None):
         """
-        Draw the ROC curve on the given axis.
+        Draw the set of ROC curve on the given axis.
 
         Parameters
         ----------
@@ -134,6 +135,10 @@ class ROCCurve(SpineArtist):
             The axis to draw the ROC curve on.
         style : Style, optional
             The style to use when drawing the ROC curve. The default is None.
+        
+        Returns
+        -------
+        None.
         """
         for gi, (k, v) in enumerate(self._roc_data.items()):
             fpr, tpr, _ = roc_curve(v['class'], v['score'], pos_label=self._pos_label[gi])
@@ -146,4 +151,8 @@ class ROCCurve(SpineArtist):
             ax.set_ylabel('True Positive Rate')
             ax.set_title(self._title)
             ax.legend(loc='lower right')
-        return self._roc_data
+        
+        if style.mark_pot:
+            mark_pot(ax, self._exposure, style.mark_pot_horizontal)
+        if style.mark_preliminary is not None:
+            mark_preliminary(ax, style.mark_preliminary)
