@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 from spectra import SpineSpectra
 from style import Style
 from variable import Variable
-from systematic import Systematic
 from utilities import mark_pot, mark_preliminary, draw_error_boxes
 
 class SpineSpectra1D(SpineSpectra):
@@ -234,7 +233,7 @@ class SpineSpectra1D(SpineSpectra):
                 x = reduce(bincenters)[0]
                 y = np.sum(reduce(data), axis=0)
                 xerr = [x / 2 for x in binwidths[0]]
-                yerr = np.sqrt(np.diag(cov))
+                yerr = np.sqrt(y)
                 draw_error_boxes(ax, x, y, xerr, yerr, facecolor='gray', edgecolor='none', alpha=0.5, hatch='///')
 
             reduce = lambda x : [x[i] for i in scatter_mask]
@@ -299,6 +298,6 @@ class SpineSpectra1D(SpineSpectra):
         
         # Add the POT and preliminary labels to the plot.
         if style.mark_pot:
-            mark_pot(ax, self._exposure, style.mark_pot_horizontal, vadj=vadj)
+            mark_pot(ax, self._exposure, style.mark_pot_horizontal)
         if style.mark_preliminary is not None:
-            mark_preliminary(ax, style.mark_preliminary, hadj=hadj, vadj=vadj)
+            mark_preliminary(ax, style.mark_preliminary)
