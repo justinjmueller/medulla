@@ -510,6 +510,7 @@ class SpineEfficiency(SpineArtist):
 
         for key in final_posteriors.keys():
             if len(final_posteriors[key].shape) == 1:
+                final_posteriors[key] /= np.sum(final_posteriors[key])
                 cv[key] = efficiencies[int(np.argmax(final_posteriors[key]))]
                 cumulative = np.cumsum(final_posteriors[key])
                 msigma[key] = cv[key]-efficiencies[int(np.argmax(cumulative > sig[0]))]
@@ -526,6 +527,7 @@ class SpineEfficiency(SpineArtist):
                     psigma[key] = 0
 
             else:
+                final_posteriors[key] /= np.sum(final_posteriors[key], axis=1)[:, np.newaxis]
                 cv[key] = efficiencies[np.argmax(final_posteriors[key], axis=1).astype(int)]
                 cumulative = np.cumsum(final_posteriors[key], axis=1)
                 msigma[key] = cv[key]-efficiencies[np.argmax(cumulative > sig[0], axis=1)]
