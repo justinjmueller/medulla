@@ -34,8 +34,8 @@ class Sample:
         systematic uncertainties for the sample.
     """
     def __init__(self, name, rf, category_branch, key, exposure_type,
-                 trees, systematics=None, override_exposure=None, precompute=None,
-                 presel=None, override_category=None, print_sys=False) -> None:
+                 trees, override_exposure=None, precompute=None,
+                 presel=None, override_category=None) -> None:
         """
         Initializes the Sample object with the given name and key.
 
@@ -86,6 +86,9 @@ class Sample:
         self._exposure_livetime = self._file_handle['Livetime'].to_numpy()[0][0]
         self._category_branch = category_branch
         self._print_sys = print_sys
+
+        if override_exposure is not None:
+            self.override_exposure(override_exposure, exposure_type)
 
         if override_exposure is not None:
             self.override_exposure(override_exposure, exposure_type)
