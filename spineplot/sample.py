@@ -25,7 +25,9 @@ class Sample:
     _data : pd.DataFrame
         The data comprising the sample.
     """
-    def __init__(self, name, rf, category_branch, key, exposure_type, trees, precompute=None, presel=None, override_category=None) -> None:
+    def __init__(self, name, rf, category_branch, key, exposure_type,
+                 trees, override_exposure=None, precompute=None,
+                 presel=None, override_category=None) -> None:
         """
         Initializes the Sample object with the given name and key.
 
@@ -50,6 +52,9 @@ class Sample:
         trees : list
             The list of TTree names in the ROOT file to load for the
             sample.
+        override_exposure : float, optional
+            The exposure value to override the exposure in the ROOT file
+            with. The default is None.
         precompute : dict, optional
             A dictionary of new branches to compute from the existing
             branches in the sample. The keys are the names of the new
@@ -72,6 +77,9 @@ class Sample:
         self._exposure_pot = self._file_handle['POT'].to_numpy()[0][0]
         self._exposure_livetime = self._file_handle['Livetime'].to_numpy()[0][0]
         self._category_branch = category_branch
+
+        if override_exposure is not None:
+            self.override_exposure(override_exposure, exposure_type)
 
         self._data = pd.concat([self._file_handle[tree].arrays(library='pd') for tree in trees])
         if self._category_branch not in self._data.columns:
