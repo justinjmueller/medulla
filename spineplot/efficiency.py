@@ -162,7 +162,6 @@ class SpineEfficiency(SpineArtist):
 
             # Clear up the axis because we are going to draw a table
             # on it (no need for any other plot elements).
-            ax.axis('tight')
             ax.axis('off')
 
             # Create the table data.
@@ -198,7 +197,7 @@ class SpineEfficiency(SpineArtist):
             # efficiency to show.
             if show_seqeff and not show_unseqeff:
                 results.rename(columns={cumu_key : 'Efficiency [%]' if percentage else 'Efficiency'}, inplace=True)
-
+            
             table_data = [results.columns.to_list()] + results.values.tolist()
             table = ax.table(cellText=table_data, colLabels=None, loc='center', cellLoc='center', edges='T')
             table.scale(1, 2.75)
