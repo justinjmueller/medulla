@@ -306,13 +306,10 @@ class SpineEfficiency(SpineArtist):
             ax.legend()
 
             # Mark the POT and preliminary information on the plot.
-            if style.scilimits:
-                ax.ticklabel_format(axis='y', scilimits=style.scilimits)
             if style.mark_pot:
                 mark_pot(ax, self._exposure, style.mark_pot_horizontal)
             if style.mark_preliminary is not None:
-                mark_preliminary(ax, style.mark_preliminary, hadj=0.035 if style.scilimits is not None else 0)
-
+                mark_preliminary(ax, style.mark_preliminary)
     def add_sample(self, sample, is_ordinate):
         """
         Add a sample to the efficiency calculation. The calculation of 
