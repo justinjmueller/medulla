@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from artists import SpineArtist
 from style import Style
 from variable import Variable
+from utilities import mark_pot, mark_preliminary
 
 class SpineEfficiency(SpineArtist):
     """
@@ -205,12 +206,31 @@ class SpineEfficiency(SpineArtist):
                 if i == len(table_data) - 1:
                     for j in range(len(table_data[i])):
                         table[i, j].visible_edges = 'B'
-                        #table[i, j].set_height(0.1)
                 else:
                     for j in range(len(table_data[i])):
                         table[i, j].visible_edges = 'open'
                     if i in group_endpoint.values():
                         table[i, 0].visible_edges = 'B'
+
+            def calc_bbox_yext(obj):
+                figure = plt.gcf()
+                bbox = obj.get_window_extent(renderer=figure.canvas.get_renderer())
+                p0, p1 = figure.transFigure.inverted().transform(bbox)
+                return p1[1] - p0[1]
+
+            scale = 2.75
+            while calc_bbox_yext(table) > 0.92:
+                table.scale(1, 1/scale)
+                scale -= 0.05
+                table.scale(1, scale)
+            if scale < 2.0:
+                print(f'Warning: Table with title `{self._title}` is too large to fit on the figure (scale = {scale:.2f}). Consider extending the figure vertically.')
+
+            # Mark the POT and preliminary information on the plot.
+            if style.mark_pot:
+                mark_pot(ax, self._exposure, style.mark_pot_horizontal, vadj=0.1)
+            if style.mark_preliminary is not None:
+                mark_preliminary(ax, style.mark_preliminary, vadj=0.1)
 
         elif show_option == 'differential':
             # Lambda formatter to round the values to two decimal
@@ -285,6 +305,12 @@ class SpineEfficiency(SpineArtist):
                 ax.set_yscale('log')
 
             ax.legend()
+
+            # Mark the POT and preliminary information on the plot.
+            if style.mark_pot:
+                mark_pot(ax, self._exposure, style.mark_pot_horizontal)
+            if style.mark_preliminary is not None:
+                mark_preliminary(ax, style.mark_preliminary)
 
     def add_sample(self, sample, is_ordinate):
         """

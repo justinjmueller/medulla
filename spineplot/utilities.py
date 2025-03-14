@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def mark_pot(ax, exposure, horizontal=False) -> None:
+def mark_pot(ax, exposure, horizontal=False, vadj=0) -> None:
     """
     Add the POT information to the plot. The POT information will
     either be added to the top right corner of the plot along the
@@ -17,6 +17,9 @@ def mark_pot(ax, exposure, horizontal=False) -> None:
     horizontal : bool, optional
         A flag to indicate if the POT information should be added
         along the horizontal axis. The default is True.
+    vadj : float, optional
+        The vertical adjustment to use when adding the POT information.
+        The default is 0.
 
     Returns
     -------
@@ -28,7 +31,7 @@ def mark_pot(ax, exposure, horizontal=False) -> None:
     xrange = ax.get_xlim()
     yrange = ax.get_ylim()
     if horizontal:
-        usey = yrange[1] + 0.02*(yrange[1] - yrange[0])
+        usey = yrange[1] + 0.02*(yrange[1] - yrange[0]) + vadj*(yrange[1] - yrange[0])
         usex = xrange[1] - 0.02*(xrange[1] - xrange[0])
         ax.text(x=usex, y=usey, s=s, fontsize=13, color='black', horizontalalignment='right')
     else:
@@ -36,7 +39,7 @@ def mark_pot(ax, exposure, horizontal=False) -> None:
         usex = xrange[0] - 0.12*(xrange[1] - xrange[0])
         ax.text(x=usex, y=usey, s=s, fontsize=13, color='black', verticalalignment='top', rotation=90)
 
-def mark_preliminary(ax, label) -> None:
+def mark_preliminary(ax, label, vadj=0) -> None:
     """
     Add a preliminary label to the plot.
 
@@ -47,13 +50,16 @@ def mark_preliminary(ax, label) -> None:
     label : str
         The label to add to the plot to indicate that the plot is
         preliminary.
+    vadj : float, optional
+        The vertical adjustment to use when adding the label. The
+        default is 0.
 
     Returns
     -------
     None.
     """
     yrange = ax.get_ylim()
-    usey = yrange[1] + 0.025*(yrange[1] - yrange[0])
+    usey = yrange[1] + 0.025*(yrange[1] - yrange[0]) + vadj*(yrange[1] - yrange[0])
     xrange = ax.get_xlim()
     usex = xrange[0] + 0.025*(xrange[1] - xrange[0])
     ax.text(x=usex, y=usey, s=label, fontsize=14, color='#d67a11')
