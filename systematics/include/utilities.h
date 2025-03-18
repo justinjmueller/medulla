@@ -75,4 +75,35 @@ TDirectory * create_directory(TDirectory * parent, std::string path)
     }
     return directory;
 }
+
+/**
+ * @brief Retrieve the parent directory of the object specified in the path.
+ * @details This function retrieves the parent directory of the object specified
+ * in the path by recursively crawling down the directory structure until the
+ * parent directory is found.
+ * @param parent The parent directory in the output ROOT file.
+ * @param path The desired output destination.
+ * @return directory The parent directory of the object specified in the path.
+ */
+TDirectory * get_parent_directory(TDirectory * parent, std::string path)
+{
+    TDirectory * directory = parent;
+    size_t pos(path.find_last_of("/"));
+    if(pos != std::string::npos)
+    {
+        std::string subdirs(path.substr(0, pos));
+        std::string subdir;
+        while((pos = subdirs.find_first_of("/")) != std::string::npos)
+        {
+            subdir = subdirs.substr(0, pos);
+            directory = directory->GetDirectory(subdir.c_str());
+            subdirs = subdirs.substr(pos+1);
+        }
+        directory = directory->GetDirectory(subdirs.c_str());
+    }
+    else
+        directory = parent;
+    return directory;
+}
+
 #endif // UTILITIES_H
