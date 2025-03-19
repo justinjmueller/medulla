@@ -23,13 +23,16 @@ class Style:
     _mark_preliminary : str
         A string to be used a label to indicate that the plot is
         preliminary. If None, no label is added.
+    _scilimits : tuple, optional
+        The scientific limits to use when formatting the axis labels.
+        The default is None.
     _plot_kwargs : dict
         A dictionary containing the keyword arguments to be passed
         to the plotting function.
     """
     def __init__(self, name, style_sheet, markers, default_figsize,
                  title, mark_pot=True, mark_pot_horizontal=True,
-                 mark_preliminary=True, plot_kwargs=None) -> None:
+                 mark_preliminary=True, scilimits=None, plot_kwargs=None) -> None:
         """
         Initializes the Style object with the given kwargs.
 
@@ -52,6 +55,9 @@ class Style:
         mark_preliminary : str, optional
             A string to be used a label to indicate that the plot is
             preliminary. If None, no label is added. The default is True.
+        scilimits : tuple, optional
+            The scientific limits to use when formatting the axis labels.
+            The default is None.
         plot_kwargs : dict, optional
             A dictionary containing the keyword arguments to be passed
             to the plotting function. The default is None.
@@ -68,6 +74,7 @@ class Style:
         self._mark_pot = mark_pot
         self._mark_pot_horizontal = mark_pot_horizontal
         self._mark_preliminary = None if mark_preliminary == 'none' else mark_preliminary
+        self._scilimits = scilimits
         self._plot_kwargs = plot_kwargs
 
     def __enter__(self):
@@ -211,6 +218,18 @@ class Style:
             The value of the mark_preliminary attribute.
         """
         return self._mark_preliminary
+    
+    @property
+    def scilimits(self) -> tuple:
+        """
+        Returns the value of the scilimits attribute.
+
+        Returns
+        -------
+        tuple
+            The value of the scilimits attribute.
+        """
+        return self._scilimits
 
     @property
     def plot_kwargs(self) -> dict:
