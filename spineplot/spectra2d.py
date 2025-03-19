@@ -293,13 +293,14 @@ class SpineSpectra2D(SpineSpectra):
                     h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
                     l.append('MC Statistical Uncertainty')
                 ax.legend(h, l)
-        
-        if style.scilimits and not logy:
+       
+        if style.scilimits:
             ax.ticklabel_format(axis='y', scilimits=style.scilimits)
         if style.mark_pot:
             mark_pot(ax, self._exposure, style.mark_pot_horizontal)
         if style.mark_preliminary is not None:
-            mark_preliminary(ax, style.mark_preliminary)
+            mark_preliminary(ax, style.mark_preliminary, hadj=0.035 if style.scilimits is not None else 0)
+
         # Set the axis to be logarithmic if requested.
         if logx:
             # Modify the x-axis limits to ensure that the lower limit
