@@ -272,9 +272,9 @@ class SpineSpectra1D(SpineSpectra):
         if logy:
             ax.set_yscale('log')
 
-        if style.scilimits:
+        if style.scilimits and not logy:
             ax.ticklabel_format(axis='y', scilimits=style.scilimits)
         if style.mark_pot:
             mark_pot(ax, self._exposure, style.mark_pot_horizontal)
         if style.mark_preliminary is not None:
-            mark_preliminary(ax, style.mark_preliminary, hadj=0.035 if style.scilimits is not None else 0)
+            mark_preliminary(ax, style.mark_preliminary, hadj=0.035 if (style.scilimits and not logy) is not None else 0)
