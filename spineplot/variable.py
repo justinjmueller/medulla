@@ -77,7 +77,7 @@ class Variable:
         self._bin_centers = {}
         self._bin_widths = {}
 
-    def check_data(self, categories, samples):
+    def check_data(self, categories, sample_name, sample):
         """
         Provides some functionality to check the data for the variable.
         Specifically, this function checks that each sample does indeed
@@ -97,24 +97,23 @@ class Variable:
             A dictionary containing the categories for the analysis.
             The key is the category enumeration and the value is the
             name of the group that the enumerated category belongs to.
-        samples : dict
-            A dictionary containing the samples for the analysis.
-            The key is the name of the sample and the value is the
-            Sample object.
+        sample_name : str
+            The name of the Sample to be checked for validity.
+        sample : Sample
+            The Sample to be checked for validity/availability of the
+            variable.
 
         Returns
         -------
         None.
         """
-        for sname, s in samples.items():
-            self._validity_check[sname] = (self._key in s._data.keys())
+        self._validity_check[sample_name] = (self._key in sample._data.keys())
 
         if all(self._validity_check.values()):
             groups = {v: [] for v in categories.values()}
-            for s in samples.values():
-                for k, v in s.get_data([self._key], self._mask)[0].items():
-                    if k in categories.keys():
-                        groups[categories[k]].append(v[0])
+            for k, v in sample.get_data([self._key], self._mask)[0].items():
+                if k in categories.keys():
+                    groups[categories[k]].append(v[0])
 
             for g, v in groups.items():
                 if v and self._binning_scheme == 'equal_population':

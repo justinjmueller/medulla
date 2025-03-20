@@ -80,8 +80,11 @@ class Analysis:
         if 'variables' not in self._config.keys():
             raise ConfigException(f"No variables defined in the TOML file. Please check for a valid variable configuration block (table='variables') in the TOML file ('{toml_path}').")
         self._variables = {name: Variable(name, **self._config['variables'][name]) for name in self._config['variables']}
-        for varname, var in self._variables.items():
-            var.check_data(self._categories, self._samples)
+
+        # Register variables with samples
+        for s in self._samples.values():
+            for v in self._variables.values():
+                s.register_variable(v, self._categories)
 
         # Load the artists table
         if 'figure' not in self._config.keys():
