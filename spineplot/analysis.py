@@ -83,14 +83,9 @@ class Analysis:
         self._variables = {name: Variable(name, **self._config['variables'][name]) for name in self._config['variables']}
 
         # Register variables with samples
-        if 'systematic_recipe' in self._config.keys():
-            recipes = self._config['systematic_recipe']
-        else:
-            recipes = list()
         for s in self._samples.values():
             for v in self._variables.values():
                 s.register_variable(v, self._categories)
-            s.process_systematics(recipes)
 
         # Load the artists table
         if 'figure' not in self._config.keys():

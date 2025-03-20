@@ -112,22 +112,28 @@ class Sample:
             print(f'Found NaN category in Sample `{self._name}` with {occurrences} occurrence(s). Masking NaNs...')
             self._data = self._data[~self._data[self._category_branch].isna()]
 
-        # Initialize the systematics dictionary for the sample. Note:
-        # the sample will always have a statistical uncertainty.
-        self._systematics = dict()
+    def register_variable(self, variable, categories) -> None:
+        """
+        Registers a new Variable object with the Sample object. This
+        allows the Sample object to call the Variable object's method
+        to check the Variable's validity in the Sample. Additionally,
+        this allows the Sample object to create or populate a
+        Systematic object with a covariance matrix for the Variable.
 
-        # Load the systematic uncertainties for the sample. If no
-        # systematics are provided, the sample is assumed to have no
-        # systematic uncertainties.
-        if systematics is not None:    
-            for sys in systematics:
-                systs = [k for k in self._file_handle[sys].keys() if k not in ['Run', 'Subrun', 'Evt']]
-                self._systematics.update({syst: Systematic(syst, self._file_handle[sys][syst]) for syst in systs})
+        Parameters
+        ----------
+        variable : Variable
+            The Variable object to register with the Sample object.
+        categories : dict
+            A dictionary containing the categories for the analysis.
+            The key is the category enumeration and the value is the
+            name of the group that the enumerated category belongs to.
         
-        # Add statistical uncertainty. This can always be added to the
-        # sample, because it is not dependent on some external source
-        # of weights.
-        self._systematics.update({f'{self._name}_statistical': Systematic('statistical', None)})
+        Returns
+        -------
+        None.
+        """
+        variable.check_data(categories, self._name, self)
 
     def override_exposure(self, exposure, exposure_type='pot') -> None:
         """
