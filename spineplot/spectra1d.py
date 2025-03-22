@@ -272,9 +272,30 @@ class SpineSpectra1D(SpineSpectra):
         if logy:
             ax.set_yscale('log')
 
+        # hadj and vadj are used to adjust the position of the POT and
+        # preliminary labels horizontally and vertically, respectively.
+        # This is necessary to ensure that the labels do not overlap
+        # with plot elements. The following logic is meant to capture
+        # all cases where the labels might overlap with the plot.
+        hadj = 0
+        vadj = 0
+
+        # The scilimits option cannot be used with a logarithmic y-axis.
+        # The hadj value is adjusted to ensure that the POT label does
+        # not overlap with the scientific notation placed above the
+        # y-axis.
         if style.scilimits and not logy:
             ax.ticklabel_format(axis='y', scilimits=style.scilimits)
+            hadj = 0.035
+
+        # The vadj value is adjusted to ensure that the POT label does
+        # not overlap with the top axis of the plot when the y-axis is
+        # logarithmic.
+        if logy:
+            vadj = 0.1
+        
+        # Add the POT and preliminary labels to the plot.
         if style.mark_pot:
-            mark_pot(ax, self._exposure, style.mark_pot_horizontal)
+            mark_pot(ax, self._exposure, style.mark_pot_horizontal, vadj=vadj)
         if style.mark_preliminary is not None:
-            mark_preliminary(ax, style.mark_preliminary, hadj=0.035 if (style.scilimits and not logy) is not None else 0)
+            mark_preliminary(ax, style.mark_preliminary, hadj=hadj, vadj=vadj)
