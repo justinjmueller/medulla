@@ -1,5 +1,8 @@
 import numpy as np
 import pandas as pd
+import re
+
+from systematic import Systematic
 
 class Sample:
     """
@@ -24,9 +27,11 @@ class Sample:
         labels.
     _data : pd.DataFrame
         The data comprising the sample.
+    _systematics : dict
+        A dictionary of Systematic objects for the Sample.
     """
     def __init__(self, name, rf, category_branch, key, exposure_type,
-                 trees, override_exposure=None, precompute=None,
+                 trees, systematics=None, override_exposure=None, precompute=None,
                  presel=None, override_category=None) -> None:
         """
         Initializes the Sample object with the given name and key.
@@ -100,29 +105,22 @@ class Sample:
             print(f'Found NaN category in Sample `{self._name}` with {occurrences} occurrence(s). Masking NaNs...')
             self._data = self._data[~self._data[self._category_branch].isna()]
 
+        # Initialize the systematics dictionary for the sample. Note:
+        # the sample will always have a statistical uncertainty.
+        self._systematics = dict()
 
-    def register_variable(self, variable, categories) -> None:
-        """
-        Registers a new Variable object with the Sample object. This
-        allows the Sample object to call the Variable object's method
-        to check the Variable's validity in the Sample. Additionally,
-        this allows the Sample object to create or populate a
-        Systematic object with a covariance matrix for the Variable.
-
-        Parameters
-        ----------
-        variable : Variable
-            The Variable object to register with the Sample object.
-        categories : dict
-            A dictionary containing the categories for the analysis.
-            The key is the category enumeration and the value is the
-            name of the group that the enumerated category belongs to.
+        # Load the systematic uncertainties for the sample. If no
+        # systematics are provided, the sample is assumed to have no
+        # systematic uncertainties.
+        if systematics is not None:    
+            for sys in systematics:
+                systs = [k for k in self._file_handle[sys].keys() if k not in ['Run', 'Subrun', 'Evt']]
+                self._systematics.update({syst: Systematic(syst, self._file_handle[sys][syst]) for syst in systs})
         
-        Returns
-        -------
-        None.
-        """
-        variable.check_data(categories, self._name, self)
+        # Add statistical uncertainty. This can always be added to the
+        # sample, because it is not dependent on some external source
+        # of weights.
+        self._systematics.update({f'{self._name}_statistical': Systematic('statistical', None)})
 
     def override_exposure(self, exposure, exposure_type='pot') -> None:
         """
@@ -167,11 +165,14 @@ class Sample:
         if target is None:
             self._data['weight'] = 1
         elif self._exposure_type == 'pot':
-            self._data['weight'] = (target._exposure_pot / self._exposure_pot)
-            print(f"Setting weight for {self._name} to {target._exposure_pot / self._exposure_pot:.2e}")
+            scale = target._exposure_pot / self._exposure_pot
         else:
-            self._data['weight'] = (target._exposure_livetime / self._exposure_livetime)
-            print(f"Setting weight for {self._name} to {target._exposure_livetime / self._exposure_livetime:.2e}")
+            scale = target._exposure_livetime / self._exposure_livetime
+
+        print(f"Setting weight for {self._name} to {scale:.2e}")
+        self._data['weight'] = scale
+        for syst in self._systematics.values():
+            syst.set_weight(scale)        
 
     def get_data(self, variables, with_mask=None) -> dict:
         """
@@ -216,6 +217,64 @@ class Sample:
             else:
                 weights[int(category)] = None
         return data, weights
+
+    def process_systematics(self, recipes) -> None:
+        """
+        Processes the systematic uncertainties for the sample.
+
+        Parameters
+        ----------
+        recipes : list
+            A list of dictionaries containing the recipes for
+            combinations of systematic uncertainties.
+
+        Returns
+        -------
+        None.
+        """
+        for syst in self._systematics.values():
+            syst.process(self)
+                
+        # Each recipe has a name, which is used to identify the
+        # combination of systematic uncertainties, and a pattern,
+        # which is used to build a list of Systematic objects to
+        # combine.
+        for recipe in recipes:
+            regxp = re.compile(recipe['pattern'])
+            systematics = [syst for syst in self._systematics.values() if regxp.match(syst._name)]
+
+            # If there are no systematics to combine, skip the recipe.
+            if len(systematics) == 0:
+                continue
+
+            # Combine the systematics and add the new Systematic object
+            syst = Systematic.combine(systematics, recipe['name'], recipe.get('label', None))
+            self._systematics[syst._name] = syst
+
+    def register_variable(self, variable, categories) -> None:
+        """
+        Registers a new Variable object with the Sample object. This
+        allows the Sample object to call the Variable object's method
+        to check the Variable's validity in the Sample. Additionally,
+        this allows the Sample object to create or populate a
+        Systematic object with a covariance matrix for the Variable.
+
+        Parameters
+        ----------
+        variable : Variable
+            The Variable object to register with the Sample object.
+        categories : dict
+            A dictionary containing the categories for the analysis.
+            The key is the category enumeration and the value is the
+            name of the group that the enumerated category belongs to.
+        
+        Returns
+        -------
+        None.
+        """
+        variable.check_data(categories, self._name, self)
+        for syst in self._systematics.values():
+            syst.register_variable(variable)
 
     def __str__(self) -> str:
         """

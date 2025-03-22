@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+from matplotlib.collections import PatchCollection
 
 def mark_pot(ax, exposure, horizontal=False, vadj=0) -> None:
     """

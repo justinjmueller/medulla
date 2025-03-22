@@ -82,9 +82,14 @@ class Analysis:
         self._variables = {name: Variable(name, **self._config['variables'][name]) for name in self._config['variables']}
 
         # Register variables with samples
+        if 'systematic_recipe' in self._config.keys():
+            recipes = self._config['systematic_recipe']
+        else:
+            recipes = None
         for s in self._samples.values():
             for v in self._variables.values():
                 s.register_variable(v, self._categories)
+            s.process_systematics(recipes)
 
         # Load the artists table
         if 'figure' not in self._config.keys():
@@ -119,7 +124,9 @@ class Analysis:
                                                  self._colors, self._category_types, x.get('title', None),
                                                  x.get('xrange', None), x.get('xtitle', None),
                                                  x.get('yrange', None), x.get('ytitle', None))
-                            self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
+                            draw_kwargs = x.get('draw_kwargs', {})
+                            draw_kwargs['draw_error'] = draw_kwargs.get('draw_error', None)
+                            self._figures[fig['name']].register_spine_artist(art, draw_kwargs=draw_kwargs)
                             self._artists.append(art)
                         elif x['type'] == 'SpineSpectra2D':
                             # Check if the variables are present in all samples

@@ -62,6 +62,10 @@ class SpineSpectra(SpineArtist):
         A dictionary of the bin counts for the spectra. This is a map
         between the category label for the spectra and the bin counts
         for the histogram data for that category.
+    _systematics : dict
+        A dictionary containing the Systematic objects configured for
+        each sample. The key is the sample name and the value is the
+        list of Systematic objects for that sample.
     """
     def __init__(self, variables, categories, colors, title=None,
                  xrange=None, xtitle=None, yrange=None, ytitle=None) -> None:
@@ -102,6 +106,7 @@ class SpineSpectra(SpineArtist):
         self._plotdata = None
         self._binedges = None
         self._onebincount = None
+        self._systematics = dict()
 
     def add_sample(self, sample, is_ordinate) -> None:
         """
@@ -121,6 +126,7 @@ class SpineSpectra(SpineArtist):
         None.
         """
         super().add_sample(sample, is_ordinate)
+        self._systematics[sample._name] = sample._systematics
 
     def fit_with_function(self, ax, bin_centers, data, bin_edges, fit_type, range=(-1,1)) -> None:
         """

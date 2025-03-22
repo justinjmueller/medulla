@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from spectra import SpineSpectra
 from style import Style
 from variable import Variable
+from systematic import Systematic
 from utilities import mark_pot, mark_preliminary, draw_error_boxes
 
 class SpineSpectra1D(SpineSpectra):
@@ -151,7 +152,7 @@ class SpineSpectra1D(SpineSpectra):
     def draw(self, ax, style, show_component_number=False,
              show_component_percentage=False, invert_stack_order=False,
              fit_type=None, logx=False, logy=False,
-             draw_stat_error=False) -> None:
+             draw_error=None) -> None:
         """
         Plots the data for the SpineSpectra1D object.
 
@@ -183,9 +184,9 @@ class SpineSpectra1D(SpineSpectra):
         logy : bool
             A flag to indicate if the y-axis should be logarithmic.
             The default is False.
-        draw_stat_error : bool
-            A flag to indicate if the statistical error should be drawn
-            on the histogram. The default is False.
+        draw_error : str, optional
+            Indicates the name of the Systematic object to use for
+            drawing the error boxes. The default is None.
 
         Returns
         -------
@@ -227,11 +228,13 @@ class SpineSpectra1D(SpineSpectra):
                 reduce = lambda x : [x[i] for i in histogram_mask]
             
             ax.hist(reduce(bincenters), weights=reduce(data), bins=self._variable._nbins, range=xr, label=reduce(labels), color=reduce(colors), **style.plot_kwargs)
-            if draw_stat_error:
+            if draw_error:
+                systs = [s[draw_error] for s in self._systematics.values() if draw_error in s]
+                cov = np.sum(s.get_covariance(self._variable._key) for s in systs)
                 x = reduce(bincenters)[0]
                 y = np.sum(reduce(data), axis=0)
                 xerr = [x / 2 for x in binwidths[0]]
-                yerr = np.sqrt(y)
+                yerr = np.sqrt(np.diag(cov))
                 draw_error_boxes(ax, x, y, xerr, yerr, facecolor='gray', edgecolor='none', alpha=0.5, hatch='///')
 
             reduce = lambda x : [x[i] for i in scatter_mask]
@@ -240,15 +243,15 @@ class SpineSpectra1D(SpineSpectra):
         
         if invert_stack_order:
             h, l = ax.get_legend_handles_labels()
-            if draw_stat_error:
+            if draw_error:
                 h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
-                l.append('MC Statistical Uncertainty')
+                l.append(systs[0].label)
             ax.legend(h[-2::-1]+h[-1:], l[-2::-1]+l[-1:])
         else:
             h, l = ax.get_legend_handles_labels()
-            if draw_stat_error:
+            if draw_error:
                 h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
-                l.append('MC Statistical Uncertainty')
+                l.append(systs[0].label)
             ax.legend(h, l)
 
         if isinstance(self._yrange, (tuple, list)):
