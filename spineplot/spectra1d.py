@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from spectra import SpineSpectra
 from style import Style
 from variable import Variable
+from systematic import Systematic
 from utilities import mark_pot, mark_preliminary, draw_error_boxes
 
 class SpineSpectra1D(SpineSpectra):
@@ -233,7 +234,7 @@ class SpineSpectra1D(SpineSpectra):
                 x = reduce(bincenters)[0]
                 y = np.sum(reduce(data), axis=0)
                 xerr = [x / 2 for x in binwidths[0]]
-                yerr = np.sqrt(y)
+                yerr = np.sqrt(np.diag(cov))
                 draw_error_boxes(ax, x, y, xerr, yerr, facecolor='gray', edgecolor='none', alpha=0.5, hatch='///')
 
             reduce = lambda x : [x[i] for i in scatter_mask]

@@ -126,7 +126,8 @@ class SpineSpectra(SpineArtist):
         None.
         """
         super().add_sample(sample, is_ordinate)
-        
+        self._systematics[sample._name] = sample._systematics
+
     def fit_with_function(self, ax, bin_centers, data, bin_edges, fit_type, range=(-1,1)) -> None:
         """
         Fit the data with a given function and plot the fit on the axis.
