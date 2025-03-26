@@ -86,7 +86,7 @@ class Analysis:
         if 'systematic_recipe' in self._config.keys():
             recipes = self._config['systematic_recipe']
         else:
-            recipes = None
+            recipes = list()
         for s in self._samples.values():
             for v in self._variables.values():
                 s.register_variable(v, self._categories)
