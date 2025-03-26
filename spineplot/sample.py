@@ -29,10 +29,13 @@ class Sample:
         The data comprising the sample.
     _systematics : dict
         A dictionary of Systematic objects for the Sample.
+    _print_sys : bool
+        A boolean flag that toggles the printing of integrated
+        systematic uncertainties for the sample.
     """
     def __init__(self, name, rf, category_branch, key, exposure_type,
                  trees, systematics=None, override_exposure=None, precompute=None,
-                 presel=None, override_category=None) -> None:
+                 presel=None, override_category=None, print_sys=False) -> None:
         """
         Initializes the Sample object with the given name and key.
 
@@ -82,6 +85,7 @@ class Sample:
         self._exposure_pot = self._file_handle['POT'].to_numpy()[0][0]
         self._exposure_livetime = self._file_handle['Livetime'].to_numpy()[0][0]
         self._category_branch = category_branch
+        self._print_sys = print_sys
 
         if override_exposure is not None:
             self.override_exposure(override_exposure, exposure_type)
@@ -250,6 +254,11 @@ class Sample:
             # Combine the systematics and add the new Systematic object
             syst = Systematic.combine(systematics, recipe['name'], recipe.get('label', None))
             self._systematics[syst._name] = syst
+        
+        # Print the systematics for the sample (if requested).
+        if self._print_sys:
+            for sysname, syst in self._systematics.items():
+                print(syst)
 
     def register_variable(self, variable, categories) -> None:
         """
