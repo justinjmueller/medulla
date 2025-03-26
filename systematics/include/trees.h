@@ -300,6 +300,8 @@ namespace sys::trees
             systrees[s]->Branch("Run", &run);
             systrees[s]->Branch("Subrun", &subrun);
             systrees[s]->Branch("Evt", &event);
+            systrees[s]->SetDirectory(directory);
+            systrees[s]->SetAutoFlush(1000);
         }
 
         for(sys::cfg::ConfigurationTable & t : config.get_subtables("sys"))
