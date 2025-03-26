@@ -277,6 +277,11 @@ class Systematic:
         
         return new_systematic
 
+    def __repr__(self):
+        s = f'--Systematic({self._name}, {self._label})--'
+        s += f'\n\tFractional uncertainty: {self._std:.2%}'
+        return s
+
     @property
     def name(self):
         return self._name
