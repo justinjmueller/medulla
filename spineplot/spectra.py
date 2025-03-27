@@ -160,6 +160,12 @@ class SpineSpectra(SpineArtist):
             mpv = bin_centers[max_index]
             ax.axvline(mpv, color='black', linestyle='--', label=f'MPV={mpv:.2f}')
 
+        elif fit_type == 'percentile':
+            # Find the 90th percentile
+            cumulative = np.cumsum(data) / np.sum(data)
+            percentile = np.interp(0.1, cumulative, bin_centers)
+            ax.axvline(percentile, color='black', linestyle='--', label=f'90th Percentile={percentile:.2f}')
+
         elif fit_type == 'mpv_sigma':
             # Find the bin with the maximum value
             max_index = np.argmax(data)
