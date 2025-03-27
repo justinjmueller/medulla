@@ -8,6 +8,7 @@ from spectra1d import SpineSpectra1D
 from spectra2d import SpineSpectra2D
 from efficiency import SpineEfficiency
 from roc import ROCCurve
+from ternary import Ternary
 from style import Style
 from variable import Variable
 
@@ -167,6 +168,18 @@ class Analysis:
                             disc = {g : self._variables[x['discriminant_scores'][i]] for i, g in enumerate(x['groups'])}
                             art = ROCCurve(restrict_categories, x['labels'], x['pos_label'], disc,
                                            x.get('background', None), x.get('title', None))
+                            self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
+                            self._artists.append(art)
+
+                        elif x['type'] == 'Ternary':
+                            # Check if the variables are present in all samples
+                            if not all([self._variables[x[v]]._validity_check.values() for v in ['var0', 'var1', 'var2']]):
+                                missing_samples = [k for k, v in self._variables[x[v]]._validity_check.items() for v in ['var0', 'var1', 'var2']]
+                                raise ConfigException(f"Variable '{v}' not found in all samples ({' '.join(missing_samples)}).")
+
+                            # Create the artist
+                            art = Ternary(self._variables[x['var0']], self._variables[x['var1']], self._variables[x['var2']],
+                                          restrict_categories, x.get('title', None))
                             self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
                             self._artists.append(art)
                             
