@@ -446,6 +446,8 @@ ana::SpillMultiVar SpineVar(double (*fvar)(const VARTYPE &), bool (*fpcut)(const
                         {
                             if(fpcut(j) && (j.match_ids.size() > 0 || !is_mc))
                                 var.push_back(fvar(*reco_particles[j.match_ids[0]]));
+                            else if(fpcut(j) && is_mc)
+                                var.push_back(PLACEHOLDERVALUE);
                         }
                     }
                 }
@@ -464,6 +466,8 @@ ana::SpillMultiVar SpineVar(double (*fvar)(const VARTYPE &), bool (*fpcut)(const
                         for(auto const & j : i.particles)
                         {
                             if(fpcut(j) && j.match_ids.size() > 0)
+                                var.push_back(fvar(j));
+                            else if(fpcut(j))
                                 var.push_back(fvar(j));
                         }
                     }
