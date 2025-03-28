@@ -33,6 +33,45 @@
 namespace pvars
 {
     /**
+     * @brief Variable for the particle's primary classification.
+     * @details This variable returns the primary classification of the particle.
+     * The primary classification is determined upstream in the SPINE
+     * reconstruction and is based on the softmax scores of the particle.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the primary classification of the particle.
+     */
+    template<class T>
+        double primary_classification(const T & p)
+        {
+            return p.is_primary ? 1 : 0;
+        }
+
+    /**
+     * @brief Variable for assigning primary classification based on the
+     * particle's softmax scores.
+     * @details This variable assigns a primary classification based on the
+     * softmax scores of the particle. This function places a relaxed threshold
+     * on the primary softmax score to reduce observed inefficiencies in the
+     * primary classification.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the primary classification of the particle.
+     */
+    template<class T>
+        double custom_primary_classification(const T & p)
+        {
+            if constexpr (std::is_same_v<T, caf::SRParticleTruthDLPProxy>)
+            {
+                return p.is_primary ? 1 : 0;
+            }
+            else
+            {
+                return p.primary_scores[1] > 0.10 ? 1 : 0;
+            }
+        }
+
+    /**
      * @brief Variable for the particle's PID.
      * @details This variable returns the PID of the particle. The PID is
      * determined by the softmax scores of the particle. This function uses the
@@ -66,7 +105,7 @@ namespace pvars
             }
             else
             {
-                if(p.pid_scores[2] > 0.10)
+                if(p.pid_scores[2] > 0.25)
                     pid = 2;
                 else
                 {
@@ -264,6 +303,122 @@ namespace pvars
         double length(const T & p)
         {
             return p.length;
+        }
+
+    /**
+     * @brief Variable for the angle of the particle in the x-wire plane for
+     * a horizontal anode plane.
+     * @details The angle is calculated as the angle of the particle start
+     * direction within the plane defined by the x-axis and the wire direction
+     * of a horizontal anode plane (e.g. the front induction plane of ICARUS).
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the angle of the particle in the x-wire plane.
+     */
+    template<class T>
+        double theta_xw_horizontal(const T & p)
+        {
+            // Wire orientation
+            double wx(0), wy(1), wz(0);
+            return std::acos(p.start_dir[0] * wx + p.start_dir[1] * wy + p.start_dir[2] * wz);
+        }
+
+    /**
+     * @brief Variable for the angle of the particle in the x-wire plane for
+     * an anode plane with wires oriented along an angle +60 degrees from the
+     * horizontal.
+     * @details The angle is calculated as the angle of the particle start
+     * direction within the plane defined by the x-axis and the wire direction
+     * of an anode plane with wires oriented along an angle of +60 degrees from
+     * the horizontal (e.g. the second induction / collection plane of ICARUS).
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the angle of the particle in the x-wire plane.
+     */
+    template<class T>
+        double theta_xw_p60(const T & p)
+        {
+            // Wire orientation
+            double wx(0), wy(0.5 * std::sqrt(3)), wz(0.5);
+            return std::acos(p.start_dir[0] * wx + p.start_dir[1] * wy + p.start_dir[2] * wz);
+        }
+    
+    /**
+     * @brief Variable for the angle of the particle in the x-wire plane for
+     * an anode plane with wires oriented along an angle -60 degrees from the
+     * horizontal.
+     * @details The angle is calculated as the angle of the particle start
+     * direction within the plane defined by the x-axis and the wire direction
+     * of an anode plane with wires oriented along an angle of -60 degrees from
+     * the horizontal (e.g. the third induction / collection plane of ICARUS).
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the angle of the particle in the x-wire plane.
+     */
+    template<class T>
+        double theta_xw_m60(const T & p)
+        {
+            // Wire orientation
+            double wx(0), wy(-0.5 * std::sqrt(3)), wz(0.5);
+            return std::acos(p.start_dir[0] * wx + p.start_dir[1] * wy + p.start_dir[2] * wz);
+        }
+    
+    /**
+     * @brief Variable for the angle of the particle in the x-wire plane for
+     * a vertical anode plane.
+     * @details The angle is calculated as the angle of the particle start
+     * direction within the plane defined by the x-axis and the wire direction
+     * of a vertical anode plane (e.g. the collection plane of SBND).
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the angle of the particle in the x-wire plane.
+     */
+    template<class T>
+        double theta_xw_vertical(const T & p)
+        {
+            // Wire orientation
+            double wx(0), wy(1), wz(0);
+            return std::acos(p.start_dir[0] * wx + p.start_dir[1] * wy + p.start_dir[2] * wz);
+        }
+
+    /**
+     * @brief Variable for the angle of the particle in the x-wire plane for
+     * an anode plane with wires oriented along an angle +30 degrees from the
+     * horizontal.
+     * @details The angle is calculated as the angle of the particle start
+     * direction within the plane defined by the x-axis and the wire direction
+     * of an anode plane with wires oriented along an angle of +30 degrees from
+     * the horizontal (e.g. the first induction plane of SBND).
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the angle of the particle in the x-wire plane.
+     */
+    template<class T>
+        double theta_xw_p30(const T & p)
+        {
+            // Wire orientation
+            double wx(0), wy(0.5), wz(0.5 * std::sqrt(3));
+            return std::acos(p.start_dir[0] * wx + p.start_dir[1] * wy + p.start_dir[2] * wz);
+        }
+
+    /**
+     * @brief Variable for the angle of the particle in the x-wire plane for
+     * an anode plane with wires oriented along an angle -30 degrees from the
+     * horizontal.
+     * @details The angle is calculated as the angle of the particle start
+     * direction within the plane defined by the x-axis and the wire direction
+     * of an anode plane with wires oriented along an angle of -30 degrees from
+     * the horizontal (e.g. the second induction plane of SBND).
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the angle of the particle in the x-wire plane.
+     */
+    template<class T>
+        double theta_xw_m30(const T & p)
+        {
+            // Wire orientation
+            double wx(0), wy(-0.5), wz(0.5 * std::sqrt(3));
+            return std::acos(p.start_dir[0] * wx + p.start_dir[1] * wy + p.start_dir[2] * wz);
         }
 
     /**
