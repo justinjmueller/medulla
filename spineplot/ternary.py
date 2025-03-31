@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import mpltern
 from scipy.stats import gaussian_kde
 
 from artists import SpineArtist
