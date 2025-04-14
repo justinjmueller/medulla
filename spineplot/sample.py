@@ -32,6 +32,8 @@ class Sample:
     _print_sys : bool
         A boolean flag that toggles the printing of integrated
         systematic uncertainties for the sample.
+    _presel_mask : pd.Series
+        A mask to apply to the sample data for pre-selection.
     """
     def __init__(self, name, rf, category_branch, key, exposure_type,
                  trees, systematics=None, override_exposure=None, precompute=None,
@@ -101,7 +103,10 @@ class Sample:
                 self._data[k] = self._data.eval(v)
         
         if presel is not None:
-            self._data = self._data[self._data.eval(presel)]
+            self._presel_mask = self._data.eval(presel)
+            self._data = self._data[self._presel_mask]
+        else:
+            self._presel_mask = np.ones(len(self._data), dtype=bool)
 
         # Check category branch for NaNs
         if np.isnan(self._data[self._category_branch]).any():
@@ -237,7 +242,7 @@ class Sample:
         None.
         """
         for syst in self._systematics.values():
-            syst.process(self)
+            syst.process(self, self._presel_mask)
                 
         # Each recipe has a name, which is used to identify the
         # combination of systematic uncertainties, and a pattern,

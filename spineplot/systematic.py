@@ -107,7 +107,7 @@ class Systematic:
         """
         self._variables[variable._key] = variable
 
-    def process(self, sample, nuniv=1000) -> np.ndarray:
+    def process(self, sample, mask, nuniv=1000) -> np.ndarray:
         """
         Processes the systematic uncertainty for the given sample for
         all configured Variables.
@@ -116,6 +116,9 @@ class Systematic:
         ----------
         sample : Sample
             The parent Sample object containing the dataset.
+        mask : pd.Series
+            A mask to apply to the sample data. This reflects the
+            `presel` mask applied to the sample.
         nuniv : int, optional
             The number of universes to generate. The default is 1000.
 
@@ -128,7 +131,7 @@ class Systematic:
         # where the systematic weights are stored in a TTree.
         if self._handle is not None:
             # Read the weights from the TTree
-            weights_array = np.stack(self._handle.array(library='np'))
+            weights_array = np.stack(self._handle.array(library='np'))[mask, :]
             
             if weights_array.shape[1] == 7:
                 # Set the "sigma" levels corresponding to each weight in the
