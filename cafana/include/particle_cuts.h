@@ -71,11 +71,15 @@ namespace pcuts
             bool passes(false);
             if(is_primary(p))
             {
-                double energy(pvars::ke(p));
-                if((p.pid == 1 && energy > 10) || (p.pid == 0 && energy > 10))
+                double energy(p.calo_ke);
+                if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
+                    energy = pvars::ke(p);
+                //double energy(pvars::ke(p));
+                if((p.pid == 1 && energy > 50) || (p.pid == 0 && energy > 50) || (p.pid > 1 && energy > 100))
                     passes = true;
             }
             return passes;
+        }
     /**
      * @brief Check if the particle is throughgoing.
      * @details This function checks if the particle is throughgoing. A
