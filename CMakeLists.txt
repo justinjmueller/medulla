@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.14)
 project(spine_anaplot_tools LANGUAGES C CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-include(SetupEnvironment)
+include(CheckEnvironment) # Validate first
+include(SetupEnvironment) # Set paths to external dependencies
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
