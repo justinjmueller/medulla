@@ -101,7 +101,7 @@ namespace sys::cfg
          * @return void
          * @throw ConfigurationError
          */
-        void check_field(const std::string & field);
+        void check_field(const std::string & field) const;
 
         /**
          * @brief Check that the requested field is present in the configuration
@@ -112,7 +112,7 @@ namespace sys::cfg
          * @param field The field that is requested.
          * @return A boolean value indicating whether the field is present.
          */
-        bool has_field(const std::string & field);
+        bool has_field(const std::string & field) const;
 
         /**
          * @brief Get the requested boolean field from the ConfigurationTable.
@@ -123,7 +123,7 @@ namespace sys::cfg
          * @return The value of the requested boolean field.
          * @throw ConfigurationError
          */
-        bool get_bool_field(const std::string & field);
+        bool get_bool_field(const std::string & field) const;
 
         /**
          * @brief Get the requested string field from the ConfigurationTable.
@@ -134,7 +134,7 @@ namespace sys::cfg
          * @return The value of the requested string field.
          * @throw ConfigurationError
          */
-        std::string get_string_field(const std::string & field);
+        std::string get_string_field(const std::string & field) const;
 
         /**
          * @brief Get a list of all strings matching the requested field name.
@@ -144,7 +144,7 @@ namespace sys::cfg
          * @return A vector of strings.
          * @throw ConfigurationError
          */
-        std::vector<std::string> get_string_vector(const std::string & field);
+        std::vector<std::string> get_string_vector(const std::string & field) const;
 
         /**
          * @brief Get the requested integer field from the ConfigurationTable.
@@ -155,7 +155,7 @@ namespace sys::cfg
          * @return The value of the requested integer field.
          * @throw ConfigurationError
          */
-        int64_t get_int_field(const std::string & field);
+        int64_t get_int_field(const std::string & field) const;
 
         /**
          * @brief Get the requested double field from the ConfigurationTable.
@@ -166,7 +166,7 @@ namespace sys::cfg
          * @return The value of the requested double field.
          * @throw ConfigurationError
          */
-        double get_double_field(const std::string & field);
+        double get_double_field(const std::string & field) const;
 
         /**
          * @brief Get a list of all doubles matching the requested field name.
@@ -176,7 +176,7 @@ namespace sys::cfg
          * @return A vector of doubles.
          * @throw ConfigurationError
          */
-        std::vector<double> get_double_vector(const std::string & field);
+        std::vector<double> get_double_vector(const std::string & field) const;
 
         /**
          * @brief Get a list of all subtables matching the requested table name.
@@ -188,19 +188,10 @@ namespace sys::cfg
          * @throw ConfigurationError
          * @see ConfigurationTable
          */
-        std::vector<ConfigurationTable> get_subtables(const std::string & table);
+        std::vector<ConfigurationTable> get_subtables(const std::string & table) const;
     
     private:
         toml::table config; ///< The TOML configuration table.
-
-        /**
-         * @brief Validate the configuration file.
-         * @details This function validates the configuration file by checking
-         * that all the requisite fields are present.
-         * @return void
-         * @throw ConfigurationError
-         */
-        void validate(); ///< Validate the configuration file.
     };
 }
 #endif // CONFIGURATION_H
