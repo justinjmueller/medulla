@@ -27,6 +27,13 @@ set(SBNANAOBJ_INC "$ENV{MRB_INSTALL}/sbnanaobj/$ENV{SBNANAOBJ_VERSION}/include")
 set(SBNANA_LIB "$ENV{MRB_INSTALL}/sbnana/$ENV{SBNANA_VERSION}/slf7.x86_64.e26.prof/lib")
 set(SBNANAOBJ_LIB "$ENV{MRB_INSTALL}/sbnanaobj/$ENV{SBNANAOBJ_VERSION}/slf7.x86_64.e26.prof/lib")
 
+# Library for the framework
+add_library(framework SHARED src/framework.cc)
+target_link_directories(framework PRIVATE ${SBNANA_LIB} ${SBNANAOBJ_LIB})
+target_link_libraries(framework PRIVATE shared CAFAnaCore sbnanaobj_StandardRecordProxy)
+target_include_directories(framework PRIVATE include/ ${SBNANA_INC} ${SBNANAOBJ_INC} ${SRPROXY_INC})
+target_compile_features(framework PRIVATE cxx_std_17)
+
 # Add a common library
 add_library(common INTERFACE)
 
@@ -67,6 +74,10 @@ target_link_libraries(common INTERFACE
 )
 
 target_compile_features(common INTERFACE cxx_std_17)
+
+add_executable(main src/main.cc)
+target_link_libraries(main PRIVATE shared framework common)
+target_include_directories(main PRIVATE . include/ ${SBNANA_INC} ${SBNANAOBJ_INC} ${SRPROXY_INC})
 
 add_executable(example example.cc)
 target_link_libraries(example PRIVATE common)
