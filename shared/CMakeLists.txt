@@ -24,3 +24,5 @@ target_include_directories(shared
 target_link_libraries(shared
     PUBLIC tomlplusplus::tomlplusplus
 )
+
+target_compile_features(shared PUBLIC cxx_std_17)
