@@ -50,6 +50,7 @@ int main(int argc, char * argv[])
     {
         // Load the configuration file
         config.set_config(argv[1]);
+
         // Check if the required fields are present in the configuration file
         std::vector<sys::cfg::ConfigurationTable> trees(config.get_subtables("tree"));
         for(const auto & tree : trees)
@@ -60,8 +61,20 @@ int main(int argc, char * argv[])
             std::map<std::string, ana::SpillMultiVar> vars_map;
             for(const auto & var : vars)
             {
-                ana::SpillMultiVar thisvar = construct(cuts, var);
-                vars_map.try_emplace(var.get_string_field("name"), thisvar);
+                // If the variable type is "both", we need to construct two
+                // variables: one for "true" and one for "reco".
+                if(var.get_string_field("type") == "both")
+                {
+                    NamedSpillMultiVar thisvar_true = construct(cuts, var, "true");
+                    NamedSpillMultiVar thisvar_reco = construct(cuts, var, "reco");
+                    vars_map.try_emplace(thisvar_true.first, thisvar_true.second);
+                    vars_map.try_emplace(thisvar_reco.first, thisvar_reco.second);
+                }
+                else
+                {
+                    NamedSpillMultiVar thisvar = construct(cuts, var);
+                    vars_map.try_emplace(thisvar.first, thisvar.second);
+                }
             }
             analysis.AddTree(tree.get_string_field("name"), vars_map, tree.get_bool_field("sim_only"));
         }

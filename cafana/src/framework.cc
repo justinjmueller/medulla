@@ -62,7 +62,7 @@ typename Registry<EventT, RegistryT>::Fn Registry<EventT, RegistryT>::get(const 
 }
 
 // Build a single SpillMultiVar for a single branch variable.
-ana::SpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & cuts, const sys::cfg::ConfigurationTable & var)
+NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & cuts, const sys::cfg::ConfigurationTable & var, const std::string & override_type)
 {
     /**
      * @brief Determine the type of the cuts.
@@ -113,7 +113,7 @@ ana::SpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
          * function from the registry.
          */
         std::string var_name = var.get_string_field("name");
-        std::string var_type = var.get_string_field("type");
+        std::string var_type = (override_type.empty() ? var.get_string_field("type") : override_type);
         std::vector<double> varPars;
         if(var.has_field("parameters"))
             varPars = var.get_double_vector("parameters");
@@ -121,11 +121,11 @@ ana::SpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
         if(var_type == "true") {
             var_name = "true_" + var_name;
             auto varFn = VarFactoryRegistry<TType>::Instance().Create(var_name, varPars);
-            return spill_multivar_helper<TType, TType>(cut, varFn);
+            return std::make_pair(var_name, spill_multivar_helper<TType, TType>(cut, varFn));
         } else if(var_type == "reco") {
             var_name = "reco_" + var_name;
             auto varFn = VarFactoryRegistry<RType>::Instance().Create(var_name, varPars);
-            return spill_multivar_helper<TType, RType>(cut, varFn);
+            return std::make_pair(var_name, spill_multivar_helper<TType, RType>(cut, varFn));
         } else {
             throw std::runtime_error("Illegal variable type '" + var_type + "' for variable " + var_name);
         }
@@ -170,7 +170,7 @@ ana::SpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
          * function from the registry.
          */
         std::string var_name = var.get_string_field("name");
-        std::string var_type = var.get_string_field("type");
+        std::string var_type = (override_type.empty() ? var.get_string_field("type") : override_type);
         std::vector<double> varPars;
         if(var.has_field("parameters"))
             varPars = var.get_double_vector("parameters");
@@ -178,11 +178,11 @@ ana::SpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
         if(var_type == "true") {
             var_name = "true_" + var_name;
             auto varFn = VarFactoryRegistry<TType>::Instance().Create(var_name, varPars);
-            return spill_multivar_helper<RType, TType>(cut, varFn);
+            return std::make_pair(var_name, spill_multivar_helper<RType, TType>(cut, varFn));
         } else if(var_type == "reco") {
             var_name = "reco_" + var_name;
             auto varFn = VarFactoryRegistry<RType>::Instance().Create(var_name, varPars);
-            return spill_multivar_helper<RType, RType>(cut, varFn);
+            return std::make_pair(var_name, spill_multivar_helper<RType, RType>(cut, varFn));
         } else {
             throw std::runtime_error("Illegal variable type '" + var_type + "' for variable " + var_name);
         }

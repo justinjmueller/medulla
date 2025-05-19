@@ -11,6 +11,7 @@
 
 using TType = caf::SRInteractionTruthDLPProxy;
 using RType = caf::SRInteractionDLPProxy;
+using NamedSpillMultiVar = std::pair<std::string, ana::SpillMultiVar>;
 
 template<typename EventT, typename RegistryT>
 class Registry
@@ -235,10 +236,10 @@ namespace {                                                                     
  *        - name:       string (base variable name)
  *        - type:       string ("true" or "reco")
  *        - parameters: array of floats (parameters for the variable)
- * @return A SpillMultiVar object that applies the cuts and computes the variable.
+ * @return A NamedSpillMultiVar object that applies the cuts and computes the variable.
  * @throw std::runtime_error if a function is not registered.
  */
-ana::SpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & cuts, const sys::cfg::ConfigurationTable & var);
+NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & cuts, const sys::cfg::ConfigurationTable & var, const std::string & override_type = "");
 
 /**
  * @brief Helper method for constructing a SpillMultiVar object.
