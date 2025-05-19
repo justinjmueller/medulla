@@ -1,23 +1,16 @@
-/**
- * @file framework.h
- * @brief Header file for the SPINE analysis framework.
- * @details This file contains the header for the SPINE analysis framework. The
- * framework is designed to be modular and extensible, allowing for easy
- * integration and application of cuts and variables.
- * @author mueller@fnal.gov
- */
 #ifndef FRAMEWORK_H
 #define FRAMEWORK_H
 #include <map>
 #include <string>
 #include <functional>
 #include <stdexcept>
+#include <type_traits>
 
 #include "sbnana/CAFAna/Core/MultiVar.h"
 #include "configuration.h"
 
-typedef caf::SRInteractionTruthDLPProxy TType;
-typedef caf::SRInteractionDLPProxy RType;
+using TType = caf::SRInteractionTruthDLPProxy;
+using RType = caf::SRInteractionDLPProxy;
 
 template<typename EventT, typename RegistryT>
 class Registry
@@ -65,7 +58,7 @@ class Registry
          * name. The name is used to identify the function in the TOML-based
          * configuration file.
          * @param name The name of the function to retrieve.
-         * @return A reference to the function 
+         * @return A copy of the registered Fn. 
          * @throw std::runtime_error if the function is not registered.
          */
         Fn get(const std::string & name);
@@ -100,44 +93,154 @@ using CutRegistry = Registry<EventT, bool>;
 template<typename EventT>
 using VariableRegistry = Registry<EventT, double>;
 
-/**
- * @brief Macro to register a cut on both true and reco types.
- * @param fn The templated function name (no angle brackets).
- *
- * Expands to:
- *   CutRegistry<TType>::instance().register_fn("true_fn", &fn<TType>);
- *   CutRegistry<RType>::instance().register_fn("reco_fn", &fn<RType>);
- */
-#define REGISTER_CUT(fn)                                                           \
-namespace                                                                          \
-{                                                                                  \
-    struct RegistrarFor##fn {                                                      \
-    RegistrarFor##fn()                                                             \
-    {                                                                              \
-        CutRegistry<TType>::instance().register_fn("true_" #fn, fn<TType>);        \
-        CutRegistry<RType>::instance().register_fn("reco_" #fn, fn<RType>);        \
-    }                                                                              \
-    } registrarFor##fn;                                                            \
+//===----------------------------------------------------------------------===//
+// 2) Factory‐based registries: bind params → callable<EventT>
+//===----------------------------------------------------------------------===//
+
+/// @brief A factory function: given params, returns a bool‑cut on EventT.
+template<typename EventT>
+using CutFactory = std::function<std::function<bool(const EventT&)>(const std::vector<double>&)>;
+
+/// @brief Registry of CutFactory<EventT> by name.
+template<typename EventT>
+class CutFactoryRegistry {
+public:
+  static CutFactoryRegistry& Instance() {
+    static CutFactoryRegistry inst;
+    return inst;
+  }
+
+  /// Register a factory that binds parameters
+  void Register(std::string name, CutFactory<EventT> f) {
+    registry_[std::move(name)] = std::move(f);
+  }
+
+  /// Create a bound cut by name + params
+  std::function<bool(const EventT&)> Create(const std::string& name,
+                                             const std::vector<double>& pars) const
+  {
+    auto it = registry_.find(name);
+    if(it == registry_.end())
+      throw std::runtime_error("Unknown cut factory: " + name);
+    return it->second(pars);
+  }
+
+private:
+  std::map<std::string, CutFactory<EventT>> registry_;
+};
+
+/// @brief Registry of variable factory functions (similar to CutFactoryRegistry).
+template<typename EventT>
+using VarFactory = std::function<std::function<double(const EventT&)>(const std::vector<double>&)>;
+
+template<typename EventT>
+class VarFactoryRegistry {
+public:
+  static VarFactoryRegistry& Instance() {
+    static VarFactoryRegistry inst;
+    return inst;
+  }
+
+  void Register(std::string name, VarFactory<EventT> f) {
+    registry_[std::move(name)] = std::move(f);
+  }
+
+  std::function<double(const EventT&)> Create(const std::string& name,
+                                             const std::vector<double>& pars) const
+  {
+    auto it = registry_.find(name);
+    if(it == registry_.end())
+      throw std::runtime_error("Unknown variable factory: " + name);
+    return it->second(pars);
+  }
+
+private:
+  std::map<std::string, VarFactory<EventT>> registry_;
+};
+
+/// @brief Register a cut that takes (EventT const&, std::vector<double> const&)
+#define REGISTER_CUT_PARAMS(name, fn)                                           \
+namespace {                                                                     \
+  struct Registrar_CutParams_##name {                                           \
+    Registrar_CutParams_##name() {                                              \
+      CutFactoryRegistry<TType>::Instance().Register(                           \
+        "true_" #name,                                                          \
+        [](const std::vector<double>& pars) -> std::function<bool(const TType&)> { \
+          return [pars](const TType& ev){ return fn<TType>(ev, pars); };        \
+        }                                                                       \
+      );                                                                        \
+      CutFactoryRegistry<RType>::Instance().Register(                           \
+        "reco_" #name,                                                          \
+        [](const std::vector<double>& pars) -> std::function<bool(const RType&)> { \
+          return [pars](const RType& ev){ return fn<RType>(ev, pars); };        \
+        }                                                                       \
+      );                                                                        \
+    }                                                                           \
+  } registrar_CutParams_##name;                                                 \
 }
 
-/**
- * @brief Macro to register a variable on both true and reco types.
- * @param fn The templated function name (no angle brackets).
- *
- * Expands to:
- *   VariableRegistry<TType>::instance().register_fn("true_fn", &fn<TType>);
- *   VariableRegistry<RType>::instance().register_fn("reco_fn", &fn<RType>);
- */
-#define REGISTER_VARIABLE(fn)                                                      \
-namespace                                                                          \
-{                                                                                  \
-    struct RegistrarFor##fn {                                                      \
-    RegistrarFor##fn()                                                             \
-    {                                                                              \
-        VariableRegistry<TType>::instance().register_fn("true_" #fn, fn<TType>);   \
-        VariableRegistry<RType>::instance().register_fn("reco_" #fn, fn<RType>);   \
-    }                                                                              \
-    } registrarFor##fn;                                                            \
+/// @brief Register a cut that takes just (EventT const&)
+#define REGISTER_CUT_NO_PARAMS(name, fn)                                        \
+namespace {                                                                     \
+  struct Registrar_CutNP_##name {                                               \
+    Registrar_CutNP_##name() {                                                  \
+      CutFactoryRegistry<TType>::Instance().Register(                           \
+        "true_" #name,                                                          \
+        [](const std::vector<double>&) -> std::function<bool(const TType&)> {   \
+          return fn<TType>;                                                     \
+        }                                                                       \
+      );                                                                        \
+      CutFactoryRegistry<RType>::Instance().Register(                           \
+        "reco_" #name,                                                          \
+        [](const std::vector<double>&) -> std::function<bool(const RType&)> {   \
+          return fn<RType>;                                                     \
+        }                                                                       \
+      );                                                                        \
+    }                                                                           \
+  } registrar_CutNP_##name;                                                     \
+}
+
+
+/// @brief Register a variable that takes (EventT const&, std::vector<double> const&)
+#define REGISTER_VAR_PARAMS(name, fn)                                                \
+namespace {                                                                          \
+  struct Registrar_VarParams_##name {                                                \
+    Registrar_VarParams_##name() {                                                   \
+      VarFactoryRegistry<TType>::Instance().Register(                                \
+        "true_" #name,                                                               \
+        [](const std::vector<double>& pars) -> std::function<double(const TType&)> { \
+          return [pars](const TType& ev){ return fn<TType>(ev, pars); };             \
+        }                                                                            \
+      );                                                                             \
+      VarFactoryRegistry<RType>::Instance().Register(                                \
+        "reco_" #name,                                                               \
+        [](const std::vector<double>& pars) -> std::function<double(const RType&)> { \
+          return [pars](const RType& ev){ return fn<RType>(ev, pars); };             \
+        }                                                                            \
+      );                                                                             \
+    }                                                                                \
+  } registrar_VarParams_##name;                                                      \
+}
+
+/// @brief Register a variable that takes just (EventT const&)
+#define REGISTER_VAR_NO_PARAMS(name, fn)                                             \
+namespace {                                                                          \
+  struct Registrar_VarNP_##name {                                                    \
+    Registrar_VarNP_##name() {                                                       \
+      VarFactoryRegistry<TType>::Instance().Register(                                \
+        "true_" #name,                                                               \
+        [](const std::vector<double>&) -> std::function<double(const TType&)> {      \
+          return fn<TType>;                                                          \
+        }                                                                            \
+      );                                                                             \
+      VarFactoryRegistry<RType>::Instance().Register(                                \
+        "reco_" #name,                                                               \
+        [](const std::vector<double>&) -> std::function<double(const RType&)> {      \
+          return fn<RType>;                                                          \
+        }                                                                            \
+      );                                                                             \
+    }                                                                                \
+  } registrar_VarNP_##name;                                                          \
 }
 
 /**

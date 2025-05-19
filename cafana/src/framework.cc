@@ -17,6 +17,8 @@
 #include "framework.h"
 #include "configuration.h"
 
+constexpr size_t kNoMatch = std::numeric_limits<size_t>::max();
+
 // Get the singleton instance of the Registry.
 template<typename EventT, typename RegistryT>
 Registry<EventT, RegistryT> & Registry<EventT, RegistryT>::instance()
@@ -83,10 +85,20 @@ ana::SpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
         cut_functions.reserve(cuts.size());
         for(const auto & cut : cuts)
         {
-            if(CutRegistry<TType>::instance().is_registered("true_" + cut.get_string_field("name")))
-                cut_functions.push_back(CutRegistry<TType>::instance().get("true_" + cut.get_string_field("name")));
+            std::string cut_name = "true_" + cut.get_string_field("name");
+            std::vector<double> params = cut.get_double_vector("parameters");
+            if(CutFactoryRegistry<TType>::Instance().Create(cut_name, params).target_type() != typeid(void))
+            {
+                cut_functions.push_back(CutFactoryRegistry<TType>::Instance().Create(cut_name, params));
+            }
+            else if(CutRegistry<TType>::instance().is_registered(cut_name))
+            {
+                cut_functions.push_back(CutRegistry<TType>::instance().get(cut_name));
+            }
             else
-                throw std::runtime_error("Cut true_" + cut.get_string_field("name") + " is not registered.");
+            {
+                throw std::runtime_error("Cut " + cut_name + " is not registered.");
+            }
         }
         auto cut = [cut_functions](const TType & e) -> bool {
             return std::all_of(cut_functions.begin(), cut_functions.end(), [&e](auto & f) { return f(e); });
@@ -98,26 +110,23 @@ ana::SpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
          * configuration of the variable. The variable name is used to retrieve the
          * function from the registry.
          */
-        std::string var_name(var.get_string_field("name"));
-        std::string var_type(var.get_string_field("type"));
-        if(var_type == "true")
-        {
+        std::string var_name = var.get_string_field("name");
+        std::string var_type = var.get_string_field("type");
+        std::vector<double> varPars;
+        if(var.has_field("parameters"))
+            varPars = var.get_double_vector("parameters");
+
+        if(var_type == "true") {
             var_name = "true_" + var_name;
-            if(!VariableRegistry<TType>::instance().is_registered(var_name))
-                throw std::runtime_error("Variable " + var_name + " is not registered.");
-            auto var = VariableRegistry<TType>::instance().get(var_name);
-            return spill_multivar_helper<TType, TType>(cut, var);
-        }
-        else if(var_type == "reco")
-        {
+            auto varFn = VarFactoryRegistry<TType>::Instance().Create(var_name, varPars);
+            return spill_multivar_helper<TType, TType>(cut, varFn);
+        } else if(var_type == "reco") {
             var_name = "reco_" + var_name;
-            if(!VariableRegistry<RType>::instance().is_registered(var_name))
-                throw std::runtime_error("Variable " + var_name + " is not registered.");
-            auto var = VariableRegistry<RType>::instance().get(var_name);
-            return spill_multivar_helper<TType, RType>(cut, var);
+            auto varFn = VarFactoryRegistry<RType>::Instance().Create(var_name, varPars);
+            return spill_multivar_helper<TType, RType>(cut, varFn);
+        } else {
+            throw std::runtime_error("Illegal variable type '" + var_type + "' for variable " + var_name);
         }
-        else
-            throw std::runtime_error("Illegal variable type " + var_type + " for variable " + var_name);
     }
     else
     {
@@ -131,10 +140,20 @@ ana::SpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
         cut_functions.reserve(cuts.size());
         for(const auto & cut : cuts)
         {
-            if(CutRegistry<RType>::instance().is_registered("reco_" + cut.get_string_field("name")))
-                cut_functions.push_back(CutRegistry<RType>::instance().get("reco_" + cut.get_string_field("name")));
+            std::string cut_name = "reco_" + cut.get_string_field("name");
+            std::vector<double> params = cut.get_double_vector("parameters");
+            if(CutFactoryRegistry<RType>::Instance().Create(cut_name, params).target_type() != typeid(void))
+            {
+                cut_functions.push_back(CutFactoryRegistry<RType>::Instance().Create(cut_name, params));
+            }
+            else if(CutRegistry<RType>::instance().is_registered(cut_name))
+            {
+                cut_functions.push_back(CutRegistry<RType>::instance().get(cut_name));
+            }
             else
-                throw std::runtime_error("Cut reco_" + cut.get_string_field("name") + " is not registered.");
+            {
+                throw std::runtime_error("Cut " + cut_name + " is not registered.");
+            }
         }
         auto cut = [cut_functions](const RType & e) -> bool {
             return std::all_of(cut_functions.begin(), cut_functions.end(), [&e](auto & f) { return f(e); });
@@ -146,26 +165,23 @@ ana::SpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
          * configuration of the variable. The variable name is used to retrieve the
          * function from the registry.
          */
-        std::string var_name(var.get_string_field("name"));
-        std::string var_type(var.get_string_field("type"));
-        if(var_type == "true")
-        {
+        std::string var_name = var.get_string_field("name");
+        std::string var_type = var.get_string_field("type");
+        std::vector<double> varPars;
+        if(var.has_field("parameters"))
+            varPars = var.get_double_vector("parameters");
+
+        if(var_type == "true") {
             var_name = "true_" + var_name;
-            if(!VariableRegistry<TType>::instance().is_registered(var_name))
-                throw std::runtime_error("Variable " + var_name + " is not registered.");
-            auto var = VariableRegistry<TType>::instance().get(var_name);
-            return spill_multivar_helper<RType, TType>(cut, var);
-        }
-        else if(var_type == "reco")
-        {
+            auto varFn = VarFactoryRegistry<TType>::Instance().Create(var_name, varPars);
+            return spill_multivar_helper<RType, TType>(cut, varFn);
+        } else if(var_type == "reco") {
             var_name = "reco_" + var_name;
-            if(!VariableRegistry<RType>::instance().is_registered(var_name))
-                throw std::runtime_error("Variable " + var_name + " is not registered.");
-            auto var = VariableRegistry<RType>::instance().get(var_name);
-            return spill_multivar_helper<RType, RType>(cut, var);
+            auto varFn = VarFactoryRegistry<RType>::Instance().Create(var_name, varPars);
+            return spill_multivar_helper<RType, RType>(cut, varFn);
+        } else {
+            throw std::runtime_error("Illegal variable type '" + var_type + "' for variable " + var_name);
         }
-        else
-            throw std::runtime_error("Illegal variable type " + var_type + " for variable " + var_name);
     }
 }
 
@@ -181,18 +197,18 @@ ana::SpillMultiVar spill_multivar_helper(std::function<bool(const CutsOn &)> cut
             for(auto const& i : sr->dlp_true)
             {
                 // Check for match
-                size_t match_id = (i.match_ids.size() > 0) ? (size_t)i.match_ids[0] : std::numeric_limits<size_t>::signaling_NaN();
+                size_t match_id = (i.match_ids.size() > 0) ? (size_t)i.match_ids[0] : kNoMatch;
 
                 if constexpr(std::is_same_v<VarOn, RType>)
                 {
-                    if(cuts(i) && match_id != std::numeric_limits<size_t>::signaling_NaN())
+                    if(cuts(i) && match_id != kNoMatch)
                     {
                         values.push_back(var(sr->dlp[match_id]));
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, TType>)
                 {
-                    if(cuts(i) && match_id != std::numeric_limits<size_t>::signaling_NaN())
+                    if(cuts(i) && match_id != kNoMatch)
                     {
                         values.push_back(var(i));
                     }
@@ -204,18 +220,18 @@ ana::SpillMultiVar spill_multivar_helper(std::function<bool(const CutsOn &)> cut
             for(auto const& i : sr->dlp)
             {
                 // Check for match
-                size_t match_id = (i.match_ids.size() > 0) ? (size_t)i.match_ids[0] : std::numeric_limits<size_t>::signaling_NaN();
+                size_t match_id = (i.match_ids.size() > 0) ? (size_t)i.match_ids[0] : kNoMatch;
 
                 if constexpr(std::is_same_v<VarOn, TType>)
                 {
-                    if(cuts(i) && match_id != std::numeric_limits<size_t>::signaling_NaN())
+                    if(cuts(i) && match_id != kNoMatch)
                     {
                         values.push_back(var(sr->dlp_true[match_id]));
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, RType>)
                 {
-                    if(cuts(i) && match_id != std::numeric_limits<size_t>::signaling_NaN())
+                    if(cuts(i) && match_id != kNoMatch)
                     {
                         values.push_back(var(i));
                     }
