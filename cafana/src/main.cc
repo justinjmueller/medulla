@@ -70,10 +70,14 @@ int main(int argc, char * argv[])
                     vars_map.try_emplace(thisvar_true.first, thisvar_true.second);
                     vars_map.try_emplace(thisvar_reco.first, thisvar_reco.second);
                 }
-                else
+                else if(var.get_string_field("type") == "true" || var.get_string_field("type") == "reco")
                 {
                     NamedSpillMultiVar thisvar = construct(cuts, var);
                     vars_map.try_emplace(thisvar.first, thisvar.second);
+                }
+                else
+                {
+                    throw std::runtime_error("Illegal variable type '" + var.get_string_field("type") + "' for branch " + tree.get_string_field("name") +  ":" + var.get_string_field("name"));
                 }
             }
             analysis.AddTree(tree.get_string_field("name"), vars_map, tree.get_bool_field("sim_only"));
