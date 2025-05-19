@@ -158,89 +158,68 @@ private:
   std::map<std::string, VarFactory<EventT>> registry_;
 };
 
-/// @brief Register a cut that takes (EventT const&, std::vector<double> const&)
-#define REGISTER_CUT_PARAMS(name, fn)                                           \
-namespace {                                                                     \
-  struct Registrar_CutParams_##name {                                           \
-    Registrar_CutParams_##name() {                                              \
-      CutFactoryRegistry<TType>::Instance().Register(                           \
-        "true_" #name,                                                          \
-        [](const std::vector<double>& pars) -> std::function<bool(const TType&)> { \
-          return [pars](const TType& ev){ return fn<TType>(ev, pars); };        \
-        }                                                                       \
-      );                                                                        \
-      CutFactoryRegistry<RType>::Instance().Register(                           \
-        "reco_" #name,                                                          \
-        [](const std::vector<double>& pars) -> std::function<bool(const RType&)> { \
-          return [pars](const RType& ev){ return fn<RType>(ev, pars); };        \
-        }                                                                       \
-      );                                                                        \
-    }                                                                           \
-  } registrar_CutParams_##name;                                                 \
+#include <type_traits>
+#include <vector>
+
+namespace sys { namespace fw {
+
+// Overload‐detecting binder for cuts:
+template<auto F, typename EventT>
+std::function<bool(const EventT&)>
+BindCut(const std::vector<double>& pars) {
+  if constexpr (std::is_invocable_v<decltype(F), const EventT&, const std::vector<double>&>) {
+    return [pars](const EventT& e){ return F(e, pars); };
+  } else {
+    return [=](const EventT& e){ return F(e); };
+  }
 }
 
-/// @brief Register a cut that takes just (EventT const&)
-#define REGISTER_CUT_NO_PARAMS(name, fn)                                        \
-namespace {                                                                     \
-  struct Registrar_CutNP_##name {                                               \
-    Registrar_CutNP_##name() {                                                  \
-      CutFactoryRegistry<TType>::Instance().Register(                           \
-        "true_" #name,                                                          \
-        [](const std::vector<double>&) -> std::function<bool(const TType&)> {   \
-          return fn<TType>;                                                     \
-        }                                                                       \
-      );                                                                        \
-      CutFactoryRegistry<RType>::Instance().Register(                           \
-        "reco_" #name,                                                          \
-        [](const std::vector<double>&) -> std::function<bool(const RType&)> {   \
-          return fn<RType>;                                                     \
-        }                                                                       \
-      );                                                                        \
-    }                                                                           \
-  } registrar_CutNP_##name;                                                     \
+// Overload‐detecting binder for variables:
+template<auto F, typename EventT>
+std::function<double(const EventT&)>
+BindVar(const std::vector<double>& pars) {
+  if constexpr (std::is_invocable_v<decltype(F), const EventT&, const std::vector<double>&>) {
+    return [pars](const EventT& e){ return F(e, pars); };
+  } else {
+    return [=](const EventT& e){ return F(e); };
+  }
 }
 
+}} // namespace sys::fw
 
-/// @brief Register a variable that takes (EventT const&, std::vector<double> const&)
-#define REGISTER_VAR_PARAMS(name, fn)                                                \
-namespace {                                                                          \
-  struct Registrar_VarParams_##name {                                                \
-    Registrar_VarParams_##name() {                                                   \
-      VarFactoryRegistry<TType>::Instance().Register(                                \
-        "true_" #name,                                                               \
-        [](const std::vector<double>& pars) -> std::function<double(const TType&)> { \
-          return [pars](const TType& ev){ return fn<TType>(ev, pars); };             \
-        }                                                                            \
-      );                                                                             \
-      VarFactoryRegistry<RType>::Instance().Register(                                \
-        "reco_" #name,                                                               \
-        [](const std::vector<double>& pars) -> std::function<double(const RType&)> { \
-          return [pars](const RType& ev){ return fn<RType>(ev, pars); };             \
-        }                                                                            \
-      );                                                                             \
-    }                                                                                \
-  } registrar_VarParams_##name;                                                      \
+/// @brief Scope for registration macros
+enum class RegistrationScope { True, Reco, Both };
+
+// Register a cut with scope, auto‐detecting its signature
+#define REGISTER_CUT_SCOPE(scope, name, fn)                                            \
+namespace {                                                                            \
+  const bool _reg_cut_##name = []{                                                     \
+    if constexpr((scope)==RegistrationScope::True || (scope)==RegistrationScope::Both) \
+      CutFactoryRegistry<TType>::Instance().Register(                                  \
+        "true_" #name, sys::fw::BindCut<+fn<TType>, TType>                             \
+      );                                                                               \
+    if constexpr((scope)==RegistrationScope::Reco || (scope)==RegistrationScope::Both) \
+      CutFactoryRegistry<RType>::Instance().Register(                                  \
+        "reco_" #name, sys::fw::BindCut<+fn<RType>, RType>                             \
+      );                                                                               \
+    return true;                                                                       \
+  }();                                                                                 \
 }
 
-/// @brief Register a variable that takes just (EventT const&)
-#define REGISTER_VAR_NO_PARAMS(name, fn)                                             \
-namespace {                                                                          \
-  struct Registrar_VarNP_##name {                                                    \
-    Registrar_VarNP_##name() {                                                       \
-      VarFactoryRegistry<TType>::Instance().Register(                                \
-        "true_" #name,                                                               \
-        [](const std::vector<double>&) -> std::function<double(const TType&)> {      \
-          return fn<TType>;                                                          \
-        }                                                                            \
-      );                                                                             \
-      VarFactoryRegistry<RType>::Instance().Register(                                \
-        "reco_" #name,                                                               \
-        [](const std::vector<double>&) -> std::function<double(const RType&)> {      \
-          return fn<RType>;                                                          \
-        }                                                                            \
-      );                                                                             \
-    }                                                                                \
-  } registrar_VarNP_##name;                                                          \
+// Register a variable with scope, auto‐detecting its signature
+#define REGISTER_VAR_SCOPE(scope, name, fn)                                            \
+namespace {                                                                            \
+  const bool _reg_var_##name = []{                                                     \
+    if constexpr((scope)==RegistrationScope::True || (scope)==RegistrationScope::Both) \
+      VarFactoryRegistry<TType>::Instance().Register(                                  \
+        "true_" #name, sys::fw::BindVar<+fn<TType>, TType>                             \
+      );                                                                               \
+    if constexpr((scope)==RegistrationScope::Reco || (scope)==RegistrationScope::Both) \
+      VarFactoryRegistry<RType>::Instance().Register(                                  \
+        "reco_" #name, sys::fw::BindVar<+fn<RType>, RType>                             \
+      );                                                                               \
+    return true;                                                                       \
+  }();                                                                                 \
 }
 
 /**

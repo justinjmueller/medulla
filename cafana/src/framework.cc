@@ -86,7 +86,9 @@ ana::SpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
         for(const auto & cut : cuts)
         {
             std::string cut_name = "true_" + cut.get_string_field("name");
-            std::vector<double> params = cut.get_double_vector("parameters");
+            std::vector<double> params;
+            if(cut.has_field("parameters"))
+              params = cut.get_double_vector("parameters");
             if(CutFactoryRegistry<TType>::Instance().Create(cut_name, params).target_type() != typeid(void))
             {
                 cut_functions.push_back(CutFactoryRegistry<TType>::Instance().Create(cut_name, params));
@@ -141,7 +143,9 @@ ana::SpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
         for(const auto & cut : cuts)
         {
             std::string cut_name = "reco_" + cut.get_string_field("name");
-            std::vector<double> params = cut.get_double_vector("parameters");
+            std::vector<double> params;
+            if(cut.has_field("parameters"))
+              params = cut.get_double_vector("parameters");
             if(CutFactoryRegistry<RType>::Instance().Create(cut_name, params).target_type() != typeid(void))
             {
                 cut_functions.push_back(CutFactoryRegistry<RType>::Instance().Create(cut_name, params));

@@ -23,16 +23,12 @@
 #include "variables.h"
 #include "include/analysis.h"
 
-using cuts::valid_flashmatch;
-REGISTER_CUT(valid_flashmatch);
-using cuts::fiducial_cut;
-REGISTER_CUT(fiducial_cut);
-//using vars::neutrino_id;
-//REGISTER_VARIABLE(neutrino_id);
-using vars::flash_time;
-REGISTER_VARIABLE(flash_time);
-using vars::visible_energy;
-REGISTER_VARIABLE(visible_energy);
+REGISTER_CUT_SCOPE(RegistrationScope::Both, flash_cut,      cuts::flash_cut);
+REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut,   cuts::fiducial_cut);
+
+REGISTER_VAR_SCOPE(RegistrationScope::True, neutrino_id,    vars::neutrino_id);
+REGISTER_VAR_SCOPE(RegistrationScope::Both, flash_time,     vars::flash_time);
+REGISTER_VAR_SCOPE(RegistrationScope::Both, visible_energy, vars::visible_energy);
 
 int main(int argc, char * argv[])
 {
