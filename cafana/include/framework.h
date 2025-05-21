@@ -1,6 +1,15 @@
+/**
+ * @file framework.h
+ * @brief Header file declaring the components of the SPINE analysis framework.
+ * @details This file contains the header declarations of the SPINE analysis
+ * framework. The framework is designed to be modular and extensible, allowing
+ * for easy integration and applications of cuts and variables.
+ * @author mueller@fnal.gov
+ */
 #ifndef FRAMEWORK_H
 #define FRAMEWORK_H
 #include <map>
+#include <vector>
 #include <string>
 #include <functional>
 #include <stdexcept>
@@ -9,19 +18,31 @@
 #include "sbnana/CAFAna/Core/MultiVar.h"
 #include "configuration.h"
 
+/**
+ * @brief Type aliases for the event types used in the framework.
+ * @details These type aliases are used to simplify the code and make it
+ * easier to read. The TType and RType are used to represent the "true" and
+ * "reco" event types, respectively. Both refer to a "Proxy" wrapped object.
+ */
 using TType = caf::SRInteractionTruthDLPProxy;
 using RType = caf::SRInteractionDLPProxy;
 using NamedSpillMultiVar = std::pair<std::string, ana::SpillMultiVar>;
 
-template<typename EventT, typename RegistryT>
+//-----------------------------------------------------------------------------
+// 1) Generic registry template
+//-----------------------------------------------------------------------------
+/**
+ * @brief A singleton registory mapping string names to callables.
+ * @details This class is a singleton that maps string names to callable
+ * functions. Its primary use is to allow for TOML-based lookup of functions
+ * to be called in the analysis framework.
+ * @tparam ValueT The type of the value to be registered. This can be a function
+ * pointer, a lambda, or any other callable type.
+ */
+template<typename ValueT>
 class Registry
 {
     public:
-        /**
-         * @brief The function signature on EventT.
-         */
-        using Fn = std::function<RegistryT(const EventT &)>;
-
         /**
          * @brief Get the singleton instance of the Registry.
          * @details This function returns a reference to the singleton instance
@@ -51,7 +72,7 @@ class Registry
          * @param fn The function to register.
          * @throw std::runtime_error if the function is already registered.
          */
-        void register_fn(const std::string & name, RegistryT (*fn)(const EventT &));
+        void register_fn(const std::string & name, ValueT fn);
 
         /**
          * @brief Retrieve a previously registered function by name.
@@ -62,7 +83,7 @@ class Registry
          * @return A copy of the registered Fn. 
          * @throw std::runtime_error if the function is not registered.
          */
-        Fn get(const std::string & name);
+        ValueT get(const std::string & name);
 
         private:
         /**
@@ -71,124 +92,97 @@ class Registry
          * function names are used to identify the functions in the TOML-based
          * configuration file.
          */
-        std::map<std::string, Fn> registry_;
+        std::map<std::string, ValueT> registry_;
 };
 
+//-----------------------------------------------------------------------------
+// 2) Raw function registries
+//-----------------------------------------------------------------------------
 /**
- * @brief Alias for the registry of Cuts.
- * @details There are two specific registeries employed in this
- * framework: one for Cuts (return bool) and one for Variables (return
- * double). This one is for Cuts.
- * @tparam EventT The type of event.
+ * @brief Alias for raw Cut functions with signature bool(const EventT&).
  */
 template<typename EventT>
-using CutRegistry = Registry<EventT, bool>;
+using CutFn = std::function<bool(const EventT&)>;
 
 /**
- * @brief Alias for the registry of Variables.
- * @details There are two specific registeries employed in this
- * framework: one for Cuts (return bool) and one for Variables (return
- * double). This one is for Variables.
- * @tparam EventT The type of event.
+ * @brief Alias for raw Variable functions with signature double(const EventT&).
  */
 template<typename EventT>
-using VariableRegistry = Registry<EventT, double>;
+using VarFn = std::function<double(const EventT&)>;
 
-//===----------------------------------------------------------------------===//
-// 2) Factory‐based registries: bind params → callable<EventT>
-//===----------------------------------------------------------------------===//
-
-/// @brief A factory function: given params, returns a bool‑cut on EventT.
+//-----------------------------------------------------------------------------
+// 3) Factory function registries
+//-----------------------------------------------------------------------------
+/**
+ * @brief A factory function: given params, returns a CutFn<EventT>
+ */
 template<typename EventT>
-using CutFactory = std::function<std::function<bool(const EventT&)>(const std::vector<double>&)>;
-
-/// @brief Registry of CutFactory<EventT> by name.
-template<typename EventT>
-class CutFactoryRegistry {
-public:
-  static CutFactoryRegistry& Instance() {
-    static CutFactoryRegistry inst;
-    return inst;
-  }
-
-  /// Register a factory that binds parameters
-  void Register(std::string name, CutFactory<EventT> f) {
-    registry_[std::move(name)] = std::move(f);
-  }
-
-  /// Create a bound cut by name + params
-  std::function<bool(const EventT&)> Create(const std::string& name,
-                                             const std::vector<double>& pars) const
-  {
-    auto it = registry_.find(name);
-    if(it == registry_.end())
-      throw std::runtime_error("Unknown cut factory: " + name);
-    return it->second(pars);
-  }
-
-private:
-  std::map<std::string, CutFactory<EventT>> registry_;
-};
-
-/// @brief Registry of variable factory functions (similar to CutFactoryRegistry).
-template<typename EventT>
-using VarFactory = std::function<std::function<double(const EventT&)>(const std::vector<double>&)>;
+using CutFactory = std::function<CutFn<EventT>(const std::vector<double>&)>;
 
 template<typename EventT>
-class VarFactoryRegistry {
-public:
-  static VarFactoryRegistry& Instance() {
-    static VarFactoryRegistry inst;
-    return inst;
-  }
+using CutFactoryRegistry = Registry<CutFactory<EventT>>;
 
-  void Register(std::string name, VarFactory<EventT> f) {
-    registry_[std::move(name)] = std::move(f);
-  }
+/**
+ * @brief A factory function: given params, returns a VarFn<EventT>
+ */
+template<typename EventT>
+using VarFactory = std::function<VarFn<EventT>(const std::vector<double>&)>;
 
-  std::function<double(const EventT&)> Create(const std::string& name,
-                                             const std::vector<double>& pars) const
-  {
-    auto it = registry_.find(name);
-    if(it == registry_.end())
-      throw std::runtime_error("Unknown variable factory: " + name);
-    return it->second(pars);
-  }
+template<typename EventT>
+using VarFactoryRegistry = Registry<VarFactory<EventT>>;
 
-private:
-  std::map<std::string, VarFactory<EventT>> registry_;
-};
-
-#include <type_traits>
-#include <vector>
-
-namespace sys { namespace fw {
-
-// Overload‐detecting binder for cuts:
+/**
+ * @brief Overload‐detecting binder for cuts.
+ * @details This function binds a function implementing a cut to a specific
+ * parameter set. It uses std::is_invocable_v to check if the function can
+ * accepts a vector of parameters; if so, it binds the function with the
+ * parameters. In either case, it returns a std::function<bool(const EventT&)>
+ * that can be used to apply the cut to an event.
+ * @tparam F The function to bind.
+ * @tparam EventT The type of event: @ref TType or @ref RType.
+ * @param pars The parameters to bind to the function.
+ * @return A std::function<bool(const EventT&)> that applies the cut to an
+ * event.
+ */
 template<auto F, typename EventT>
-std::function<bool(const EventT&)>
-BindCut(const std::vector<double>& pars) {
-  if constexpr (std::is_invocable_v<decltype(F), const EventT&, const std::vector<double>&>) {
-    return [pars](const EventT& e){ return F(e, pars); };
-  } else {
-    return [=](const EventT& e){ return F(e); };
-  }
+inline std::function<bool(const EventT&)> bind_cut(const std::vector<double>& pars)
+{
+    if constexpr(std::is_invocable_v<decltype(F), const EventT&, const std::vector<double>&>)
+        return [pars](const EventT& e){ return F(e, pars); };
+    else
+        return [=](const EventT& e){ return F(e); };
 }
 
-// Overload‐detecting binder for variables:
+/**
+ * @brief Overload‐detecting binder for variables.
+ * @details This function binds a function implementing a variable to a
+ * specific parameter set. It uses std::is_invocable_v to check if the function
+ * can accepts a vector of parameters; if so, it binds the function with the
+ * parameters. In either case, it returns a 
+ * std::function<double(const EventT&)> that can be used to compute the
+ * variable for an event.
+ * @tparam F The function to bind.
+ * @tparam EventT The type of event: @ref TType or @ref RType.
+ * @param pars The parameters to bind to the function.
+ * @return A std::function<double(const EventT&)> that computes the variable
+ * for an event.
+ */
 template<auto F, typename EventT>
-std::function<double(const EventT&)>
-BindVar(const std::vector<double>& pars) {
-  if constexpr (std::is_invocable_v<decltype(F), const EventT&, const std::vector<double>&>) {
-    return [pars](const EventT& e){ return F(e, pars); };
-  } else {
-    return [=](const EventT& e){ return F(e); };
-  }
+inline std::function<double(const EventT&)> bind_var(const std::vector<double>& pars)
+{
+    if constexpr(std::is_invocable_v<decltype(F), const EventT&, const std::vector<double>&>)
+        return [pars](const EventT& e){ return F(e, pars); };
+    else
+        return [=](const EventT& e){ return F(e); };
 }
 
-}} // namespace sys::fw
-
-/// @brief Scope for registration macros
+/**
+ * @brief Scope for registration macros
+ * @details This enum class defines the scope of registration for cuts and
+ * variables. It can be either "true", "reco", or "both". This is used in the
+ * registration macros to determine which type of event the cut or variable
+ * can be reasonably applied to.
+ */
 enum class RegistrationScope { True, Reco, Both };
 
 // Register a cut with scope, auto‐detecting its signature
@@ -196,12 +190,12 @@ enum class RegistrationScope { True, Reco, Both };
 namespace {                                                                            \
   const bool _reg_cut_##name = []{                                                     \
     if constexpr((scope)==RegistrationScope::True || (scope)==RegistrationScope::Both) \
-      CutFactoryRegistry<TType>::Instance().Register(                                  \
-        "true_" #name, sys::fw::BindCut<+fn<TType>, TType>                             \
+      CutFactoryRegistry<TType>::instance().register_fn(                               \
+        "true_" #name, bind_cut<+fn<TType>, TType>                                     \
       );                                                                               \
     if constexpr((scope)==RegistrationScope::Reco || (scope)==RegistrationScope::Both) \
-      CutFactoryRegistry<RType>::Instance().Register(                                  \
-        "reco_" #name, sys::fw::BindCut<+fn<RType>, RType>                             \
+      CutFactoryRegistry<RType>::instance().register_fn(                               \
+        "reco_" #name, bind_cut<+fn<RType>, RType>                                     \
       );                                                                               \
     return true;                                                                       \
   }();                                                                                 \
@@ -212,12 +206,12 @@ namespace {                                                                     
 namespace {                                                                            \
   const bool _reg_var_##name = []{                                                     \
     if constexpr((scope)==RegistrationScope::True || (scope)==RegistrationScope::Both) \
-      VarFactoryRegistry<TType>::Instance().Register(                                  \
-        "true_" #name, sys::fw::BindVar<+fn<TType>, TType>                             \
+      VarFactoryRegistry<TType>::instance().register_fn(                               \
+        "true_" #name, bind_var<+fn<TType>, TType>                                     \
       );                                                                               \
     if constexpr((scope)==RegistrationScope::Reco || (scope)==RegistrationScope::Both) \
-      VarFactoryRegistry<RType>::Instance().Register(                                  \
-        "reco_" #name, sys::fw::BindVar<+fn<RType>, RType>                             \
+      VarFactoryRegistry<RType>::instance().register_fn(                               \
+        "reco_" #name, bind_var<+fn<RType>, RType>                                     \
       );                                                                               \
     return true;                                                                       \
   }();                                                                                 \
