@@ -26,6 +26,8 @@
  */
 using TType = caf::SRInteractionTruthDLPProxy;
 using RType = caf::SRInteractionDLPProxy;
+using MCTruth = caf::Proxy<caf::SRTrueInteraction>;
+
 using NamedSpillMultiVar = std::pair<std::string, ana::SpillMultiVar>;
 
 //-----------------------------------------------------------------------------
@@ -157,11 +159,11 @@ inline std::function<ValueT(const EventT&)> bind(const std::vector<double>& pars
 /**
  * @brief Scope for registration macros
  * @details This enum class defines the scope of registration for cuts and
- * variables. It can be either "true", "reco", or "both". This is used in the
- * registration macros to determine which type of event the cut or variable
- * can be reasonably applied to.
+ * variables. It can be either "true", "reco," "both," or "mctruth". This is
+ * used in the registration macros to determine which type of event the cut or
+ * variable can be reasonably applied to.
  */
-enum class RegistrationScope { True, Reco, Both };
+enum class RegistrationScope { True, Reco, Both, MCTruth };
 
 // Register a cut with scope, auto‐detecting its signature
 #define REGISTER_CUT_SCOPE(scope, name, fn)                                            \
@@ -185,11 +187,15 @@ namespace {                                                                     
   const bool _reg_var_##name = []{                                                     \
     if constexpr((scope)==RegistrationScope::True || (scope)==RegistrationScope::Both) \
       VarFactoryRegistry<TType>::instance().register_fn(                               \
-        "true_" #name, bind<+fn<TType>, TType, double>                                 \
+        "true_" #name, bind<fn<TType>, TType, double>                                 \
       );                                                                               \
     if constexpr((scope)==RegistrationScope::Reco || (scope)==RegistrationScope::Both) \
       VarFactoryRegistry<RType>::instance().register_fn(                               \
-        "reco_" #name, bind<+fn<RType>, RType, double>                                 \
+        "reco_" #name, bind<fn<RType>, RType, double>                                 \
+      );                                                                               \
+    if constexpr((scope)==RegistrationScope::MCTruth)                                  \
+      VarFactoryRegistry<MCTruth>::instance().register_fn(                             \
+        "true_" #name, bind<fn<MCTruth>, MCTruth, double>                             \
       );                                                                               \
     return true;                                                                       \
   }();                                                                                 \
@@ -247,9 +253,9 @@ NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
  */
 template<typename CutsOn, typename CompsOn, typename VarOn>
 ana::SpillMultiVar spill_multivar_helper(
-  CutFn<CutsOn> cuts,
-  CutFn<CompsOn> comps,
-  VarFn<VarOn> var
+    const CutFn<CutsOn> & cuts,
+    const CutFn<CompsOn> & comps,
+    const VarFn<VarOn> & var
 );
 
 #endif // FRAMEWORK_H

@@ -23,6 +23,7 @@
 #include "cuts.h"
 #include "variables.h"
 #include "muon2024/variables_muon2024.h"
+#include "mctruth.h"
 #include "include/analysis.h"
 
 REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut,    cuts::fiducial_cut);
@@ -30,6 +31,8 @@ REGISTER_CUT_SCOPE(RegistrationScope::Both, containment_cut, cuts::containment_c
 REGISTER_CUT_SCOPE(RegistrationScope::Both, flash_cut,       cuts::flash_cut);
 REGISTER_CUT_SCOPE(RegistrationScope::True, neutrino,        cuts::neutrino);
 
+REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, neutrino_energy, mctruth::neutrino_energy);
+REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, baseline, mctruth::baseline);
 REGISTER_VAR_SCOPE(RegistrationScope::True, neutrino_id,    vars::neutrino_id);
 REGISTER_VAR_SCOPE(RegistrationScope::True, category,       vars::muon2024::category);
 REGISTER_VAR_SCOPE(RegistrationScope::True, contained,      vars::containment);
@@ -50,8 +53,6 @@ int main(int argc, char * argv[])
 
     // SpectrumLoader
     ana::Analysis analysis("tomlexample");
-    ana::SpectrumLoader mc("/pnfs/sbnd/persistent/users/mueller/v10_04_07/nue_v10_04_07.flat.root");
-    analysis.AddLoader("mc", &mc, true);
 
     // Load the configuration file
     sys::cfg::ConfigurationTable config;
@@ -92,7 +93,7 @@ int main(int argc, char * argv[])
                     vars_map.try_emplace(thisvar_true.first, thisvar_true.second);
                     vars_map.try_emplace(thisvar_reco.first, thisvar_reco.second);
                 }
-                else if(var.get_string_field("type") == "true" || var.get_string_field("type") == "reco")
+                else if(var.get_string_field("type") == "true" || var.get_string_field("type") == "reco" || var.get_string_field("type") == "mctruth") 
                 {
                     NamedSpillMultiVar thisvar = construct(cuts, var, mode);
                     vars_map.try_emplace(thisvar.first, thisvar.second);

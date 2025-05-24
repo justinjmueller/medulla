@@ -142,15 +142,22 @@ NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
         {
             var_name = "true_" + var_name;
             auto factory = VarFactoryRegistry<TType>::instance().get(var_name);
-            auto varFn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TType>(true_cut, reco_cut, varFn));
+            auto var_fn = factory(varPars);
+            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TType>(true_cut, reco_cut, var_fn));
         }
         else if(var_type == "reco")
         {
             var_name = "reco_" + var_name;
             auto factory = VarFactoryRegistry<RType>::instance().get(var_name);
-            auto varFn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<TType, RType, RType>(true_cut, reco_cut, varFn));
+            auto var_fn = factory(varPars);
+            return std::make_pair(var_name, spill_multivar_helper<TType, RType, RType>(true_cut, reco_cut, var_fn));
+        }
+        else if(var_type == "mctruth")
+        {
+            var_name = "true_" + var_name;
+            auto factory = VarFactoryRegistry<MCTruth>::instance().get(var_name);
+            auto var_fn = factory(varPars);
+            return std::make_pair(var_name, spill_multivar_helper<TType, RType, MCTruth>(true_cut, reco_cut, var_fn));
         }
         else
         {
@@ -175,15 +182,22 @@ NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
         {
             var_name = "true_" + var_name;
             auto factory = VarFactoryRegistry<TType>::instance().get(var_name);
-            auto varFn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<RType, TType, TType>(reco_cut, true_cut, varFn));
+            auto var_fn = factory(varPars);
+            return std::make_pair(var_name, spill_multivar_helper<RType, TType, TType>(reco_cut, true_cut, var_fn));
         }
         else if(var_type == "reco")
         {
             var_name = "reco_" + var_name;
             auto factory = VarFactoryRegistry<RType>::instance().get(var_name);
-            auto varFn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<RType, TType, RType>(reco_cut, true_cut, varFn));
+            auto var_fn = factory(varPars);
+            return std::make_pair(var_name, spill_multivar_helper<RType, TType, RType>(reco_cut, true_cut, var_fn));
+        }
+        else if(var_type == "mctruth")
+        {
+            var_name = "true_" + var_name;
+            auto factory = VarFactoryRegistry<MCTruth>::instance().get(var_name);
+            auto var_fn = factory(varPars);
+            return std::make_pair(var_name, spill_multivar_helper<RType, TType, MCTruth>(reco_cut, true_cut, var_fn));
         }
         else
         {
@@ -195,9 +209,10 @@ NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
 // Helper method for constructing a SpillMultiVar object.
 template<typename CutsOn, typename CompsOn, typename VarOn>
 ana::SpillMultiVar spill_multivar_helper(
-  CutFn<CutsOn> cuts,
-  CutFn<CompsOn> comps,
-  VarFn<VarOn> var)
+    const CutFn<CutsOn> & cuts,
+    const CutFn<CompsOn> & comps,
+    const VarFn<VarOn> & var
+)
 {
     return ana::SpillMultiVar([comps, cuts, var](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
     {
@@ -223,6 +238,14 @@ ana::SpillMultiVar spill_multivar_helper(
                         values.push_back(var(i));
                     }
                 }
+                else if constexpr(std::is_same_v<VarOn, MCTruth>)
+                {
+                    if(cuts(i) && match_id != kNoMatch && comps(sr->dlp[match_id]))
+                    {
+                        int64_t nu_id = sr->dlp_true[match_id].nu_id;
+                        values.push_back(nu_id >= 0 ? var(sr->mc.nu[nu_id]) : kNoMatch);
+                    }
+                }
             }
         }
         else if constexpr(std::is_same_v<CutsOn, RType>)
@@ -246,6 +269,14 @@ ana::SpillMultiVar spill_multivar_helper(
                         values.push_back(var(i));
                     }
                 }
+                else if constexpr(std::is_same_v<VarOn, MCTruth>)
+                {
+                    if(cuts(i) && match_id != kNoMatch && comps(sr->dlp_true[match_id]))
+                    {
+                        int64_t nu_id = sr->dlp_true[match_id].nu_id;
+                        values.push_back(nu_id >= 0 ? var(sr->mc.nu[nu_id]) : kNoMatch);
+                    }
+                }
             }
         }
         return values;
@@ -257,3 +288,4 @@ template class Registry<CutFactory<TType>>;
 template class Registry<CutFactory<RType>>;
 template class Registry<VarFactory<TType>>;
 template class Registry<VarFactory<RType>>;
+template class Registry<VarFactory<MCTruth>>;
