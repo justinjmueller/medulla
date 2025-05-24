@@ -14,6 +14,7 @@
 
 #include <iostream>
 #include <string>
+#include <memory>
 
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
 
@@ -59,7 +60,19 @@ int main(int argc, char * argv[])
         // Load the configuration file
         config.set_config(argv[1]);
 
-        // Check if the required fields are present in the configuration file
+        // Configure the samples in the analysis
+        std::vector<sys::cfg::ConfigurationTable> samples = config.get_subtables("sample");
+        std::vector<std::unique_ptr<ana::SpectrumLoader>> loaders;
+        loaders.reserve(samples.size());
+        for(const auto & sample : samples)
+        {
+            // Create a SpectrumLoader for each sample
+            std::unique_ptr<ana::SpectrumLoader> loader = std::make_unique<ana::SpectrumLoader>(sample.get_string_field("path"));
+            analysis.AddLoader(sample.get_string_field("name"), loader.get(), sample.get_bool_field("ismc"));
+            loaders.push_back(std::move(loader));
+        }
+
+        // Main loop over the trees defined in the configuration
         std::vector<sys::cfg::ConfigurationTable> trees(config.get_subtables("tree"));
         for(const auto & tree : trees)
         {
