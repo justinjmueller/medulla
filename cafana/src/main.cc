@@ -21,14 +21,22 @@
 #include "framework.h"
 #include "cuts.h"
 #include "variables.h"
+#include "muon2024/variables_muon2024.h"
 #include "include/analysis.h"
 
-REGISTER_CUT_SCOPE(RegistrationScope::Both, flash_cut,      cuts::flash_cut);
-REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut,   cuts::fiducial_cut);
+REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut,    cuts::fiducial_cut);
+REGISTER_CUT_SCOPE(RegistrationScope::Both, containment_cut, cuts::containment_cut);
+REGISTER_CUT_SCOPE(RegistrationScope::Both, flash_cut,       cuts::flash_cut);
+REGISTER_CUT_SCOPE(RegistrationScope::True, neutrino,        cuts::neutrino);
 
 REGISTER_VAR_SCOPE(RegistrationScope::True, neutrino_id,    vars::neutrino_id);
-REGISTER_VAR_SCOPE(RegistrationScope::Both, flash_time,     vars::flash_time);
+REGISTER_VAR_SCOPE(RegistrationScope::True, category,       vars::muon2024::category);
+REGISTER_VAR_SCOPE(RegistrationScope::True, contained,      vars::containment);
 REGISTER_VAR_SCOPE(RegistrationScope::Both, visible_energy, vars::visible_energy);
+REGISTER_VAR_SCOPE(RegistrationScope::Both, visible_energy_calosub, vars::visible_energy_calosub);
+REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_time,     vars::flash_time);
+REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_total_pe, vars::flash_total_pe);
+REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_hypothesis, vars::flash_hypothesis);
 
 int main(int argc, char * argv[])
 {
@@ -57,6 +65,7 @@ int main(int argc, char * argv[])
         {
             std::vector<sys::cfg::ConfigurationTable> cuts = tree.get_subtables("cut");
             std::vector<sys::cfg::ConfigurationTable> vars = tree.get_subtables("branch");
+            std::string mode = tree.get_string_field("mode");
             
             std::map<std::string, ana::SpillMultiVar> vars_map;
             for(const auto & var : vars)
@@ -65,14 +74,14 @@ int main(int argc, char * argv[])
                 // variables: one for "true" and one for "reco".
                 if(var.get_string_field("type") == "both")
                 {
-                    NamedSpillMultiVar thisvar_true = construct(cuts, var, "true");
-                    NamedSpillMultiVar thisvar_reco = construct(cuts, var, "reco");
+                    NamedSpillMultiVar thisvar_true = construct(cuts, var, mode, "true");
+                    NamedSpillMultiVar thisvar_reco = construct(cuts, var, mode, "reco");
                     vars_map.try_emplace(thisvar_true.first, thisvar_true.second);
                     vars_map.try_emplace(thisvar_reco.first, thisvar_reco.second);
                 }
                 else if(var.get_string_field("type") == "true" || var.get_string_field("type") == "reco")
                 {
-                    NamedSpillMultiVar thisvar = construct(cuts, var);
+                    NamedSpillMultiVar thisvar = construct(cuts, var, mode);
                     vars_map.try_emplace(thisvar.first, thisvar.second);
                 }
                 else

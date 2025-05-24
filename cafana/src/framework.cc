@@ -63,40 +63,69 @@ ValueT Registry<ValueT>::get(const std::string & name)
 }
 
 // Build a single SpillMultiVar for a single branch variable.
-NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & cuts, const sys::cfg::ConfigurationTable & var, const std::string & override_type)
+NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & cuts,
+                             const sys::cfg::ConfigurationTable & var,
+                             const std::string & mode,
+                             const std::string & override_type)
 {
     /**
      * @brief Determine the type of the cuts.
      * @details The type of the first cut is used to determine the type of the
      * cuts, and therefore whether the selection is applied in a loop over true
      * or reco events. This type is used to branch the code into the appropriate
-     * path.
+     * path. First, we check if the mode is a valid option. If not, we throw an
+     * exception.
      */
-    bool is_mc(cuts[0].get_string_field("type") == "true");
+    Mode exec_mode;
+    if(mode == "true") exec_mode = Mode::True;
+    else if(mode == "reco") exec_mode = Mode::Reco;
+    else throw std::runtime_error("Illegal mode '" + mode + "' for variable " + var.get_string_field("name"));
 
-    if(is_mc)
+    std::vector<CutFn<TType>> true_cut_functions;
+    std::vector<CutFn<RType>> reco_cut_functions;
+    for(const auto & cut : cuts)
     {
-        /**
-         * @brief Compose a common cut function.
-         * @details This function composes a common cut function from the
-         * subtables of the cuts vector. This is a logical "and" of all
-         * configured cuts constructed using std::all_of.
-         */
-        std::vector<std::function<bool(const TType &)>> cut_functions;
-        cut_functions.reserve(cuts.size());
-        for(const auto & cut : cuts)
+        if(!cut.has_field("type"))
+            throw std::runtime_error("Cut " + cut.get_string_field("name") + " does not have a type field.");
+        if(cut.get_string_field("type") == "true")
         {
             std::string cut_name = "true_" + cut.get_string_field("name");
             std::vector<double> params;
             if(cut.has_field("parameters"))
                 params = cut.get_double_vector("parameters");
             auto factory = CutFactoryRegistry<TType>::instance().get(cut_name);
-            cut_functions.push_back(factory(params));
+            true_cut_functions.push_back(factory(params));
         }
-        auto cut = [cut_functions](const TType & e) -> bool {
-            return std::all_of(cut_functions.begin(), cut_functions.end(), [&e](auto & f) { return f(e); });
-        };
+        else if(cut.get_string_field("type") == "reco")
+        {
+            std::string cut_name = "reco_" + cut.get_string_field("name");
+            std::vector<double> params;
+            if(cut.has_field("parameters"))
+                params = cut.get_double_vector("parameters");
+            auto factory = CutFactoryRegistry<RType>::instance().get(cut_name);
+            reco_cut_functions.push_back(factory(params));
+        }
+        else
+        {
+            throw std::runtime_error("Illegal cut type '" + cut.get_string_field("type") + "' for cut " + cut.get_string_field("name"));
+        }
+    }
 
+    /**
+     * @brief Compose a common cut function.
+     * @details This function composes a common cut function from the
+     * subtables of the cuts vector. This is a logical "and" of all
+     * configured cuts constructed using std::all_of.
+     */
+    auto true_cut = [true_cut_functions](const TType & e) -> bool {
+        return std::all_of(true_cut_functions.begin(), true_cut_functions.end(), [&e](auto & f) { return f(e); });
+    };
+    auto reco_cut = [reco_cut_functions](const RType & e) -> bool {
+        return std::all_of(reco_cut_functions.begin(), reco_cut_functions.end(), [&e](auto & f) { return f(e); });
+    };
+
+    if(exec_mode == Mode::True)
+    {
         /**
          * @brief Read the branch variable configuration.
          * @details This function constructs the branch variable from the TOML
@@ -114,14 +143,14 @@ NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
             var_name = "true_" + var_name;
             auto factory = VarFactoryRegistry<TType>::instance().get(var_name);
             auto varFn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<TType, TType>(cut, varFn));
+            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TType>(true_cut, reco_cut, varFn));
         }
         else if(var_type == "reco")
         {
             var_name = "reco_" + var_name;
             auto factory = VarFactoryRegistry<RType>::instance().get(var_name);
             auto varFn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<TType, RType>(cut, varFn));
+            return std::make_pair(var_name, spill_multivar_helper<TType, RType, RType>(true_cut, reco_cut, varFn));
         }
         else
         {
@@ -131,27 +160,6 @@ NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
     else
     {
         /**
-         * @brief Compose a common cut function.
-         * @details This function composes a common cut function from the
-         * subtables of the cuts vector. This is a logical "and" of all
-         * configured cuts constructed using std::all_of.
-         */
-        std::vector<std::function<bool(const RType &)>> cut_functions;
-        cut_functions.reserve(cuts.size());
-        for(const auto & cut : cuts)
-        {
-            std::string cut_name = "reco_" + cut.get_string_field("name");
-            std::vector<double> params;
-            if(cut.has_field("parameters"))
-                params = cut.get_double_vector("parameters");
-            auto factory = CutFactoryRegistry<RType>::instance().get(cut_name);
-            cut_functions.push_back(factory(params));
-        }
-        auto cut = [cut_functions](const RType & e) -> bool {
-            return std::all_of(cut_functions.begin(), cut_functions.end(), [&e](auto & f) { return f(e); });
-        };
-
-        /**
          * @brief Read the branch variable configuration.
          * @details This function constructs the branch variable from the TOML
          * configuration of the variable. The variable name is used to retrieve the
@@ -168,14 +176,14 @@ NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
             var_name = "true_" + var_name;
             auto factory = VarFactoryRegistry<TType>::instance().get(var_name);
             auto varFn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<RType, TType>(cut, varFn));
+            return std::make_pair(var_name, spill_multivar_helper<RType, TType, TType>(reco_cut, true_cut, varFn));
         }
         else if(var_type == "reco")
         {
             var_name = "reco_" + var_name;
             auto factory = VarFactoryRegistry<RType>::instance().get(var_name);
             auto varFn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<RType, RType>(cut, varFn));
+            return std::make_pair(var_name, spill_multivar_helper<RType, TType, RType>(reco_cut, true_cut, varFn));
         }
         else
         {
@@ -185,10 +193,13 @@ NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
 }
 
 // Helper method for constructing a SpillMultiVar object.
-template<typename CutsOn, typename VarOn>
-ana::SpillMultiVar spill_multivar_helper(std::function<bool(const CutsOn &)> cuts, std::function<double(const VarOn &)> var)
+template<typename CutsOn, typename CompsOn, typename VarOn>
+ana::SpillMultiVar spill_multivar_helper(
+  CutFn<CutsOn> cuts,
+  CutFn<CompsOn> comps,
+  VarFn<VarOn> var)
 {
-    return ana::SpillMultiVar([cuts, var](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
+    return ana::SpillMultiVar([comps, cuts, var](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
     {
         std::vector<double> values;
         if constexpr (std::is_same_v<CutsOn, TType>)
@@ -200,14 +211,14 @@ ana::SpillMultiVar spill_multivar_helper(std::function<bool(const CutsOn &)> cut
 
                 if constexpr(std::is_same_v<VarOn, RType>)
                 {
-                    if(cuts(i) && match_id != kNoMatch)
+                    if(cuts(i) && match_id != kNoMatch && comps(sr->dlp[match_id]))                    
                     {
                         values.push_back(var(sr->dlp[match_id]));
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, TType>)
                 {
-                    if(cuts(i) && match_id != kNoMatch)
+                    if(cuts(i) && match_id != kNoMatch && comps(sr->dlp[match_id]))
                     {
                         values.push_back(var(i));
                     }
@@ -223,14 +234,14 @@ ana::SpillMultiVar spill_multivar_helper(std::function<bool(const CutsOn &)> cut
 
                 if constexpr(std::is_same_v<VarOn, TType>)
                 {
-                    if(cuts(i) && match_id != kNoMatch)
+                    if(cuts(i) && match_id != kNoMatch && comps(sr->dlp_true[match_id]))
                     {
                         values.push_back(var(sr->dlp_true[match_id]));
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, RType>)
                 {
-                    if(cuts(i) && match_id != kNoMatch)
+                    if(cuts(i) && match_id != kNoMatch && comps(sr->dlp_true[match_id]))
                     {
                         values.push_back(var(i));
                     }
