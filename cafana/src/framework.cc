@@ -85,25 +85,50 @@ NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
     std::vector<CutFn<RType>> reco_cut_functions;
     for(const auto & cut : cuts)
     {
+        // Retrieve the cut name and check for negation.
+        std::string name = cut.get_string_field("name");
+        bool invert = false;
+        if(name.at(0) == '!')
+        {
+            invert = true;
+            name = name.substr(1); // Remove the negation character.
+        }
+         
         if(!cut.has_field("type"))
-            throw std::runtime_error("Cut " + cut.get_string_field("name") + " does not have a type field.");
+            throw std::runtime_error("Cut " + name + " does not have a type field.");
         if(cut.get_string_field("type") == "true")
         {
-            std::string cut_name = "true_" + cut.get_string_field("name");
+            std::string cut_name = "true_" + name;
             std::vector<double> params;
             if(cut.has_field("parameters"))
                 params = cut.get_double_vector("parameters");
             auto factory = CutFactoryRegistry<TType>::instance().get(cut_name);
-            true_cut_functions.push_back(factory(params));
+            if(invert)
+            {
+                // If the cut is inverted, we need to negate the function.
+                auto fn = factory(params);
+                true_cut_functions.push_back([fn](const TType & e) { return !fn(e); });
+            }
+            else
+                // Otherwise, we just add the function as is.
+                true_cut_functions.push_back(factory(params));
         }
         else if(cut.get_string_field("type") == "reco")
         {
-            std::string cut_name = "reco_" + cut.get_string_field("name");
+            std::string cut_name = "reco_" + name;
             std::vector<double> params;
             if(cut.has_field("parameters"))
                 params = cut.get_double_vector("parameters");
             auto factory = CutFactoryRegistry<RType>::instance().get(cut_name);
-            reco_cut_functions.push_back(factory(params));
+            if(invert)
+            {
+                // If the cut is inverted, we need to negate the function.
+                auto fn = factory(params);
+                reco_cut_functions.push_back([fn](const RType & e) { return !fn(e); });
+            }
+            else
+                // Otherwise, we just add the function as is.
+                reco_cut_functions.push_back(factory(params));
         }
         else
         {
