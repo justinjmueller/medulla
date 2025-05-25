@@ -187,33 +187,6 @@ namespace vars
         double flash_hypothesis(const T & obj) { return obj.flash_hypo_pe; }
 
     /**
-     * @brief Variable for the truth x-coordinate of the interaction vertex.
-     * @details The interaction vertex is 3D point in space where the neutrino
-     * interacted to produce the primary particles in the interaction.
-     * @param obj the interaction to apply the variable on.
-     * @return the truth x-coordinate of the interaction vertex.
-     */
-    double truth_vertex_x(const caf::SRInteractionTruthDLPProxy & obj) { return obj.vertex[0]; }
-
-    /**
-     * @brief Variable for the truth y-coordinate of the interaction vertex.
-     * @details The interaction vertex is 3D point in space where the neutrino
-     * interacted to produce the primary particles in the interaction.
-     * @param obj the interaction to apply the variable on.
-     * @return the truth y-coordinate of the interaction vertex.
-     */
-    double truth_vertex_y(const caf::SRInteractionTruthDLPProxy & obj) { return obj.vertex[1]; }
-
-    /**
-     * @brief Variable for the truth z-coordinate of the interaction vertex.
-     * @details The interaction vertex is 3D point in space where the neutrino
-     * interacted to produce the primary particles in the interaction.
-     * @param obj the interaction to apply the variable on.
-     * @return the truth z-coordinate of the interaction vertex.
-     */
-    double truth_vertex_z(const caf::SRInteractionTruthDLPProxy & obj) { return obj.vertex[2]; }
-
-    /**
      * @brief Variable for the x-coordinate of the interaction vertex.
      * @details The interaction vertex is 3D point in space where the neutrino
      * interacted to produce the primary particles in the interaction.
