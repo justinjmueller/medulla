@@ -166,39 +166,41 @@ inline std::function<ValueT(const EventT&)> bind(const std::vector<double>& pars
 enum class RegistrationScope { True, Reco, Both, MCTruth };
 
 // Register a cut with scope, auto‐detecting its signature
-#define REGISTER_CUT_SCOPE(scope, name, fn)                                            \
-namespace {                                                                            \
-  const bool _reg_cut_##name = []{                                                     \
-    if constexpr((scope)==RegistrationScope::True || (scope)==RegistrationScope::Both) \
-      CutFactoryRegistry<TType>::instance().register_fn(                               \
-        "true_" #name, bind<+fn<TType>, TType, bool>                                   \
-      );                                                                               \
-    if constexpr((scope)==RegistrationScope::Reco || (scope)==RegistrationScope::Both) \
-      CutFactoryRegistry<RType>::instance().register_fn(                               \
-        "reco_" #name, bind<+fn<RType>, RType, bool>                                   \
-      );                                                                               \
-    return true;                                                                       \
-  }();                                                                                 \
+#define REGISTER_CUT_SCOPE(scope, name, fn)                                                \
+namespace                                                                                  \
+{                                                                                          \
+    const bool _reg_cut_##name = []{                                                       \
+        if constexpr((scope)==RegistrationScope::True || (scope)==RegistrationScope::Both) \
+            CutFactoryRegistry<TType>::instance().register_fn(                             \
+                "true_" #name, bind<+fn<TType>, TType, bool>                               \
+            );                                                                             \
+        if constexpr((scope)==RegistrationScope::Reco || (scope)==RegistrationScope::Both) \
+            CutFactoryRegistry<RType>::instance().register_fn(                             \
+                "reco_" #name, bind<+fn<RType>, RType, bool>                               \
+            );                                                                             \
+        return true;                                                                       \
+    }();                                                                                   \
 }
 
 // Register a variable with scope, auto‐detecting its signature
-#define REGISTER_VAR_SCOPE(scope, name, fn)                                            \
-namespace {                                                                            \
-  const bool _reg_var_##name = []{                                                     \
-    if constexpr((scope)==RegistrationScope::True || (scope)==RegistrationScope::Both) \
-      VarFactoryRegistry<TType>::instance().register_fn(                               \
-        "true_" #name, bind<fn<TType>, TType, double>                                 \
-      );                                                                               \
-    if constexpr((scope)==RegistrationScope::Reco || (scope)==RegistrationScope::Both) \
-      VarFactoryRegistry<RType>::instance().register_fn(                               \
-        "reco_" #name, bind<fn<RType>, RType, double>                                 \
-      );                                                                               \
-    if constexpr((scope)==RegistrationScope::MCTruth)                                  \
-      VarFactoryRegistry<MCTruth>::instance().register_fn(                             \
-        "true_" #name, bind<fn<MCTruth>, MCTruth, double>                             \
-      );                                                                               \
-    return true;                                                                       \
-  }();                                                                                 \
+#define REGISTER_VAR_SCOPE(scope, name, fn)                                                \
+namespace                                                                                  \
+{                                                                                          \
+    const bool _reg_var_##name = []{                                                       \
+        if constexpr((scope)==RegistrationScope::True || (scope)==RegistrationScope::Both) \
+            VarFactoryRegistry<TType>::instance().register_fn(                             \
+                "true_" #name, bind<fn<TType>, TType, double>                              \
+            );                                                                             \
+        if constexpr((scope)==RegistrationScope::Reco || (scope)==RegistrationScope::Both) \
+            VarFactoryRegistry<RType>::instance().register_fn(                             \
+                "reco_" #name, bind<fn<RType>, RType, double>                              \
+            );                                                                             \
+        if constexpr((scope)==RegistrationScope::MCTruth)                                  \
+            VarFactoryRegistry<MCTruth>::instance().register_fn(                           \
+                "true_" #name, bind<fn<MCTruth>, MCTruth, double>                          \
+            );                                                                             \
+        return true;                                                                       \
+    }();                                                                                   \
 }
 
 /**
