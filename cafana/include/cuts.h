@@ -173,124 +173,253 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::Both, flash_cut, flash_cut);
 
     /**
-     * @brief Apply a cut to select interactions with no primary charged pions.
-     * @details This function applies a cut to select interactions with no
-     * primary charged pions in the final state as defined by the
-     * @ref utilities::count_primaries function.
-     * @tparam T the type of interaction (true or reco).
+     * @brief Base particle multiplicity cut for a single particle.
+     * @details This function applies a cut to select interactions with a
+     * multiplicity of 1 for a specific particle type. The particle type is
+     * specified by the `particle_species` parameter, which corresponds to the
+     * index in the @ref utilities::count_primaries function.
      * @param obj the interaction to select on.
-     * @return true if the interaction has zero charged pions.
+     * @param particle_species the index of the particle species to count.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for the particle to count towards the
+     * multiplicity.
+     * @return true if the interaction has a multiplicity of 1 for the specified
+     * particle species.
      */
     template<class T>
-    bool no_charged_pions(const T & obj)
+    bool single_particle_multiplicity(const T & obj, size_t particle_species, std::vector<double> params={})
     {
-        std::vector<uint32_t> c(utilities::count_primaries(obj));
-        return c[3] == 0;
+        size_t count(0);
+        for(const auto & p : obj.particles)
+        {
+            if(PIDFUNC(p) == particle_species && PRIMARYFUNC(p) && pvars::ke(p) >= params[0])
+                ++count;
+            if(count > 1)
+                break; // No need to count further, we only care about multiplicity of 1.
+        }
+        return count == 1;
+    }
+
+    /**
+     * @brief Binding for a single particle photon multiplicity cut.
+     * @details This function binds the single particle multiplicity cut for
+     * photons, which corresponds to the index 0 in the
+     * @ref utilities::count_primaries function.
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for a photon to count towards the
+     * multiplicity. Defaults to 25 MeV.
+     * @return true if the interaction has a single primary photon.
+     */
+    template<class T>
+    bool single_photon(const T & obj, std::vector<double> params={25.0,})
+    {
+        return single_particle_multiplicity(obj, 0, params);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, single_photon, single_photon);
+
+    /**
+     * @brief Binding for a single particle electron multiplicity cut.
+     * @details This function binds the single particle multiplicity cut for
+     * electrons, which corresponds to the index 1 in the
+     * @ref utilities::count_primaries function.
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for an electron to count towards the
+     * multiplicity. Defaults to 25 MeV.
+     * @return true if the interaction has a single primary electron.
+     */
+    template<class T>
+    bool single_electron(const T & obj, std::vector<double> params={25.0,})
+    {
+        return single_particle_multiplicity(obj, 1, params);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, single_electron, single_electron);
+
+    /**
+     * @brief Binding for a single particle muon multiplicity cut.
+     * @details This function binds the single particle multiplicity cut for
+     * muons, which corresponds to the index 2 in the
+     * @ref utilities::count_primaries function.
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for a muon to count towards the multiplicity.
+     * Defaults to 143.425 MeV, which corresponds to a muon of length 50 cm
+     * (assuming the muon stops).
+     * @return true if the interaction has a single primary muon.
+     */
+    template<class T>
+    bool single_muon(const T & obj, std::vector<double> params={143.425,})
+    {
+        return single_particle_multiplicity(obj, 2, params);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, single_muon, single_muon);
+
+    /**
+     * @brief Binding for a single particle pion multiplicity cut.
+     * @details This function binds the single particle multiplicity cut for
+     * charged pions, which corresponds to the index 3 in the
+     * @ref utilities::count_primaries function.
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for a pion to count towards the multiplicity.
+     * Defaults to 25 MeV.
+     * @return true if the interaction has a single primary charged pion.
+     */
+    template<class T>
+    bool single_pion(const T & obj, std::vector<double> params={25.0,})
+    {
+        return single_particle_multiplicity(obj, 3, params);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, single_pion, single_pion);
+
+    /**
+     * @brief Binding for a single particle proton multiplicity cut.
+     * @details This function binds the single particle multiplicity cut for
+     * protons, which corresponds to the index 4 in the
+     * @ref utilities::count_primaries function.
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for a proton to count towards the multiplicity.
+     * Defaults to 50 MeV.
+     * @return true if the interaction has a single primary proton.
+     */
+    template<class T>
+    bool single_proton(const T & obj, std::vector<double> params={50.0,})
+    {
+        return single_particle_multiplicity(obj, 4, params);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, single_proton, single_proton);
+
+    /**
+     * @brief Base particle multiplicity cut for nonzero particle multiplicity.
+     * @details This function applies a cut to select interactions with a
+     * nonzero multiplicity for a specific particle type. The particle type is
+     * specified by the `particle_species` parameter, which corresponds to the
+     * index in the @ref utilities::count_primaries function.
+     * @param obj the interaction to select on.
+     * @param particle_species the index of the particle species to count.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for the particle to count towards the
+     * multiplicity.
+     * @return true if the interaction has a nonzero multiplicity for the
+     * specified particle species.
+     */
+    template<class T>
+    bool nonzero_particle_multiplicity(const T & obj, size_t particle_species, std::vector<double> params={})
+    {
+        size_t count(0);
+        for(const auto & p : obj.particles)
+        {
+            if(PIDFUNC(p) == particle_species && PRIMARYFUNC(p) && pvars::ke(p) >= params[0])
+                ++count;
+            if(count > 0)
+                break; // No need to count further, we only care about nonzero multiplicity.
+        }
+        return count > 0;
+    }
+
+    /**
+     * @brief Binding for zero particle photon multiplicity cut (negation of
+     * nonzero_particle_multiplicity).
+     * @details This function binds the nonzero particle multiplicity cut for
+     * photons, which corresponds to the index 0 in the
+     * @ref utilities::count_primaries function. The negation of this
+     * function is used to select interactions with no primary photons.
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for a photon to count towards the
+     * multiplicity. Defaults to 25 MeV.
+     * @return true if the interaction has a nonzero primary photon.
+     */
+    template<class T>
+    bool no_photons(const T & obj, std::vector<double> params={25.0,})
+    {
+        return !nonzero_particle_multiplicity(obj, 0, params);
+    }
+
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, no_photons, no_photons);
+
+    /**
+     * @brief Binding for zero particle electron multiplicity cut (negation of
+     * nonzero_particle_multiplicity).
+     * @details This function binds the nonzero particle multiplicity cut for
+     * electrons, which corresponds to the index 1 in the
+     * @ref utilities::count_primaries function. The negation of this
+     * function is used to select interactions with no primary electrons.
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for an electron to count towards the
+     * multiplicity. Defaults to 25 MeV.
+     * @return true if the interaction has a nonzero primary electron.
+     */
+    template<class T>
+    bool no_electrons(const T & obj, std::vector<double> params={25.0,})
+    {
+        return !nonzero_particle_multiplicity(obj, 1, params);
+    }
+
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, no_electrons, no_electrons);
+    /**
+     * @brief Binding for zero particle muon multiplicity cut (negation of
+     * nonzero_particle_multiplicity).
+     * @details This function binds the nonzero particle multiplicity cut for
+     * muons, which corresponds to the index 2 in the
+     * @ref utilities::count_primaries function. The negation of this
+     * function is used to select interactions with no primary muons.
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for a muon to count towards the
+     * multiplicity. Defaults to 143.425 MeV, which corresponds to a muon of
+     * length 50 cm (assuming the muon stops).
+     * @return true if the interaction has a nonzero primary muon.
+     */
+
+    template<class T>
+    bool no_muons(const T & obj, std::vector<double> params={143.425,})
+    {
+        return !nonzero_particle_multiplicity(obj, 2, params);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, no_muons, no_muons);
+
+    /**
+     * @brief Binding for zero particle pion multiplicity cut (negation of
+     * nonzero_particle_multiplicity).
+     * @details This function binds the nonzero particle multiplicity cut for
+     * charged pions, which corresponds to the index 3 in the
+     * @ref utilities::count_primaries function. The negation of this
+     * function is used to select interactions with no primary charged pions.
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for a pion to count towards the
+     * multiplicity. Defaults to 25 MeV.
+     * @return true if the interaction has a nonzero primary charged pion.
+     */
+    template<class T>
+    bool no_charged_pions(const T & obj, std::vector<double> params={25.0,})
+    {
+        return !nonzero_particle_multiplicity(obj, 3, params);
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, no_charged_pions, no_charged_pions);
 
     /**
-     * @brief Apply a cut to select interactions with no primary showers.
-     * @details This function applies a cut to select interactions with no
-     * primary showers in the final state as defined by the
-     * @ref utilities::count_primaries function.
-     * @tparam T the type of interaction (true or reco).
+     * @brief Binding for zero particle proton multiplicity cut (negation of
+     * nonzero_particle_multiplicity).
+     * @details This function binds the nonzero particle multiplicity cut for
+     * protons, which corresponds to the index 4 in the
+     * @ref utilities::count_primaries function. The negation of this
+     * function is used to select interactions with no primary protons.
      * @param obj the interaction to select on.
-     * @return true if the interaction has zero showers.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for a proton to count towards the
+     * multiplicity. Defaults to 50 MeV.
+     * @return true if the interaction has a nonzero primary proton.
      */
     template<class T>
-    bool no_showers(const T & obj)
+    bool no_protons(const T & obj, std::vector<double> params={50.0,})
     {
-        std::vector<uint32_t> c(utilities::count_primaries(obj));
-        return c[0] == 0 && c[1] == 0;
+        return !nonzero_particle_multiplicity(obj, 4, params);
     }
-    REGISTER_CUT_SCOPE(RegistrationScope::Both, no_showers, no_showers);
-
-    /**
-     * @brief Apply a cut to select interactions with a single primary muon.
-     * @details This function applies a cut to select interactions with a
-     * single primary muon in the final state as defined by the
-     * @ref utilities::count_primaries function.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to select on.
-     * @return true if the interaction has a single primary muon.
-     */
-    template<class T>
-    bool has_single_muon(const T & obj)
-    {
-        std::vector<uint32_t> c(utilities::count_primaries(obj));
-        return c[2] == 1;
-    }
-    REGISTER_CUT_SCOPE(RegistrationScope::Both, has_single_muon, has_single_muon);
-
-    /**
-     * @brief Apply a cut to select interactions with a single primary proton.
-     * @details This function applies a cut to select interactions with a
-     * single primary proton in the final state as defined by the
-     * @ref utilities::count_primaries function.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to select on.
-     * @return true if the interaction has a single primary proton.
-     */
-    template<class T>
-    bool has_single_proton(const T & obj)
-    {
-        std::vector<uint32_t> c(utilities::count_primaries(obj));
-        return c[4] == 1;
-    }
-    REGISTER_CUT_SCOPE(RegistrationScope::Both, has_single_proton, has_single_proton);
-
-    /**
-     * @brief Apply a cut to select interactions with nonzero primary protons.
-     * @details This function applies a cut to select interactions with
-     * nonzero primary protons in the final state as defined by the
-     * @ref utilities::count_primaries function.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to select on.
-     * @return true if the interaction has nonzero primary protons.
-     */
-    template<class T>
-    bool has_nonzero_protons(const T & obj)
-    {
-        std::vector<uint32_t> c(utilities::count_primaries(obj));
-        return c[4] > 0;
-    }
-    REGISTER_CUT_SCOPE(RegistrationScope::Both, has_nonzero_protons, has_nonzero_protons);
-
-    /**
-     * @brief Apply a cut to select interactions with at least one primary
-     * photon.
-     * @details This function applies a cut to select interactions with at
-     * least one primary photon in the final state as defined by the
-     * @ref utilities::count_primaries function.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to select on.
-     * @return true if the interaction has at least one primary photon.
-     */
-    template<class T>
-    bool has_photon(const T & obj)
-    {
-        std::vector<uint32_t> c(utilities::count_primaries(obj));
-        return c[0] > 0;
-    }
-    REGISTER_CUT_SCOPE(RegistrationScope::Both, has_photon, has_photon);
-
-    /**
-     * @brief Apply a cut to select interactions with at least one primary
-     * electron.
-     * @details This function applies a cut to select interactions with at
-     * least one primary electron in the final state as defined by the
-     * @ref utilities::count_primaries function.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to select on.
-     * @return true if the interaction has at least one primary electron.
-     */
-    template<class T>
-    bool has_electron(const T & obj)
-    {
-        std::vector<uint32_t> c(utilities::count_primaries(obj));
-        return c[1] > 0;
-    }
-    REGISTER_CUT_SCOPE(RegistrationScope::Both, has_electron, has_electron);
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, no_protons, no_protons);
 }
 #endif
