@@ -17,6 +17,7 @@
 #include "sbnanaobj/StandardRecord/SRInteractionTruthDLP.h"
 
 #include "include/utilities.h"
+#include "include/framework.h"
 #include "include/cuts.h"
 #include "include/muon2024/cuts_muon2024.h"
 
@@ -49,10 +50,12 @@ namespace vars::muon2024
      * 6: Other CC nu
      * 7: Other NC nu
      * 8: Cosmic
+     * @tparam T the type of interaction (true or reco).
      * @param obj The interaction to apply the variable on.
      * @return the enumerated category of the interaction.
     */
-    double category(const caf::SRInteractionTruthDLPProxy & obj)
+    template<class T>
+    double category(const T & obj)
     {
         double cat(8);
         if(cuts::muon2024::signal_1mu1p(obj)) cat = 0;
@@ -65,6 +68,7 @@ namespace vars::muon2024
         else if(cuts::neutrino(obj) && !cuts::iscc(obj)) cat = 7;
         return cat;
     }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, category, category);
 
     /**
      * @brief Variable for enumerating interaction categories.
@@ -98,6 +102,7 @@ namespace vars::muon2024
         else if(cuts::neutrino(obj) && !cuts::iscc(obj)) cat = 7;
         return cat;
     }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, category_no_containment, category_no_containment);
 
     /**
      * @brief Variable for the opening angle between leading muon and proton.
@@ -110,11 +115,12 @@ namespace vars::muon2024
      * proton.
      */
     template<class T>
-        double opening_angle(const T & obj)
-        {
-            auto & m(obj.particles[utilities::leading_particle_index(obj, 2)]);
-            auto & p(obj.particles[utilities::leading_particle_index(obj, 4)]);
-            return std::acos(m.start_dir[0] * p.start_dir[0] + m.start_dir[1] * p.start_dir[1] + m.start_dir[2] * p.start_dir[2]);
-        }
+    double opening_angle(const T & obj)
+    {
+        auto & m(obj.particles[utilities::leading_particle_index(obj, 2)]);
+        auto & p(obj.particles[utilities::leading_particle_index(obj, 4)]);
+        return std::acos(m.start_dir[0] * p.start_dir[0] + m.start_dir[1] * p.start_dir[1] + m.start_dir[2] * p.start_dir[2]);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, opening_angle, opening_angle);
 }
 #endif // VARS_MUON2024_H

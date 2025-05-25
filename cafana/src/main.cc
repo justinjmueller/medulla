@@ -21,26 +21,11 @@
 #include "configuration.h"
 #include "framework.h"
 #include "cuts.h"
+#include "muon2024/cuts_muon2024.h"
 #include "variables.h"
 #include "muon2024/variables_muon2024.h"
 #include "mctruth.h"
 #include "include/analysis.h"
-
-REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut,    cuts::fiducial_cut);
-REGISTER_CUT_SCOPE(RegistrationScope::Both, containment_cut, cuts::containment_cut);
-REGISTER_CUT_SCOPE(RegistrationScope::Both, flash_cut,       cuts::flash_cut);
-REGISTER_CUT_SCOPE(RegistrationScope::True, neutrino,        cuts::neutrino);
-
-REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, neutrino_energy, mctruth::neutrino_energy);
-REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, baseline, mctruth::baseline);
-REGISTER_VAR_SCOPE(RegistrationScope::True, neutrino_id,    vars::neutrino_id);
-REGISTER_VAR_SCOPE(RegistrationScope::True, category,       vars::muon2024::category);
-REGISTER_VAR_SCOPE(RegistrationScope::True, contained,      vars::containment);
-REGISTER_VAR_SCOPE(RegistrationScope::Both, visible_energy, vars::visible_energy);
-REGISTER_VAR_SCOPE(RegistrationScope::Both, visible_energy_calosub, vars::visible_energy_calosub);
-REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_time,     vars::flash_time);
-REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_total_pe, vars::flash_total_pe);
-REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_hypothesis, vars::flash_hypothesis);
 
 int main(int argc, char * argv[])
 {

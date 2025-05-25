@@ -15,6 +15,7 @@
 #include <algorithm>
 
 #include "utilities.h"
+#include "framework.h"
 
 /**
  * @namespace cuts
@@ -42,10 +43,11 @@ namespace cuts
      * @return true if the interaction is flash matched and the time is valid.
      */
     template<class T>
-        bool valid_flashmatch(const T & obj)
-        {
-            return obj.flash_times.size() > 0 && obj.is_flash_matched == 1 && !std::isnan(obj.flash_times[0]);
-        }
+    bool valid_flashmatch(const T & obj)
+    {
+        return obj.flash_times.size() > 0 && obj.is_flash_matched == 1 && !std::isnan(obj.flash_times[0]);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, valid_flashmatch, valid_flashmatch);
 
     /**
      * @brief Apply no cut; all interactions passed.
@@ -57,31 +59,38 @@ namespace cuts
      * @return true (always).
      */
     template<class T>
-        bool no_cut(const T & obj) { return true; }
+    bool no_cut(const T & obj) { return true; }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, no_cut, no_cut);
 
     /**
      * @brief Apply a cut to select neutrinos.
      * @details This function applies a cut to select neutrinos. This cut
      * makes use of the is_neutrino flag in the true interaction object and is
      * intended to be used to identify signal neutrinos.
+     * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to select on.
      * @return true if the interaction is a neutrino.
      * @note This cut is intended to be used for identifying neutrinos in
      * truth, which is useful for making signal definitions.
      */
-    bool neutrino(const caf::SRInteractionTruthDLPProxy & obj) { return obj.nu_id >= 0; }
+    template<class T>
+    bool neutrino(const T & obj) { return obj.nu_id >= 0; }
+    REGISTER_CUT_SCOPE(RegistrationScope::True, neutrino, neutrino);
 
     /**
      * @brief Apply a cut to select cosmogenic interactions.
      * @details This function applies a cut to select cosmogenic interactions.
      * This cut makes use of the is_neutrino flag in the true interaction
      * object and is intended to be used to identify cosmogenic interactions.
+     * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to select on.
      * @return true if the interaction is a cosmogenic interaction.
      * @note This cut is intended to be used for identifying cosmogenic
      * interactions in truth, which is useful for making background definitions.
      */
-    bool cosmic(const caf::SRInteractionTruthDLPProxy & obj) { return !neutrino(obj); }
+    template<class T>
+    bool cosmic(const T & obj) { return !neutrino(obj); }
+    REGISTER_CUT_SCOPE(RegistrationScope::True, cosmic, cosmic);
 
     /**
      * @brief Apply a cut to select charged current interactions.
@@ -89,10 +98,13 @@ namespace cuts
      * interactions. This cut makes use of the `current_type` attribute in the
      * true interaction object and is intended to be used to identify charged
      * current interactions.
+     * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to select on.
      * @return true if the interaction is a charged current interaction.
      */
-    bool iscc(const caf::SRInteractionTruthDLPProxy & obj) { return obj.current_type == 0; }
+    template<class T>
+    bool iscc(const T & obj) { return obj.current_type == 0; }
+    REGISTER_CUT_SCOPE(RegistrationScope::True, iscc, iscc);
 
     /**
      * @brief Apply a fiducial volume cut; the interaction vertex must be
@@ -108,10 +120,11 @@ namespace cuts
      * @return true if the vertex is in the fiducial volume.
      */
     template<class T>
-        bool fiducial_cut(const T & obj)
-        {
-            return obj.is_fiducial && !(obj.vertex[0] > 210.215 && obj.vertex[1] > 60 && (obj.vertex[2] > 290 && obj.vertex[2] < 390));
-        }
+    bool fiducial_cut(const T & obj)
+    {
+        return obj.is_fiducial && !(obj.vertex[0] > 210.215 && obj.vertex[1] > 60 && (obj.vertex[2] > 290 && obj.vertex[2] < 390));
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut, fiducial_cut);
     
     /**
      * @brief Apply a containment cut on the entire interaction.
@@ -127,7 +140,8 @@ namespace cuts
      * @return true if the vertex is contained.
      */
     template<class T>
-        bool containment_cut(const T & obj) { return obj.is_contained; }
+    bool containment_cut(const T & obj) { return obj.is_contained; }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, containment_cut, containment_cut);
 
     /**
      * @brief Apply a flash time cut on the interaction.
@@ -137,6 +151,7 @@ namespace cuts
      * to reduce the impact of cosmogenic interactions on analyses.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to select on.
+     * @param params the parameters for the cut.
      * @return true if the interaction has been matched to an in-time flash.
      * @note The switch to the NuMI beam window is applied by the definition of
      * a preprocessor macro (BEAM_IS_NUMI).
@@ -144,67 +159,18 @@ namespace cuts
      * observed in data and simulation.
      */
     template<class T>
-        bool flash_cut(const T & obj)
-        {
-            if(!valid_flashmatch(obj))
-                return false;
-            else if constexpr(!BEAM_IS_NUMI)
-                return (obj.flash_times[0] >= -0.5) && (obj.flash_times[0] <= 1.6);
-            else
-                return (obj.flash_times[0] >= 0) && (obj.flash_times[0] <= 9.6);
-        }
-
-    /**
-     * @brief Apply a fiducial and containment cut (logical "and" of both).
-     * @details This function applies a fiducial and containment cut on the
-     * interaction using the logical "and" of both previously defined cuts.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to select on.
-     * @return true if the interaction passes the fiducial and containment cut.
-     */
-    template<class T>
-        bool fiducial_containment_cut(const T & obj) { return fiducial_cut<T>(obj) && containment_cut<T>(obj); }
-
-    /**
-     * @brief Apply a fiducial, containment, and flash time cut (logical "and"
-     * of each).
-     * @details This function applies a fiducial, containment, and flash time
-     * cut on the interaction using the logical "and" of each previously
-     * defined cut.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to select on.
-     * @return true if the interaction passes the fiducial, containment, and
-     * flash time cut.
-     * @note The switch to the NuMI beam window for the flash cut is applied by
-     * the definition of a preprocessor macro (BEAM_IS_NUMI).
-     */
-    template<class T>
-        bool fiducial_containment_flash_cut(const T & obj) { return fiducial_cut<T>(obj) && containment_cut<T>(obj) && flash_cut<T>(obj); }
-        
-    /**
-     * @brief Apply a fiducial and neutrino cut (logical "and" of each).
-     * @details This function applies a fiducial and neutrino cut on the
-     * interaction using the logical "and" of each previously defined cut.
-     * @param obj the interaction to select on.
-     * @return true if the interaction passes the fiducial and neutrino cut.
-     * @note This cut is intended to be used to select signal interactions
-     * (neutrinos) that occur within the fiducial volume.
-     */
-    bool fiducial_neutrino_cut(const caf::SRInteractionTruthDLPProxy & obj) { return fiducial_cut(obj) && neutrino(obj); }
-
-    /**
-     * @brief Apply a fiducial, containment, and neutrino cut (logical "and" of
-     * each).
-     * @details This function applies a fiducial, containment, and neutrino cut
-     * on the interaction using the logical "and" of each previously defined cut.
-     * @param obj the interaction to select on.
-     * @return true if the interaction passes the fiducial, containment, and
-     * neutrino cut.
-     * @note This cut is intended to be used to select signal interactions
-     * (neutrinos) that are fully contained within the detector and that occur
-     * within the fiducial volume.
-     */
-    bool fiducial_containment_neutrino_cut(const caf::SRInteractionTruthDLPProxy & obj) { return fiducial_cut(obj) && containment_cut(obj) && neutrino(obj); }
+    bool flash_cut(const T & obj, std::vector<double> params={})
+    {
+        if(!valid_flashmatch(obj))
+            return false;
+        else if(params.size() == 2 && obj.flash_times[0] >= params[0] && obj.flash_times[0] <= params[1])
+            return true;
+        else if(params.size() !=2)
+            return true;
+        else
+            return false;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, flash_cut, flash_cut);
 
     /**
      * @brief Apply a cut to select interactions with no primary charged pions.
@@ -216,11 +182,12 @@ namespace cuts
      * @return true if the interaction has zero charged pions.
      */
     template<class T>
-        bool no_charged_pions(const T & obj)
-        {
-            std::vector<uint32_t> c(utilities::count_primaries(obj));
-            return c[3] == 0;
-        }
+    bool no_charged_pions(const T & obj)
+    {
+        std::vector<uint32_t> c(utilities::count_primaries(obj));
+        return c[3] == 0;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, no_charged_pions, no_charged_pions);
 
     /**
      * @brief Apply a cut to select interactions with no primary showers.
@@ -232,11 +199,12 @@ namespace cuts
      * @return true if the interaction has zero showers.
      */
     template<class T>
-        bool no_showers(const T & obj)
-        {
-            std::vector<uint32_t> c(utilities::count_primaries(obj));
-            return c[0] == 0 && c[1] == 0;
-        }
+    bool no_showers(const T & obj)
+    {
+        std::vector<uint32_t> c(utilities::count_primaries(obj));
+        return c[0] == 0 && c[1] == 0;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, no_showers, no_showers);
 
     /**
      * @brief Apply a cut to select interactions with a single primary muon.
@@ -248,11 +216,12 @@ namespace cuts
      * @return true if the interaction has a single primary muon.
      */
     template<class T>
-        bool has_single_muon(const T & obj)
-        {
-            std::vector<uint32_t> c(utilities::count_primaries(obj));
-            return c[2] == 1;
-        }
+    bool has_single_muon(const T & obj)
+    {
+        std::vector<uint32_t> c(utilities::count_primaries(obj));
+        return c[2] == 1;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, has_single_muon, has_single_muon);
 
     /**
      * @brief Apply a cut to select interactions with a single primary proton.
@@ -264,11 +233,12 @@ namespace cuts
      * @return true if the interaction has a single primary proton.
      */
     template<class T>
-        bool has_single_proton(const T & obj)
-        {
-            std::vector<uint32_t> c(utilities::count_primaries(obj));
-            return c[4] == 1;
-        }
+    bool has_single_proton(const T & obj)
+    {
+        std::vector<uint32_t> c(utilities::count_primaries(obj));
+        return c[4] == 1;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, has_single_proton, has_single_proton);
 
     /**
      * @brief Apply a cut to select interactions with nonzero primary protons.
@@ -280,11 +250,12 @@ namespace cuts
      * @return true if the interaction has nonzero primary protons.
      */
     template<class T>
-        bool has_nonzero_protons(const T & obj)
-        {
-            std::vector<uint32_t> c(utilities::count_primaries(obj));
-            return c[4] > 0;
-        }
+    bool has_nonzero_protons(const T & obj)
+    {
+        std::vector<uint32_t> c(utilities::count_primaries(obj));
+        return c[4] > 0;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, has_nonzero_protons, has_nonzero_protons);
 
     /**
      * @brief Apply a cut to select interactions with at least one primary
@@ -297,11 +268,12 @@ namespace cuts
      * @return true if the interaction has at least one primary photon.
      */
     template<class T>
-        bool has_photon(const T & obj)
-        {
-            std::vector<uint32_t> c(utilities::count_primaries(obj));
-            return c[0] > 0;
-        }
+    bool has_photon(const T & obj)
+    {
+        std::vector<uint32_t> c(utilities::count_primaries(obj));
+        return c[0] > 0;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, has_photon, has_photon);
 
     /**
      * @brief Apply a cut to select interactions with at least one primary
@@ -314,10 +286,11 @@ namespace cuts
      * @return true if the interaction has at least one primary electron.
      */
     template<class T>
-        bool has_electron(const T & obj)
-        {
-            std::vector<uint32_t> c(utilities::count_primaries(obj));
-            return c[1] > 0;
-        }
+    bool has_electron(const T & obj)
+    {
+        std::vector<uint32_t> c(utilities::count_primaries(obj));
+        return c[1] > 0;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, has_electron, has_electron);
 }
 #endif
