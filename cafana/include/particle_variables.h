@@ -589,7 +589,7 @@ namespace pvars
     template<class T>
         double azimuthal_angle(const T & p)
         {
-            return std::acos(p.start_dir[0] / std::sqrt(std::pow(p.start_dir[0], 2) + std::pow(p.start_dir[1], 2)));
+            return std::atan2(p.start_dir[1], p.start_dir[0]);
         }
 
     /**
