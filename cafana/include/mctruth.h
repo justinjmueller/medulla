@@ -15,6 +15,8 @@
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
 #include "sbnanaobj/StandardRecord/SRTrueInteraction.h"
 
+#include "framework.h"
+
 /**
  * @namespace mctruth
  * @brief Namespace for organizing variables which act on true interactions.
@@ -28,56 +30,74 @@ namespace mctruth
      * @brief Variable for the true neutrino energy.
      * @details This variable is intended to provide the true energy of the
      * parent neutrino that produced the interaction.
+     * @tparam T the type of the object to apply the variable on.
      * @param obj the SRTrueInteraction to apply the variable on.
      * @return the true neutrino energy.
      */
-    double true_neutrino_energy(const caf::Proxy<caf::SRTrueInteraction> & obj) { return obj.E; }
+    template<typename T>
+        double neutrino_energy(const T & obj) { return obj.E; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, neutrino_energy, neutrino_energy);
 
     /**
      * @brief Variable for the true neutrino baseline.
      * @details This variable is intended to provide the true baseline of the
      * parent neutrino that produced the interaction.
+     * @tparam T the type of the object to apply the variable on.
      * @param obj the SRTrueInteraction to apply the variable on.
      * @return the true neutrino baseline.
      */
-    double true_neutrino_baseline(const caf::Proxy<caf::SRTrueInteraction> & obj) { return obj.baseline; }
+    template<typename T>
+        double baseline(const T & obj) { return obj.baseline; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, baseline, baseline);
 
     /**
      * @brief Variable for the true neutrino PDG code.
      * @details This variable is intended to provide the true PDG code of the
      * parent neutrino that produced the interaction.
+     * @tparam T the type of the object to apply the variable on.
      * @param obj the SRTrueInteraction to apply the variable on.
      * @return the true neutrino PDG code.
      */
-    double true_neutrino_pdg(const caf::Proxy<caf::SRTrueInteraction> & obj) { return obj.pdg; }
+    template<typename T>
+        double pdg(const T & obj) { return obj.pdg; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, pdg, pdg);
 
     /**
      * @brief Variable for the true neutrino current value.
      * @details This variable is intended to provide the true current value of
      * the parent neutrino that produced the interaction.
+     * @tparam T the type of the object to apply the variable on.
      * @param obj the SRTrueInteraction to apply the variable on.
      * @return the true neutrino current value.
      */
-    double true_neutrino_cc(const caf::Proxy<caf::SRTrueInteraction> & obj) { return obj.iscc; }
+    template<typename T>
+        double cc(const T & obj) { return obj.iscc; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, cc, cc);
 
     /**
      * @brief Variable for the interaction mode of the interaction.
      * @details This variable is intended to provide the interaction mode of the
      * interaction. This is based on the GENIE interaction mode enumeration 
      * defined in the LArSoft MCNeutrino class.
+     * @tparam T the type of the object to apply the variable on.
      * @param obj the SRTrueInteraction to apply the variable on.
      * @return the interaction mode.
      */
-    double interaction_mode(const caf::Proxy<caf::SRTrueInteraction> & obj) { return obj.genie_mode; }
+    template<typename T>
+        double interaction_mode(const T & obj) { return obj.genie_mode; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, interaction_mode, interaction_mode);
 
     /**
      * @brief Variable for the interaction type of the interaction.
      * @details This variable is intended to provide the interaction type of the
      * interaction. This is based on the GENIE interaction type enumeration 
      * defined in the LArSoft MCNeutrino class.
+     * @param T the type of the object to apply the variable on.
      * @param obj the SRTrueInteraction to apply the variable on.
      * @return the interaction type.
      */
-    double interaction_type(const caf::Proxy<caf::SRTrueInteraction> & obj) { return obj.genie_inttype; }
+    template<typename T>
+        double interaction_type(const T & obj) { return obj.genie_inttype; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, interaction_type, interaction_type);
 } // namespace mctruth
 #endif
