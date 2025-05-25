@@ -51,15 +51,15 @@ int main(int argc, char * argv[])
         return 1;
     }
 
-    // SpectrumLoader
-    ana::Analysis analysis("tomlexample");
-
     // Load the configuration file
     sys::cfg::ConfigurationTable config;
     try
     {
         // Load the configuration file
         config.set_config(argv[1]);
+
+        // SpectrumLoader
+        ana::Analysis analysis(config.get_string_field("general.output"));
 
         // Configure the samples in the analysis
         std::vector<sys::cfg::ConfigurationTable> samples = config.get_subtables("sample");
