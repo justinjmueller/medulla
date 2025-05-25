@@ -67,6 +67,39 @@ namespace vars::muon2024
     }
 
     /**
+     * @brief Variable for enumerating interaction categories.
+     * @details This variable provides a basic categorization of interactions
+     * using only signal, neutrino background, and cosmic background as the
+     * three categories.
+     * 0: 1mu1p (fiducial)
+     * 1: 1mu1p (not fiducial)
+     * 2: 1muNp (N > 1 and fiducial)
+     * 3: 1muNp (N > 1 and not fiducial)
+     * 4: 1muX (not 1muNp and fiducial)
+     * 5: 1muX (not 1muNp and not fiducial)
+     * 6: Other CC nu
+     * 7: Other NC nu
+     * 8: Cosmic
+     * @tparam T the type of interaction (true or reco).
+     * @param obj The interaction to apply the variable on.
+     * @return the enumerated category of the interaction.
+    */
+    template<class T>
+    double category_no_containment(const T & obj)
+    {
+        double cat(8);
+        if(cuts::muon2024::signal_1mu1p_no_containment(obj)) cat = 0;
+        else if(cuts::muon2024::nonsignal_1mu1p_no_containment(obj)) cat = 1;
+        else if(cuts::muon2024::signal_1muNp_no_containment(obj)) cat = 2;
+        else if(cuts::muon2024::nonsignal_1muNp_no_containment(obj)) cat = 3;
+        else if(cuts::muon2024::signal_1muX_no_containment(obj)) cat = 4;
+        else if(cuts::muon2024::nonsignal_1muX_no_containment(obj)) cat = 5;
+        else if(cuts::neutrino(obj) && cuts::iscc(obj)) cat = 6;
+        else if(cuts::neutrino(obj) && !cuts::iscc(obj)) cat = 7;
+        return cat;
+    }
+
+    /**
      * @brief Variable for the opening angle between leading muon and proton.
      * @details The leading muon and proton are defined as the particles with the
      * highest kinetic energy. The opening angle is defined as the arccosine of
