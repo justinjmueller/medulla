@@ -78,7 +78,18 @@ int main(int argc, char * argv[])
                     vars_map.try_emplace(thisvar_true.first, thisvar_true.second);
                     vars_map.try_emplace(thisvar_reco.first, thisvar_reco.second);
                 }
-                else if(var.get_string_field("type") == "true" || var.get_string_field("type") == "reco" || var.get_string_field("type") == "mctruth") 
+                else if(var.get_string_field("type") == "both_particle")
+                {
+                    NamedSpillMultiVar thisvar_true = construct(cuts, var, mode, "true_particle");
+                    NamedSpillMultiVar thisvar_reco = construct(cuts, var, mode, "reco_particle");
+                    vars_map.try_emplace(thisvar_true.first, thisvar_true.second);
+                    vars_map.try_emplace(thisvar_reco.first, thisvar_reco.second);
+                }
+                else if(var.get_string_field("type") == "true"
+                        || var.get_string_field("type") == "reco"
+                        || var.get_string_field("type") == "mctruth"
+                        || var.get_string_field("type") == "true_particle"
+                        || var.get_string_field("type") == "reco_particle")
                 {
                     NamedSpillMultiVar thisvar = construct(cuts, var, mode);
                     vars_map.try_emplace(thisvar.first, thisvar.second);

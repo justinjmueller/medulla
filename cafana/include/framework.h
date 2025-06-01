@@ -27,6 +27,8 @@
 using TType = caf::SRInteractionTruthDLPProxy;
 using RType = caf::SRInteractionDLPProxy;
 using MCTruth = caf::Proxy<caf::SRTrueInteraction>;
+using TParticleType = caf::Proxy<caf::SRParticleTruthDLP>;
+using RParticleType = caf::Proxy<caf::SRParticleDLP>;
 
 using NamedSpillMultiVar = std::pair<std::string, ana::SpillMultiVar>;
 
@@ -163,7 +165,7 @@ inline std::function<ValueT(const EventT&)> bind(const std::vector<double>& pars
  * used in the registration macros to determine which type of event the cut or
  * variable can be reasonably applied to.
  */
-enum class RegistrationScope { True, Reco, Both, MCTruth };
+enum class RegistrationScope { True, Reco, Both, MCTruth, TrueParticle, RecoParticle, BothParticle };
 
 // Register a cut with scope, auto‐detecting its signature
 #define REGISTER_CUT_SCOPE(scope, name, fn)                                                \
@@ -177,6 +179,14 @@ namespace                                                                       
         if constexpr((scope)==RegistrationScope::Reco || (scope)==RegistrationScope::Both) \
             CutFactoryRegistry<RType>::instance().register_fn(                             \
                 "reco_" #name, bind<+fn<RType>, RType, bool>                               \
+            );                                                                             \
+        if constexpr((scope)==RegistrationScope::TrueParticle || (scope)==RegistrationScope::BothParticle) \
+            CutFactoryRegistry<TParticleType>::instance().register_fn(                     \
+                "true_particle_" #name, bind<+fn<TParticleType>, TParticleType, bool>      \
+            );                                                                             \
+        if constexpr((scope)==RegistrationScope::RecoParticle || (scope)==RegistrationScope::BothParticle) \
+            CutFactoryRegistry<RParticleType>::instance().register_fn(                     \
+                "reco_particle_" #name, bind<+fn<RParticleType>, RParticleType, bool>      \
             );                                                                             \
         return true;                                                                       \
     }();                                                                                   \
@@ -199,6 +209,17 @@ namespace                                                                       
             VarFactoryRegistry<MCTruth>::instance().register_fn(                           \
                 "true_" #name, bind<fn<MCTruth>, MCTruth, double>                          \
             );                                                                             \
+        if constexpr((scope)==RegistrationScope::TrueParticle || (scope)==RegistrationScope::BothParticle) \
+            VarFactoryRegistry<TParticleType>::instance().register_fn(                     \
+                "true_particle_" #name, bind<fn<TParticleType>, TParticleType, double>      \
+            );                                                                             \
+        if constexpr((scope)==RegistrationScope::RecoParticle || (scope)==RegistrationScope::BothParticle) \
+            VarFactoryRegistry<RParticleType>::instance().register_fn(                     \
+                "reco_particle_" #name, bind<fn<RParticleType>, RParticleType, double>      \
+            );                                                                             \
+        return true;                                                                       \
+    }();                                                                                   \
+}
         return true;                                                                       \
     }();                                                                                   \
 }
@@ -247,16 +268,23 @@ NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
  * @tparam CompsOn The type (TType or RType) that is complementary to CutsOn
  * and is used to partition the events. This can be used, for example, to set
  * a truth cut on reco events passing the CutsOn cuts.
+ * @tparam PCutsOn The type (TParticleType or RParticleType) that the cuts are
+ * applied to at the single-particle level. This is applied if and only if the
+ * VarOn type is a particle type (TParticleType or RParticleType). Additionally,
+ * this is restricted to be the same "truth" type as CutsOn, i.e., if CutsOn is
+ * TType, then PCutsOn must be TParticleType.
  * @tparam VarOn The type (TType or RType) that the variable is applied to.
  * @param cuts The callable that implements the cuts on the broadcast branch.
  * @param comps The callable that implements the cuts on the selected branch.
+ * @param pcuts The callable that implements the cuts on the single-particles.
  * @param var The callable that implements the variable on the selected branch.
  * @return A SpillMultiVar object that applies the cuts and computes the variable.
  */
-template<typename CutsOn, typename CompsOn, typename VarOn>
+template<typename CutsOn, typename CompsOn, typename PCutsOn, typename VarOn>
 ana::SpillMultiVar spill_multivar_helper(
     const CutFn<CutsOn> & cuts,
     const CutFn<CompsOn> & comps,
+    const CutFn<PCutsOn> & pcuts,
     const VarFn<VarOn> & var
 );
 
