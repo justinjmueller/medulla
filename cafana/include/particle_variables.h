@@ -525,6 +525,97 @@ namespace pvars
     {
         return p.end_point[2];
     }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, end_z, end_z);
+
+    /**
+     * @brief Variable for the x-component of the particle start direction.
+     * @details The start direction is predicted upstream in the SPINE
+     * reconstruction.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the x-component of the particle start direction.
+     */
+    template<class T>
+    double start_dir_x(const T & p)
+    {
+        return p.start_dir[0];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, start_dir_x, start_dir_x);
+    
+    /**
+     * @brief Variable for the y-component of the particle start direction.
+     * @details The start direction is predicted upstream in the SPINE
+     * reconstruction.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the y-component of the particle start direction.
+     */
+    template<class T>
+    double start_dir_y(const T & p)
+    {
+        return p.start_dir[1];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, start_dir_y, start_dir_y);
+
+    /**
+     * @brief Variable for the z-component of the particle start direction.
+     * @details The start direction is predicted upstream in the SPINE
+     * reconstruction.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the z-component of the particle start direction.
+     */
+    template<class T>
+    double start_dir_z(const T & p)
+    {
+        return p.start_dir[2];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, start_dir_z, start_dir_z);
+
+    /**
+     * @brief Variable for the x-component of the particle end direction.
+     * @details The end direction is predicted upstream in the SPINE
+     * reconstruction.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the x-component of the particle end direction.
+     */
+    template<class T>
+    double end_dir_x(const T & p)
+    {
+        return p.end_dir[0];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, end_dir_x, end_dir_x);
+
+    /**
+     * @brief Variable for the y-component of the particle end direction.
+     * @details The end direction is predicted upstream in the SPINE
+     * reconstruction.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the y-component of the particle end direction.
+     */
+    template<class T>
+    double end_dir_y(const T & p)
+    {
+        return p.end_dir[1];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, end_dir_y, end_dir_y);
+
+    /**
+     * @brief Variable for the z-component of the particle end direction.
+     * @details The end direction is predicted upstream in the SPINE
+     * reconstruction.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the z-component of the particle end direction.
+     */
+    template<class T>
+    double end_dir_z(const T & p)
+    {
+        return p.end_dir[2];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, end_dir_z, end_dir_z);
 
     /**
      * @brief Variable for the x-component of the particle momentum.
