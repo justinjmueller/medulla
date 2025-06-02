@@ -42,10 +42,11 @@ namespace pvars
      * @return the primary classification of the particle.
      */
     template<class T>
-        double primary_classification(const T & p)
-        {
-            return p.is_primary ? 1 : 0;
-        }
+    double primary_classification(const T & p)
+    {
+        return p.is_primary ? 1 : 0;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, primary_classification, primary_classification);
 
     /**
      * @brief Variable for assigning primary classification based on the
@@ -59,17 +60,18 @@ namespace pvars
      * @return the primary classification of the particle.
      */
     template<class T>
-        double custom_primary_classification(const T & p)
+    double lax_primary_classification(const T & p)
+    {
+        if constexpr (std::is_same_v<T, caf::SRParticleTruthDLPProxy>)
         {
-            if constexpr (std::is_same_v<T, caf::SRParticleTruthDLPProxy>)
-            {
-                return p.is_primary ? 1 : 0;
-            }
-            else
-            {
-                return p.primary_scores[1] > 0.10 ? 1 : 0;
-            }
+            return p.is_primary ? 1 : 0;
         }
+        else
+        {
+            return p.primary_scores[1] > 0.10 ? 1 : 0;
+        }
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, lax_primary_classification, lax_primary_classification);
 
     /**
      * @brief Variable for the particle's PID.
@@ -81,10 +83,11 @@ namespace pvars
      * @return the PID of the particle.
      */
     template<class T>
-        double pid(const T & p)
-        {
-            return p.pid;
-        }
+    double pid(const T & p)
+    {
+        return p.pid;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, pid, pid);
 
     /**
      * @brief Variable for assigning PID based on the particle's softmax scores.
@@ -96,27 +99,28 @@ namespace pvars
      * @return the PID of the particle.
      */
     template<class T>
-        double custom_pid(const T & p)
+    double custom_pid(const T & p)
+    {
+        double pid = std::numeric_limits<double>::quiet_NaN();
+        if constexpr (std::is_same_v<T, caf::SRParticleTruthDLPProxy>)
         {
-            double pid = std::numeric_limits<double>::quiet_NaN();
-            if constexpr (std::is_same_v<T, caf::SRParticleTruthDLPProxy>)
-            {
-                pid = p.pid;
-            }
+            pid = p.pid;
+        }
+        else
+        {
+            if(p.pid_scores[2] > 0.25)
+                pid = 2;
             else
             {
-                if(p.pid_scores[2] > 0.25)
-                    pid = 2;
-                else
-                {
-                    size_t high_index(0);
-                    for(size_t i(0); i < 5; ++i)
-                        if(p.pid_scores[i] > p.pid_scores[high_index]) high_index = i;
-                    pid = high_index;
-                }
+                size_t high_index(0);
+                for(size_t i(0); i < 5; ++i)
+                    if(p.pid_scores[i] > p.pid_scores[high_index]) high_index = i;
+                pid = high_index;
             }
-            return pid;
         }
+        return pid;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, custom_pid, custom_pid);
 
     /**
      * @brief Variable for the semantic type of the particle.
@@ -130,10 +134,11 @@ namespace pvars
      * @return the semantic type of the particle.
      */
     template<class T>
-        double semantic_type(const T & p)
-        {
-            return p.shape;
-        }
+    double semantic_type(const T & p)
+    {
+        return p.shape;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, semantic_type, semantic_type);
 
     /**
      * @brief Variable for the best-match IoU of the particle.
@@ -145,13 +150,14 @@ namespace pvars
      * @return the best-match IoU of the particle.
      */
     template<class T>
-        double iou(const T & p)
-        {
-            if(p.match_ids.size() > 0)
-                return p.match_overlaps[0];
-            else 
-                return PLACEHOLDERVALUE;
-        }
+    double iou(const T & p)
+    {
+        if(p.match_ids.size() > 0)
+            return p.match_overlaps[0];
+        else 
+            return PLACEHOLDERVALUE;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, iou, iou);
 
     /**
      * @brief Variable for the mass of the particle.
@@ -164,39 +170,40 @@ namespace pvars
      * @return the mass of the particle.
      */
     template<class T>
-        double mass(const T & p)
+    double mass(const T & p)
+    {
+        double mass(0);
+        if constexpr (std::is_same_v<T, caf::SRParticleTruthDLPProxy>)
         {
-            double mass(0);
-            if constexpr (std::is_same_v<T, caf::SRParticleTruthDLPProxy>)
-            {
-                mass = p.mass;
-            }
-            else
-            {
-                switch(int(PIDFUNC(p)))
-                {
-                    case 0:
-                        mass = 0;
-                        break;
-                    case 1:
-                        mass = ELECTRON_MASS;
-                        break;
-                    case 2:
-                        mass = MUON_MASS;
-                        break;
-                    case 3:
-                        mass = PION_MASS;
-                        break;
-                    case 4:
-                        mass = PROTON_MASS;
-                        break;
-                    default:
-                        mass = PLACEHOLDERVALUE;
-                        break;
-                }
-            }
-            return mass;
+            mass = p.mass;
         }
+        else
+        {
+            switch(int(PIDFUNC(p)))
+            {
+                case 0:
+                    mass = 0;
+                    break;
+                case 1:
+                    mass = ELECTRON_MASS;
+                    break;
+                case 2:
+                    mass = MUON_MASS;
+                    break;
+                case 3:
+                    mass = PION_MASS;
+                    break;
+                case 4:
+                    mass = PROTON_MASS;
+                    break;
+                default:
+                    mass = PLACEHOLDERVALUE;
+                    break;
+            }
+        }
+        return mass;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, mass, mass);
 
     /**
      * @brief Variable for the CSDA kinetic energy of the particle.
@@ -210,10 +217,11 @@ namespace pvars
      * the detector.
      */
     template<class T>
-        double csda_ke(const T & p)
-        {
-            return p.csda_ke_per_pid[PIDFUNC(p)];
-        }
+    double csda_ke(const T & p)
+    {
+        return p.csda_ke_per_pid[PIDFUNC(p)];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, csda_ke, csda_ke);
 
     /**
      * @brief Variable for the MCS kinetic energy of the particle.
@@ -225,10 +233,11 @@ namespace pvars
      * @return the MCS kinetic energy of the particle.
      */
     template<class T>
-        double mcs_ke(const T & p)
-        {
-            return p.mcs_ke_per_pid[PIDFUNC(p)];
-        }
+    double mcs_ke(const T & p)
+    {
+        return p.mcs_ke_per_pid[PIDFUNC(p)];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, mcs_ke, mcs_ke);
 
     /**
      * @brief Variable for the calorimetric kinetic energy of the particle.
@@ -240,10 +249,11 @@ namespace pvars
      * @return the calorimetric kinetic energy of the particle.
      */
     template<class T>
-        double calo_ke(const T & p)
-        {
-            return p.calo_ke;
-        }
+    double calo_ke(const T & p)
+    {
+        return p.calo_ke;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, calo_ke, calo_ke);
 
     /**
      * @brief Variable for true particle starting kinetic energy.
@@ -254,25 +264,26 @@ namespace pvars
      * @return the starting kinetic energy of the particle.
      */
     template<class T>
-        double ke(const T & p)
+    double ke(const T & p)
+    {
+        double energy(0);
+        if constexpr (std::is_same_v<T, caf::SRParticleTruthDLPProxy>)
         {
-            double energy(0);
-            if constexpr (std::is_same_v<T, caf::SRParticleTruthDLPProxy>)
-            {
-                energy = p.energy_init - mass(p);
-            }
+            energy = p.energy_init - mass(p);
+        }
+        else
+        {
+            if(PIDFUNC(p) < 2) [[likely]]
+                energy += calo_ke(p);
             else
             {
-                if(PIDFUNC(p) < 2) [[likely]]
-                    energy += calo_ke(p);
-                else
-                {
-                    if(p.is_contained) energy += csda_ke(p);
-                    else energy += mcs_ke(p);
-                }
+                if(p.is_contained) energy += csda_ke(p);
+                else energy += mcs_ke(p);
             }
-            return energy;
         }
+        return energy;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, ke, ke);
 
     /**
      * @brief Variable for the best estimate of the particle energy.
@@ -285,11 +296,12 @@ namespace pvars
      * @return the best estimate of the particle energy.
      */
     template<class T>
-        double energy(const T & p)
-        {
-            double energy = ke(p) + mass(p);
-            return energy;
-        }
+    double energy(const T & p)
+    {
+        double energy = ke(p) + mass(p);
+        return energy;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, energy, energy);
 
     /**
      * @brief Variable for the length of the particle track.
@@ -300,10 +312,11 @@ namespace pvars
      * @return the length of the particle track.
      */
     template<class T>
-        double length(const T & p)
-        {
-            return p.length;
-        }
+    double length(const T & p)
+    {
+        return p.length;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, length, length);
 
     /**
      * @brief Variable for the angle of the particle in the x-wire plane for
@@ -316,12 +329,13 @@ namespace pvars
      * @return the angle of the particle in the x-wire plane.
      */
     template<class T>
-        double theta_xw_horizontal(const T & p)
-        {
-            // Wire orientation
-            double wx(0), wy(1), wz(0);
-            return std::acos(p.start_dir[0] * wx + p.start_dir[1] * wy + p.start_dir[2] * wz);
-        }
+    double theta_xw_horizontal(const T & p)
+    {
+        // Wire orientation
+        double wx(0), wy(1), wz(0);
+        return std::acos(p.start_dir[0] * wx + p.start_dir[1] * wy + p.start_dir[2] * wz);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, theta_xw_horizontal, theta_xw_horizontal);
 
     /**
      * @brief Variable for the angle of the particle in the x-wire plane for
@@ -336,12 +350,13 @@ namespace pvars
      * @return the angle of the particle in the x-wire plane.
      */
     template<class T>
-        double theta_xw_p60(const T & p)
-        {
-            // Wire orientation
-            double wx(0), wy(0.5 * std::sqrt(3)), wz(0.5);
-            return std::acos(p.start_dir[0] * wx + p.start_dir[1] * wy + p.start_dir[2] * wz);
-        }
+    double theta_xw_p60(const T & p)
+    {
+        // Wire orientation
+        double wx(0), wy(0.5 * std::sqrt(3)), wz(0.5);
+        return std::acos(p.start_dir[0] * wx + p.start_dir[1] * wy + p.start_dir[2] * wz);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, theta_xw_p60, theta_xw_p60);
     
     /**
      * @brief Variable for the angle of the particle in the x-wire plane for
@@ -356,12 +371,13 @@ namespace pvars
      * @return the angle of the particle in the x-wire plane.
      */
     template<class T>
-        double theta_xw_m60(const T & p)
-        {
-            // Wire orientation
-            double wx(0), wy(-0.5 * std::sqrt(3)), wz(0.5);
-            return std::acos(p.start_dir[0] * wx + p.start_dir[1] * wy + p.start_dir[2] * wz);
-        }
+    double theta_xw_m60(const T & p)
+    {
+        // Wire orientation
+        double wx(0), wy(-0.5 * std::sqrt(3)), wz(0.5);
+        return std::acos(p.start_dir[0] * wx + p.start_dir[1] * wy + p.start_dir[2] * wz);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, theta_xw_m60, theta_xw_m60);
     
     /**
      * @brief Variable for the angle of the particle in the x-wire plane for
@@ -374,12 +390,13 @@ namespace pvars
      * @return the angle of the particle in the x-wire plane.
      */
     template<class T>
-        double theta_xw_vertical(const T & p)
-        {
-            // Wire orientation
-            double wx(0), wy(1), wz(0);
-            return std::acos(p.start_dir[0] * wx + p.start_dir[1] * wy + p.start_dir[2] * wz);
-        }
+    double theta_xw_vertical(const T & p)
+    {
+        // Wire orientation
+        double wx(0), wy(1), wz(0);
+        return std::acos(p.start_dir[0] * wx + p.start_dir[1] * wy + p.start_dir[2] * wz);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, theta_xw_vertical, theta_xw_vertical);
 
     /**
      * @brief Variable for the angle of the particle in the x-wire plane for
@@ -394,12 +411,13 @@ namespace pvars
      * @return the angle of the particle in the x-wire plane.
      */
     template<class T>
-        double theta_xw_p30(const T & p)
-        {
-            // Wire orientation
-            double wx(0), wy(0.5), wz(0.5 * std::sqrt(3));
-            return std::acos(p.start_dir[0] * wx + p.start_dir[1] * wy + p.start_dir[2] * wz);
-        }
+    double theta_xw_p30(const T & p)
+    {
+        // Wire orientation
+        double wx(0), wy(0.5), wz(0.5 * std::sqrt(3));
+        return std::acos(p.start_dir[0] * wx + p.start_dir[1] * wy + p.start_dir[2] * wz);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, theta_xw_p30, theta_xw_p30);
 
     /**
      * @brief Variable for the angle of the particle in the x-wire plane for
@@ -414,12 +432,13 @@ namespace pvars
      * @return the angle of the particle in the x-wire plane.
      */
     template<class T>
-        double theta_xw_m30(const T & p)
-        {
-            // Wire orientation
-            double wx(0), wy(-0.5), wz(0.5 * std::sqrt(3));
-            return std::acos(p.start_dir[0] * wx + p.start_dir[1] * wy + p.start_dir[2] * wz);
-        }
+    double theta_xw_m30(const T & p)
+    {
+        // Wire orientation
+        double wx(0), wy(-0.5), wz(0.5 * std::sqrt(3));
+        return std::acos(p.start_dir[0] * wx + p.start_dir[1] * wy + p.start_dir[2] * wz);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, theta_xw_m30, theta_xw_m30);
 
     /**
      * @brief Variable for the x-coordinate of the particle starting point.
@@ -430,10 +449,11 @@ namespace pvars
      * @return the x-coordinate of the particle starting point.
      */
     template<class T>
-        double start_x(const T & p)
-        {
-            return p.start_point[0];
-        }
+    double start_x(const T & p)
+    {
+        return p.start_point[0];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, start_x, start_x);
 
     /**
      * @brief Variable for the y-coordinate of the particle starting point.
@@ -444,10 +464,11 @@ namespace pvars
      * @return the y-coordinate of the particle starting point.
      */
     template<class T>
-        double start_y(const T & p)
-        {
-            return p.start_point[1];
-        }
+    double start_y(const T & p)
+    {
+        return p.start_point[1];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, start_y, start_y);
 
     /**
      * @brief Variable for the z-coordinate of the particle starting point.
@@ -458,10 +479,11 @@ namespace pvars
      * @return the z-coordinate of the particle starting point.
      */
     template<class T>
-        double start_z(const T & p)
-        {
-            return p.start_point[2];
-        }
+    double start_z(const T & p)
+    {
+        return p.start_point[2];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, start_z, start_z);
 
     /**
      * @brief Variable for the x-coordinate of the particle end point.
@@ -471,10 +493,11 @@ namespace pvars
      * @return the x-coordinate of the particle end point.
      */
     template<class T>
-        double end_x(const T & p)
-        {
-            return p.end_point[0];
-        }
+    double end_x(const T & p)
+    {
+        return p.end_point[0];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, end_x, end_x);
 
     /**
      * @brief Variable for the y-coordinate of the particle end point.
@@ -484,10 +507,11 @@ namespace pvars
      * @return the y-coordinate of the particle end point.
      */
     template<class T>
-        double end_y(const T & p)
-        {
-            return p.end_point[1];
-        }
+    double end_y(const T & p)
+    {
+        return p.end_point[1];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, end_y, end_y);
     
     /**
      * @brief Variable for the z-coordinate of the particle end point.
@@ -497,10 +521,10 @@ namespace pvars
      * @return the z-coordinate of the particle end point.
      */
     template<class T>
-        double end_z(const T & p)
-        {
-            return p.end_point[2];
-        }
+    double end_z(const T & p)
+    {
+        return p.end_point[2];
+    }
 
     /**
      * @brief Variable for the x-component of the particle momentum.
@@ -510,10 +534,11 @@ namespace pvars
      * @return the x-component of the particle momentum.
      */
     template<class T>
-        double px(const T & p)
-        {
-            return p.momentum[0];
-        }
+    double px(const T & p)
+    {
+        return p.momentum[0];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, px, px);
     
     /**
      * @brief Variable for the y-component of the particle momentum.
@@ -523,10 +548,11 @@ namespace pvars
      * @return the x-component of the particle momentum.
      */
     template<class T>
-        double py(const T & p)
-        {
-            return p.momentum[1];
-        }
+    double py(const T & p)
+    {
+        return p.momentum[1];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, py, py);
 
     /**
      * @brief Variable for the z-component of the particle momentum.
@@ -536,10 +562,11 @@ namespace pvars
      * @return the z-component of the particle momentum.
      */
     template<class T>
-        double pz(const T & p)
-        {
-            return p.momentum[2];
-        }
+    double pz(const T & p)
+    {
+        return p.momentum[2];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, pz, pz);
     
     /**
      * @brief Variable for the transverse momentum of a particle.
@@ -554,13 +581,14 @@ namespace pvars
      * @return the transverse momentum of the particle.
      */
     template<class T>
-        double dpT(const T & p)
-        {
-            utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
-            utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
-            utilities::three_vector pt = utilities::transverse_momentum(momentum, vtx);
-            return utilities::magnitude(pt);
-        }
+    double dpT(const T & p)
+    {
+        utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+        utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+        utilities::three_vector pt = utilities::transverse_momentum(momentum, vtx);
+        return utilities::magnitude(pt);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, dpT, dpT);
 
     /**
      * @brief Variable for the polar angle (w.r.t the z-axis) of the particle.
@@ -572,10 +600,11 @@ namespace pvars
      * @return the polar angle of the particle.
      */
     template<class T>
-        double polar_angle(const T & p)
-        {
-            return std::acos(p.start_dir[2]);
-        }
+    double polar_angle(const T & p)
+    {
+        return std::acos(p.start_dir[2]);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, polar_angle, polar_angle);
 
     /**
      * @brief Variable for the azimuthal angle (w.r.t the z-axis) of the particle.
@@ -587,101 +616,123 @@ namespace pvars
      * @return the azimuthal angle of the particle.
      */
     template<class T>
-        double azimuthal_angle(const T & p)
-        {
-            return std::atan2(p.start_dir[1], p.start_dir[0]);
-        }
+    double azimuthal_angle(const T & p)
+    {
+        return std::atan2(p.start_dir[1], p.start_dir[0]);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, azimuthal_angle, azimuthal_angle);
 
     /**
      * @brief Variable for the photon softmax score of the particle.
      * @details The photon softmax score represents the confidence that the
      * network has in the particle being a photon. The score is between 0 and 1,
      * with 1 being the most confident that the particle is a photon.
+     * @tparam T the type of particle (true or reco).
      * @param p the particle to apply the variable on.
      * @return the photon softmax score of the particle.
      */
+    template<class T>
     double photon_softmax(const caf::SRParticleDLPProxy & p)
     {
         return p.pid_scores[0];
     }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, photon_softmax, photon_softmax);
 
     /**
      * @brief Variable for the electron softmax score of the particle.
      * @details The electron softmax score represents the confidence that the
      * network has in the particle being an electron. The score is between 0 and 1,
      * with 1 being the most confident that the particle is an electron.
+     * @tparam T the type of particle (true or reco).
      * @param p the particle to apply the variable on.
      * @return the electron softmax score of the particle.
      */
+    template<class T>
     double electron_softmax(const caf::SRParticleDLPProxy & p)
     {
         return p.pid_scores[1];
     }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, electron_softmax, electron_softmax);
     
     /**
      * @brief Variable for the muon softmax score of the particle.
      * @details The muon softmax score represents the confidence that the
      * network has in the particle being a muon. The score is between 0 and 1,
      * with 1 being the most confident that the particle is a muon.
+     * @tparam T the type of particle (true or reco).
      * @param p the particle to apply the variable on.
      * @return the muon softmax score of the particle.
      */
+    template<class T>
     double muon_softmax(const caf::SRParticleDLPProxy & p)
     {
         return p.pid_scores[2];
     }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, muon_softmax, muon_softmax);
 
     /**
      * @brief Variable for the pion softmax score of the particle.
      * @details The pion softmax score represents the confidence that the
      * network has in the particle being a pion. The score is between 0 and 1,
      * with 1 being the most confident that the particle is a pion.
+     * @tparam T the type of particle (true or reco).
      * @param p the particle to apply the variable on.
      * @return the pion softmax score of the particle.
      */
+    template<class T>
     double pion_softmax(const caf::SRParticleDLPProxy & p)
     {
         return p.pid_scores[3];
     }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, pion_softmax, pion_softmax);
 
     /**
      * @brief Variable for the proton softmax score of the particle.
      * @details The proton softmax score represents the confidence that the
      * network has in the particle being a proton. The score is between 0 and 1,
      * with 1 being the most confident that the particle is a proton.
+     * @tparam p the type of particle (true or reco).
      * @param p the particle to apply the variable on.
      * @return the proton softmax score of the particle.
      */
+    template<class T>
     double proton_softmax(const caf::SRParticleDLPProxy & p)
     {
         return p.pid_scores[4];
     }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, proton_softmax, proton_softmax);
 
     /**
      * @brief Variable for the "MIP" softmax score of the particle.
      * @details The "MIP" softmax score is calculated as the sum of the softmax
      * scores for the muon and pion. The score represents the confidence that
      * the network has in the particle being a minimum ionizing particle.
+     * @tparam T the type of particle (true or reco).
      * @param p the particle to apply the variable on.
      * @return the "MIP" softmax score of the particle.
      */
+    template<class T>
     double mip_softmax(const caf::SRParticleDLPProxy & p)
     {
         return p.pid_scores[2] + p.pid_scores[3];
     }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, mip_softmax, mip_softmax);
 
     /**
      * @brief Variable for the "hadron" softmax score of the particle.
      * @details The "hadron" softmax score is calculated as the sum of the softmax
      * scores for the pion and proton. The score represents the confidence that
      * the network has in the particle being a hadron.
+     * @tparam T the type of particle (true or reco).
      * @param p the particle to apply the variable on.
      * @return the "hadron" softmax score of the particle.
      */
+    template<class T>
     double hadron_softmax(const caf::SRParticleDLPProxy & p)
     {
         return p.pid_scores[3] + p.pid_scores[4];
     }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, hadron_softmax, hadron_softmax);
 
     /**
      * @brief Variable for the primary softmax score of the particle.
@@ -689,13 +740,16 @@ namespace pvars
      * network has in the particle being a primary particle. The score is between
      * 0 and 1, with 1 being the most confident that the particle is a primary
      * particle.
+     * @tparam T the type of particle (true or reco).
      * @param p the particle to apply the variable on.
      * @return the primary softmax score of the particle.
      */
+    template<class T>
     double primary_softmax(const caf::SRParticleDLPProxy & p)
     {
         return p.primary_scores[1];
     }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, primary_softmax, primary_softmax);
 
     /**
      * @brief Variable for the secondary softmax score of the particle.
@@ -703,12 +757,15 @@ namespace pvars
      * network has in the particle being a secondary particle. The score is between
      * 0 and 1, with 1 being the most confident that the particle is a secondary
      * particle.
+     * @tparam T the type of particle (true or reco).
      * @param p the particle to apply the variable on.
      * @return the secondary softmax score of the particle.
      */
+    template<class T>
     double secondary_softmax(const caf::SRParticleDLPProxy & p)
     {
         return p.primary_scores[0];
     }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, secondary_softmax, secondary_softmax);
 }
 #endif // PARTICLE_VARIABLES_H

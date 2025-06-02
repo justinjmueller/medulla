@@ -37,10 +37,11 @@ namespace pcuts
      * @return true if the particle is a primary particle.
      */
     template<class T>
-        bool is_primary(const T & p)
-        {
-            return PRIMARYFUNC(p) == 1;
-        }
+    bool is_primary(const T & p)
+    {
+        return PRIMARYFUNC(p) == 1;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, is_primary, is_primary);
 
     /**
      * @brief Check if the particle meets final state signal requirements.
@@ -53,17 +54,18 @@ namespace pcuts
      * @return true if the particle is a final state signal particle.
      */
     template<class T>
-        bool final_state_signal(const T & p)
+    bool final_state_signal(const T & p)
+    {
+        bool passes(false);
+        if(is_primary(p))
         {
-            bool passes(false);
-            if(is_primary(p))
-            {
-                double energy(pvars::ke(p));
-                if((PIDFUNC(p) == 2 && energy > 143.425) || (PIDFUNC(p) != 2 && PIDFUNC(p) < 4 && energy > 25) || (PIDFUNC(p) == 4 && energy > 50))
-                    passes = true;
-            }
-            return passes;
+            double energy(pvars::ke(p));
+            if((PIDFUNC(p) == 2 && energy > 143.425) || (PIDFUNC(p) != 2 && PIDFUNC(p) < 4 && energy > 25) || (PIDFUNC(p) == 4 && energy > 50))
+                passes = true;
         }
+        return passes;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, final_state_signal, final_state_signal);
 
     /**
      * @brief Check if the particle is throughgoing.
@@ -76,9 +78,10 @@ namespace pcuts
      * @return true if the particle is throughgoing.
      */
     template<class T>
-        bool throughgoing(const T & p)
-        {
-            return PIDFUNC(p) > 1 && utilities::near_boundary(p.start) && utilities::near_boundary(p.end);
-        }
+    bool throughgoing(const T & p)
+    {
+        return PIDFUNC(p) > 1 && utilities::near_boundary(p.start) && utilities::near_boundary(p.end);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, throughgoing, throughgoing);
 }
 #endif // PARTICLE_CUTS_H
