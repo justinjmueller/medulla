@@ -80,7 +80,9 @@ namespace pcuts
     template<class T>
     bool throughgoing(const T & p)
     {
-        return PIDFUNC(p) > 1 && utilities::near_boundary(p.start) && utilities::near_boundary(p.end);
+        utilities::three_vector start_point = {p.start_point[0], p.start_point[1], p.start_point[2]};
+        utilities::three_vector end_point = {p.end_point[0], p.end_point[1], p.end_point[2]};
+        return PIDFUNC(p) > 1 && utilities::near_boundary(start_point) && utilities::near_boundary(end_point);
     }
     REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, throughgoing, throughgoing);
 }
