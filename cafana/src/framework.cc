@@ -19,6 +19,7 @@
 
 // Set a sensible default for a no-match scenario.
 constexpr size_t kNoMatch = std::numeric_limits<size_t>::max();
+constexpr double kNoMatchValue = std::numeric_limits<double>::quiet_NaN();
 
 // Get the singleton instance of the Registry.
 template<typename ValueT>
@@ -357,7 +358,7 @@ ana::SpillMultiVar spill_multivar_helper(
                     if(cuts(i) && match_id != kNoMatch && comps(sr->dlp[match_id]))
                     {
                         int64_t nu_id = sr->dlp_true[match_id].nu_id;
-                        values.push_back(nu_id >= 0 ? var(sr->mc.nu[nu_id]) : kNoMatch);
+                        values.push_back(nu_id >= 0 ? var(sr->mc.nu[nu_id]) : kNoMatchValue);
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, TParticleType> || std::is_same_v<VarOn, RParticleType>)
@@ -428,7 +429,7 @@ ana::SpillMultiVar spill_multivar_helper(
                     if(cuts(i) && match_id != kNoMatch && comps(sr->dlp_true[match_id]))
                     {
                         int64_t nu_id = sr->dlp_true[match_id].nu_id;
-                        values.push_back(nu_id >= 0 ? var(sr->mc.nu[nu_id]) : kNoMatch);
+                        values.push_back(nu_id >= 0 ? var(sr->mc.nu[nu_id]) : kNoMatchValue);
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, TParticleType> || std::is_same_v<VarOn, RParticleType>)
