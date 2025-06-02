@@ -7,7 +7,7 @@
  * @author mueller@fnal.gov
  */
 #define PLACEHOLDERVALUE std::numeric_limits<double>::quiet_NaN()
-#define PRIMARYFUNC pvars::custom_primary_classification
+#define PRIMARYFUNC pvars::lax_primary_classification
 #define PIDFUNC pvars::pid
 #define PROTON_BINDING_ENERGY 30.9 // MeV
 #define BEAM_IS_NUMI false
