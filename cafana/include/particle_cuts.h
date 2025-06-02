@@ -85,5 +85,23 @@ namespace pcuts
         return PIDFUNC(p) > 1 && utilities::near_boundary(start_point) && utilities::near_boundary(end_point);
     }
     REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, throughgoing, throughgoing);
+
+    /**
+     * @brief Check if the particle is of the given type.
+     * @details This function checks if the particle is of the given type.
+     * The type is determined by the particle ID, which is abstracted away
+     * using the PIDFUNC function.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to check.
+     * @param params the parameters for the cut. In this case, this sets the
+     * particle ID to check against. Defaults to 0, which corresponds to
+     * a photon.
+     */
+    template<class T>
+    bool is_pid(const T & p, std::vector<double> params={0.0,})
+    {
+        return PIDFUNC(p) == static_cast<size_t>(params[0]);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, is_pid, is_pid);
 }
 #endif // PARTICLE_CUTS_H
