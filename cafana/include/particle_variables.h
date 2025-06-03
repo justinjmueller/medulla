@@ -495,7 +495,8 @@ namespace pvars
     template<class T>
     double end_x(const T & p)
     {
-        return p.end_point[0];
+        // If the particle is a shower, the end point is not defined.
+        return (pid(p) < 2 ? PLACEHOLDERVALUE : (double)p.end_point[0]);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, end_x, end_x);
 
@@ -509,7 +510,8 @@ namespace pvars
     template<class T>
     double end_y(const T & p)
     {
-        return p.end_point[1];
+        // If the particle is a shower, the end point is not defined.
+        return (pid(p) < 2 ? PLACEHOLDERVALUE : (double)p.end_point[1]);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, end_y, end_y);
     
@@ -523,7 +525,8 @@ namespace pvars
     template<class T>
     double end_z(const T & p)
     {
-        return p.end_point[2];
+        // If the particle is a shower, the end point is not defined.
+        return (pid(p) < 2 ? PLACEHOLDERVALUE : (double)p.end_point[2]);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, end_z, end_z);
 
