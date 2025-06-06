@@ -118,7 +118,7 @@ namespace vars::electron2025
         double opening_angle_ee(const T & obj)
         {
             std::vector<size_t> indices = utilities::electron2025::particle_indices(obj, 1, 0);
-            if(indices[0] == indices[1]) return PLACEHOLDERVALUE; //return NaN if there is only one shower
+            if(indices.size() == 1 || indices.size() == 0) return PLACEHOLDERVALUE; //return NaN if there is only one shower
             auto & e1(obj.particles[indices[0]]); //extract the leading shower
             auto & e2(obj.particles[indices[1]]); //extract the subleading shower 
             //return std::acos(e1.start_dir[0] * e2.start_dir[0] + e1.start_dir[1] * e2.start_dir[1] + e1.start_dir[2] * e2.start_dir[2]);
@@ -133,7 +133,7 @@ namespace vars::electron2025
             {
                 if(p.is_primary)
                 {
-                    if(pcuts::final_state_signal_elec(p)) //at the moment, we are only interested in electrons with energy > 25 MeV
+                    if(pcuts::final_state_signal_elec(p)) //at the moment, we are only interested in electrons with energy > 50 MeV
                     {
                         energy += pvars::energy(p);
                     }
@@ -146,6 +146,7 @@ namespace vars::electron2025
         double leading_shower_energy(const T & obj)
         {
             std::vector<size_t> indices = utilities::electron2025::particle_indices(obj, 1, 0);
+            if(indices.size() == 0) return PLACEHOLDERVALUE;
             auto & e1(obj.particles[indices[0]]); //extract the leading shower
             return pvars::energy(e1);
         }
@@ -154,9 +155,66 @@ namespace vars::electron2025
         double subleading_shower_energy(const T & obj)
         {
             std::vector<size_t> indices = utilities::electron2025::particle_indices(obj, 1, 0);
-            if(indices[0] == indices[1]) return PLACEHOLDERVALUE; //return NaN if there is only one shower
+            if(indices.size() == 1 || indices.size() == 0) return PLACEHOLDERVALUE; //return NaN if there is only one shower
             auto & e2(obj.particles[indices[1]]); //extract the subleading shower
             return pvars::energy(e2);
+        }
+
+    template<class T>
+        utilities::three_vector beam_direction(const T & obj)
+        {
+            utilities::three_vector vertex = std::make_tuple(obj.vertex[0], obj.vertex[1], obj.vertex[2]);
+            if constexpr(!BEAM_IS_NUMI){
+               return std::make_tuple(0,0,1); 
+            }
+            else{
+                utilities::three_vector beam = std::make_tuple(315.120380 + std::get<0>(vertex), 33.644912 + std::get<1>(vertex), 733.632532 + std::get<2>(vertex));
+                return utilities::normalize(beam);
+
+            }
+
+            //just to be sure, return all values negative 1 if we somehow get here
+            return std::make_tuple(-1,-1,-1);
+        }
+
+    template<class T>
+        double beam_angle(const T & obj)
+        {
+            //compute the total shower momentum (leading+subleading)
+            std::vector<size_t> indices = utilities::electron2025::particle_indices(obj, 1, 0);
+            if(indices.size() == 1 || indices.size() == 0) return PLACEHOLDERVALUE;
+            utilities::three_vector beamdir = beam_direction(obj);
+            auto & e1(obj.particles[indices[0]]);
+            utilities::three_vector e1_p = std::make_tuple(e1.momentum[0],e1.momentum[1], e1.momentum[2]);
+            auto & e2(obj.particles[indices[1]]);
+            utilities::three_vector e2_p = std::make_tuple(e2.momentum[0],e2.momentum[1], e2.momentum[2]);
+            utilities::three_vector total_p = utilities::add(e1_p,e2_p);
+            utilities::three_vector norm_p = utilities::normalize(total_p);
+
+            double costheta = utilities::dot_product(norm_p, beamdir);
+
+            return costheta;
+        }
+
+    template<class T> 
+        double beam_x_dir(const T & obj)
+        {
+            utilities::three_vector beam_dir = beam_direction(obj);
+            return std::get<0>(beam_dir);
+        }
+
+    template<class T> 
+        double beam_y_dir(const T & obj)
+        {
+            utilities::three_vector beam_dir = beam_direction(obj);
+            return std::get<1>(beam_dir);
+        }
+
+    template<class T> 
+        double beam_z_dir(const T & obj)
+        {
+            utilities::three_vector beam_dir = beam_direction(obj);
+            return std::get<2>(beam_dir);
         }
 
     template<class T>
@@ -164,7 +222,7 @@ namespace vars::electron2025
         {
             double inv_mass(0);
             std::vector<size_t> indices = utilities::electron2025::particle_indices(obj, 1, 0);
-            if(indices[0] == indices[1]) return PLACEHOLDERVALUE; //return NaN if there is only one shower
+            if(indices.size() == 1 || indices.size() == 0) return PLACEHOLDERVALUE; //return NaN if there is only one shower
             auto & e1(obj.particles[indices[0]]); //extract the leading shower
             auto & e2(obj.particles[indices[1]]); //extract the subleading shower
             double e1_energy(pvars::energy(e1));
@@ -178,7 +236,7 @@ namespace vars::electron2025
         double energy_asymmetry(const T & obj)
         {
             std::vector<size_t> indices = utilities::electron2025::particle_indices(obj, 1, 0);
-            if(indices[0] == indices[1]) return PLACEHOLDERVALUE; //return NaN if there is only one shower
+            if(indices.size() == 1 || indices.size() == 0) return PLACEHOLDERVALUE; //return NaN if there is only one shower
             auto & e1(obj.particles[indices[0]]); //extract the leading shower
             auto & e2(obj.particles[indices[1]]); //extract the subleading shower
             double e1_energy(pvars::energy(e1));
@@ -190,7 +248,7 @@ namespace vars::electron2025
         double max_vertex_x_distance(const T & obj)
         {
             std::vector<size_t> indices = utilities::electron2025::particle_indices(obj, 1, 0);
-            if(indices[0] == indices[1]) return PLACEHOLDERVALUE; //return NaN if there is only one shower
+            if(indices.size() == 1 || indices.size() == 0) return PLACEHOLDERVALUE; //return NaN if there is only one shower
             double vtx_x = vars::vertex_x(obj);
             auto & e1(obj.particles[indices[0]]); //extract the leading shower
             double dist_1 = vtx_x - pvars::start_x(e1);
@@ -203,7 +261,7 @@ namespace vars::electron2025
         double max_vertex_y_distance(const T & obj)
         {
             std::vector<size_t> indices = utilities::electron2025::particle_indices(obj, 1, 0);
-            if(indices[0] == indices[1]) return PLACEHOLDERVALUE; //return NaN if there is only one shower
+            if(indices.size() == 1 || indices.size() == 0) return PLACEHOLDERVALUE; //return NaN if there is only one shower
             double vtx_y = vars::vertex_y(obj);
             auto & e1(obj.particles[indices[0]]); //extract the leading shower
             double dist_1 = vtx_y - pvars::start_y(e1);
@@ -216,7 +274,7 @@ namespace vars::electron2025
         double max_vertex_z_distance(const T & obj)
         {
             std::vector<size_t> indices = utilities::electron2025::particle_indices(obj, 1, 0);
-            if(indices[0] == indices[1]) return PLACEHOLDERVALUE; //return NaN if there is only one shower
+            if(indices.size() == 1 || indices.size() == 0) return PLACEHOLDERVALUE; //return NaN if there is only one shower
             double vtx_z = vars::vertex_z(obj);
             auto & e1(obj.particles[indices[0]]); //extract the leading shower
             double dist_1 = vtx_z - pvars::start_z(e1);
@@ -230,7 +288,7 @@ namespace vars::electron2025
         {
             //compute 3D magnitude here and use that
             std::vector<size_t> indices = utilities::electron2025::particle_indices(obj, 1, 0);
-            if(indices[0] == indices[1]) return PLACEHOLDERVALUE; //return NaN if there is only one shower
+            if(indices.size() == 1 || indices.size() == 0) return PLACEHOLDERVALUE; //return NaN if there is only one shower
             double vtx_x = vars::vertex_x(obj);
             double vtx_y = vars::vertex_y(obj);
             double vtx_z = vars::vertex_z(obj);

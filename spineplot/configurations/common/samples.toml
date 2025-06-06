@@ -2,6 +2,7 @@
 [samples.mc]
 key = "mc"
 exposure_type = "pot"
+override_exposure = 2.45e24
 trees = ['selectedEvents',]
 
 [samples.benchmark]
@@ -16,10 +17,27 @@ exposure_type = "pot"
 trees = ['selectedEvents',]
 presel = 'opening_angle_reco > 0.0 and opening_angle_reco < 0.6'
 
+[samples.truenu]
+key = "mc"
+exposure_type = "pot"
+trees = ['selectedNu',]
+
+[samples.mcnu]
+key = "mcnu"
+exposure_type = "pot"
+#override_category = -10
+#precompute = {'category=category+10'}
+trees = ['selectedNu',]
+
+[samples.pandora]
+key = "mc"
+exposure_type = "pot"
+trees = ['selectedNu',]
+
 [samples.mcsignal]
 key = "mc"
 exposure_type = "pot"
-trees = ['signal',]
+trees = ['signal_eff',]
 
 [samples.offbeam]
 key = "offbeam"

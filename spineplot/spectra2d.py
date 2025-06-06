@@ -293,6 +293,42 @@ class SpineSpectra2D(SpineSpectra):
                     h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
                     l.append('MC Statistical Uncertainty')
                 ax.legend(h, l)
+
+        if show_option == 'absdiff' and self._plotdata_absdiag is not None:
+            labels, data = zip(*self._plotdata_absdiag.items())
+            colors = [self._colors[label] for label in labels]
+            bincenters = [self._binedges_absdiag[l][:-1] + np.diff(self._binedges_absdiag[l]) / 2 for l in labels]
+
+            ax.hist(bincenters, weights=data, bins=self._variables[0]._nbins,
+                    range=(-100, 100), histtype='barstacked', label=labels,
+                    color=colors, stacked=True)
+            ax.set_xlabel('(Y-X)' if self._xtitle is None else self._xtitle)
+            ax.set_ylabel('Entries')
+            ax.set_xlim(-100, 100)
+
+            if fit_type is not None:
+                super().fit_with_function(ax, bincenters[0], np.sum(data, axis=0), self._binedges_absdiag[labels[0]], fit_type, range=(-100, 100))
+            if draw_stat_error:
+                x = bincenters[0]
+                y = np.sum(data, axis=0)
+                xerr = np.diff(self._binedges_absdiag[labels[0]]) / 2
+                yerr = np.sqrt(y)
+                draw_error_boxes(ax, x, y, xerr, yerr, facecolor='gray', edgecolor='none', alpha=0.5, hatch='///')
+            if invert_stack_order:
+                h, l = ax.get_legend_handles_labels()
+                if draw_stat_error:
+                    h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
+                    l.append('MC Statistical Uncertainty')
+                ax.legend(h[-2::-1]+h[-1:], l[-2::-1]+l[-1:])
+            else:
+                h, l = ax.get_legend_handles_labels()
+                if draw_stat_error:
+                    h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
+                    l.append('MC Statistical Uncertainty')
+                ax.legend(h, l)    
+
+    
+        
         
         if style.scilimits and not logy:
             ax.ticklabel_format(axis='y', scilimits=style.scilimits)

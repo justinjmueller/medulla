@@ -105,7 +105,7 @@ namespace utilities::electron2025
                 double energy(p.csda_ke);
                 if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
                     energy = pvars::ke(p);
-                if((p.pid == pid1 || p.pid == pid2) && energy > leading_ke)
+                if((p.pid == pid1 || p.pid == pid2) && energy > leading_ke && energy > 50)
                 {
                     leading_ke = energy;
                     index = i;
@@ -125,12 +125,22 @@ namespace utilities::electron2025
             std::vector<size_t> indices;
             //if there is only one particle in the list (I expect this is the case for reconstructed only one shower), return 0 for both indices
             //figure out a smarter way, still has some that pass this and are added to the other plots, must not always be the case even in reco (are there tracks?)
+            /*
             if(obj.particles.size() == 1)
             {
                 indices.push_back(0);
+                return indices;
+            }
+            */
+            //if only one shower but possibly other particles, try this, otherwise it will return 0 for the second index even if only one shower
+            /*
+            std::vector<uint32_t> c(count_primaries_ee(obj));
+            if((c[0] == 1 && c[1] == 0) || (c[0] == 0 && c[1] == 1))
+            {
                 indices.push_back(0);
                 return indices;
             }
+	         */
             //find leading particle of a given type
             for(size_t i(0); i < obj.particles.size(); ++i)
             {
@@ -138,12 +148,14 @@ namespace utilities::electron2025
                 double energy(p.calo_ke);
                 if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
                     energy = pvars::ke(p);
-                if((p.pid == pid1 || p.pid == pid2) && (energy > leading_ke && p.is_primary))
+                
+                if((p.pid == pid1 || p.pid == pid2) && (energy > leading_ke && p.is_primary && energy > 50))
                 {
                     leading_ke = energy;
                     index = i;
                 }
             }
+            
             indices.push_back(index);
             //find subleading particle of any shower type (electron, photon)
             for(size_t i(0); i < obj.particles.size(); ++i)
@@ -152,12 +164,13 @@ namespace utilities::electron2025
                 double energy(p.calo_ke);
                 if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
                     energy = pvars::ke(p);
-                if((p.pid == pid1 || p.pid == pid2) && energy > subleading_ke && p.is_primary && i != index)
+                if((p.pid == pid1 || p.pid == pid2) && (energy > subleading_ke && p.is_primary && energy > 50) && i != index)
                 {
                     subleading_ke = energy;
                     subindex = i;
                 }
             }
+           
             indices.push_back(subindex);
 
             return indices;

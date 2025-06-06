@@ -1,0 +1,13 @@
+[variables.true_edep_eff]
+key = "true_edep"
+range = [0.0, 2.0]
+nbins = 30
+binning_scheme = "equal_population"
+xlabel = "True Energy"
+
+[variables.true_opening_angle]
+key = "true_opening_angle"
+range = [-1, 1]
+nbins = 15
+binning_scheme = "equal_population"
+xlabel = "True Opening Angle"

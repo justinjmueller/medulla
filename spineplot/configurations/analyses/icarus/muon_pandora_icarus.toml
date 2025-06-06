@@ -1,0 +1,50 @@
+[[this_includes]]
+file = 'configurations/muon_pandora/variables.toml'
+
+[[this_includes]]
+file = 'configurations/common/samples.toml'
+choose = {'samples' = ['pandora']}
+
+[[this_includes]]
+file = 'configurations/common/styles.toml'
+
+[output]
+path = '/exp/icarus/app/users/jzettle/spineprod/spine_anaplot_tools/spineplot/plots_pandora'
+
+[[figure]]
+name = 'reco_visible_energy'
+type = 'SimpleFigure'
+artists = [{'type' = 'SpineSpectra1D', 'variable' = 'reco_edep'},]
+style = 'pandora'
+
+[[figure]]
+name = 'chi2_muon'
+type = 'SimpleFigure'
+artists = [{'type' = 'SpineSpectra1D', 'variable' = 'chi2_muon'},]
+style = 'pandora'
+
+[[figure]]
+name = 'chi2_proton'
+type = 'SimpleFigure'
+artists = [{'type' = 'SpineSpectra1D', 'variable' = 'chi2_proton'},]
+style = 'pandora'
+
+[[figure]]
+name = 'reco_muon_momentum'
+type = 'SimpleFigure'
+artists = [{'type' = 'SpineSpectra1D', 'variable' = 'reco_muon_p'},]
+style = 'pandora'
+
+[[figure]]
+name = 'deltaPt'
+type = 'SimpleFigure'
+artists = [{'type' = 'SpineSpectra1D', 'variable' = 'deltaPt'},]
+style = 'pandora'
+
+[analysis]
+ordinate_sample = 'pandora'
+category_branch = 'CC'
+category_assignment = [[1]]
+category_labels = ['CC']
+category_colors = ['C0']
+category_types = ['histogram']

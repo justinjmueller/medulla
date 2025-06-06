@@ -1,5 +1,5 @@
 [[this_includes]]
-file = 'configurations/electron2025/variables.toml'
+file = 'configurations/electron2025/variables_eff.toml'
 
 [[this_includes]]
 file = 'configurations/common/samples.toml'
@@ -9,10 +9,10 @@ choose = {'samples' = ['mcsignal']}
 file = 'configurations/common/styles.toml'
 
 [output]
-path = '/exp/icarus/app/users/jzettle/spineprod/spine_anaplot_tools/spineplot/plots_boosted'
+path = '/exp/icarus/app/users/jzettle/spineprod/spine_anaplot_tools/spineplot/plots_higgs_withmc_2shower'
 
 [[figure]]
-name = 'efficiency_truesignal'
+name = 'efficiency_truesignal_2esignal'
 type = 'SimpleFigure'
 style = 'selected_electrons'
 figsize = [6.0, 5.5]
@@ -21,10 +21,10 @@ type = 'SpineEfficiency'
 variable = 'true_edep_eff'
 groups = ['2e',]
 cuts = {'fiducial_cut' = 'Fiducial', 'containment_cut' = 'Containment', 'has_one_shower' = 'At Least One Shower', 'has_no_tracks' = 'No Tracks', 'has_two_showers' = 'Two Recod Showers', 'has_two_electrons' = 'Two Recod Electrons'}
-draw_kwargs = {'show_option' = 'table', 'show_seqeff' = true, 'show_unseqeff' = true, 'npts' = 1e5}
+draw_kwargs = {'show_option' = 'table', 'show_seqeff' = true, 'show_unseqeff' = false, 'npts' = 1e5}
 
 [[figure]]
-name = 'efficiency_truesignalplot'
+name = 'efficiency_truesignalplot_2esignal'
 type = 'SimpleFigure'
 style = 'selected_electrons'
 figsize = [8.0, 4.0]
@@ -33,10 +33,10 @@ type = 'SpineEfficiency'
 variable = 'true_edep_eff'
 groups = ['2e',]
 cuts = {'fiducial_cut' = 'Fiducial', 'containment_cut' = 'Containment', 'has_one_shower' = 'At Least One Shower', 'has_no_tracks' = 'No Tracks', 'has_two_showers' = 'Two Recod Showers', 'has_two_electrons' = 'Two Recod Electrons'}
-draw_kwargs = {'show_option' = 'differential', 'show_seqeff' = true, 'show_unseqeff' = false, 'npts' = 1e5}
+draw_kwargs = {'show_option' = 'differential', 'percentage' = true, 'show_seqeff' = true, 'show_unseqeff' = true, 'npts' = 1e5}
 
 [[figure]]
-name = 'efficiency_openingangle'
+name = 'efficiency_openingangle_2esignal'
 type = 'SimpleFigure'
 style = 'selected_electrons'
 figsize = [6.0, 5.5]
@@ -45,10 +45,10 @@ type = 'SpineEfficiency'
 variable = 'true_opening_angle'
 groups = ['2e',]
 cuts = {'fiducial_cut' = 'Fiducial', 'containment_cut' = 'Containment', 'has_one_shower' = 'At Least One Shower', 'has_no_tracks' = 'No Tracks', 'has_two_showers' = 'Two Recod Showers', 'has_two_electrons' = 'Two Recod Electrons'}
-draw_kwargs = {'show_option' = 'table', 'show_seqeff' = true, 'show_unseqeff' = true, 'npts' = 1e5}
+draw_kwargs = {'show_option' = 'table', 'show_seqeff' = true, 'show_unseqeff' = false, 'npts' = 1e5}
 
 [[figure]]
-name = 'efficiency_openingangleplot'
+name = 'efficiency_openingangleplot_2esignal'
 type = 'SimpleFigure'
 style = 'selected_electrons'
 figsize = [8.0, 4.0]
@@ -57,13 +57,15 @@ type = 'SpineEfficiency'
 variable = 'true_opening_angle'
 groups = ['2e',]
 cuts = {'fiducial_cut' = 'Fiducial', 'containment_cut' = 'Containment', 'has_one_shower' = 'At Least One Shower', 'has_no_tracks' = 'No Tracks', 'has_two_showers' = 'Two Recod Showers', 'has_two_electrons' = 'Two Recod Electrons'}
-draw_kwargs = {'show_option' = 'differential', 'percentage' = true, 'show_seqeff' = true, 'show_unseqeff' = false, 'npts' = 1e5}
+draw_kwargs = {'show_option' = 'differential', 'percentage' = true, 'show_seqeff' = true, 'show_unseqeff' = true, 'npts' = 1e5}
 
 [analysis]
 ordinate_sample = 'mcsignal'
 category_branch = 'category'
 category_assignment = [[0]]
 category_labels = ['2e']
+#category_assignment = [[6]]
+#category_labels = ['1shower']
 category_colors = ['C0']
 category_types = ['histogram']
 

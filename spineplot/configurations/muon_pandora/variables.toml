@@ -1,22 +1,47 @@
 [variables]
 
-[variables.true_edep_eff]
-key = "true_edep"
-range = [0.0, 4.0]
-nbins = 50
-binning_scheme = "equal_population"
-xlabel = "True Energy"
-
 [variables.reco_edep]
-key = "reco_edep"
+key = "recoE"
 range = [0.0, 4.0]
 nbins = 50
 xlabel = "Reconstructed Visible Energy"
+
+[variables.chi2_muon]
+key = "chi2Muon"
+range = [0.0,30.0]
+nbins = 50
+xlabel = '$\chi^{2}_\mu$'
+
+[variables.chi2_proton]
+key = "chi2LeadingProton"
+range = [0.0,100.0]
+nbins = 50
+xlabel = '$\chi^{2}_p$'
+
+[variables.reco_muon_p]
+key = "recoPmu"
+range = [0.0,3.0]
+nbins = 50
+xlabel = "Reconstructed Muon Momentum"
+
+[variables.deltaPt]
+key = "deltaPt"
+range = [0.0,2000.0]
+nbins = 50
+xlabel = '$\delta p_T$'
+
 
 [variables.true_edep]
 key = "true_edep"
 range = [0.0, 4.0]
 nbins = 50
+xlabel = "True Energy"
+
+[variables.true_edep_eff]
+key = "true_edep"
+range = [0.0, 4.0]
+nbins = 50
+binning_scheme = "equal_population"
 xlabel = "True Energy"
 
 [variables.category_reco]
@@ -67,17 +92,17 @@ range = [0, 8000]
 nbins = 80
 xlabel = "True Leading Shower Energy"
 
-#[variables.subleading_shower_energy_reco]
-#key = "subleading_shower_energy_reco"
-#range = [0, 8000]
-#nbins = 80
-#xlabel = "Reconstructed Subleading Shower Energy"
+[variables.subleading_shower_energy_reco]
+key = "subleading_shower_energy_reco"
+range = [0, 8000]
+nbins = 80
+xlabel = "Reconstructed Subleading Shower Energy"
 
-#[variables.subleading_shower_energy_true]
-#key = "subleading_shower_energy"
-#range = [0, 8000]
-#nbins = 80
-#xlabel = "True Subleading Shower Energy"
+[variables.subleading_shower_energy_true]
+key = "subleading_shower_energy"
+range = [0, 8000]
+nbins = 80
+xlabel = "True Subleading Shower Energy"
 
 [variables.leading_electron_primary_softmax]
 key = "leading_electron_primary_softmax"
@@ -97,33 +122,33 @@ range = [0, 1]
 nbins = 50
 xlabel = "Leading Electron Photon Softmax Score"
 
-#[variables.subleading_electron_primary_softmax]
-#key = "subleading_electron_primary_softmax"
-#range = [0, 1]
-#nbins = 50
-#xlabel = "Subleading Electron Primary Softmax Score"
+[variables.subleading_electron_primary_softmax]
+key = "subleading_electron_primary_softmax"
+range = [0, 1]
+nbins = 50
+xlabel = "Subleading Electron Primary Softmax Score"
 
-#[variables.subleading_electron_electron_softmax]
-#key = "subleading_electron_electron_softmax"
-#range = [0, 1]
-#nbins = 50
-#xlabel = "Subleading Electron Electron Softmax Score"
+[variables.subleading_electron_electron_softmax]
+key = "subleading_electron_electron_softmax"
+range = [0, 1]
+nbins = 50
+xlabel = "Subleading Electron Electron Softmax Score"
 
-#[variables.subleading_electron_photon_softmax]
-#key = "subleading_electron_photon_softmax"
-#range = [0, 1]
-#nbins = 50
-#xlabel = "Subleading Electron Photon Softmax Score"
+[variables.subleading_electron_photon_softmax]
+key = "subleading_electron_photon_softmax"
+range = [0, 1]
+nbins = 50
+xlabel = "Subleading Electron Photon Softmax Score"
 
 [variables.invariant_mass]
 key = "invariant_mass"
-range = [0, 500]
+range = [0, 3000]
 nbins = 50
 xlabel = "Reco Invariant Mass"
 
 [variables.invariant_mass_true]
 key = "invariant_mass_true"
-range = [0, 500]
+range = [0, 3000]
 nbins = 50
 xlabel = "True Invariant Mass"
 
@@ -146,7 +171,7 @@ nbins = 50
 xlabel = "True Opening Angle"
 
 [variables.true_opening_angle]
-key = "opening_angle"
+key = "true_opening_angle"
 range = [-1, 1]
 nbins = 30
 binning_scheme = "equal_population"
