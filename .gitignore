@@ -9,3 +9,6 @@
 *dev.*
 
 build/
+*/CMakeFiles/*
+*.cmake
+Makefile
