@@ -44,6 +44,26 @@ namespace pcuts
     REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, is_primary, is_primary);
 
     /**
+     * @brief Check if the particle is contained.
+     * @details This function checks if the particle is contained. The
+     * containment of a particle is defined upstream in SPINE using the
+     * full set of points in the particle's track. A particle is considered
+     * contained if all of its points are within the detector volume by some
+     * margin (e.g., 5 cm) and all of its points are reconstructed within the
+     * TPC that physically reads out the hits comprising the spacepoints of
+     * the particle.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to check.
+     * @return true if the particle is contained.
+     */
+    template<class T>
+    bool contained(const T & p)
+    {
+        return p.is_contained == 1;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, contained, contained);
+
+    /**
      * @brief Check if the particle meets final state signal requirements.
      * @details must be primary and have an energy above threshold.
      * Muons must have a length of at least 50 cm (143.425 MeV), protons
