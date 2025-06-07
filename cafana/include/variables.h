@@ -57,6 +57,21 @@ namespace vars
     REGISTER_VAR_SCOPE(RegistrationScope::True, neutrino_id, neutrino_id);
 
     /**
+     * @brief Variable for the interaction ID.
+     * @details This variable is intended to provide a unique identifier for
+     * each interaction within the event record. This number is assigned
+     * starting at 0 for the first interaction in the event and is incremented
+     * for each subsequent interaction. This assignment is done upstream in the
+     * SPINE reconstruction.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the interaction ID.
+     */
+    template<class T>
+    double interaction_id(const T & obj) { return obj.id; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, interaction_id, interaction_id);
+
+    /**
      * @brief Variable for the best-match IoU of the interaction.
      * @details The best-match IoU is the intersection over union of the
      * points belonging to a pair of reconstructed and true interactions. The
