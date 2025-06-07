@@ -1,0 +1,19 @@
+[general]
+output = "test"
+
+[[sample]]
+name = "test"
+path = "validation.root"
+ismc = true
+
+[[tree]]
+name = "test_reco"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "no_cut", type = "reco"},
+]
+branch = [
+    {name = "vertex_x", type = "both"},
+    {name = "interaction_id", type= "reco"}
+]

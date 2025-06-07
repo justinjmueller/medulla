@@ -34,6 +34,13 @@ target_link_libraries(framework PRIVATE shared CAFAnaCore sbnanaobj_StandardReco
 target_include_directories(framework PRIVATE include/ ${SBNANA_INC} ${SBNANAOBJ_INC} ${SRPROXY_INC})
 target_compile_features(framework PRIVATE cxx_std_17)
 
+# Library for the framework testing code
+add_library(test SHARED src/test.cc)
+target_link_directories(test PRIVATE ${SBNANA_LIB} ${SBNANAOBJ_LIB})
+target_link_libraries(test PRIVATE shared CAFAnaCore sbnanaobj_StandardRecord)
+target_include_directories(test PRIVATE include/ ${SBNANA_INC} ${SBNANAOBJ_INC} ${SRPROXY_INC})
+target_compile_features(test PRIVATE cxx_std_17)
+
 # Add a common library
 add_library(common INTERFACE)
 
@@ -78,6 +85,10 @@ target_compile_features(common INTERFACE cxx_std_17)
 add_executable(main src/main.cc)
 target_link_libraries(main PRIVATE shared framework common)
 target_include_directories(main PRIVATE . include/ ${SBNANA_INC} ${SBNANAOBJ_INC} ${SRPROXY_INC})
+
+add_executable(validate src/validate.cc)
+target_link_libraries(validate PRIVATE test common sbnanaobj_StandardRecord)
+target_include_directories(validate PRIVATE include/ ${SBNANA_INC} ${SBNANAOBJ_INC} ${SRPROXY_INC})
 
 add_executable(example example.cc)
 target_link_libraries(example PRIVATE common)
