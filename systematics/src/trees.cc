@@ -387,5 +387,6 @@ void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & con
     }
 
     // Write detector systematic histograms to the output file.
-    calc.write_results();
+    if(calc.is_initialized())
+        calc.write_results();
 }
