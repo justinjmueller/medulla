@@ -41,6 +41,9 @@ typedef std::map<std::string, double> row_t;
 // defines a test condition.
 typedef std::pair<std::string, row_t> condition_t;
 
+// Simple NaN value
+constexpr double kNaN = std::numeric_limits<double>::quiet_NaN();
+
 /**
  * @brief Collect the offset for a given object.
  * @tparam T The type of the object for which to collect the offset.
@@ -113,3 +116,38 @@ void pair(T & left, U & right);
  */
 void write_event(caf::StandardRecord * rec, int64_t run, int64_t subrun,
                  int64_t event_num, TH1F * pot, TH1F * nevt, TTree * t);
+
+/**
+ * @brief Read the event data from the TTree at the specified path.
+ * @details This function reads the event data from the TTree at the specified
+ * path, extracting the run, subrun, event number, and all associated
+ * additional variables.
+ * @param name The name of the TTree to read from.
+ * @return std::vector<row_t> A vector of rows, where each row is a map
+ * containing the event data.
+ */
+std::vector<row_t> read_event_data(const std::string & name);
+
+/**
+ * @brief Match the (Run, Subrun, Evt) metadata between a row_t object and a
+ * condition_t object.
+ * @details This function checks if the (Run, Subrun, Evt) metadata in two
+ * row_t objects match. This is used to check if the condition_t being
+ * validated against the row is at least from the correct event for the
+ * condition.
+ * @param row The row_t object to check.
+ * @param condition The condition_t object to check against.
+ * @return bool True if the (Run, Subrun, Evt) metadata match, false otherwise.
+ */
+bool match_metadata(const row_t & row, const condition_t & condition);
+
+/**
+ * @brief Match a set of row_t objects against a set of condition_t objects.
+ * @details Check if each condition_t entry is met by the corresponding (via
+ * Run, Subrun, Evt metadata) row_t object. This is used to validate the
+ * results of the test against the expected results.
+ * @param rows The vector of row_t objects to check.
+ * @param conditions The vector of condition_t objects to check against.
+ */
+void match_conditions(const std::vector<row_t> & rows,
+                      const std::vector<condition_t> & conditions);

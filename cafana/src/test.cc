@@ -10,6 +10,8 @@
  * these functionalities.
  * @author mueller@fnal.gov
  */
+#include <iostream>
+
 #include "sbnanaobj/StandardRecord/StandardRecord.h"
 #include "sbnanaobj/StandardRecord/SRInteractionDLP.h"
 #include "sbnanaobj/StandardRecord/SRInteractionTruthDLP.h"
@@ -124,6 +126,129 @@ void write_event(caf::StandardRecord * rec, int64_t run, int64_t subrun,
 
     // Fill the tree with the event data.
     tree->Fill();
+}
+
+// Read the event data from the TTree at the specified path.
+std::vector<row_t> read_event_data(const std::string & name)
+{
+    TTree * t = dynamic_cast<TTree *>(gDirectory->Get(name.c_str()));
+    if(!t)
+    {
+        throw std::runtime_error("Could not find TTree " + name + " in the current directory.");
+    }
+
+    // Triplet metadata.
+    Int_t run, subrun, event;
+
+    // Everything else is a double. Retrieve the list of branches.
+    auto branches = t->GetListOfBranches();
+    std::vector<std::string> branch_names;
+    for(auto const & branch : *branches)
+    {
+        auto b = dynamic_cast<TBranch *>(branch);
+        if(!b || std::string(b->GetName()) == "Run" || std::string(b->GetName()) == "Subrun" || std::string(b->GetName()) == "Evt")
+            continue;
+        branch_names.push_back(b->GetName());
+    }
+
+    // Double array to hold the values for each branch.
+    double values[branch_names.size()];
+
+    // Set the branch addresses.
+    t->SetBranchAddress("Run", &run);
+    t->SetBranchAddress("Subrun", &subrun);
+    t->SetBranchAddress("Evt", &event);
+    for(size_t i = 0; i < branch_names.size(); ++i)
+    {
+        t->SetBranchAddress(branch_names[i].c_str(), &values[i]);
+    }
+
+    // Read the entries from the TTree.
+    std::vector<row_t> rows;
+    for(int i = 0; i < t->GetEntries(); ++i)
+    {
+        t->GetEntry(i);
+        row_t row;
+        row["Run"] = run;
+        row["Subrun"] = subrun;
+        row["Evt"] = event;
+
+        // Fill the row with the values from the branches.
+        for(size_t j = 0; j < branch_names.size(); ++j)
+        {
+            row[branch_names[j]] = values[j];
+        }
+        rows.push_back(row);
+    }
+
+    return rows;
+}
+
+// Match the (Run, Subrun, Evt) metadata between a row_t object and a
+// condition_t object.
+bool match_metadata(const row_t & row, const condition_t & condition)
+{
+    for(const auto & field : condition.second)
+    {
+        if(field.first == "Run" || field.first == "Subrun" || field.first == "Evt")
+        {
+            if(row.at(field.first) != field.second)
+                return false; // Metadata mismatch.
+        }
+    }
+    return true;
+}
+
+// Match a set of row_t objects against a set of condition_t objects.
+void match_conditions(const std::vector<row_t> & rows, const std::vector<condition_t> & conditions)
+{
+    for(const auto & condition : conditions)
+    {
+        bool found = false;
+        for(const auto & row : rows)
+        {
+            if(match_metadata(row, condition))
+            {
+                found = true;
+                // Check if all fields in the condition match the corresponding
+                // fields in the row.
+                bool match = true;
+                for(const auto & field : condition.second)
+                {
+                    if(row.find(field.first) == row.end()
+                       || (!std::isnan(field.second) && row.at(field.first) != field.second)
+                       || (std::isnan(field.second) && !std::isnan(row.at(field.first))))
+                    {
+                        match = false;
+                        break; // Mismatch found, no need to check further.
+                    }
+                }
+                if(match)
+                {
+                    std::cout << "\033[32mValidation passed:\033[0m   " << condition.first << "." << std::endl;
+                    found = true;
+                    break;
+                }
+                else if(found && !match)                
+                {
+                    std::cerr << "\033[33mValidation mismatch:\033[0m " << condition.first << "." << std::endl;
+                    
+                    // Print the fields that are mismatched.
+                    for(const auto & field : condition.second)
+                    {
+                        if(row.find(field.first) == row.end() || row.at(field.first) != field.second)
+                        {
+                            std::cout << "    " << field.first
+                                        << " - expected: " << field.second
+                                        << ", got: " << (row.find(field.first) != row.end() ? std::to_string(row.at(field.first)) : "N/A") << std::endl;
+                        }
+                    }
+                }
+            }
+        }
+        if(!found)
+            std::cout << "\033[31mValidation failed:\033[0m   " << condition.first << "." << std::endl;
+    }
 }
 
 // Explicit template instantiations for the functions defined above.

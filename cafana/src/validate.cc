@@ -58,7 +58,7 @@ int main(int argc, char * argv[])
     // and functionality.
     if(mode == "--generate")
     {
-        TFile f("validation.root", "RECREATE");
+        TFile sim("validation_simlike.root", "RECREATE");
 
         TH1F * pot = new TH1F("TotalPOT", "TotalPOT", 1, 0, 1);
         TH1F * nevt = new TH1F("TotalEvents", "TotalEvents", 1, 0, 1);
@@ -83,7 +83,30 @@ int main(int argc, char * argv[])
         t->Write();
         pot->Write();
         nevt->Write();
-        f.Close();
+        sim.Close();
+
+        // Clean up the allocated memory.
+        delete rec;
+
+        TFile data("validation_datalike.root", "RECREATE");
+
+        pot = new TH1F("TotalPOT", "TotalPOT", 1, 0, 1);
+        nevt = new TH1F("TotalEvents", "TotalEvents", 1, 0, 1);
+
+        t = new TTree("recTree", "Standard Record Tree");
+
+        rec = new caf::StandardRecord();
+        t->Branch("rec", &rec);
+
+        // Basic interaction with particles (No interaction matches).
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}));
+        write_event(rec, 1, 1, 0, pot, nevt, t);
+
+        // Write the tree and histograms to the file.
+        t->Write();
+        pot->Write();
+        nevt->Write();
+        data.Close();
 
         // Clean up the allocated memory.
         delete rec;
@@ -103,94 +126,87 @@ int main(int argc, char * argv[])
             return 1;
         }
 
-        // Retrieve the TTree from the file.
-        TTree * t = static_cast<TTree *>(f.Get("events/test/test_reco"));
-        if(!t)
-        {
-            std::cerr << "Error: Could not find the TTree 'test_reco' in the file." << std::endl;
-            f.Close();
-            return 1;
-        }
+        std::cout << "\033[1m--- Running validation ---\033[0m" << std::endl;
+        /**
+         * @brief The first set of events to validate is the "sim-like" events
+         * and the response of the framework when run over them in "reco" mode.
+         * @details This set of events is used to validate the framework's
+         * response to the "sim-like" events, which mimic the structure of
+         * simulated events. There are a few different conditions that we are 
+         * looking for in the validation:
+         * 
+         * - Condition #0: This represents a reco event that should be selected
+         *   and does not have a valid truth match. The lack of a truth match
+         *   should not prevent the event from being selected and the branches
+         *   containing the reco information should be populated with real
+         *   values.
+         * 
+         * - Condition #1: This represents a reco event that should be selected
+         *   and does not have a valid truth match. The lack of a truth match
+         *   should not prevent the event from being selected. Branches that
+         *   reference the truth match should be set to a NaN value.
+         * 
+         * - Condition #2: This represents a reco event that should be selected
+         *   and have a valid truth match. The branches that reference the
+         *   reco information should be populated with real values.
+         * 
+         * - Condition #3: This represents a reco event that has a valid truth
+         *   match. The event should be selected and the truth match should be
+         *   correctly identified. The branches that reference the truth match
+         *   should be populated with real values.
+         */
+        std::cout << "\n\033[1mSimulation-like events with mode == 'reco' \033[0m" << std::endl;
 
-        // Connect to the branches of the TTree.
-        Int_t run, subrun, event_num;
-        double id, true_vtxx, reco_vtxx;
-        t->SetBranchAddress("Run", &run);
-        t->SetBranchAddress("Subrun", &subrun);
-        t->SetBranchAddress("Evt", &event_num);
-        t->SetBranchAddress("reco_interaction_id", &id);
-        t->SetBranchAddress("true_vertex_x", &true_vtxx);
-        t->SetBranchAddress("reco_vertex_x", &reco_vtxx);
-
-        // Fill the rows vector with the data from the TTree.
-        std::vector<row_t> rows;
-        for(int i = 0; i < t->GetEntries(); ++i)
-        {
-            t->GetEntry(i);
-            row_t row;
-            row["run"] = run;
-            row["subrun"] = subrun;
-            row["event_num"] = event_num;
-            row["interaction_id"] = id;
-            row["true_vertex_x"] = true_vtxx;
-            row["reco_vertex_x"] = reco_vtxx;
-            rows.push_back(row);
-        }
+        //  Read the event data from the TTree in the ROOT file.
+        std::vector<row_t> rows = read_event_data("events/test_simlike/test_reco");
 
         // Expected results for validation.
-        std::vector<condition_t> expected_results = {
-            {"Condition #0", {{"run", 1}, {"subrun", 1}, {"event_num", 0}, {"interaction_id", 0}, {"true_vertex_x", -210.0}, {"reco_vertex_x", -210.0}}},
-            {"Condition #1", {{"run", 1}, {"subrun", 1}, {"event_num", 1}, {"interaction_id", 1}, {"true_vertex_x", -210.0}, {"reco_vertex_x", -210.0}}},
-        };
-        auto match_metadata = [](const row_t & row, const condition_t & condition) {
-            for(const auto & field : condition.second)
-            {
-                if(field.first == "run" || field.first == "subrun" || field.first == "event_num")
-                {
-                    if(row.at(field.first) != field.second)
-                        return false; // Metadata mismatch.
-                }
-            }
-            return true;
+        std::vector<condition_t> conditions = {
+            {"Condition #0", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_interaction_id", 0}, {"reco_vertex_x", -210.0}}},
+            {"Condition #1", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_interaction_id", 0}, {"true_vertex_x", kNaN}}},
+            {"Condition #2", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}, {"reco_interaction_id", 1}, {"reco_vertex_x", -210.0}}},
+            {"Condition #3", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}, {"reco_interaction_id", 1}, {"true_vertex_x", -210.0}}},
         };
 
         // Check if each condition_t entry is present in the rows vector.
-        std::cout << "\033[1m--- Running validation ---\033[0m" << std::endl;
-        for(const auto & condition : expected_results)
-        {
-            bool found = false;
-            for(const auto & row : rows)
-            {
-                if(match_metadata(row, condition) && row == condition.second)
-                {
-                    std::cout << "\033[32mValidation passed:\033[0m   " << condition.first << "." << std::endl;
-                    found = true;
-                    break;
-                }
-                if(match_metadata(row, condition) && row != condition.second)
-                {
-                    found = true;
-                    std::cout << "\033[33mValidation mismatch:\033[0m " << condition.first << "." << std::endl;
-                    
-                    // Print the fields that are mismatched.
-                    for(const auto & field : condition.second)
-                    {
-                        if(row.at(field.first) != field.second)
-                        {
-                            std::cout << "    " << field.first
-                                      << " - expected: " << field.second
-                                      << ", got: " << row.at(field.first) << std::endl;
-                        }
-                    }
-                }
-            }
-            if(!found)
-                std::cout << "\033[31mValidation failed:\033[0m   " << condition.first << "." << std::endl;
-        }
-        std::cout << "\033[1m---        DONE        ---\033[0m" << std::endl;
+        match_conditions(rows, conditions);
 
+        /**
+         * @brief The second set of events to validate is the "data-like" events
+         * and the response of the framework when run over them in "reco" mode.
+         * @details This set of events is used to validate the framework's
+         * response to the "data-like" events, which mimic the structure of
+         * reconstructed events in data. These events have no truth information,
+         * but this does mean that we need to test scenarios where we ask for
+         * truth information in the branches.
+         * 
+         * - Condition #0: This represents a reco event that should be selected
+         *   and have valid reco branches (assuming no branch-specific NaN
+         *   cases are present).
+         * 
+         * - Condition #1: This represents a reco event that should be selected
+         *   but have NaN values for the truth branches. This can occur when
+         *   the user writes selection that writes true/reco pairs of
+         *   information to be applied equally to simulation and data (a common
+         *   design pattern in the framework).
+         */
+        std::cout << "\n\033[1mData-like events with mode == 'reco' \033[0m" << std::endl;
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_datalike/test_reco");
+        
+        // Expected results for validation.
+        conditions = {
+            {"Condition #0", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_interaction_id", 0}, {"reco_vertex_x", -210.0}}},
+            {"Condition #1", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_interaction_id", 0}, {"true_vertex_x", kNaN}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        match_conditions(rows, conditions);
+
+        // Finished!
+        std::cout << "\n\033[1m---        DONE        ---\033[0m" << std::endl;
         f.Close();
     }
-
     return 0;
 }
