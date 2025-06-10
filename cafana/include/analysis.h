@@ -92,11 +92,13 @@ namespace ana
             Analysis(std::string name);
             void AddLoader(std::string name, ana::SpectrumLoader * loader, bool is_sim);
             void AddTree(std::string name, std::map<std::string, ana::SpillMultiVar> & vars, bool is_sim);
+            void AddTreeForSample(std::string sname, std::string name, std::map<std::string, ana::SpillMultiVar> & vars, bool is_sim);
             void Go();
         private:
             std::string name;
             std::vector<Sample> samples;
             std::vector<TreeSet> trees;
+            std::map<std::pair<std::string, std::string>, TreeSet> trees_map;
     };
 
     /**
@@ -159,6 +161,33 @@ namespace ana
     }
 
     /**
+     * @brief Add a Tree to the Analysis class for a specific sample.
+     * @details This function allows the user to add a new Tree to the Analysis
+     * class for a specific sample. A Tree is a set of variables with associated
+     * names that are applied to the data in the SpectrumLoader. The Tree is used
+     * to store the results of the analysis in a TTree in the output ROOT file.
+     * @param sname The name of the sample to which the Tree belongs.
+     * @param name The name of the Tree to be added to the Analysis class.
+     * @param vars A map of variable names to SpillMultiVar objects implementing
+     * the variables to use in the Tree.
+     * @param is_sim A boolean indicating whether the Tree represents a simulation
+     * sample, which is principally used to determine if truth information is
+     * available.
+     * @return void
+     */
+    void Analysis::AddTreeForSample(std::string sname, std::string name, std::map<std::string, ana::SpillMultiVar> & vars, bool is_sim)
+    {
+        std::vector<std::string> n;
+        std::vector<ana::SpillMultiVar> v;
+        for(const auto & [name, var] : vars)
+        {
+            n.push_back(name);
+            v.push_back(var);
+        }
+        trees_map[std::make_pair(sname, name)] = {name, n, v, is_sim};
+    }
+
+    /**
      * @brief Run the analysis on the specified samples.
      * @details This function runs the analysis on the configured samples by
      * looping over each sample, creating the Trees for each sample, then
@@ -185,6 +214,13 @@ namespace ana
                     continue;
                 sbruce_trees.push_back(new ana::Tree(t.name, t.names, *s.loader, t.vars, ana::kNoSpillCut, true));
             }
+            for(const auto & [name, t] : trees_map)
+            {
+                if((t.is_sim && !s.is_sim) || name.first != s.name)
+                    continue;
+                sbruce_trees.push_back(new ana::Tree(t.name, t.names, *s.loader, t.vars, ana::kNoSpillCut, true));
+            }
+
             s.loader->Go();
             for(const ana::Tree * t : sbruce_trees)
             {
