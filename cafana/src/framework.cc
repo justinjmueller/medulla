@@ -67,7 +67,8 @@ ValueT Registry<ValueT>::get(const std::string & name)
 NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & cuts,
                              const sys::cfg::ConfigurationTable & var,
                              const std::string & mode,
-                             const std::string & override_type)
+                             const std::string & override_type,
+                             const bool ismc)
 {
     /**
      * @brief Determine the type of the cuts.
@@ -211,35 +212,60 @@ NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
             var_name = "true_" + var_name;
             auto factory = VarFactoryRegistry<TType>::instance().get(var_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, TType>(true_cut, reco_cut, true_particle_cut, var_fn));
+            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, TType>(
+                true_cut,
+                reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
+                true_particle_cut,
+                var_fn, 
+                ismc));
         }
         else if(var_type == "reco")
         {
             var_name = "reco_" + var_name;
             auto factory = VarFactoryRegistry<RType>::instance().get(var_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, RType>(true_cut, reco_cut, true_particle_cut, var_fn));
+            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, RType>(
+                true_cut,
+                reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
+                true_particle_cut,
+                var_fn,
+                ismc));
         }
         else if(var_type == "mctruth")
         {
             var_name = "true_" + var_name;
             auto factory = VarFactoryRegistry<MCTruth>::instance().get(var_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, MCTruth>(true_cut, reco_cut, true_particle_cut, var_fn));
+            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, MCTruth>(
+                true_cut,
+                reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
+                true_particle_cut,
+                var_fn,
+                ismc));
         }
         else if(var_type == "true_particle")
         {
             var_name = "true_particle_" + var_name;
             auto factory = VarFactoryRegistry<TParticleType>::instance().get(var_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, TParticleType>(true_cut, reco_cut, true_particle_cut, var_fn));
+            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, TParticleType>(
+                true_cut,
+                reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
+                true_particle_cut,
+                var_fn,
+                ismc));
         }
         else if(var_type == "reco_particle")
         {
             var_name = "reco_particle_" + var_name;
             auto factory = VarFactoryRegistry<RParticleType>::instance().get(var_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, RParticleType>(true_cut, reco_cut, true_particle_cut, var_fn));
+            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, RParticleType>(
+                true_cut,
+                reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
+                true_particle_cut,
+                var_fn,
+                ismc));
         }
         else
         {
@@ -265,35 +291,60 @@ NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
             var_name = "true_" + var_name;
             auto factory = VarFactoryRegistry<TType>::instance().get(var_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<RType, TType, TParticleType, TType>(reco_cut, true_cut, true_particle_cut, var_fn));
+            return std::make_pair(var_name, spill_multivar_helper<RType, TType, TParticleType, TType>(
+                reco_cut,
+                true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
+                true_particle_cut,
+                var_fn,
+                ismc));
         }
         else if(var_type == "reco")
         {
             var_name = "reco_" + var_name;
             auto factory = VarFactoryRegistry<RType>::instance().get(var_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<RType, TType, TParticleType, RType>(reco_cut, true_cut, true_particle_cut, var_fn));
+            return std::make_pair(var_name, spill_multivar_helper<RType, TType, TParticleType, RType>(
+                reco_cut,
+                true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
+                true_particle_cut,
+                var_fn,
+                ismc));
         }
         else if(var_type == "mctruth")
         {
             var_name = "true_" + var_name;
             auto factory = VarFactoryRegistry<MCTruth>::instance().get(var_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<RType, TType, TParticleType, MCTruth>(reco_cut, true_cut, true_particle_cut, var_fn));
+            return std::make_pair(var_name, spill_multivar_helper<RType, TType, TParticleType, MCTruth>(
+                reco_cut,
+                true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
+                true_particle_cut,
+                var_fn,
+                ismc));
         }
         else if(var_type == "true_particle")
         {
             var_name = "true_particle_" + var_name;
             auto factory = VarFactoryRegistry<TParticleType>::instance().get(var_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<RType, TType, RParticleType, TParticleType>(reco_cut, true_cut, reco_particle_cut, var_fn));
+            return std::make_pair(var_name, spill_multivar_helper<RType, TType, RParticleType, TParticleType>(
+                reco_cut,
+                true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
+                reco_particle_cut,
+                var_fn,
+                ismc));
         }
         else if(var_type == "reco_particle")
         {
             var_name = "reco_particle_" + var_name;
             auto factory = VarFactoryRegistry<RParticleType>::instance().get(var_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<RType, TType, RParticleType, RParticleType>(reco_cut, true_cut, reco_particle_cut, var_fn));
+            return std::make_pair(var_name, spill_multivar_helper<RType, TType, RParticleType, RParticleType>(
+                reco_cut,
+                true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
+                reco_particle_cut,
+                var_fn,
+                ismc));
         }
         else
         {
@@ -306,12 +357,13 @@ NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
 template<typename CutsOn, typename CompsOn, typename PCutsOn, typename VarOn>
 ana::SpillMultiVar spill_multivar_helper(
     const CutFn<CutsOn> & cuts,
-    const CutFn<CompsOn> & comps,
+    const std::optional<CutFn<CompsOn>> & comps,
     const CutFn<PCutsOn> & pcuts,
-    const VarFn<VarOn> & var
+    const VarFn<VarOn> & var,
+    const bool ismc
 )
 {
-    return ana::SpillMultiVar([comps, cuts, pcuts, var](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
+    return ana::SpillMultiVar([comps, cuts, pcuts, var, ismc](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
     {
         std::vector<double> values;
 
@@ -341,21 +393,21 @@ ana::SpillMultiVar spill_multivar_helper(
 
                 if constexpr(std::is_same_v<VarOn, RType>)
                 {
-                    if(cuts(i) && match_id != kNoMatch && comps(sr->dlp[match_id]))                    
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))))                    
                     {
                         values.push_back(var(sr->dlp[match_id]));
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, TType>)
                 {
-                    if(cuts(i) && match_id != kNoMatch && comps(sr->dlp[match_id]))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))))
                     {
                         values.push_back(var(i));
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, MCTruth>)
                 {
-                    if(cuts(i) && match_id != kNoMatch && comps(sr->dlp[match_id]))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))))
                     {
                         int64_t nu_id = sr->dlp_true[match_id].nu_id;
                         values.push_back(nu_id >= 0 ? var(sr->mc.nu[nu_id]) : kNoMatchValue);
@@ -363,7 +415,7 @@ ana::SpillMultiVar spill_multivar_helper(
                 }
                 else if constexpr(std::is_same_v<VarOn, TParticleType> || std::is_same_v<VarOn, RParticleType>)
                 {
-                    if(cuts(i) && match_id != kNoMatch && comps(sr->dlp[match_id]))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))))
                     {
                         for(auto const & j : i.particles)
                         {
@@ -412,29 +464,36 @@ ana::SpillMultiVar spill_multivar_helper(
 
                 if constexpr(std::is_same_v<VarOn, TType>)
                 {
-                    if(cuts(i) && match_id != kNoMatch && comps(sr->dlp_true[match_id]))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])) || !ismc))
                     {
-                        values.push_back(var(sr->dlp_true[match_id]));
+                        values.push_back(ismc && match_id != kNoMatch ? var(sr->dlp_true[match_id]) : kNoMatchValue);
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, RType>)
                 {
-                    if(cuts(i) && match_id != kNoMatch && comps(sr->dlp_true[match_id]))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])) || !ismc))
                     {
                         values.push_back(var(i));
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, MCTruth>)
                 {
-                    if(cuts(i) && match_id != kNoMatch && comps(sr->dlp_true[match_id]))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])) || !ismc))
                     {
-                        int64_t nu_id = sr->dlp_true[match_id].nu_id;
-                        values.push_back(nu_id >= 0 ? var(sr->mc.nu[nu_id]) : kNoMatchValue);
+                        if(!ismc || match_id == kNoMatch)
+                        {
+                            values.push_back(kNoMatchValue);
+                        }
+                        else
+                        {
+                            int64_t nu_id = sr->dlp_true[match_id].nu_id;
+                            values.push_back(nu_id >= 0 ? var(sr->mc.nu[nu_id]) : kNoMatchValue);
+                        }
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, TParticleType> || std::is_same_v<VarOn, RParticleType>)
                 {
-                    if(cuts(i) && match_id != kNoMatch && comps(sr->dlp_true[match_id]))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id]))))
                     {
                         for(auto const & j : i.particles)
                         {

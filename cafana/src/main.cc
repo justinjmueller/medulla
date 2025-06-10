@@ -56,50 +56,50 @@ int main(int argc, char * argv[])
             std::unique_ptr<ana::SpectrumLoader> loader = std::make_unique<ana::SpectrumLoader>(sample.get_string_field("path"));
             analysis.AddLoader(sample.get_string_field("name"), loader.get(), sample.get_bool_field("ismc"));
             loaders.push_back(std::move(loader));
-        }
 
-        // Main loop over the trees defined in the configuration
-        std::vector<sys::cfg::ConfigurationTable> trees(config.get_subtables("tree"));
-        for(const auto & tree : trees)
-        {
-            std::vector<sys::cfg::ConfigurationTable> cuts = tree.get_subtables("cut");
-            std::vector<sys::cfg::ConfigurationTable> vars = tree.get_subtables("branch");
-            std::string mode = tree.get_string_field("mode");
-            
-            std::map<std::string, ana::SpillMultiVar> vars_map;
-            for(const auto & var : vars)
+            // Main loop over the trees defined in the configuration
+            std::vector<sys::cfg::ConfigurationTable> trees(config.get_subtables("tree"));
+            for(const auto & tree : trees)
             {
-                // If the variable type is "both", we need to construct two
-                // variables: one for "true" and one for "reco".
-                if(var.get_string_field("type") == "both")
+                std::vector<sys::cfg::ConfigurationTable> cuts = tree.get_subtables("cut");
+                std::vector<sys::cfg::ConfigurationTable> vars = tree.get_subtables("branch");
+                std::string mode = tree.get_string_field("mode");
+                
+                std::map<std::string, ana::SpillMultiVar> vars_map;
+                for(const auto & var : vars)
                 {
-                    NamedSpillMultiVar thisvar_true = construct(cuts, var, mode, "true");
-                    NamedSpillMultiVar thisvar_reco = construct(cuts, var, mode, "reco");
-                    vars_map.try_emplace(thisvar_true.first, thisvar_true.second);
-                    vars_map.try_emplace(thisvar_reco.first, thisvar_reco.second);
+                    // If the variable type is "both", we need to construct two
+                    // variables: one for "true" and one for "reco".
+                    if(var.get_string_field("type") == "both")
+                    {
+                        NamedSpillMultiVar thisvar_true = construct(cuts, var, mode, "true", sample.get_bool_field("ismc"));
+                        NamedSpillMultiVar thisvar_reco = construct(cuts, var, mode, "reco", sample.get_bool_field("ismc"));
+                        vars_map.try_emplace(thisvar_true.first, thisvar_true.second);
+                        vars_map.try_emplace(thisvar_reco.first, thisvar_reco.second);
+                    }
+                    else if(var.get_string_field("type") == "both_particle")
+                    {
+                        NamedSpillMultiVar thisvar_true = construct(cuts, var, mode, "true_particle", sample.get_bool_field("ismc"));
+                        NamedSpillMultiVar thisvar_reco = construct(cuts, var, mode, "reco_particle", sample.get_bool_field("ismc"));
+                        vars_map.try_emplace(thisvar_true.first, thisvar_true.second);
+                        vars_map.try_emplace(thisvar_reco.first, thisvar_reco.second);
+                    }
+                    else if(var.get_string_field("type") == "true"
+                            || var.get_string_field("type") == "reco"
+                            || var.get_string_field("type") == "mctruth"
+                            || var.get_string_field("type") == "true_particle"
+                            || var.get_string_field("type") == "reco_particle")
+                    {
+                        NamedSpillMultiVar thisvar = construct(cuts, var, mode, var.get_string_field("type"), sample.get_bool_field("ismc"));
+                        vars_map.try_emplace(thisvar.first, thisvar.second);
+                    }
+                    else
+                    {
+                        throw std::runtime_error("Illegal variable type '" + var.get_string_field("type") + "' for branch " + tree.get_string_field("name") +  ":" + var.get_string_field("name"));
+                    }
                 }
-                else if(var.get_string_field("type") == "both_particle")
-                {
-                    NamedSpillMultiVar thisvar_true = construct(cuts, var, mode, "true_particle");
-                    NamedSpillMultiVar thisvar_reco = construct(cuts, var, mode, "reco_particle");
-                    vars_map.try_emplace(thisvar_true.first, thisvar_true.second);
-                    vars_map.try_emplace(thisvar_reco.first, thisvar_reco.second);
-                }
-                else if(var.get_string_field("type") == "true"
-                        || var.get_string_field("type") == "reco"
-                        || var.get_string_field("type") == "mctruth"
-                        || var.get_string_field("type") == "true_particle"
-                        || var.get_string_field("type") == "reco_particle")
-                {
-                    NamedSpillMultiVar thisvar = construct(cuts, var, mode);
-                    vars_map.try_emplace(thisvar.first, thisvar.second);
-                }
-                else
-                {
-                    throw std::runtime_error("Illegal variable type '" + var.get_string_field("type") + "' for branch " + tree.get_string_field("name") +  ":" + var.get_string_field("name"));
-                }
+                analysis.AddTreeForSample(sample.get_string_field("name"), tree.get_string_field("name"), vars_map, tree.get_bool_field("sim_only"));
             }
-            analysis.AddTree(tree.get_string_field("name"), vars_map, tree.get_bool_field("sim_only"));
         }
 
         analysis.Go();

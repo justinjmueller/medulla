@@ -248,13 +248,15 @@ enum class Mode { True = 0, Reco = 1 };
  *        - parameters: array of floats (parameters for the variable)
  * @param mode The mode to use for the main loop ("true" or "reco").
  * @param override_type The type to use for the variable ("true" or "reco").
+ * @param ismc A boolean indicating whether the data is MC (true) or not (false).
  * @return A NamedSpillMultiVar object that applies the cuts and computes the variable.
  * @throw std::runtime_error if a function is not registered.
  */
 NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & cuts,
                              const sys::cfg::ConfigurationTable & var,
                              const std::string & mode,
-                             const std::string & override_type = "");
+                             const std::string & override_type = "",
+                             const bool ismc = true);
 
 /**
  * @brief Helper method for constructing a SpillMultiVar object.
@@ -276,16 +278,20 @@ NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & c
  * @tparam VarOn The type (TType or RType) that the variable is applied to.
  * @param cuts The callable that implements the cuts on the broadcast branch.
  * @param comps The callable that implements the cuts on the selected branch.
+ * This is wrapped by std::optional to allow for the case where no
+ * complementary cuts are applied.
  * @param pcuts The callable that implements the cuts on the single-particles.
  * @param var The callable that implements the variable on the selected branch.
+ * @param ismc A boolean indicating whether the data is MC (true) or not (false).
  * @return A SpillMultiVar object that applies the cuts and computes the variable.
  */
 template<typename CutsOn, typename CompsOn, typename PCutsOn, typename VarOn>
 ana::SpillMultiVar spill_multivar_helper(
     const CutFn<CutsOn> & cuts,
-    const CutFn<CompsOn> & comps,
+    const std::optional<CutFn<CompsOn>> & comps,
     const CutFn<PCutsOn> & pcuts,
-    const VarFn<VarOn> & var
+    const VarFn<VarOn> & var,
+    const bool ismc = true
 );
 
 #endif // FRAMEWORK_H
