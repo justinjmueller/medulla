@@ -126,6 +126,12 @@ void write_event(caf::StandardRecord * rec, int64_t run, int64_t subrun,
 
     // Fill the tree with the event data.
     tree->Fill();
+
+    // Clear the StandardRecord interaction vectors.
+    rec->dlp.clear();
+    rec->dlp_true.clear();
+    rec->ndlp = 0;
+    rec->ndlp_true = 0;
 }
 
 // Read the event data from the TTree at the specified path.

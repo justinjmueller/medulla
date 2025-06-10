@@ -74,9 +74,9 @@ int main(int argc, char * argv[])
         write_event(rec, 1, 1, 0, pot, nevt, t);
 
         // Basic interaction with particles (Reco -> True match only).
-        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(1, 0, {2, 2, 2, 2, 2}));
-        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(1, 0, {2, 2, 2, 2, 2}));
-        pair(rec->dlp[1], rec->dlp_true[1]);
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, {2, 2, 2, 2, 2}));
+        pair(rec->dlp[0], rec->dlp_true[0]);
         write_event(rec, 1, 1, 1, pot, nevt, t);
 
         // Write the tree and histograms to the file.
@@ -162,10 +162,10 @@ int main(int argc, char * argv[])
 
         // Expected results for validation.
         std::vector<condition_t> conditions = {
-            {"Condition #0", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_interaction_id", 0}, {"reco_vertex_x", -210.0}}},
-            {"Condition #1", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_interaction_id", 0}, {"true_vertex_x", kNaN}}},
-            {"Condition #2", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}, {"reco_interaction_id", 1}, {"reco_vertex_x", -210.0}}},
-            {"Condition #3", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}, {"reco_interaction_id", 1}, {"true_vertex_x", -210.0}}},
+            {"Condition #0", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
+            {"Condition #1", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"true_vertex_x", kNaN}}},
+            {"Condition #2", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}, {"reco_vertex_x", -210.0}}},
+            {"Condition #3", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}, {"true_vertex_x", -210.0}}},
         };
 
         // Check if each condition_t entry is present in the rows vector.
