@@ -197,8 +197,8 @@ int main(int argc, char * argv[])
         
         // Expected results for validation.
         conditions = {
-            {"Condition #0", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_interaction_id", 0}, {"reco_vertex_x", -210.0}}},
-            {"Condition #1", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_interaction_id", 0}, {"true_vertex_x", kNaN}}},
+            {"Condition #0", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
+            {"Condition #1", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"true_vertex_x", kNaN}}},
         };
 
         // Check if each condition_t entry is present in the rows vector.
