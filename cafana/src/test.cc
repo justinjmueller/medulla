@@ -73,7 +73,7 @@ T generate_particle(int64_t id, int64_t pid)
 // Generate an interaction of the specified type with the requested particle
 // multiplicity.
 template<typename T>
-T generate_interaction(int64_t id, int64_t poffset, multiplicity_t mult)
+T generate_interaction(int64_t id, int64_t poffset, multiplicity_t mult, bool assign_fm)
 {
     T interaction;
     interaction.id = id;
@@ -93,6 +93,11 @@ T generate_interaction(int64_t id, int64_t poffset, multiplicity_t mult)
     interaction.vertex[0] = -210.0;
     interaction.vertex[1] = 0.0;
     interaction.vertex[2] = 0.0;
+    if(assign_fm)
+    {
+        interaction.flash_times.push_back(1.0);
+        interaction.is_flash_matched = 1;
+    }
 
     return interaction;
 }
@@ -270,7 +275,7 @@ void match_conditions(const std::vector<row_t> & rows, const std::vector<conditi
 }
 
 // Explicit template instantiations for the functions defined above.
-template caf::SRInteractionDLP generate_interaction<caf::SRInteractionDLP>(int64_t, int64_t, multiplicity_t);
-template caf::SRInteractionTruthDLP generate_interaction<caf::SRInteractionTruthDLP>(int64_t, int64_t, multiplicity_t);
+template caf::SRInteractionDLP generate_interaction<caf::SRInteractionDLP>(int64_t, int64_t, multiplicity_t, bool);
+template caf::SRInteractionTruthDLP generate_interaction<caf::SRInteractionTruthDLP>(int64_t, int64_t, multiplicity_t, bool);
 template void pair<caf::SRInteractionDLP, caf::SRInteractionTruthDLP>(caf::SRInteractionDLP &, caf::SRInteractionTruthDLP &);
 template void pair<caf::SRInteractionTruthDLP, caf::SRInteractionDLP>(caf::SRInteractionTruthDLP &, caf::SRInteractionDLP &);

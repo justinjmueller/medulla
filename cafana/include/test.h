@@ -79,11 +79,15 @@ T generate_particle(int64_t id, int64_t pid);
  * @param mult The multiplicity of particles in the interaction, which is a
  * fixed-size array of integers representing the number of particles of each
  * type in the interaction.
+ * @param assign_fm Whether to assign a flash match to the interaction.
  * @return An interaction of the specified type with the given ID and
  * particle multiplicity.
  */
 template<typename T>
-T generate_interaction(int64_t id, int64_t poffset, multiplicity_t mult = {2, 2, 2, 2, 2});
+T generate_interaction(int64_t id,
+                       int64_t poffset,
+                       multiplicity_t mult = {2, 2, 2, 2, 2},
+                       bool assign_fm = true);
 
 /**
  * @brief Pair two interactions together, setting the match IDs.
