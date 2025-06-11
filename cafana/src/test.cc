@@ -231,9 +231,19 @@ void match_conditions(const std::vector<row_t> & rows, const std::vector<conditi
                 }
                 if(match)
                 {
-                    std::cout << "\033[32mValidation passed:\033[0m   " << condition.first << "." << std::endl;
-                    found = true;
-                    break;
+                    if(condition.first.find('!') == std::string::npos)
+                    {
+                        std::cout << "\033[32mValidation passed:\033[0m   " << condition.first << "." << std::endl;
+                        found = true;
+                        break;
+                    }
+                    else
+                    {
+                        // If the condition starts with '!', it means we expect it to not match.
+                        std::cout << "\033[31mValidation failed:\033[0m   " << condition.first.substr(1) << "." << std::endl;
+                        found = true;
+                        break;
+                    }
                 }
                 else if(found && !match)                
                 {
@@ -252,8 +262,10 @@ void match_conditions(const std::vector<row_t> & rows, const std::vector<conditi
                 }
             }
         }
-        if(!found)
+        if(!found && condition.first.find('!') == std::string::npos)
             std::cout << "\033[31mValidation failed:\033[0m   " << condition.first << "." << std::endl;
+        else if(!found && condition.first.find('!') != std::string::npos)
+            std::cout << "\033[32mValidation passed:\033[0m   " << condition.first.substr(1) << "." << std::endl;
     }
 }
 
