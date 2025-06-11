@@ -2,9 +2,14 @@
 output = "test"
 
 [[sample]]
-name = "test"
-path = "validation.root"
+name = "test_simlike"
+path = "validation_simlike.root"
 ismc = true
+
+[[sample]]
+name = "test_datalike"
+path = "validation_datalike.root"
+ismc = false
 
 [[tree]]
 name = "test_reco"
