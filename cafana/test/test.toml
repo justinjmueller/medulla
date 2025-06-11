@@ -20,5 +20,16 @@ cut = [
 ]
 branch = [
     {name = "vertex_x", type = "both"},
-    {name = "interaction_id", type= "reco"}
+]
+
+[[tree]]
+name = "test_reco_with_truth_cut"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "no_cut", type = "reco"},
+    {name = "no_cut", type = "true"},
+]
+branch = [
+    {name = "vertex_x", type = "both"},
 ]
