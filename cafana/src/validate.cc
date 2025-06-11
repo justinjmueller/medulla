@@ -79,6 +79,20 @@ int main(int argc, char * argv[])
         pair(rec->dlp[0], rec->dlp_true[0]);
         write_event(rec, 1, 1, 1, pot, nevt, t);
 
+        // Basic interaction with particles (No interaction matches and
+        // no valid flash match for the reco interaction).
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}, false));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, {2, 2, 2, 2, 2}));
+        write_event(rec, 1, 1, 2, pot, nevt, t);
+
+        // Basic interaction with particles (Reco -> True match only and
+        // no valid flash match for the reco interaction).
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}, false));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, {2, 2, 2, 2, 2}));
+
+        pair(rec->dlp[0], rec->dlp_true[0]);
+        write_event(rec, 1, 1, 3, pot, nevt, t);
+
         // Write the tree and histograms to the file.
         t->Write();
         pot->Write();
@@ -154,6 +168,17 @@ int main(int argc, char * argv[])
          *   match. The event should be selected and the truth match should be
          *   correctly identified. The branches that reference the truth match
          *   should be populated with real values.
+         * 
+         * - Condition #4: This represents a reco event that should not be
+         *   selected and has no valid truth match. This is a negative
+         *   condition that checks if the framework correctly ignores events
+         *   that do not match the selection criteria.
+         * 
+         * - Condition #5: This represents a reco event that should not be
+         *   selected and does have a valid truth match. This is a negative
+         *   condition that checks if the framework correctly ignores events
+         *   that do not match the selection criteria, even if they have a
+         *   valid truth match.
          */
         std::cout << "\n\033[1mSimulation-like events with mode == 'reco' \033[0m" << std::endl;
 
@@ -166,6 +191,8 @@ int main(int argc, char * argv[])
             {"Condition #1", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"true_vertex_x", kNaN}}},
             {"Condition #2", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}, {"reco_vertex_x", -210.0}}},
             {"Condition #3", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}, {"true_vertex_x", -210.0}}},
+            {"!Condition #4", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}}},
+            {"!Condition #5", {{"Run", 1}, {"Subrun", 1}, {"Evt", 3}}},
         };
 
         // Check if each condition_t entry is present in the rows vector.
