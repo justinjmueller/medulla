@@ -73,17 +73,17 @@ int main(int argc, char * argv[])
         rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, {2, 2, 2, 2, 2}));
         write_event(rec, 1, 1, 0, pot, nevt, t);
 
-        // Basic interaction with particles (Reco -> True match only).
-        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}));
-        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, {2, 2, 2, 2, 2}));
-        pair(rec->dlp[0], rec->dlp_true[0]);
-        write_event(rec, 1, 1, 1, pot, nevt, t);
-
         // Basic interaction with particles (No interaction matches and
         // no valid flash match for the reco interaction).
         rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}, false));
         rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, {2, 2, 2, 2, 2}));
-        write_event(rec, 1, 1, 2, pot, nevt, t);
+        write_event(rec, 1, 1, 1, pot, nevt, t);
+
+        // Basic interaction with particles (Reco -> True match only).
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, {2, 2, 2, 2, 2}));
+        pair(rec->dlp[0], rec->dlp_true[0]);
+        write_event(rec, 1, 1, 2, pot, nevt, t);        
 
         // Basic interaction with particles (Reco -> True match only and
         // no valid flash match for the reco interaction).
@@ -115,6 +115,10 @@ int main(int argc, char * argv[])
         // Basic interaction with particles (No interaction matches).
         rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}));
         write_event(rec, 1, 1, 0, pot, nevt, t);
+
+        // Basic interaction with particles (No valid flash match for the reco).
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}, false));
+        write_event(rec, 1, 1, 1, pot, nevt, t);
 
         // Write the tree and histograms to the file.
         t->Write();
@@ -149,36 +153,49 @@ int main(int argc, char * argv[])
          * simulated events. There are a few different conditions that we are 
          * looking for in the validation:
          * 
-         * - Condition #0: This represents a reco event that should be selected
-         *   and does not have a valid truth match. The lack of a truth match
-         *   should not prevent the event from being selected and the branches
-         *   containing the reco information should be populated with real
-         *   values.
+         * - SR00: This represents a reco interaction with no valid truth match
+         *   under an additional truth cut that would otherwise pass the reco-
+         *   only selection. This does not pass the selection.
          * 
-         * - Condition #1: This represents a reco event that should be selected
-         *   and does not have a valid truth match. The lack of a truth match
-         *   should not prevent the event from being selected. Branches that
-         *   reference the truth match should be set to a NaN value.
+         * - SR01: This represents a reco interaction with no valid truth match
+         *   under an additional truth cut that would also not pass the
+         *   reco-only selection. This does not pass the selection.
          * 
-         * - Condition #2: This represents a reco event that should be selected
-         *   and have a valid truth match. The branches that reference the
-         *   reco information should be populated with real values.
+         * - SR02: This represents a reco interaction with no valid truth match
+         *   under no additional truth cut and that passes the reco-only
+         *   selection. This passes the selection with a valid reco-var.
          * 
-         * - Condition #3: This represents a reco event that has a valid truth
-         *   match. The event should be selected and the truth match should be
-         *   correctly identified. The branches that reference the truth match
-         *   should be populated with real values.
+         * - SR03: This represents a reco interaction with no valid truth match
+         *   under no additional truth cut and that passes the reco-only
+         *   selection. This passes the selection with a NaN truth-var.
          * 
-         * - Condition #4: This represents a reco event that should not be
-         *   selected and has no valid truth match. This is a negative
-         *   condition that checks if the framework correctly ignores events
-         *   that do not match the selection criteria.
+         * - SR04: This represents a reco interaction with no valid truth match
+         *   under no additional truth cut and that does not pass the reco-only
+         *   selection. This does not pass the selection.
          * 
-         * - Condition #5: This represents a reco event that should not be
-         *   selected and does have a valid truth match. This is a negative
-         *   condition that checks if the framework correctly ignores events
-         *   that do not match the selection criteria, even if they have a
-         *   valid truth match.
+         * - SR05: This represents a reco interaction with a valid truth match
+         *   under an additional truth cut that would also pass the reco-only
+         *   selection. This passes the selection with a valid reco-var.
+         * 
+         * - SR06: This represents a reco interaction with a valid truth match
+         *   under an additional truth cut that would also pass the reco-only
+         *   selection. This passes the selection with a valid truth-var.
+         * 
+         * - SR07: This represents a reco interaction with a valid truth match
+         *   under and additional truth cut that would also not pass the
+         *   reco-only selection. This does not pass the selection.
+         * 
+         * - SR08: This represents a reco interaction with a valid truth match
+         *   under no additional truth cut and that passes the reco-only
+         *   selection. This passes the selection with a valid reco-var.
+         * 
+         * - SR09: This represents a reco interaction with a valid truth match
+         *   under no additional truth cut and that passes the reco-only
+         *   selection. This passes the selection with a valid truth-var.
+         * 
+         * - SR10: This represents a reco interaction with a valid truth match
+         *   under no additional truth cut and that does not pass the reco-only
+         *   selection. This does not pass the selection.
          */
         std::cout << "\n\033[1mSimulation-like events with mode == 'reco' \033[0m" << std::endl;
 
@@ -187,12 +204,27 @@ int main(int argc, char * argv[])
 
         // Expected results for validation.
         std::vector<condition_t> conditions = {
-            {"Condition #0", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
-            {"Condition #1", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"true_vertex_x", kNaN}}},
-            {"Condition #2", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}, {"reco_vertex_x", -210.0}}},
-            {"Condition #3", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}, {"true_vertex_x", -210.0}}},
-            {"!Condition #4", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}}},
-            {"!Condition #5", {{"Run", 1}, {"Subrun", 1}, {"Evt", 3}}},
+            {"SR02", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
+            {"SR03", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"true_vertex_x", kNaN}}},
+            {"!SR04", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
+            {"SR08", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"reco_vertex_x", -210.0}}},
+            {"SR09", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"true_vertex_x", -210.0}}},
+            {"!SR10", {{"Run", 1}, {"Subrun", 1}, {"Evt", 3}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        match_conditions(rows, conditions);
+
+        //  Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_simlike/test_reco_with_truth_cut");
+
+        // Expected results for validation.
+        conditions = {
+            {"!SR00", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}}},
+            {"!SR01", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
+            {"SR05", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"reco_vertex_x", -210.0}}},
+            {"SR06", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"true_vertex_x", -210.0}}},
+            {"!SR07", {{"Run", 1}, {"Subrun", 1}, {"Evt", 3}}},
         };
 
         // Check if each condition_t entry is present in the rows vector.
@@ -216,6 +248,12 @@ int main(int argc, char * argv[])
          *   the user writes selection that writes true/reco pairs of
          *   information to be applied equally to simulation and data (a common
          *   design pattern in the framework).
+         * 
+         * - Condition #2: This represents a reco event that should not be
+         *   selected. This is a negative condition that checks if the
+         *   framework correctly ignores events that do not match the
+         *   selection criteria.
+         *   
          */
         std::cout << "\n\033[1mData-like events with mode == 'reco' \033[0m" << std::endl;
 
@@ -226,6 +264,7 @@ int main(int argc, char * argv[])
         conditions = {
             {"Condition #0", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
             {"Condition #1", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"true_vertex_x", kNaN}}},
+            {"!Condition #2", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
         };
 
         // Check if each condition_t entry is present in the rows vector.
