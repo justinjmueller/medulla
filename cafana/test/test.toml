@@ -33,3 +33,26 @@ cut = [
 branch = [
     {name = "vertex_x", type = "both"},
 ]
+
+[[tree]]
+name = "test_truth"
+sim_only = true
+mode = "true"
+cut = [
+    {name = "valid_flashmatch", type = "true"}
+]
+branch = [
+    {name = "vertex_x", type = "both"},
+]
+
+[[tree]]
+name = "test_truth_with_reco_cut"
+sim_only = true
+mode = "true"
+cut = [
+    {name = "valid_flashmatch", type = "true"},
+    {name = "no_cut", type = "reco"},
+]
+branch = [
+    {name = "vertex_x", type = "both"},
+]
