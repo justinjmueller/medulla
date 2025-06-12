@@ -271,7 +271,93 @@ int main(int argc, char * argv[])
         match_conditions(rows, conditions);
 
         /**
-         * @brief The second set of events to validate is the "data-like" events
+         * @brief The second set of events to validate is the "sim-like" events
+         * and the response of the framework when run over them in "truth" mode.
+         * @details This set of events is used to validate the framework's
+         * response to the "sim-like" events, which mimic the structure of
+         * simulated events. These events have truth information, and
+         * therefore we can test the framework's response to the truth
+         * information in the branches.
+         * 
+         * - ST00: This represents a truth interaction with no valid reco match
+         *   under an additional reco cut that would otherwise pass the truth-
+         *   only selection. This does not pass the selection.
+         * 
+         * - ST01: This represents a truth interaction with no valid reco match
+         *   under an additional reco cut that would also not pass the truth-
+         *   only selection. This does not pass the selection.
+         * 
+         * - ST02: This represents a truth interaction with no valid reco match
+         *   under no additional reco cut and that passes the truth-only
+         *   selection. This passes the selection with a valid truth-var.
+         * 
+         * - ST03: This represents a truth interaction with no valid reco match
+         *   under no additional reco cut and that passes the truth-only
+         *   selection. This passes the selection with a NaN reco-var.
+         * 
+         * - ST04: This represents a truth interaction with no valid reco match
+         *   under no additional reco cut and that does not pass the truth-only
+         *   selection. This does not pass the selection.
+         * 
+         * - ST05: This represents a truth interaction with a valid reco match
+         *   under an additional reco cut that would also pass the truth-only
+         *   selection. This passes the selection with a valid truth-var.
+         * 
+         * - ST06: This represents a truth interaction with a valid reco match
+         *   under an additional reco cut that would also pass the truth-only
+         *   selection. This passes the selection with a valid reco-var.
+         * 
+         * - ST07: This represents a truth interaction with a valid reco match
+         *   under and additional reco cut that would also not pass the truth-
+         *   only selection. This does not pass the selection.
+         * 
+         * - ST08: This represents a truth interaction with a valid reco match
+         *   under no additional reco cut and that passes the truth-only
+         *   selection. This passes the selection with a valid truth-var.
+         * 
+         * - ST09: This represents a truth interaction with a valid reco match
+         *   under no additional reco cut and that passes the truth-only
+         *   selection. This passes the selection with a valid reco-var.
+         * 
+         * - ST10: This represents a truth interaction with a valid reco match
+         *   under no additional reco cut and that does not pass the truth-only
+         *   selection. This does not pass the selection.
+         */
+        std::cout << "\n\033[1mSimulation-like events with mode == 'truth' \033[0m" << std::endl;
+        
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_simlike/test_truth");
+        
+        // Expected results for validation.
+        conditions = {
+            {"ST02", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"true_vertex_x", -210.0}}},
+            {"ST03", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_vertex_x", kNaN}}},
+            {"!ST04", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
+            {"ST08", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"true_vertex_x", -210.0}}},
+            {"ST09", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"reco_vertex_x", -210.0}}},
+            {"!ST10", {{"Run", 1}, {"Subrun", 1}, {"Evt", 3}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        match_conditions(rows, conditions);
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_simlike/test_truth_with_reco_cut");
+
+        // Expected results for validation.
+        conditions = {
+            {"!ST00", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}}},
+            {"!ST01", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
+            {"ST05", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"true_vertex_x", -210.0}}},
+            {"ST06", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"reco_vertex_x", -210.0}}},
+            {"!ST07", {{"Run", 1}, {"Subrun", 1}, {"Evt", 3}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        match_conditions(rows, conditions);
+
+        /**
+         * @brief The third set of events to validate is the "data-like" events
          * and the response of the framework when run over them in "reco" mode.
          * @details This set of events is used to validate the framework's
          * response to the "data-like" events, which mimic the structure of
