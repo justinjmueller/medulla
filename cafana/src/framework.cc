@@ -395,7 +395,7 @@ ana::SpillMultiVar spill_multivar_helper(
                 {
                     if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))))                    
                     {
-                        values.push_back(var(sr->dlp[match_id]));
+                        values.push_back(match_id != kNoMatch ? var(sr->dlp[match_id]) : kNoMatchValue);
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, TType>)
