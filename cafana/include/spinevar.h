@@ -394,6 +394,51 @@ ana::SpillMultiVar SpineVar(double (*fvar)(const VARTYPE &), bool (*fpcut)(const
                 return var;
             });
         }
+        else if constexpr(std::is_same_v<VARTYPE, RTYPE>)
+        {
+            return ana::SpillMultiVar([fvar, fpcut, ficut](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
+            {
+                std::vector<double> var;
+                bool is_mc(sr->ndlp_true != 0);
+                for(auto const& i : sr->dlp)
+                {
+                    if(ficut(i))
+                    {
+                        for(auto const & j : i.particles)
+                        {
+                            if(fpcut(j) && (j.match_ids.size() > 0 || !is_mc))
+                                var.push_back(fvar(i));
+                        }
+                    }
+                }
+                return var;
+            });
+        }
+        else if constexpr(std::is_same_v<VARTYPE, TTYPE>)
+        {
+            return ana::SpillMultiVar([fvar, fpcut, ficut](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
+            {
+                std::vector<double> var;
+                bool is_mc(sr->ndlp_true != 0);
+                std::map<caf::Proxy<int64_t>, const caf::Proxy<caf::SRInteractionTruthDLP> *> true_interactions;
+                for(auto const& i : sr->dlp_true)
+                {
+                    true_interactions.insert(std::make_pair(i.id, &i));
+                }
+                for(auto const& i : sr->dlp)
+                {
+                    if(ficut(i))
+                    {
+                        for(auto const & j : i.particles)
+                        {
+                            if(fpcut(j) && (j.match_ids.size() > 0 || !is_mc))
+                                var.push_back(i.match_ids.size() > 0 ? fvar(*true_interactions[i.match_ids[0]]) : PLACEHOLDERVALUE);
+                        }
+                    }
+                }
+                return var;
+            });
+        }
         else if constexpr(std::is_same_v<VARTYPE, TTYPEP>)
         {
             return ana::SpillMultiVar([fvar, fpcut, ficut](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
