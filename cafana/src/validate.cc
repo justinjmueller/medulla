@@ -105,7 +105,7 @@ int main(int argc, char * argv[])
 
         // ES01
         rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}, false));
-        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, {2, 2, 2, 2, 2}));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, {2, 2, 2, 2, 2}, false));
         write_event(rec, 1, 1, 1, pot, nevt, t);
 
         // ES02
