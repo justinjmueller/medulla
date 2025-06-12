@@ -279,21 +279,30 @@ int main(int argc, char * argv[])
          * but this does mean that we need to test scenarios where we ask for
          * truth information in the branches.
          * 
-         * - Condition #0: This represents a reco event that should be selected
-         *   and have valid reco branches (assuming no branch-specific NaN
-         *   cases are present).
+         * - DR00: This represents a reco interaction with both a truth cut and
+         *   the usual selection cut placed. The interaction should pass the
+         *   normal selection cut, and the fact that the sample is labeled as
+         *   data should bypass the truth cut. Thus, this should have a valid
+         *   reco-var.
          * 
-         * - Condition #1: This represents a reco event that should be selected
-         *   but have NaN values for the truth branches. This can occur when
-         *   the user writes selection that writes true/reco pairs of
-         *   information to be applied equally to simulation and data (a common
-         *   design pattern in the framework).
+         * - DR01: This represents a reco interaction with both a truth cut and
+         *   the usual selection cut placed. The interaction should pass the
+         *   normal selection cut, and the fact that the sample is labeled as
+         *   data should bypass the truth cut. Thus, this should have a NaN
+         *   truth-var.
          * 
-         * - Condition #2: This represents a reco event that should not be
-         *   selected. This is a negative condition that checks if the
-         *   framework correctly ignores events that do not match the
-         *   selection criteria.
-         *   
+         * - DR02: This represents a reco interaction with both a truth cut and
+         *   the usual selection cut placed. The interaction should not pass
+         *   the normal selection cut, and therefore should not pass the
+         *   selection.
+         * 
+         * - DR03: This represents a reco interaction with no truth cut and the
+         *   usual selection cut placed. The interaction should pass the normal
+         *   selection cut, and therefore should have a valid reco-var.
+         * 
+         * - DR04: This represents a reco interaction with no truth cut and the
+         *   usual selection cut placed. The interaction should pass the normal
+         *   selection cut, and therefore should have a NaN truth-var.  
          */
         std::cout << "\n\033[1mData-like events with mode == 'reco' \033[0m" << std::endl;
 
@@ -302,9 +311,12 @@ int main(int argc, char * argv[])
         
         // Expected results for validation.
         conditions = {
-            {"Condition #0", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
-            {"Condition #1", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"true_vertex_x", kNaN}}},
-            {"!Condition #2", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
+            {"DR00", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
+            {"DR01", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"true_vertex_x", kNaN}}},
+            {"!DR02", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
+            {"DR03", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
+            {"DR04", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"true_vertex_x", kNaN}}},
+            {"!DR05", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
         };
 
         // Check if each condition_t entry is present in the rows vector.
