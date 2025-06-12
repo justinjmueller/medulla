@@ -107,6 +107,7 @@ template<typename T, typename U>
 void pair(T & left, U & right)
 {
     left.match_ids.push_back(right.id);
+    right.match_ids.push_back(left.id);
 }
 
 // Set the event metadata.

@@ -58,38 +58,65 @@ int main(int argc, char * argv[])
     // and functionality.
     if(mode == "--generate")
     {
+        // Common variables for both simulation-like and data-like events.
+        TH1F * pot, * nevt;
+        TTree * t;
+        caf::StandardRecord * rec;
+
+        /**
+         * @brief Generate some basic "simulation-like" events for the
+         * validation.
+         * @details These events are used to test the framework's response
+         * to the "simulation-like" events, which mimic the structure of
+         * simulated events. The events are structured to test various logic
+         * paths in the framework, including cases where interactions are not
+         * matched (truth <--> reco) and cases where the interactions do
+         * actually have matches. Additionally, the proxy for "is the event
+         * selected" is the presence of a valid flash match.
+         * 
+         * - ES00: This represents the case where a reco interaction and a
+         *   truth interaction are present, but are not matched. Both have
+         *   valid flash matches, so they are selected.
+         * 
+         * - ES01: This represents the case where a reco interaction and a
+         *   truth interaction are present, but are not matched. Both have
+         *   no valid flash matches, so they are not selected.
+         * 
+         * - ES02: This represents the case where a reco interaction and a
+         *   truth interaction are present, and they are matched. Both have
+         *   valid flash matches, so they are selected.
+         * 
+         * - ES03: This represents the case where a reco interaction and a
+         *   truth interaction are present, and they are matched. Both have
+         *   no valid flash matches, so they are not selected.
+         */
+        // Open the file and initialize everything.
         TFile sim("validation_simlike.root", "RECREATE");
-
-        TH1F * pot = new TH1F("TotalPOT", "TotalPOT", 1, 0, 1);
-        TH1F * nevt = new TH1F("TotalEvents", "TotalEvents", 1, 0, 1);
-
-        TTree * t = new TTree("recTree", "Standard Record Tree");
-
-        caf::StandardRecord * rec = new caf::StandardRecord();
+        pot = new TH1F("TotalPOT", "TotalPOT", 1, 0, 1);
+        nevt = new TH1F("TotalEvents", "TotalEvents", 1, 0, 1);
+        t = new TTree("recTree", "Standard Record Tree");
+        rec = new caf::StandardRecord();
         t->Branch("rec", &rec);
 
-        // Basic interaction with particles (No interaction matches).
+        // ES00
         rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}));
         rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, {2, 2, 2, 2, 2}));
         write_event(rec, 1, 1, 0, pot, nevt, t);
 
-        // Basic interaction with particles (No interaction matches and
-        // no valid flash match for the reco interaction).
+        // ES01
         rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}, false));
         rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, {2, 2, 2, 2, 2}));
         write_event(rec, 1, 1, 1, pot, nevt, t);
 
-        // Basic interaction with particles (Reco -> True match only).
+        // ES02
         rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}));
         rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, {2, 2, 2, 2, 2}));
         pair(rec->dlp[0], rec->dlp_true[0]);
         write_event(rec, 1, 1, 2, pot, nevt, t);        
 
-        // Basic interaction with particles (Reco -> True match only and
-        // no valid flash match for the reco interaction).
+        // ES03
         rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}, false));
-        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, {2, 2, 2, 2, 2}));
-
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, {2, 2, 2, 2, 2}, false));
         pair(rec->dlp[0], rec->dlp_true[0]);
         write_event(rec, 1, 1, 3, pot, nevt, t);
 
@@ -102,21 +129,34 @@ int main(int argc, char * argv[])
         // Clean up the allocated memory.
         delete rec;
 
+        /**
+         * @brief Generate some basic "data-like" events for the validation.
+         * @details These events are used to test the framework's response to
+         * the "data-like" events, which mimic the structure of reconstructed
+         * events in data. These events have no truth information, but this
+         * does mean that we need to test scenarios where we ask for truth
+         * information in the branches (as one might do when reusing the same
+         * selection logic for both simulation and data).
+         * 
+         * - ED00: This represents a reco interaction with a valid flash match,
+         *   which should be selected.
+         * 
+         * - ED01: This represents a reco interaction with no valid flash match,
+         *   which should not be selected.
+         */
+        // Open the file and initialize everything.
         TFile data("validation_datalike.root", "RECREATE");
-
         pot = new TH1F("TotalPOT", "TotalPOT", 1, 0, 1);
         nevt = new TH1F("TotalEvents", "TotalEvents", 1, 0, 1);
-
         t = new TTree("recTree", "Standard Record Tree");
-
         rec = new caf::StandardRecord();
         t->Branch("rec", &rec);
 
-        // Basic interaction with particles (No interaction matches).
+        // ED00
         rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}));
         write_event(rec, 1, 1, 0, pot, nevt, t);
 
-        // Basic interaction with particles (No valid flash match for the reco).
+        // ED01
         rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}, false));
         write_event(rec, 1, 1, 1, pot, nevt, t);
 
