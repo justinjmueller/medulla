@@ -78,6 +78,9 @@ target_link_libraries(common INTERFACE
     CAFAnaExtrap
     CAFAnaExperiment
     CAFAnaAnalysis
+    SBNAnaCuts
+    shared
+    framework
 )
 
 target_compile_features(common INTERFACE cxx_std_17)
@@ -89,16 +92,6 @@ target_include_directories(main PRIVATE . include/ ${SBNANA_INC} ${SBNANAOBJ_INC
 add_executable(validate src/validate.cc)
 target_link_libraries(validate PRIVATE test common sbnanaobj_StandardRecord)
 target_include_directories(validate PRIVATE include/ ${SBNANA_INC} ${SBNANAOBJ_INC} ${SRPROXY_INC})
-
-add_executable(example example.cc)
-target_link_libraries(example PRIVATE common)
-
-add_executable(muon2024 muon2024.cc)
-target_link_libraries(muon2024 PRIVATE common)
-
-add_executable(spine_benchmark spine_benchmark.cc)
-target_link_libraries(spine_benchmark PRIVATE common)
-
 
 option(BUILD_DOCS "Build documentation" OFF)
 

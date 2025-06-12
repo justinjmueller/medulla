@@ -15,7 +15,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 add_subdirectory(shared)
 
 # Subprojects
-add_subdirectory(cafana)
+add_subdirectory(selection)
 add_subdirectory(systematics)
 
 # Docs (optional)
