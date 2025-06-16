@@ -280,6 +280,44 @@ class Systematic:
         
         return new_systematic
 
+    @staticmethod
+    def transform_as(cov, param):
+        """
+        Apply a scale correction to the covariance matrix. This is
+        intended to be used when the covariance matrix is meant to be
+        rescaled to a different exposure, or for the case where the
+        spectrum is being area normalized. The former case is realized
+        by a "simple" scale correction (i.e. the covariance matrix is
+        multiplied by the square of the scale). The latter case is
+        realized by a "normalized" scale correction (i.e. the
+        covariance matrix is properly transformed to account for how
+        the area normalization impacts the covariance matrix).
+
+        Parameters
+        ----------
+        cov : numpy.ndarray
+            The covariance matrix to transform.
+        param : float or np.ndarray
+            The parameter to use for the transformation. For a "simple"
+            scale correction, this is a float. For a "normalized" scale
+            correction, this is a numpy array with the same shape as
+            `cov` and containing the bin contents of the histogram.
+        
+        Returns
+        -------
+        numpy.ndarray
+            The transformed covariance matrix.
+        """
+        if np.isscalar(param):
+            return cov * param**2
+
+        else:
+            A = np.sum(param)
+            y = param.reshape(-1, 1)
+            delta = np.eye(len(y))
+            jacobian = (delta * A - y) / A**2
+            return jacobian @ cov @ jacobian.T
+
     def __repr__(self):
         s = f'--Systematic({self._name}, {self._label})--'
         s += f'\n\tFractional uncertainty: {self._std:.2%}'
