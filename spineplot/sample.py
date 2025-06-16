@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import re
+import uproot
 
 from systematic import Systematic
 
@@ -250,7 +251,7 @@ class Sample:
         # combine.
         for recipe in recipes:
             regxp = re.compile(recipe['pattern'])
-            systematics = [syst for syst in self._systematics.values() if regxp.match(syst._name)]
+            systematics = [syst for k, syst in self._systematics.items() if regxp.match(k)]
 
             # If there are no systematics to combine, skip the recipe.
             if len(systematics) == 0:
