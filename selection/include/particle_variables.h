@@ -219,7 +219,10 @@ namespace pvars
     template<class T>
     double csda_ke(const T & p)
     {
-        return p.csda_ke_per_pid[PIDFUNC(p)];
+        double pidx(PIDFUNC(p));
+        if(pidx < 0 || std::isinf(p.csda_ke_per_pid[pidx]))
+            return PLACEHOLDERVALUE;
+        return p.csda_ke_per_pid[pidx];
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, csda_ke, csda_ke);
 
@@ -235,7 +238,8 @@ namespace pvars
     template<class T>
     double mcs_ke(const T & p)
     {
-        return p.mcs_ke_per_pid[PIDFUNC(p)];
+        size_t pidx(PIDFUNC(p));
+        return std::isinf(p.mcs_ke_per_pid[pidx]) ? PLACEHOLDERVALUE : (double)p.mcs_ke_per_pid[pidx];
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, mcs_ke, mcs_ke);
 
@@ -495,8 +499,7 @@ namespace pvars
     template<class T>
     double end_x(const T & p)
     {
-        // If the particle is a shower, the end point is not defined.
-        return (pid(p) < 2 ? PLACEHOLDERVALUE : (double)p.end_point[0]);
+        return std::isinf(p.end_point[0]) ? PLACEHOLDERVALUE : (double)p.end_point[0];
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, end_x, end_x);
 
@@ -510,8 +513,7 @@ namespace pvars
     template<class T>
     double end_y(const T & p)
     {
-        // If the particle is a shower, the end point is not defined.
-        return (pid(p) < 2 ? PLACEHOLDERVALUE : (double)p.end_point[1]);
+        return std::isinf(p.end_point[1]) ? PLACEHOLDERVALUE : (double)p.end_point[1];
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, end_y, end_y);
     
@@ -525,8 +527,7 @@ namespace pvars
     template<class T>
     double end_z(const T & p)
     {
-        // If the particle is a shower, the end point is not defined.
-        return (pid(p) < 2 ? PLACEHOLDERVALUE : (double)p.end_point[2]);
+        return std::isinf(p.end_point[2]) ? PLACEHOLDERVALUE : (double)p.end_point[2];
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, end_z, end_z);
 
