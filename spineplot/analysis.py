@@ -8,6 +8,7 @@ from figure import SpineFigure, SimpleFigure
 from spectra1d import SpineSpectra1D
 from spectra2d import SpineSpectra2D
 from efficiency import SpineEfficiency
+from confusion import ConfusionMatrix
 from roc import ROCCurve
 from ternary import Ternary
 from style import Style
@@ -157,6 +158,21 @@ class Analysis:
                             art = SpineEfficiency(self._variables[x['variable']], restrict_categories,
                                                   x['cuts'], x.get('title', None), x.get('xrange', None),
                                                   x.get('xtitle', None), show_option, npts)
+                            self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
+                            self._artists.append(art)
+
+                        elif x['type'] == 'ConfusionMatrix':
+                            # Check if the true and predicted labels are present in all samples
+                            if not all([self._variables[x['true_labels']]._validity_check.values(),
+                                        self._variables[x['predicted_labels']]._validity_check.values()]):
+                                missing_samples = [k for k, v in self._variables[x['true_labels']]._validity_check.items() if not v] + \
+                                                  [k for k, v in self._variables[x['predicted_labels']]._validity_check.items() if not v]
+                                raise ConfigException(f"Variable '{x['true_labels']}' or '{x['predicted_labels']}' not found in all samples ({' '.join(missing_samples)}).")
+                            
+                            # Create the artist
+                            kwargs = {k : v for k, v in x.items() if k not in ['type', 'true_labels', 'predicted_labels', 'groups', 'draw_kwargs']}
+                            art = ConfusionMatrix(restrict_categories, self._variables[x['true_labels']],
+                                                  self._variables[x['predicted_labels']], **kwargs)
                             self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
                             self._artists.append(art)
 
