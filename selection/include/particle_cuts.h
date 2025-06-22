@@ -57,11 +57,8 @@ namespace pcuts
      * @return true if the particle is contained.
      */
     template<class T>
-    bool contained(const T & p)
-    {
-        return p.is_contained == 1;
-    }
-    REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, contained, contained);
+    bool containment_cut(const T & p) { return p.is_contained == 1; }
+    REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, containment_cut, containment_cut);
 
     /**
      * @brief Check if the particle meets final state signal requirements.

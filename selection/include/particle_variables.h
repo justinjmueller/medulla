@@ -160,6 +160,19 @@ namespace pvars
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, iou, iou);
 
     /**
+     * @brief Variable for the containment status of the particle.
+     * @details The containment status is determined upstream in the SPINE
+     * reconstruction and is based on the set of all points in the particle,
+     * which must be contained within the volume of the TPC that created them.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the containment status of the particle.
+     */
+    template<class T>
+    double containment(const T & p) { return p.is_contained; }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, containment, containment);
+
+    /**
      * @brief Variable for the mass of the particle.
      * @details The mass of the particle is determined by the PID of the
      * particle. This couples the PID to the mass of the particle, so it is

@@ -100,7 +100,7 @@ namespace vars
      * @return the containment status of the interaction.
      */
     template<class T>
-    double containment(const T & obj) { return obj.is_contained; }
+    double containment(const T & obj) { return cuts::containment_cut(obj); }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, containment, containment);
 
     /**
@@ -110,7 +110,7 @@ namespace vars
      * the fiducial volume of the TPC.
      */
     template<class T>
-    double fiducial(const T & obj) { return obj.is_fiducial; }
+    double fiducial(const T & obj) { return cuts::fiducial_cut(obj); }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, fiducial, fiducial);
 
     /**
