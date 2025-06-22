@@ -14,6 +14,7 @@
 
 #include <vector>
 
+#include "framework.h"
 #include "include/particle_variables.h"
 #include "include/particle_cuts.h"
 
@@ -70,7 +71,7 @@ namespace utilities
             for(size_t i(0); i < obj.particles.size(); ++i)
             {
                 const auto & p = obj.particles[i];
-                double energy(p.csda_ke);
+                double energy(pvars::ke(p));
                 if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
                     energy = pvars::ke(p);
                 if(PIDFUNC(p) == pid && energy > leading_ke)
@@ -92,10 +93,11 @@ namespace utilities
      * @return the index of the leading muon (highest KE).
      */
     template<class T>
-        size_t leading_muon_index(const T & obj)
-        {
-            return leading_particle_index(obj, 2);
-        }
+    size_t leading_muon_index(const T & obj)
+    {
+        return leading_particle_index(obj, 2);
+    }
+    REGISTER_SELECTOR(leading_muon_index, leading_muon_index);
     
     /**
      * @brief Finds the index corresponding to the leading proton.
