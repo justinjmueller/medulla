@@ -409,8 +409,7 @@ ana::SpillMultiVar spill_multivar_helper(
                 {
                     if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))))
                     {
-                        int64_t nu_id = sr->dlp_true[match_id].nu_id;
-                        values.push_back(nu_id >= 0 ? var(sr->mc.nu[nu_id]) : kNoMatchValue);
+                        values.push_back(i.nu_id >= 0 ? var(sr->mc.nu[i.nu_id]) : kNoMatchValue);
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, TParticleType> || std::is_same_v<VarOn, RParticleType>)
