@@ -103,6 +103,20 @@ template<typename T, typename U>
 void pair(T & left, U & right);
 
 /**
+ * @brief Mark the particles as contained.
+ * @details This function marks all particles in the interaction as
+ * contained, which is used to create a set of "passing" particles (w.r.t.
+ * containment) in the interaction.
+ * @param reco_interaction The interaction to mark the particles as contained.
+ * @param true_interaction The true interaction to mark the particles as contained.
+ * @return void
+ * @note The true interaction may be null, in which case only the
+ * reco_interaction is marked as contained.
+ */
+void mark_contained(caf::SRInteractionDLP * reco_interaction,
+                    caf::SRInteractionTruthDLP * true_interaction = nullptr);
+
+/**
  * @brief Set the event metadata in the StandardRecord header.
  * @details This function sets the run, subrun, and event number for the
  * StandardRecord header in the test, along with the exposure information

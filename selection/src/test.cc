@@ -61,11 +61,16 @@ T generate_particle(int64_t id, int64_t pid)
     particle.id = id;
     particle.interaction_id = 0;
     particle.is_primary = true;
+    particle.is_contained = false;
     particle.pid = pid;
     particle.ke = ENERGY_SCALE;
-    particle.csda_ke = ENERGY_SCALE + 1.0;
-    particle.mcs_ke = ENERGY_SCALE + 2.0;
-    particle.calo_ke = ENERGY_SCALE + 3.0;
+    particle.csda_ke = ENERGY_SCALE;
+    particle.mcs_ke = ENERGY_SCALE;
+    particle.calo_ke = ENERGY_SCALE;
+    particle.mass = 0.0;
+
+    if constexpr (std::is_same_v<T, caf::SRParticleTruthDLP>)
+        particle.energy_init = ENERGY_SCALE;
 
     return particle;
 }
@@ -108,6 +113,23 @@ void pair(T & left, U & right)
 {
     left.match_ids.push_back(right.id);
     right.match_ids.push_back(left.id);
+}
+
+// Mark the particles as contained.
+void mark_contained(caf::SRInteractionDLP * reco_interaction,
+                    caf::SRInteractionTruthDLP * true_interaction)
+{
+    for(auto & p : reco_interaction->particles)
+    {
+        p.is_contained = true;
+    }
+    if(true_interaction)
+    {
+        for(auto & p : true_interaction->particles)
+        {
+            p.is_contained = true;
+        }
+    }
 }
 
 // Set the event metadata.
@@ -280,3 +302,5 @@ template caf::SRInteractionDLP generate_interaction<caf::SRInteractionDLP>(int64
 template caf::SRInteractionTruthDLP generate_interaction<caf::SRInteractionTruthDLP>(int64_t, int64_t, multiplicity_t, bool);
 template void pair<caf::SRInteractionDLP, caf::SRInteractionTruthDLP>(caf::SRInteractionDLP &, caf::SRInteractionTruthDLP &);
 template void pair<caf::SRInteractionTruthDLP, caf::SRInteractionDLP>(caf::SRInteractionTruthDLP &, caf::SRInteractionDLP &);
+template void pair<caf::SRParticleDLP, caf::SRParticleTruthDLP>(caf::SRParticleDLP &, caf::SRParticleTruthDLP &);
+template void pair<caf::SRParticleTruthDLP, caf::SRParticleDLP>(caf::SRParticleTruthDLP &, caf::SRParticleDLP &);

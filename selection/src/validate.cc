@@ -98,27 +98,112 @@ int main(int argc, char * argv[])
         rec = new caf::StandardRecord();
         t->Branch("rec", &rec);
 
-        // ES00
-        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}));
-        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, {2, 2, 2, 2, 2}));
+        // Default multiplicity for the final state particles (1 photon)
+        const multiplicity_t fs = {1, 0, 0, 0, 0}; 
+
+        // ES00A
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs));
+        write_event(rec, 1, 0, 0, pot, nevt, t);
+
+        // ES00B
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs));
+        mark_contained(&rec->dlp[0], &rec->dlp_true[0]);
         write_event(rec, 1, 1, 0, pot, nevt, t);
 
-        // ES01
-        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}, false));
-        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, {2, 2, 2, 2, 2}, false));
+        // ES00C
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs));
+        pair(rec->dlp[0].particles[0], rec->dlp_true[0].particles[0]);
+        write_event(rec, 1, 2, 0, pot, nevt, t);
+
+        // ES00D
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs));
+        pair(rec->dlp[0].particles[0], rec->dlp_true[0].particles[0]);
+        mark_contained(&rec->dlp[0], &rec->dlp_true[0]);
+        write_event(rec, 1, 3, 0, pot, nevt, t);
+
+        // ES01A
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs, false));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs, false));
+        write_event(rec, 1, 0, 1, pot, nevt, t);
+
+        // ES01B
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs, false));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs, false));
+        mark_contained(&rec->dlp[0], &rec->dlp_true[0]);
         write_event(rec, 1, 1, 1, pot, nevt, t);
 
-        // ES02
-        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}));
-        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, {2, 2, 2, 2, 2}));
-        pair(rec->dlp[0], rec->dlp_true[0]);
-        write_event(rec, 1, 1, 2, pot, nevt, t);        
+        // ES01C
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs, false));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs, false));
+        pair(rec->dlp[0].particles[0], rec->dlp_true[0].particles[0]);
+        write_event(rec, 1, 2, 1, pot, nevt, t);
 
-        // ES03
-        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}, false));
-        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, {2, 2, 2, 2, 2}, false));
+        // ES01D
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs, false));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs, false));
+        pair(rec->dlp[0].particles[0], rec->dlp_true[0].particles[0]);
+        mark_contained(&rec->dlp[0], &rec->dlp_true[0]);
+        write_event(rec, 1, 3, 1, pot, nevt, t);
+
+        // ES02A
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs));
         pair(rec->dlp[0], rec->dlp_true[0]);
+        write_event(rec, 1, 0, 2, pot, nevt, t);
+
+        // ES02B
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs));
+        pair(rec->dlp[0], rec->dlp_true[0]);
+        mark_contained(&rec->dlp[0], &rec->dlp_true[0]);
+        write_event(rec, 1, 1, 2, pot, nevt, t);
+
+        // ES02C
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs));
+        pair(rec->dlp[0], rec->dlp_true[0]);
+        pair(rec->dlp[0].particles[0], rec->dlp_true[0].particles[0]);
+        write_event(rec, 1, 2, 2, pot, nevt, t);
+
+        // ES02D
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs));
+        pair(rec->dlp[0], rec->dlp_true[0]);
+        pair(rec->dlp[0].particles[0], rec->dlp_true[0].particles[0]);
+        mark_contained(&rec->dlp[0], &rec->dlp_true[0]);
+        write_event(rec, 1, 3, 2, pot, nevt, t);
+
+        // ES03A
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs, false));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs, false));
+        pair(rec->dlp[0], rec->dlp_true[0]);
+        write_event(rec, 1, 0, 3, pot, nevt, t);
+
+        // ES03B
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs, false));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs, false));
+        pair(rec->dlp[0], rec->dlp_true[0]);
+        mark_contained(&rec->dlp[0], &rec->dlp_true[0]);
         write_event(rec, 1, 1, 3, pot, nevt, t);
+        
+        // ES03C
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs, false));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs, false));
+        pair(rec->dlp[0], rec->dlp_true[0]);
+        pair(rec->dlp[0].particles[0], rec->dlp_true[0].particles[0]);
+        write_event(rec, 1, 2, 3, pot, nevt, t);
+        
+        // ES03D
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs, false));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs, false));
+        pair(rec->dlp[0], rec->dlp_true[0]);
+        pair(rec->dlp[0].particles[0], rec->dlp_true[0].particles[0]);
+        mark_contained(&rec->dlp[0], &rec->dlp_true[0]);
+        write_event(rec, 1, 3, 3, pot, nevt, t);
 
         // Write the tree and histograms to the file.
         t->Write();
@@ -152,12 +237,22 @@ int main(int argc, char * argv[])
         rec = new caf::StandardRecord();
         t->Branch("rec", &rec);
 
-        // ED00
-        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}));
+        // ED00A
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs));
+        write_event(rec, 1, 0, 0, pot, nevt, t);
+
+        // ED00B
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs));
+        mark_contained(&rec->dlp[0]);
         write_event(rec, 1, 1, 0, pot, nevt, t);
 
-        // ED01
-        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {2, 2, 2, 2, 2}, false));
+        // ED01A
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs, false));
+        write_event(rec, 1, 0, 1, pot, nevt, t);
+
+        // ED01B
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs, false));
+        mark_contained(&rec->dlp[0]);
         write_event(rec, 1, 1, 1, pot, nevt, t);
 
         // Write the tree and histograms to the file.
@@ -244,12 +339,12 @@ int main(int argc, char * argv[])
 
         // Expected results for validation.
         std::vector<condition_t> conditions = {
-            {"SR02", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
-            {"SR03", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"true_vertex_x", kNaN}}},
-            {"!SR04", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
-            {"SR08", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"reco_vertex_x", -210.0}}},
-            {"SR09", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"true_vertex_x", -210.0}}},
-            {"!SR10", {{"Run", 1}, {"Subrun", 1}, {"Evt", 3}}},
+            {"SR02", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
+            {"SR03", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}, {"true_vertex_x", kNaN}}},
+            {"!SR04", {{"Run", 1}, {"Subrun", 0}, {"Evt", 1}}},
+            {"SR08", {{"Run", 1}, {"Subrun", 0}, {"Evt", 2}, {"reco_vertex_x", -210.0}}},
+            {"SR09", {{"Run", 1}, {"Subrun", 0}, {"Evt", 2}, {"true_vertex_x", -210.0}}},
+            {"!SR10", {{"Run", 1}, {"Subrun", 0}, {"Evt", 3}}},
         };
 
         // Check if each condition_t entry is present in the rows vector.
@@ -260,11 +355,11 @@ int main(int argc, char * argv[])
 
         // Expected results for validation.
         conditions = {
-            {"!SR00", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}}},
-            {"!SR01", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
-            {"SR05", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"reco_vertex_x", -210.0}}},
-            {"SR06", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"true_vertex_x", -210.0}}},
-            {"!SR07", {{"Run", 1}, {"Subrun", 1}, {"Evt", 3}}},
+            {"!SR00", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}}},
+            {"!SR01", {{"Run", 1}, {"Subrun", 0}, {"Evt", 1}}},
+            {"SR05", {{"Run", 1}, {"Subrun", 0}, {"Evt", 2}, {"reco_vertex_x", -210.0}}},
+            {"SR06", {{"Run", 1}, {"Subrun", 0}, {"Evt", 2}, {"true_vertex_x", -210.0}}},
+            {"!SR07", {{"Run", 1}, {"Subrun", 0}, {"Evt", 3}}},
         };
 
         // Check if each condition_t entry is present in the rows vector.
@@ -330,12 +425,12 @@ int main(int argc, char * argv[])
         
         // Expected results for validation.
         conditions = {
-            {"ST02", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"true_vertex_x", -210.0}}},
-            {"ST03", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_vertex_x", kNaN}}},
-            {"!ST04", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
-            {"ST08", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"true_vertex_x", -210.0}}},
-            {"ST09", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"reco_vertex_x", -210.0}}},
-            {"!ST10", {{"Run", 1}, {"Subrun", 1}, {"Evt", 3}}},
+            {"ST02", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}, {"true_vertex_x", -210.0}}},
+            {"ST03", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}, {"reco_vertex_x", kNaN}}},
+            {"!ST04", {{"Run", 1}, {"Subrun", 0}, {"Evt", 1}}},
+            {"ST08", {{"Run", 1}, {"Subrun", 0}, {"Evt", 2}, {"true_vertex_x", -210.0}}},
+            {"ST09", {{"Run", 1}, {"Subrun", 0}, {"Evt", 2}, {"reco_vertex_x", -210.0}}},
+            {"!ST10", {{"Run", 1}, {"Subrun", 0}, {"Evt", 3}}},
         };
 
         // Check if each condition_t entry is present in the rows vector.
@@ -346,11 +441,11 @@ int main(int argc, char * argv[])
 
         // Expected results for validation.
         conditions = {
-            {"!ST00", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}}},
-            {"!ST01", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
-            {"ST05", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"true_vertex_x", -210.0}}},
-            {"ST06", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"reco_vertex_x", -210.0}}},
-            {"!ST07", {{"Run", 1}, {"Subrun", 1}, {"Evt", 3}}},
+            {"!ST00", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}}},
+            {"!ST01", {{"Run", 1}, {"Subrun", 0}, {"Evt", 1}}},
+            {"ST05", {{"Run", 1}, {"Subrun", 0}, {"Evt", 2}, {"true_vertex_x", -210.0}}},
+            {"ST06", {{"Run", 1}, {"Subrun", 0}, {"Evt", 2}, {"reco_vertex_x", -210.0}}},
+            {"!ST07", {{"Run", 1}, {"Subrun", 0}, {"Evt", 3}}},
         };
 
         // Check if each condition_t entry is present in the rows vector.
@@ -397,12 +492,312 @@ int main(int argc, char * argv[])
         
         // Expected results for validation.
         conditions = {
-            {"DR00", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
-            {"DR01", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"true_vertex_x", kNaN}}},
-            {"!DR02", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
-            {"DR03", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
-            {"DR04", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"true_vertex_x", kNaN}}},
-            {"!DR05", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
+            {"DR00", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
+            {"DR01", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}, {"true_vertex_x", kNaN}}},
+            {"!DR02", {{"Run", 1}, {"Subrun", 0}, {"Evt", 1}}},
+            {"DR03", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
+            {"DR04", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}, {"true_vertex_x", kNaN}}},
+            {"!DR05", {{"Run", 1}, {"Subrun", 0}, {"Evt", 1}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        match_conditions(rows, conditions);
+
+        /**
+         * @brief The fourth set of events to validate is the "sim-like" events
+         * and the response of the framework when run over them in "reco" mode
+         * with particle-level variables.
+         * @details This set of events effectively tests the framework's
+         * behavior when run in a mode where the selection logic is applied
+         * to the particles of the interactions, rather than the interactions
+         * themselves. Effectively, the framework implements an additional
+         * nested loop over the particles (of the same type) for each
+         * interaction, and applies some selection logic that is similar to the
+         * one used for the interactions.
+         * 
+         * - SPR00: This represents a reco interaction with no valid truth match
+         *   under no additional truth cut that would otherwise not pass the
+         *   reco-selection. Furthermore, the particle in this interaction has
+         *   no truth match and does not pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR01: This represents a reco interaction with no valid truth match
+         *   under no additional truth cut that would otherwise not pass the
+         *   reco-selection. Furthermore, the particle in this interaction has
+         *   no truth match and does pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR02: This represents a reco interaction with no valid truth match
+         *   under no additional truth cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has no
+         *   truth match and does not pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR03: This represents a reco interaction with no valid truth match
+         *   under no additional truth cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has no
+         *   truth match and does pass the reco cut. Passes the selection with
+         *   a valid reco-var.
+         * 
+         * - SPR04: This represents a reco interaction with no valid truth match
+         *   under no additional truth cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has no
+         *   truth match and does pass the reco cut. Passes the selection with
+         *   a NaN truth-var.
+         * 
+         * - SPR05: This represents a reco interaction with no valid truth match
+         *   under an additional truth cut that would otherwise not pass the
+         *   reco-selection. Furthermore, the particle in this interaction has
+         *   no truth match and does not pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR06: This represents a reco interaction with no valid truth match
+         *   under an additional truth cut that would otherwise not pass the
+         *   reco-selection. Furthermore, the particle in this interaction has
+         *   no truth match and does pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR07: This represents a reco interaction with no valid truth match
+         *   under an additional truth cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has no
+         *   truth match and does not pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR08: This represents a reco interaction with no valid truth match
+         *   under an additional truth cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has no
+         *   truth match and does pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR09: This represents a reco interaction with no valid truth match
+         *   under no additional truth cut that would otherwise not pass the
+         *   reco-selection. Furthermore, the particle in this interaction has a
+         *   truth match and does not pass the reco cut. Does not pass the
+         *   selection.
+         *  
+         * - SPR10: This represents a reco interaction with no valid truth match
+         *   under no additional truth cut that would otherwise not pass the
+         *   reco-selection. Furthermore, the particle in this interaction has a
+         *   truth match and does pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR11: This represents a reco interaction with no valid truth match
+         *   under no additional truth cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has a
+         *   truth match and does not pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR12: This represents a reco interaction with no valid truth match
+         *   under no additional truth cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has a
+         *   truth match and does pass the reco cut. Passes the selection with
+         *   a valid reco-var.
+         * 
+         * - SPR13: This represents a reco interaction with no valid truth match
+         *   under no additional truth cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has a
+         *   truth match and does pass the reco cut. Passes the selection with
+         *   a valid truth-var.
+         * 
+         * - SPR14: This represents a reco interaction with no valid truth match
+         *   under an additional truth cut that would otherwise not pass the
+         *   reco-selection. Furthermore, the particle in this interaction has a
+         *   truth match and does not pass the reco cut. Does not pass the
+         *   selection.
+         *  
+         * - SPR15: This represents a reco interaction with no valid truth match
+         *   under an additional truth cut that would otherwise not pass the
+         *   reco-selection. Furthermore, the particle in this interaction has a
+         *   truth match and does pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR16: This represents a reco interaction with no valid truth match
+         *   under an additional truth cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has a
+         *   truth match and does not pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR17: This represents a reco interaction with no valid truth match
+         *   under an additional truth cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has a
+         *   truth match and does pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR18: This represents a reco interaction with a valid truth match
+         *   under no additional truth cut and that does not pass the reco-
+         *   selection. Furthermore, the particle in this interaction has no
+         *   truth match and does not pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR19: This represents a reco interaction with a valid truth match
+         *   under no additional truth cut and that does not pass the reco-
+         *   selection. Furthermore, the particle in this interaction has no
+         *   truth match and does pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR20: This represents a reco interaction with a valid truth match
+         *   under no additional truth cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has no
+         *   truth match and does not pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR21: This represents a reco interaction with a valid truth match
+         *   under no additional truth cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has no
+         *   truth match and does pass the reco cut. Passes the selection with
+         *   a valid reco-var.
+         * 
+         * - SPR22: This represents a reco interaction with a valid truth match
+         *   under no additional truth cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has no
+         *   truth match and does pass the reco cut. Passes the selection with
+         *   a NaN truth-var.
+         * 
+         * - SPR23: This represents a reco interaction with a valid truth match
+         *   under an additional truth cut and that does not pass the reco-
+         *   selection. Furthermore, the particle in this interaction has no
+         *   truth match and does not pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR24: This represents a reco interaction with a valid truth match
+         *   under an additional truth cut and that does not pass the reco-
+         *   selection. Furthermore, the particle in this interaction has no
+         *   truth match and does pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR25: This represents a reco interaction with a valid truth match
+         *   under an additional truth cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has no
+         *   truth match and does not pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR26: This represents a reco interaction with a valid truth match
+         *   under an additional truth cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has no
+         *   truth match and does pass the reco cut. Passes the selection with
+         *   a valid reco-var.
+         * 
+         * - SPR27: This represents a reco interaction with a valid truth match
+         *   under an additional truth cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has no
+         *   truth match and does pass the reco cut. Passes the selection with
+         *   a NaN truth-var.
+         * 
+         * - SPR28: This represents a reco interaction with a valid truth match
+         *   under no additional truth cut and that does not pass the reco-
+         *   selection. Furthermore, the particle in this interaction has a
+         *   truth match and does not pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR29: This represents a reco interaction with a valid truth match
+         *   under no additional truth cut and that does not pass the reco-
+         *   selection. Furthermore, the particle in this interaction has a
+         *   truth match and does pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR30: This represents a reco interaction with a valid truth match
+         *   under no additional truth cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has a
+         *   truth match and does not pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR31: This represents a reco interaction with a valid truth match
+         *   under no additional truth cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has a
+         *   truth match and does pass the reco cut. Passes the selection with
+         *   a valid reco-var.
+         * 
+         * - SPR32: This represents a reco interaction with a valid truth match
+         *   under no additional truth cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has a
+         *   truth match and does pass the reco cut. Passes the selection with
+         *   a valid truth-var.
+         * 
+         * - SPR33: This represents a reco interaction with a valid truth match
+         *   under an additional truth cut and that does not pass the reco-
+         *   selection. Furthermore, the particle in this interaction has a
+         *   truth match and does not pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR34: This represents a reco interaction with a valid truth match
+         *   under an additional truth cut and that does not pass the reco-
+         *   selection. Furthermore, the particle in this interaction has a
+         *   truth match and does pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR35: This represents a reco interaction with a valid truth match
+         *   under an additional truth cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has a
+         *   truth match and does not pass the reco cut. Does not pass the
+         *   selection.
+         * 
+         * - SPR36: This represents a reco interaction with a valid truth match
+         *   under an additional truth cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has a
+         *   truth match and does pass the reco cut. Passes the selection with
+         *   a valid reco-var.
+         * 
+         * - SPR37: This represents a reco interaction with a valid truth match
+         *   under an additional truth cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has a
+         *   truth match and does pass the reco cut. Passes the selection with
+         *   a valid truth-var.
+         */
+        std::cout << "\n\033[1mSimulation-like events with mode == 'reco' and particle-level variables \033[0m" << std::endl;
+        
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_simlike/test_reco_particles");
+
+        // Expected results for validation.
+        conditions = {
+            {"!SPR00", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}}},
+            {"!SPR01", {{"Run", 1}, {"Subrun", 0}, {"Evt", 1}}},
+            {"!SPR02", {{"Run", 1}, {"Subrun", 0}, {"Evt", 2}}},
+            {"SPR03", {{"Run", 1}, {"Subrun", 0}, {"Evt", 3}, {"reco_particle_ke", 200.0}}},
+            {"SPR04", {{"Run", 1}, {"Subrun", 0}, {"Evt", 3}, {"true_particle_ke", kNaN}}},
+            {"!SPR09", {{"Run", 1}, {"Subrun", 0}, {"Evt", 8}}},
+            {"!SPR10", {{"Run", 1}, {"Subrun", 0}, {"Evt", 9}}},
+            {"!SPR11", {{"Run", 1}, {"Subrun", 0}, {"Evt", 10}}},
+            {"SPR12", {{"Run", 1}, {"Subrun", 0}, {"Evt", 11}, {"reco_particle_ke", 200.0}}},
+            {"SPR13", {{"Run", 1}, {"Subrun", 0}, {"Evt", 11}, {"true_particle_ke", kNaN}}},
+            {"!SPR18", {{"Run", 1}, {"Subrun", 0}, {"Evt", 3}}},
+            {"!SPR19", {{"Run", 1}, {"Subrun", 1}, {"Evt", 3}}},
+            {"!SPR20", {{"Run", 1}, {"Subrun", 0}, {"Evt", 2}}},
+            {"SPR21", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"reco_particle_ke", 200.0}}},
+            {"SPR22", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"true_particle_ke", kNaN}}},
+            {"!SPR29", {{"Run", 1}, {"Subrun", 3}, {"Evt", 3}}},
+            {"!SPR30", {{"Run", 1}, {"Subrun", 2}, {"Evt", 2}}},
+            {"SPR31", {{"Run", 1}, {"Subrun", 3}, {"Evt", 2}, {"reco_particle_ke", 200.0}}},
+            {"SPR32", {{"Run", 1}, {"Subrun", 3}, {"Evt", 2}, {"true_particle_ke", 200.0}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        match_conditions(rows, conditions);
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_simlike/test_reco_particles_with_truth_cut");
+        
+        // Expected results for validation.
+        conditions = {
+            {"!SPR05", {{"Run", 1}, {"Subrun", 0}, {"Evt", 1}}},
+            {"!SPR06", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
+            {"!SPR07", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}}},
+            {"!SPR08", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}}},
+            {"!SPR14", {{"Run", 1}, {"Subrun", 2}, {"Evt", 1}}},
+            {"!SPR15", {{"Run", 1}, {"Subrun", 3}, {"Evt", 1}}},      
+            {"!SPR16", {{"Run", 1}, {"Subrun", 2}, {"Evt", 0}}},
+            {"!SPR17", {{"Run", 1}, {"Subrun", 3}, {"Evt", 0}}},
+            {"!SPR23", {{"Run", 1}, {"Subrun", 0}, {"Evt", 3}}},
+            {"!SPR24", {{"Run", 1}, {"Subrun", 1}, {"Evt", 3}}},
+            {"!SPR25", {{"Run", 1}, {"Subrun", 0}, {"Evt", 2}}},
+            {"SPR26", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"reco_particle_ke", 200.0}}},
+            {"SPR27", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"true_particle_ke", kNaN}}},
+            {"!SPR28", {{"Run", 1}, {"Subrun", 2}, {"Evt", 3}}},
+            {"!SPR33", {{"Run", 1}, {"Subrun", 2}, {"Evt", 3}}},
+            {"!SPR34", {{"Run", 1}, {"Subrun", 3}, {"Evt", 3}}},
+            {"!SPR35", {{"Run", 1}, {"Subrun", 2}, {"Evt", 2}}},
+            {"SPR36", {{"Run", 1}, {"Subrun", 3}, {"Evt", 2}, {"reco_particle_ke", 200.0}}},
+            {"SPR37", {{"Run", 1}, {"Subrun", 3}, {"Evt", 2}, {"true_particle_ke", 200.0}}},
         };
 
         // Check if each condition_t entry is present in the rows vector.

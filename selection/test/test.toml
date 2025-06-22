@@ -56,3 +56,26 @@ cut = [
 branch = [
     {name = "vertex_x", type = "both"},
 ]
+
+[[tree]]
+name = "test_reco_particles"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "valid_flashmatch", type = "reco"}
+]
+branch = [
+    {name = "ke", type = "both_particle"},
+]
+
+[[tree]]
+name = "test_reco_particles_with_truth_cut"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "valid_flashmatch", type = "reco"},
+    {name = "no_cut", type = "true"}
+]
+branch = [
+    {name = "ke", type = "both_particle"},
+]
