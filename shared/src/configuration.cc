@@ -14,7 +14,7 @@
 #include "configuration.h"
 #include "toml++/toml.h"
 
-namespace sys::cfg
+namespace cfg
 {
     // Configuration class constructor that takes a TOML configuration table
     // and stores it as a class member (for use with sub-tables of the

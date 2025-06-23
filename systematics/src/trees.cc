@@ -30,7 +30,7 @@ size_t sys::trees::hash(uint64_t run, uint64_t subrun, uint64_t event, uint64_t 
 }
 
 // Copy the input TTree to the output TTree.
-void sys::trees::copy_tree(sys::cfg::ConfigurationTable & table, TFile * output, TFile * input)
+void sys::trees::copy_tree(cfg::ConfigurationTable & table, TFile * output, TFile * input)
 {
     /**
      * @brief Create the output subdirectory following the nesting outlined
@@ -111,7 +111,7 @@ void sys::trees::copy_tree(sys::cfg::ConfigurationTable & table, TFile * output,
 }
 
 // Add reweightable systematics to the output TTree.
-void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & config, sys::cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc)
+void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc)
 {
     /**
      * @brief Create the output subdirectory following the nesting outlined
@@ -238,7 +238,7 @@ void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & con
     std::vector<SysVariable> sysvariables;
     std::map<syst_t, TH2D *> results2d;
     std::map<syst_t, TH1D *> results1d;
-    for(sys::cfg::ConfigurationTable & t : config.get_subtables("sysvar"))
+    for(cfg::ConfigurationTable & t : config.get_subtables("sysvar"))
     {
         sysvariables.push_back(SysVariable(t));
         calc.add_variable(sysvariables.back());
@@ -265,7 +265,7 @@ void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & con
         systrees[s]->SetAutoFlush(1000);
     }
 
-    for(sys::cfg::ConfigurationTable & t : config.get_subtables("sys"))
+    for(cfg::ConfigurationTable & t : config.get_subtables("sys"))
     {
         systematics.insert(std::make_pair<std::string, Systematic *>(t.get_string_field("name"), new Systematic(t, systrees[t.get_string_field("type")])));
         systematics[t.get_string_field("name")]->get_tree()->Branch(t.get_string_field("name").c_str(), &systematics[t.get_string_field("name")]->get_weights());

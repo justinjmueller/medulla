@@ -37,7 +37,7 @@ int main(int argc, char * argv[])
     }
 
     // Load the configuration file
-    sys::cfg::ConfigurationTable config;
+    cfg::ConfigurationTable config;
     try
     {
         // Load the configuration file
@@ -47,7 +47,7 @@ int main(int argc, char * argv[])
         ana::Analysis analysis(config.get_string_field("general.output"));
 
         // Configure the samples in the analysis
-        std::vector<sys::cfg::ConfigurationTable> samples = config.get_subtables("sample");
+        std::vector<cfg::ConfigurationTable> samples = config.get_subtables("sample");
         std::vector<std::unique_ptr<ana::SpectrumLoader>> loaders;
         loaders.reserve(samples.size());
         for(const auto & sample : samples)
@@ -58,11 +58,11 @@ int main(int argc, char * argv[])
             loaders.push_back(std::move(loader));
 
             // Main loop over the trees defined in the configuration
-            std::vector<sys::cfg::ConfigurationTable> trees(config.get_subtables("tree"));
+            std::vector<cfg::ConfigurationTable> trees(config.get_subtables("tree"));
             for(const auto & tree : trees)
             {
-                std::vector<sys::cfg::ConfigurationTable> cuts = tree.get_subtables("cut");
-                std::vector<sys::cfg::ConfigurationTable> vars = tree.get_subtables("branch");
+                std::vector<cfg::ConfigurationTable> cuts = tree.get_subtables("cut");
+                std::vector<cfg::ConfigurationTable> vars = tree.get_subtables("branch");
                 std::string mode = tree.get_string_field("mode");
                 
                 std::map<std::string, ana::SpillMultiVar> vars_map;
@@ -104,7 +104,7 @@ int main(int argc, char * argv[])
 
         analysis.Go();
     }
-    catch(const sys::cfg::ConfigurationError &e)
+    catch(const cfg::ConfigurationError &e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;

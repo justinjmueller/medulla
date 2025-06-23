@@ -14,7 +14,7 @@
 #include <toml++/toml.h>
 
 /**
- * @namespace sys::cfg
+ * @namespace cfg
  * @brief Namespace for functions that read and interface with the TOML-based
  * configuration file.
  * @details This namespace contains functions that read and interface with the
@@ -22,7 +22,7 @@
  * parameters that may be analysis-specific or that may change frequently. The
  * main backend employed in this project is toml++.
  */
-namespace sys::cfg
+namespace cfg
 {
     /**
      * @class A class inheriting from std::exception that is used as an error

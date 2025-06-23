@@ -62,7 +62,7 @@ namespace sys::trees
      * @param input The input TFile.
      * @return void
      */
-    void copy_tree(sys::cfg::ConfigurationTable & table, TFile * output, TFile * input);
+    void copy_tree(cfg::ConfigurationTable & table, TFile * output, TFile * input);
 
     /**
      * @brief Add reweightable systematics to the output TTree.
@@ -77,6 +77,6 @@ namespace sys::trees
      * @param input The input TFile.
      * @return void
      */
-    void copy_with_weight_systematics(sys::cfg::ConfigurationTable & config, sys::cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc);
+    void copy_with_weight_systematics(cfg::ConfigurationTable & config, cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc);
 }
 #endif

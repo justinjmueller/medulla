@@ -64,8 +64,8 @@ ValueT Registry<ValueT>::get(const std::string & name)
 }
 
 // Build a single SpillMultiVar for a single branch variable.
-NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & cuts,
-                             const sys::cfg::ConfigurationTable & var,
+NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
+                             const cfg::ConfigurationTable & var,
                              const std::string & mode,
                              const std::string & override_type,
                              const bool ismc)

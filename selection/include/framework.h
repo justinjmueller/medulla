@@ -252,8 +252,8 @@ enum class Mode { True = 0, Reco = 1 };
  * @return A NamedSpillMultiVar object that applies the cuts and computes the variable.
  * @throw std::runtime_error if a function is not registered.
  */
-NamedSpillMultiVar construct(const std::vector<sys::cfg::ConfigurationTable> & cuts,
-                             const sys::cfg::ConfigurationTable & var,
+NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
+                             const cfg::ConfigurationTable & var,
                              const std::string & mode,
                              const std::string & override_type = "",
                              const bool ismc = true);

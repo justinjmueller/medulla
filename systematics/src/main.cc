@@ -50,22 +50,22 @@ int main(int argc, char * argv[])
     /**
      * @brief Read the configuration file.
      * @details This block reads the configuration file by using the
-     * @ref sys::cfg::Configuration class. The configuration
+     * @ref cfg::Configuration class. The configuration
      * file is read using the toml++ library. If the configuration file is not
      * found or if there is an error in parsing the configuration file, the
      * code prints an error message and exits with an error code. Each requisite
      * field in the configuration file is checked for validity by the 
-     * @ref sys::cfg::validate() function
-     * @see sys::cfg::Configuration
-     * @see sys::cfg::ConfigurationError
-     * @see sys::cfg::validate()
+     * @ref cfg::validate() function
+     * @see cfg::Configuration
+     * @see cfg::ConfigurationError
+     * @see cfg::validate()
      */
-    sys::cfg::ConfigurationTable config;
+    cfg::ConfigurationTable config;
     try
     {
         config.set_config(argv[1]);
     }
-    catch(const sys::cfg::ConfigurationError & e)
+    catch(const cfg::ConfigurationError & e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
@@ -101,17 +101,17 @@ int main(int argc, char * argv[])
      * @details This block begins the main loop over the trees in the
      * configuration file. Each tree is a sub-table in the configuration file,
      * and can be fetched as a vector of sub-tables using the function
-     * @ref sys::cfg::get_subtables(). The main body of the loop then reads
+     * @ref cfg::get_subtables(). The main body of the loop then reads
      * delegates the handling of the tree to the appropriate function.
-     * @see sys::cfg::get_subtables()
-     * @see sys::cfg::ConfigurationTable
+     * @see cfg::get_subtables()
+     * @see cfg::ConfigurationTable
      */
-    std::vector<sys::cfg::ConfigurationTable> tables;
+    std::vector<cfg::ConfigurationTable> tables;
     try
     {
        tables = config.get_subtables("tree");
     }
-    catch(const sys::cfg::ConfigurationError & e)
+    catch(const cfg::ConfigurationError & e)
     {
         /**
          * @TODO reconsider if this should cause the code to exit.
@@ -119,7 +119,7 @@ int main(int argc, char * argv[])
         std::cout << "No trees found in the configuration file." << std::endl;
     }
 
-    for(sys::cfg::ConfigurationTable & table : tables)
+    for(cfg::ConfigurationTable & table : tables)
     {
         std::cout << "Processing tree: " << table.get_string_field("origin") << std::endl;
         std::string type(table.get_string_field("action"));
