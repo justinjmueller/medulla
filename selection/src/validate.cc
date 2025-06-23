@@ -803,6 +803,306 @@ int main(int argc, char * argv[])
         // Check if each condition_t entry is present in the rows vector.
         match_conditions(rows, conditions);
 
+        /**
+         * @brief The fifth set of events to validate is the "sim-like" events
+         * and the response of the framework when run over them in "true" mode
+         * with particle-level variables.
+         * @details This set of events effectively tests the framework's
+         * behavior when run in a mode where the selection logic is applied
+         * to the particles of the interactions, rather than the interactions
+         * themselves. Effectively, the framework implements an additional
+         * nested loop over the particles (of the same type) for each
+         * interaction, and applies some selection logic that is similar to the
+         * one used for the interactions.
+         * 
+         * - SPT00: This represents a true interaction with no valid reco match
+         *   under no additional reco cut that would otherwise not pass the
+         *   reco-selection. Furthermore, the particle in this interaction has
+         *   no reco match and does not pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT01: This represents a true interaction with no valid reco match
+         *   under no additional reco cut that would otherwise not pass the
+         *   reco-selection. Furthermore, the particle in this interaction has
+         *   no reco match and does pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT02: This represents a true interaction with no valid reco match
+         *   under no additional reco cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has no
+         *   reco match and does not pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT03: This represents a true interaction with no valid reco match
+         *   under no additional reco cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has no
+         *   reco match and does pass the truth cut. Passes the selection with
+         *   a valid truth-var.
+         * 
+         * - SPT04: This represents a true interaction with no valid reco match
+         *   under no additional reco cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has no
+         *   reco match and does pass the truth cut. Passes the selection with
+         *   a NaN reco-var.
+         * 
+         * - SPT05: This represents a true interaction with no valid reco match
+         *   under an additional truth cut that would otherwise not pass the
+         *   reco-selection. Furthermore, the particle in this interaction has
+         *   no reco match and does not pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT06: This represents a true interaction with no valid reco match
+         *   under an additional truth cut that would otherwise not pass the
+         *   reco-selection. Furthermore, the particle in this interaction has
+         *   no reco match and does pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT07: This represents a true interaction with no valid reco match
+         *   under an additional truth cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has no
+         *   reco match and does not pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT08: This represents a true interaction with no valid reco match
+         *   under an additional truth cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has no
+         *   reco match and does pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT09: This represents a true interaction with no valid reco match
+         *   under no additional reco cut that would otherwise not pass the
+         *   reco-selection. Furthermore, the particle in this interaction has a
+         *   reco match and does not pass the truth cut. Does not pass the
+         *   selection.
+         *  
+         * - SPT10: This represents a true interaction with no valid reco match
+         *   under no additional reco cut that would otherwise not pass the
+         *   reco-selection. Furthermore, the particle in this interaction has a
+         *   reco match and does pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT11: This represents a true interaction with no valid reco match
+         *   under no additional reco cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has a
+         *   reco match and does not pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT12: This represents a true interaction with no valid reco match
+         *   under no additional reco cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has a
+         *   reco match and does pass the truth cut. Passes the selection with
+         *   a valid truth-var.
+         * 
+         * - SPT13: This represents a true interaction with no valid reco match
+         *   under no additional reco cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has a
+         *   reco match and does pass the truth cut. Passes the selection with
+         *   a valid reco-var.
+         * 
+         * - SPT14: This represents a true interaction with no valid reco match
+         *   under an additional truth cut that would otherwise not pass the
+         *   reco-selection. Furthermore, the particle in this interaction has a
+         *   reco match and does not pass the truth cut. Does not pass the
+         *   selection.
+         *  
+         * - SPT15: This represents a true interaction with no valid reco match
+         *   under an additional truth cut that would otherwise not pass the
+         *   reco-selection. Furthermore, the particle in this interaction has a
+         *   reco match and does pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT16: This represents a true interaction with no valid reco match
+         *   under an additional truth cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has a
+         *   reco match and does not pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT17: This represents a true interaction with no valid reco match
+         *   under an additional truth cut that would otherwise pass the reco-
+         *   selection. Furthermore, the particle in this interaction has a
+         *   reco match and does pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT18: This represents a true interaction with a valid truth match
+         *   under no additional reco cut and that does not pass the reco-
+         *   selection. Furthermore, the particle in this interaction has no
+         *   reco match and does not pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT19: This represents a true interaction with a valid truth match
+         *   under no additional reco cut and that does not pass the reco-
+         *   selection. Furthermore, the particle in this interaction has no
+         *   reco match and does pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT20: This represents a true interaction with a valid truth match
+         *   under no additional reco cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has no
+         *   reco match and does not pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT21: This represents a true interaction with a valid truth match
+         *   under no additional reco cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has no
+         *   reco match and does pass the truth cut. Passes the selection with
+         *   a valid truth-var.
+         * 
+         * - SPT22: This represents a true interaction with a valid truth match
+         *   under no additional reco cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has no
+         *   reco match and does pass the truth cut. Passes the selection with
+         *   a NaN reco-var.
+         * 
+         * - SPT23: This represents a true interaction with a valid truth match
+         *   under an additional truth cut and that does not pass the reco-
+         *   selection. Furthermore, the particle in this interaction has no
+         *   reco match and does not pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT24: This represents a true interaction with a valid truth match
+         *   under an additional truth cut and that does not pass the reco-
+         *   selection. Furthermore, the particle in this interaction has no
+         *   reco match and does pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT25: This represents a true interaction with a valid truth match
+         *   under an additional truth cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has no
+         *   reco match and does not pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT26: This represents a true interaction with a valid truth match
+         *   under an additional truth cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has no
+         *   reco match and does pass the truth cut. Passes the selection with
+         *   a valid truth-var.
+         * 
+         * - SPT27: This represents a true interaction with a valid truth match
+         *   under an additional truth cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has no
+         *   reco match and does pass the truth cut. Passes the selection with
+         *   a NaN reco-var.
+         * 
+         * - SPT28: This represents a true interaction with a valid truth match
+         *   under no additional reco cut and that does not pass the reco-
+         *   selection. Furthermore, the particle in this interaction has a
+         *   reco match and does not pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT29: This represents a true interaction with a valid truth match
+         *   under no additional reco cut and that does not pass the reco-
+         *   selection. Furthermore, the particle in this interaction has a
+         *   reco match and does pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT30: This represents a true interaction with a valid truth match
+         *   under no additional reco cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has a
+         *   reco match and does not pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT31: This represents a true interaction with a valid truth match
+         *   under no additional reco cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has a
+         *   reco match and does pass the truth cut. Passes the selection with
+         *   a valid truth-var.
+         * 
+         * - SPT32: This represents a true interaction with a valid truth match
+         *   under no additional reco cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has a
+         *   reco match and does pass the truth cut. Passes the selection with
+         *   a valid reco-var.
+         * 
+         * - SPT33: This represents a true interaction with a valid truth match
+         *   under an additional truth cut and that does not pass the reco-
+         *   selection. Furthermore, the particle in this interaction has a
+         *   reco match and does not pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT34: This represents a true interaction with a valid truth match
+         *   under an additional truth cut and that does not pass the reco-
+         *   selection. Furthermore, the particle in this interaction has a
+         *   reco match and does pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT35: This represents a true interaction with a valid truth match
+         *   under an additional truth cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has a
+         *   reco match and does not pass the truth cut. Does not pass the
+         *   selection.
+         * 
+         * - SPT36: This represents a true interaction with a valid truth match
+         *   under an additional truth cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has a
+         *   reco match and does pass the truth cut. Passes the selection with
+         *   a valid truth-var.
+         * 
+         * - SPT37: This represents a true interaction with a valid truth match
+         *   under an additional truth cut that would also pass the reco-only
+         *   selection. Furthermore, the particle in this interaction has a
+         *   reco match and does pass the truth cut. Passes the selection with
+         *   a valid reco-var.
+         */
+        std::cout << "\n\033[1mSimulation-like events with mode == 'true' and particle-level variables \033[0m" << std::endl;
+        
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_simlike/test_truth_particles");
+
+        // Expected results for validation.
+        conditions = {
+            {"!SPT00", {{"Run", 1}, {"Subrun", 0}, {"Evt", 1}}},
+            {"!SPT01", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
+            {"!SPT02", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}}},
+            {"SPT03", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"true_particle_ke", 200.0}}},
+            {"SPT04", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_particle_ke", kNaN}}},
+            {"!SPT09", {{"Run", 1}, {"Subrun", 2}, {"Evt", 1}}},
+            {"!SPT10", {{"Run", 1}, {"Subrun", 3}, {"Evt", 1}}},
+            {"!SPT11", {{"Run", 1}, {"Subrun", 2}, {"Evt", 0}}},
+            {"SPT12", {{"Run", 1}, {"Subrun", 3}, {"Evt", 0}, {"true_particle_ke", 200.0}}},
+            {"SPT13", {{"Run", 1}, {"Subrun", 3}, {"Evt", 0}, {"reco_particle_ke", 200.0}}},
+            {"!SPT18", {{"Run", 1}, {"Subrun", 0}, {"Evt", 3}}},
+            {"!SPT19", {{"Run", 1}, {"Subrun", 1}, {"Evt", 3}}},
+            {"!SPT20", {{"Run", 1}, {"Subrun", 0}, {"Evt", 2}}},
+            {"SPT21", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"true_particle_ke", 200.0}}},
+            {"SPT22", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"reco_particle_ke", kNaN}}},
+            {"!SPT28", {{"Run", 1}, {"Subrun", 2}, {"Evt", 3}}},
+            {"!SPT29", {{"Run", 1}, {"Subrun", 3}, {"Evt", 3}}},
+            {"!SPT30", {{"Run", 1}, {"Subrun", 2}, {"Evt", 2}}},
+            {"SPT31", {{"Run", 1}, {"Subrun", 3}, {"Evt", 2}, {"true_particle_ke", 200.0}}},
+            {"SPT32", {{"Run", 1}, {"Subrun", 3}, {"Evt", 2}, {"reco_particle_ke", 200.0}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        match_conditions(rows, conditions);
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_simlike/test_truth_particles_with_reco_cut");
+        
+        // Expected results for validation.
+        conditions = {
+            {"!SPT05", {{"Run", 1}, {"Subrun", 0}, {"Evt", 1}}},
+            {"!SPT06", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
+            {"!SPT07", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}}},
+            {"!SPT08", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}}},
+            {"!SPT14", {{"Run", 1}, {"Subrun", 2}, {"Evt", 1}}},
+            {"!SPT15", {{"Run", 1}, {"Subrun", 3}, {"Evt", 1}}},      
+            {"!SPT16", {{"Run", 1}, {"Subrun", 2}, {"Evt", 0}}},
+            {"!SPT17", {{"Run", 1}, {"Subrun", 3}, {"Evt", 0}}},
+            {"!SPT23", {{"Run", 1}, {"Subrun", 0}, {"Evt", 3}}},
+            {"!SPT24", {{"Run", 1}, {"Subrun", 1}, {"Evt", 3}}},
+            {"!SPT25", {{"Run", 1}, {"Subrun", 0}, {"Evt", 2}}},
+            {"SPT26", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"true_particle_ke", 200.0}}},
+            {"SPT27", {{"Run", 1}, {"Subrun", 1}, {"Evt", 2}, {"reco_particle_ke", kNaN}}},
+            {"!SPT33", {{"Run", 1}, {"Subrun", 2}, {"Evt", 3}}},
+            {"!SPT34", {{"Run", 1}, {"Subrun", 3}, {"Evt", 3}}},
+            {"!SPT35", {{"Run", 1}, {"Subrun", 2}, {"Evt", 2}}},
+            {"SPT36", {{"Run", 1}, {"Subrun", 3}, {"Evt", 2}, {"true_particle_ke", 200.0}}},
+            {"SPT37", {{"Run", 1}, {"Subrun", 3}, {"Evt", 2}, {"reco_particle_ke", 200.0}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        match_conditions(rows, conditions);
+
         // Finished!
         std::cout << "\n\033[1m---        DONE        ---\033[0m" << std::endl;
         f.Close();

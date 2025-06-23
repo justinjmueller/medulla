@@ -81,3 +81,28 @@ cut = [
 branch = [
     {name = "ke", type = "both_particle"},
 ]
+
+[[tree]]
+name = "test_truth_particles"
+sim_only = true
+mode = "true"
+cut = [
+    {name = "valid_flashmatch", type = "true"},
+    {name = "containment_cut", type = "true_particle"}
+]
+branch = [
+    {name = "ke", type = "both_particle"},
+]
+
+[[tree]]
+name = "test_truth_particles_with_reco_cut"
+sim_only = true
+mode = "true"
+cut = [
+    {name = "valid_flashmatch", type = "true"},
+    {name = "containment_cut", type = "true_particle"},
+    {name = "no_cut", type = "reco"}
+]
+branch = [
+    {name = "ke", type = "both_particle"},
+]

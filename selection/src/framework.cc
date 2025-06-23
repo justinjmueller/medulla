@@ -509,7 +509,6 @@ ana::SpillMultiVar spill_multivar_helper(
                             }
                         }
                     }
-                    std::cerr << std::endl;
                 }
             }
         }
