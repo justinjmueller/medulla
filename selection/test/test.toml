@@ -62,7 +62,8 @@ name = "test_reco_particles"
 sim_only = false
 mode = "reco"
 cut = [
-    {name = "valid_flashmatch", type = "reco"}
+    {name = "valid_flashmatch", type = "reco"},
+    {name = "containment_cut", type = "reco_particle"}
 ]
 branch = [
     {name = "ke", type = "both_particle"},
@@ -74,6 +75,7 @@ sim_only = false
 mode = "reco"
 cut = [
     {name = "valid_flashmatch", type = "reco"},
+    {name = "containment_cut", type = "reco_particle"},
     {name = "no_cut", type = "true"}
 ]
 branch = [

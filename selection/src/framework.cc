@@ -501,15 +501,15 @@ ana::SpillMultiVar spill_multivar_helper(
                                     values.push_back(var(j));
                                 else if constexpr(std::is_same_v<VarOn, TParticleType>)
                                 {
-                                    auto it = particles.find(j.id);
-                                    if(it != particles.end())
-                                        values.push_back(var(*it->second));
+                                    if(j.match_ids.size() > 0 && particles.find(j.match_ids[0]) != particles.end())
+                                        values.push_back(var(*particles[j.match_ids[0]]));
                                     else
                                         values.push_back(kNoMatchValue); // No match found.
                                 }
                             }
                         }
                     }
+                    std::cerr << std::endl;
                 }
             }
         }
