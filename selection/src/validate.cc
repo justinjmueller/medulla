@@ -1103,6 +1103,85 @@ int main(int argc, char * argv[])
         // Check if each condition_t entry is present in the rows vector.
         match_conditions(rows, conditions);
 
+        /**
+         * @brief The sixth set of events to validate is the "data-like" events
+         * and the response of the framework when run over them in "reco" mode
+         * with particle-level variables.
+         * @details This set of events effectively tests the framework's
+         * behavior when run in a mode where the selection logic is applied
+         * to the particles of the interactions, rather than the interactions
+         * themselves. Effectively, the framework implements an additional
+         * nested loop over the particles (of the same type) for each
+         * interaction, and applies some selection logic that is similar to the
+         * one used for the interactions.
+         * 
+         * - DPR00: This represents a reco interaction that does not pass the
+         *   reco-selection and with a particle that does not pass the reco
+         *   cut. Does not pass the selection.
+         * 
+         * - DPR01: This represents a reco interaction that does not pass the
+         *   reco-selection and with a particle that does pass the reco cut.
+         *   Does not pass the selection.
+         * 
+         * - DPR02: This represents a reco interaction that passes the reco-
+         *   selection and with a particle that does not pass the reco cut.
+         *   Does not pass the selection.
+         * 
+         * - DPR03: This represents a reco interaction that passes the reco-
+         *   selection and with a particle that does pass the reco cut. Passes
+         *   the selection with a valid reco-var.
+         * 
+         * - DPR04: This represents a reco interaction that passes the reco-
+         *   selection and with a particle that does pass the reco cut. Passes
+         *   the selection with a NaN truth-var.
+         * 
+         * - DPR05: This represents a reco interaction that does not pass the
+         *   reco-selection and with a particle that does not pass the reco
+         *   cut. There is an additional truth cut at the interaction level.
+         *   Does not pass the selection.
+         * 
+         * - DPR06: This represents a reco interaction that does not pass the
+         *   reco-selection and with a particle that does pass the reco cut.
+         *   There is an additional truth cut at the interaction level. Does
+         *   not pass the selection.
+         * 
+         * - DPR07: This represents a reco interaction that passes the reco-
+         *   selection and with a particle that does not pass the reco cut.
+         *   There is an additional truth cut at the interaction level. Does
+         *   not pass the selection.
+         *  
+         * - DPR08: This represents a reco interaction that passes the reco-
+         *   selection and with a particle that does pass the reco cut. There
+         *   is an additional truth cut at the interaction level. Passes the
+         *   selection with a valid reco-var.
+         * 
+         * - DPR09: This represents a reco interaction that passes the reco-
+         *   selection and with a particle that does pass the reco cut. There
+         *   is an additional truth cut at the interaction level. Passes the
+         *   selection with a NaN truth-var.
+         */
+        std::cout << "\n\033[1mData-like events with mode == 'reco' and particle-level variables \033[0m" << std::endl;
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_datalike/test_reco_particles");
+        
+        // Expected results for validation.
+        conditions = {
+            {"!DPR00", {{"Run", 1}, {"Subrun", 0}, {"Evt", 1}}},
+            {"!DPR01", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
+            {"!DPR02", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}}},
+            {"DPR03", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_particle_ke", 200.0}}},
+            {"DPR04", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"true_particle_ke", kNaN}}},
+            {"!DPR05", {{"Run", 1}, {"Subrun", 0}, {"Evt", 1}}},
+            {"!DPR06", {{"Run", 1}, {"Subrun", 1}, {"Evt", 1}}},
+            {"!DPR07", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}}},
+            {"DPR08", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_particle_ke", 200.0}}},
+            {"DPR09", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"true_particle_ke", kNaN}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        match_conditions(rows, conditions);
+
         // Finished!
         std::cout << "\n\033[1m---        DONE        ---\033[0m" << std::endl;
         f.Close();
