@@ -88,6 +88,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
     std::vector<CutFn<RType>> reco_cut_functions;
     std::vector<CutFn<TParticleType>> true_particle_cut_functions;
     std::vector<CutFn<RParticleType>> reco_particle_cut_functions;
+    std::vector<CutFn<EventType>> event_cut_functions;
     for(const auto & cut : cuts)
     {
         // Retrieve the cut name and check for negation.
@@ -169,6 +170,23 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 // Otherwise, we just add the function as is.
                 reco_particle_cut_functions.push_back(factory(params));
         }
+        else if(cut.get_string_field("type") == "event")
+        {
+            std::string cut_name = "event_" + name;
+            std::vector<double> params;
+            if(cut.has_field("parameters"))
+                params = cut.get_double_vector("parameters");
+            auto factory = CutFactoryRegistry<EventType>::instance().get(cut_name);
+            if(invert)
+            {
+                // If the cut is inverted, we need to negate the function.
+                auto fn = factory(params);
+                event_cut_functions.push_back([fn](const EventType & e) { return !fn(e); });
+            }
+            else
+                // Otherwise, we just add the function as is.
+                event_cut_functions.push_back(factory(params));
+        }
         else
         {
             throw std::runtime_error("Illegal cut type '" + cut.get_string_field("type") + "' for cut " + cut.get_string_field("name"));
@@ -192,6 +210,9 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
     };
     auto reco_particle_cut = [reco_particle_cut_functions](const RParticleType & e) -> bool {
         return std::all_of(reco_particle_cut_functions.begin(), reco_particle_cut_functions.end(), [&e](auto & f) { return f(e); });
+    };
+    auto event_cut = [event_cut_functions](const EventType & e) -> bool {
+        return std::all_of(event_cut_functions.begin(), event_cut_functions.end(), [&e](auto & f) { return f(e); });
     };
 
     if(exec_mode == Mode::True)
@@ -371,7 +392,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             var_name = "event_" + var_name;
             auto factory = VarFactoryRegistry<EventType>::instance().get(var_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper(var_fn));
+            return std::make_pair(var_name, spill_multivar_helper(event_cut, var_fn));
         }
         else
         {
@@ -547,12 +568,13 @@ ana::SpillMultiVar spill_multivar_helper(
 
 // Helper method for constructing a SpillMultiVar object when run in the
 // "event" mode.
-ana::SpillMultiVar spill_multivar_helper(const VarFn<EventType> & var)
+ana::SpillMultiVar spill_multivar_helper(const CutFn<EventType> & cut, const VarFn<EventType> & var)
 {
-    return ana::SpillMultiVar([var](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
+    return ana::SpillMultiVar([cut, var](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
     {
         std::vector<double> values;
-        values.push_back(var(*sr));
+        if(cut(*sr))        
+            values.push_back(var(*sr));
         return values;
     });
 }
@@ -563,6 +585,7 @@ template class Registry<CutFactory<TType>>;
 template class Registry<CutFactory<RType>>;
 template class Registry<CutFactory<TParticleType>>;
 template class Registry<CutFactory<RParticleType>>;
+template class Registry<CutFactory<EventType>>;
 
 // Var Registry
 template class Registry<VarFactory<TType>>;

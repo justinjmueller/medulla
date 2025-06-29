@@ -25,6 +25,7 @@
 #include "variables.h"
 #include "muon2024/variables_muon2024.h"
 #include "mctruth.h"
+#include "event_cuts.h"
 #include "event_variables.h"
 #include "include/analysis.h"
 

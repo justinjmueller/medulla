@@ -1,5 +1,5 @@
 /**
- * @file spill.h
+ * @file event_variables.h
  * @brief Definitions of analysis variables which can extract information from
  * the StandardRecord object.
  * @details This file contains definitions of analysis variables which can be
@@ -8,21 +8,45 @@
  * argument and returns a double.
  * @author mueller@fnal.gov
  */
-#ifndef SPILL_H
-#define SPILL_H
+#ifndef EVENT_VARIABLES_H
+#define EVENT_VARIABLES_H
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
 
 #include "framework.h"
 
 /**
- * @namespace event
+ * @namespace evar
  * @brief Namespace for organizing variables which act on events.
  * @details This namespace is intended to be used for organizing variables
  * which act on events. Each variable is implemented as a function which takes
  * a StandardRecord object as an argument and returns a double.
  */
-namespace event
+namespace evar
 {
+    /**
+     * @brief Variable for the number of true SPINE interactions in the event.
+     * @details This variable counts the number of true SPINE interactions in
+     * the event.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the number of true SPINE interactions in the event.
+     */
+    template<typename T>
+    double ntrue(const T & sr) { return sr.ndlp_true; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, ntrue, ntrue);
+
+    /**
+     * @brief Variable for the number of reco SPINE interactions in the event.
+     * @details This variable counts the number of reco SPINE interactions in
+     * the event.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the number of reco SPINE interactions in the event.
+     */
+    template<typename T>
+    double nreco(const T & sr) { return sr.ndlp; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, nreco, nreco);
+
     /**
      * @brief Variable for time of the flash closest to the trigger time.
      * @details This variable is intended to provide the time of the flash

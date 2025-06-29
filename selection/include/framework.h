@@ -189,6 +189,10 @@ namespace                                                                       
             CutFactoryRegistry<RParticleType>::instance().register_fn(                     \
                 "reco_particle_" #name, bind<+fn<RParticleType>, RParticleType, bool>      \
             );                                                                             \
+        if constexpr((scope)==RegistrationScope::Event)                                    \
+            CutFactoryRegistry<EventType>::instance().register_fn(                         \
+                "event_" #name, bind<+fn<EventType>, EventType, bool>                      \
+            );                                                                             \
         return true;                                                                       \
     }();                                                                                   \
 }
@@ -305,10 +309,11 @@ ana::SpillMultiVar spill_multivar_helper(
  * @details This function is used to construct a SpillMultiVar object from
  * a event variable. It is intended to be called by the @ref construct function
  * when the mode is "event". 
+ * @param cut The callable that implements the event cut.
  * @param var The callable that implements the event variable.
  * @return A SpillMultiVar object that applies the cuts and computes the event
  * variable.
  */
-ana::SpillMultiVar spill_multivar_helper(const VarFn<EventType> & var);
+ana::SpillMultiVar spill_multivar_helper(const CutFn<EventType> & cut, const VarFn<EventType> & var);
 
 #endif // FRAMEWORK_H
