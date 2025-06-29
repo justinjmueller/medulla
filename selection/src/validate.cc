@@ -1182,6 +1182,31 @@ int main(int argc, char * argv[])
         // Check if each condition_t entry is present in the rows vector.
         match_conditions(rows, conditions);
 
+        /**
+         * @brief The seventh set of events to validate is the "sim-like"
+         * events and the response of the framework when run over them in
+         * "event" mode (i.e., extraction of event-level variables).
+         * @details This set of events effectively tests the framework's
+         * behavior when run in a mode where the selection logic is applied to
+         * each event as a whole, rather than to the interactions or particles
+         * within the interactions.
+         * 
+         * - SEV00: This represents a sim-like event that does pass the
+         *   selection and has a valid variable.
+         */
+        std::cout << "\n\033[1mSimulation-like events with mode == 'event' \033[0m" << std::endl;
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_simlike/test_event");
+
+        // Expected results for validation.
+        conditions = {
+            {"SEV00", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}, {"event_ntrue", 1}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        match_conditions(rows, conditions);
+
         // Finished!
         std::cout << "\n\033[1m---        DONE        ---\033[0m" << std::endl;
         f.Close();

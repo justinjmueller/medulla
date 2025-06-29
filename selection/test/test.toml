@@ -12,6 +12,17 @@ path = "validation_datalike.root"
 ismc = false
 
 [[tree]]
+name = "test_event"
+sim_only = false
+mode = "event"
+cut = [
+    {name = "no_cut", type = "event"}
+]
+branch = [
+    {name = "ntrue", type = "event"}
+]
+
+[[tree]]
 name = "test_reco"
 sim_only = false
 mode = "reco"
