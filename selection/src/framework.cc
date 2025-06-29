@@ -81,6 +81,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
     Mode exec_mode;
     if(mode == "true") exec_mode = Mode::True;
     else if(mode == "reco") exec_mode = Mode::Reco;
+    else if(mode == "spill") exec_mode = Mode::Spill;
     else throw std::runtime_error("Illegal mode '" + mode + "' for variable " + var.get_string_field("name"));
 
     std::vector<CutFn<TType>> true_cut_functions;
@@ -272,7 +273,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             throw std::runtime_error("Illegal variable type '" + var_type + "' for variable " + var_name);
         }
     }
-    else
+    else if(exec_mode == Mode::Reco)
     {
         /**
          * @brief Read the branch variable configuration.
@@ -345,6 +346,32 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 reco_particle_cut,
                 var_fn,
                 ismc));
+        }
+        else
+        {
+            throw std::runtime_error("Illegal variable type '" + var_type + "' for variable " + var_name);
+        }
+    }
+    else
+    {
+        /**
+         * @brief Read the branch variable configuration.
+         * @details This function constructs the branch variable from the TOML
+         * configuration of the variable. The variable name is used to retrieve the
+         * function from the registry.
+         */
+        std::string var_name = var.get_string_field("name");
+        std::string var_type = (override_type.empty() ? var.get_string_field("type") : override_type);
+        std::vector<double> varPars;
+        if(var.has_field("parameters"))
+            varPars = var.get_double_vector("parameters");
+
+        if(var_type == "spill")
+        {
+            var_name = "spill_" + var_name;
+            auto factory = VarFactoryRegistry<SpillType>::instance().get(var_name);
+            auto var_fn = factory(varPars);
+            return std::make_pair(var_name, spill_multivar_helper(var_fn));
         }
         else
         {
@@ -518,6 +545,18 @@ ana::SpillMultiVar spill_multivar_helper(
     });
 }
 
+// Helper method for constructing a SpillMultiVar object when run in the
+// "spill" mode.
+ana::SpillMultiVar spill_multivar_helper(const VarFn<SpillType> & var)
+{
+    return ana::SpillMultiVar([var](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
+    {
+        std::vector<double> values;
+        values.push_back(var(*sr));
+        return values;
+    });
+}
+
 // Explicitly instantiate Registry for the factory types we use:
 // Cut Registry
 template class Registry<CutFactory<TType>>;
@@ -531,6 +570,7 @@ template class Registry<VarFactory<RType>>;
 template class Registry<VarFactory<MCTruth>>;
 template class Registry<VarFactory<TParticleType>>;
 template class Registry<VarFactory<RParticleType>>;
+template class Registry<VarFactory<SpillType>>;
 
 // Explicit instantiation for selector registries
 template class Registry<SelectorFn<TType>>;

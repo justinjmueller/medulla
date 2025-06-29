@@ -29,6 +29,7 @@ using RType = caf::SRInteractionDLPProxy;
 using MCTruth = caf::Proxy<caf::SRTrueInteraction>;
 using TParticleType = caf::Proxy<caf::SRParticleTruthDLP>;
 using RParticleType = caf::Proxy<caf::SRParticleDLP>;
+using SpillType = caf::Proxy<caf::StandardRecord>;
 
 using NamedSpillMultiVar = std::pair<std::string, ana::SpillMultiVar>;
 
@@ -165,7 +166,7 @@ inline std::function<ValueT(const EventT&)> bind(const std::vector<double>& pars
  * used in the registration macros to determine which type of event the cut or
  * variable can be reasonably applied to.
  */
-enum class RegistrationScope { True, Reco, Both, MCTruth, TrueParticle, RecoParticle, BothParticle };
+enum class RegistrationScope { True, Reco, Both, MCTruth, TrueParticle, RecoParticle, BothParticle, Spill };
 
 // Register a cut with scope, auto‐detecting its signature
 #define REGISTER_CUT_SCOPE(scope, name, fn)                                                \
@@ -211,11 +212,15 @@ namespace                                                                       
             );                                                                             \
         if constexpr((scope)==RegistrationScope::TrueParticle || (scope)==RegistrationScope::BothParticle) \
             VarFactoryRegistry<TParticleType>::instance().register_fn(                     \
-                "true_particle_" #name, bind<fn<TParticleType>, TParticleType, double>      \
+                "true_particle_" #name, bind<fn<TParticleType>, TParticleType, double>     \
             );                                                                             \
         if constexpr((scope)==RegistrationScope::RecoParticle || (scope)==RegistrationScope::BothParticle) \
             VarFactoryRegistry<RParticleType>::instance().register_fn(                     \
-                "reco_particle_" #name, bind<fn<RParticleType>, RParticleType, double>      \
+                "reco_particle_" #name, bind<fn<RParticleType>, RParticleType, double>     \
+            );                                                                             \
+        if constexpr((scope)==RegistrationScope::Spill)                                    \
+            VarFactoryRegistry<SpillType>::instance().register_fn(                         \
+                "spill_" #name, bind<fn<SpillType>, SpillType, double>                     \
             );                                                                             \
         return true;                                                                       \
     }();                                                                                   \
@@ -227,11 +232,11 @@ namespace                                                                       
 /**
  * @brief Operation mode for iteration over data products.
  * @details This enum class defines the operation mode for iteration over data
- * products. It can be either "true" or "reco". This is used in the
+ * products. It can be either "true," "reco," or "spill". This is used in the
  * @ref construct function to determine the object to broadcast the selection
  * over.
  */
-enum class Mode { True = 0, Reco = 1 };
+enum class Mode { True = 0, Reco = 1, Spill = 2 };
 
 /**
  * @brief Build a single SpillMultiVar for a single branch variable.
@@ -293,5 +298,17 @@ ana::SpillMultiVar spill_multivar_helper(
     const VarFn<VarOn> & var,
     const bool ismc = true
 );
+
+/**
+ * @brief Helper method for constructing a SpillMultiVar object when run in the
+ * "spill" mode.
+ * @details This function is used to construct a SpillMultiVar object from
+ * a spill variable. It is intended to be called by the @ref construct function
+ * when the mode is "spill". 
+ * @param var The callable that implements the spill variable.
+ * @return A SpillMultiVar object that applies the cuts and computes the spill
+ * variable.
+ */
+ana::SpillMultiVar spill_multivar_helper(const VarFn<SpillType> & var);
 
 #endif // FRAMEWORK_H
