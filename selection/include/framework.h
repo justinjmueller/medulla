@@ -33,6 +33,10 @@ using EventType = caf::Proxy<caf::StandardRecord>;
 
 using NamedSpillMultiVar = std::pair<std::string, ana::SpillMultiVar>;
 
+// Set a sensible default for a no-match scenario.
+constexpr size_t kNoMatch = std::numeric_limits<size_t>::max();
+constexpr double kNoMatchValue = std::numeric_limits<double>::quiet_NaN();
+
 //-----------------------------------------------------------------------------
 // 1) Generic registry template
 //-----------------------------------------------------------------------------

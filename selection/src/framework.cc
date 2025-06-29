@@ -17,10 +17,6 @@
 #include "framework.h"
 #include "configuration.h"
 
-// Set a sensible default for a no-match scenario.
-constexpr size_t kNoMatch = std::numeric_limits<size_t>::max();
-constexpr double kNoMatchValue = std::numeric_limits<double>::quiet_NaN();
-
 // Get the singleton instance of the Registry.
 template<typename ValueT>
 Registry<ValueT> & Registry<ValueT>::instance()
