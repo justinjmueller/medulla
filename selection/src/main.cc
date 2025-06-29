@@ -25,6 +25,7 @@
 #include "variables.h"
 #include "muon2024/variables_muon2024.h"
 #include "mctruth.h"
+#include "event_variables.h"
 #include "include/analysis.h"
 
 int main(int argc, char * argv[])
@@ -88,7 +89,8 @@ int main(int argc, char * argv[])
                             || var.get_string_field("type") == "reco"
                             || var.get_string_field("type") == "mctruth"
                             || var.get_string_field("type") == "true_particle"
-                            || var.get_string_field("type") == "reco_particle")
+                            || var.get_string_field("type") == "reco_particle"
+                            || var.get_string_field("type") == "event")
                     {
                         NamedSpillMultiVar thisvar = construct(cuts, var, mode, var.get_string_field("type"), sample.get_bool_field("ismc"));
                         vars_map.try_emplace(thisvar.first, thisvar.second);

@@ -81,7 +81,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
     Mode exec_mode;
     if(mode == "true") exec_mode = Mode::True;
     else if(mode == "reco") exec_mode = Mode::Reco;
-    else if(mode == "spill") exec_mode = Mode::Spill;
+    else if(mode == "event") exec_mode = Mode::Event;
     else throw std::runtime_error("Illegal mode '" + mode + "' for variable " + var.get_string_field("name"));
 
     std::vector<CutFn<TType>> true_cut_functions;
@@ -366,10 +366,10 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
         if(var.has_field("parameters"))
             varPars = var.get_double_vector("parameters");
 
-        if(var_type == "spill")
+        if(var_type == "event")
         {
-            var_name = "spill_" + var_name;
-            auto factory = VarFactoryRegistry<SpillType>::instance().get(var_name);
+            var_name = "event_" + var_name;
+            auto factory = VarFactoryRegistry<EventType>::instance().get(var_name);
             auto var_fn = factory(varPars);
             return std::make_pair(var_name, spill_multivar_helper(var_fn));
         }
@@ -546,8 +546,8 @@ ana::SpillMultiVar spill_multivar_helper(
 }
 
 // Helper method for constructing a SpillMultiVar object when run in the
-// "spill" mode.
-ana::SpillMultiVar spill_multivar_helper(const VarFn<SpillType> & var)
+// "event" mode.
+ana::SpillMultiVar spill_multivar_helper(const VarFn<EventType> & var)
 {
     return ana::SpillMultiVar([var](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
     {
@@ -570,7 +570,7 @@ template class Registry<VarFactory<RType>>;
 template class Registry<VarFactory<MCTruth>>;
 template class Registry<VarFactory<TParticleType>>;
 template class Registry<VarFactory<RParticleType>>;
-template class Registry<VarFactory<SpillType>>;
+template class Registry<VarFactory<EventType>>;
 
 // Explicit instantiation for selector registries
 template class Registry<SelectorFn<TType>>;

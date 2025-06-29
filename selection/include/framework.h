@@ -29,7 +29,7 @@ using RType = caf::SRInteractionDLPProxy;
 using MCTruth = caf::Proxy<caf::SRTrueInteraction>;
 using TParticleType = caf::Proxy<caf::SRParticleTruthDLP>;
 using RParticleType = caf::Proxy<caf::SRParticleDLP>;
-using SpillType = caf::Proxy<caf::StandardRecord>;
+using EventType = caf::Proxy<caf::StandardRecord>;
 
 using NamedSpillMultiVar = std::pair<std::string, ana::SpillMultiVar>;
 
@@ -162,11 +162,11 @@ inline std::function<ValueT(const EventT&)> bind(const std::vector<double>& pars
 /**
  * @brief Scope for registration macros
  * @details This enum class defines the scope of registration for cuts and
- * variables. It can be either "true", "reco," "both," or "mctruth". This is
- * used in the registration macros to determine which type of event the cut or
- * variable can be reasonably applied to.
+ * variables. It can be either "true", "reco," "both," "mctruth," or "event".
+ * This is used in the registration macros to determine which type of object
+ * the cut or variable can be reasonably applied to.
  */
-enum class RegistrationScope { True, Reco, Both, MCTruth, TrueParticle, RecoParticle, BothParticle, Spill };
+enum class RegistrationScope { True, Reco, Both, MCTruth, TrueParticle, RecoParticle, BothParticle, Event };
 
 // Register a cut with scope, auto‐detecting its signature
 #define REGISTER_CUT_SCOPE(scope, name, fn)                                                \
@@ -218,9 +218,9 @@ namespace                                                                       
             VarFactoryRegistry<RParticleType>::instance().register_fn(                     \
                 "reco_particle_" #name, bind<fn<RParticleType>, RParticleType, double>     \
             );                                                                             \
-        if constexpr((scope)==RegistrationScope::Spill)                                    \
-            VarFactoryRegistry<SpillType>::instance().register_fn(                         \
-                "spill_" #name, bind<fn<SpillType>, SpillType, double>                     \
+        if constexpr((scope)==RegistrationScope::Event)                                    \
+            VarFactoryRegistry<EventType>::instance().register_fn(                         \
+                "event_" #name, bind<fn<EventType>, EventType, double>                     \
             );                                                                             \
         return true;                                                                       \
     }();                                                                                   \
@@ -232,11 +232,11 @@ namespace                                                                       
 /**
  * @brief Operation mode for iteration over data products.
  * @details This enum class defines the operation mode for iteration over data
- * products. It can be either "true," "reco," or "spill". This is used in the
+ * products. It can be either "true," "reco," or "Event". This is used in the
  * @ref construct function to determine the object to broadcast the selection
  * over.
  */
-enum class Mode { True = 0, Reco = 1, Spill = 2 };
+enum class Mode { True = 0, Reco = 1, Event = 2 };
 
 /**
  * @brief Build a single SpillMultiVar for a single branch variable.
@@ -301,14 +301,14 @@ ana::SpillMultiVar spill_multivar_helper(
 
 /**
  * @brief Helper method for constructing a SpillMultiVar object when run in the
- * "spill" mode.
+ * "event" mode.
  * @details This function is used to construct a SpillMultiVar object from
- * a spill variable. It is intended to be called by the @ref construct function
- * when the mode is "spill". 
- * @param var The callable that implements the spill variable.
- * @return A SpillMultiVar object that applies the cuts and computes the spill
+ * a event variable. It is intended to be called by the @ref construct function
+ * when the mode is "event". 
+ * @param var The callable that implements the event variable.
+ * @return A SpillMultiVar object that applies the cuts and computes the event
  * variable.
  */
-ana::SpillMultiVar spill_multivar_helper(const VarFn<SpillType> & var);
+ana::SpillMultiVar spill_multivar_helper(const VarFn<EventType> & var);
 
 #endif // FRAMEWORK_H

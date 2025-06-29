@@ -15,18 +15,18 @@
 #include "framework.h"
 
 /**
- * @namespace spill
- * @brief Namespace for organizing variables which act on spills.
+ * @namespace event
+ * @brief Namespace for organizing variables which act on events.
  * @details This namespace is intended to be used for organizing variables
- * which act on spills. Each variable is implemented as a function which takes
+ * which act on events. Each variable is implemented as a function which takes
  * a StandardRecord object as an argument and returns a double.
  */
-namespace spill
+namespace event
 {
     /**
      * @brief Variable for time of the flash closest to the trigger time.
      * @details This variable is intended to provide the time of the flash
-     * closest to the trigger time of the spill. It is useful for producing a
+     * closest to the trigger time of the event. It is useful for producing a
      * "tophat"-style plot for locating the beam window and validating the
      * normalization.
      * @tparam T the top-level record.
@@ -47,7 +47,7 @@ namespace spill
         }
         return closest_flash_to_trigger + t0;
     }
-    REGISTER_VAR_SCOPE(RegistrationScope::Spill, trigger_time, trigger_time);
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, time_of_flash_closest_to_trigger, time_of_flash_closest_to_trigger);
 
     /**
      * @brief Variable for the time of the global trigger.
@@ -65,7 +65,7 @@ namespace spill
     {
         return sr.hdr.triggerinfo.global_trigger_time;
     }
-    REGISTER_VAR_SCOPE(RegistrationScope::Spill, global_time, global_time);
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, global_trigger_time, global_trigger_time);
 }
 
 #endif
