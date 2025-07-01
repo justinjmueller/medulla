@@ -27,6 +27,7 @@
 #include "mctruth.h"
 #include "event_cuts.h"
 #include "event_variables.h"
+#include "selectors.h"
 #include "include/analysis.h"
 
 int main(int argc, char * argv[])
