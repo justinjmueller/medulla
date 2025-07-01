@@ -64,7 +64,7 @@ namespace evar
         double closest_flash_to_trigger = 10000;
         for(const auto & flash : sr.opflashes)
         {
-            if(std::abs(flash.firsttime - t0) < std::abs(closest_flash_to_trigger - t0))
+            if(std::abs(flash.firsttime) < std::abs(closest_flash_to_trigger))
             {
                 closest_flash_to_trigger = flash.firsttime;
             }
