@@ -11,7 +11,6 @@
  */
 #ifndef UTILITIES_H
 #define UTILITIES_H
-
 #include <vector>
 
 #include "framework.h"
@@ -50,68 +49,6 @@ namespace utilities
                     ++counts[PIDFUNC(p)];
             }
             return counts;
-        }
-
-    /**
-     * @brief Finds the index corresponding to the leading particle of the specifed
-     * particle type.
-     * @details The leading particle is defined as the particle with the highest
-     * kinetic energy. If the interaction is a true interaction, the initial kinetic
-     * energy is used instead of the CSDA kinetic energy.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to operate on.
-     * @param pid of the particle type.
-     * @return the index of the leading particle (highest KE). 
-     */
-    template <class T>
-        size_t leading_particle_index(const T & obj, uint16_t pid)
-        {
-            double leading_ke(0);
-            size_t index(0);
-            for(size_t i(0); i < obj.particles.size(); ++i)
-            {
-                const auto & p = obj.particles[i];
-                double energy(pvars::ke(p));
-                if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
-                    energy = pvars::ke(p);
-                if(PIDFUNC(p) == pid && energy > leading_ke)
-                {
-                    leading_ke = energy;
-                    index = i;
-                }
-            }
-            return index;
-        }
-
-    /**
-     * @brief Finds the index corresponding to the leading muon.
-     * @details The leading muon is defined as the muon with the highest
-     * kinetic energy. If the interaction is a true interaction, the initial
-     * kinetic energy is used instead of the CSDA kinetic energy.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to operate on.
-     * @return the index of the leading muon (highest KE).
-     */
-    template<class T>
-    size_t leading_muon_index(const T & obj)
-    {
-        return leading_particle_index(obj, 2);
-    }
-    REGISTER_SELECTOR(leading_muon_index, leading_muon_index);
-    
-    /**
-     * @brief Finds the index corresponding to the leading proton.
-     * @details The leading proton is defined as the proton with the highest
-     * kinetic energy. If the interaction is a true interaction, the initial
-     * kinetic energy is used instead of the CSDA kinetic energy.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to operate on.
-     * @return the index of the leading proton (highest KE).
-     */
-    template<class T>
-        size_t leading_proton_index(const T & obj)
-        {
-            return leading_particle_index(obj, 4);
         }
 }
 #endif // UTILITIES_H

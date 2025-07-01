@@ -119,6 +119,12 @@ using CutFn = std::function<bool(const EventT&)>;
 template<typename EventT>
 using VarFn = std::function<double(const EventT&)>;
 
+/**
+ * @brief Alias for Selector functions with signature size_t(const EventT&).
+ */
+template<typename EventT>
+using SelectorFn = std::function<size_t(const EventT&)>;
+
 //-----------------------------------------------------------------------------
 // 3) Factory function registries
 //-----------------------------------------------------------------------------
@@ -139,6 +145,15 @@ using VarFactory = std::function<VarFn<EventT>(const std::vector<double>&)>;
 
 template<typename EventT>
 using VarFactoryRegistry = Registry<VarFactory<EventT>>;
+
+/**
+ * @brief A factory function: given params, returns a SelectorFn<EventT>
+ */
+template<typename EventT>
+using SelectorFactory = std::function<SelectorFn<EventT>(const std::vector<double>&)>;
+
+template<typename EventT>
+using SelectorFactoryRegistry = Registry<SelectorFactory<EventT>>;
 
 /**
  * @brief Bind a function to a specific parameter set.
@@ -233,6 +248,19 @@ namespace                                                                       
         return true;                                                                       \
     }();                                                                                   \
 }
+
+// Register a selector for use in selecting a single particle within an
+// interaction.
+#define REGISTER_SELECTOR(name, fn)                                                        \
+namespace                                                                                  \
+{                                                                                          \
+    const bool _reg_selector_##name = []{                                                  \
+        SelectorFactoryRegistry<TType>::instance().register_fn(                            \
+            "true_" #name, bind<fn<TType>, TType, size_t>                                  \
+        );                                                                                 \
+        SelectorFactoryRegistry<RType>::instance().register_fn(                            \
+            "reco_" #name, bind<fn<RType>, RType, size_t>                                  \
+        );                                                                                 \
         return true;                                                                       \
     }();                                                                                   \
 }

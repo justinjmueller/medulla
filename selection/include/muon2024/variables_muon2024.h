@@ -16,7 +16,7 @@
 #include "sbnanaobj/StandardRecord/SRInteractionDLP.h"
 #include "sbnanaobj/StandardRecord/SRInteractionTruthDLP.h"
 
-#include "include/utilities.h"
+#include "include/selectors.h"
 #include "include/framework.h"
 #include "include/cuts.h"
 #include "include/muon2024/cuts_muon2024.h"
@@ -117,8 +117,8 @@ namespace vars::muon2024
     template<class T>
     double opening_angle(const T & obj)
     {
-        auto & m(obj.particles[utilities::leading_particle_index(obj, 2)]);
-        auto & p(obj.particles[utilities::leading_particle_index(obj, 4)]);
+        auto & m(obj.particles[selectors::leading_particle_index(obj, 2)]);
+        auto & p(obj.particles[selectors::leading_particle_index(obj, 4)]);
         return std::acos(m.start_dir[0] * p.start_dir[0] + m.start_dir[1] * p.start_dir[1] + m.start_dir[2] * p.start_dir[2]);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::True, opening_angle, opening_angle);

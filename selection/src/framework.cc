@@ -225,29 +225,96 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
         if(var.has_field("parameters"))
             varPars = var.get_double_vector("parameters");
 
-        if(var_type == "true")
+        if(var_type == "true" || (var.has_field("selector") && var_type == "true_particle"))
         {
-            var_name = "true_" + var_name;
-            auto factory = VarFactoryRegistry<TType>::instance().get(var_name);
-            auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, TType>(
-                true_cut,
-                reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
-                true_particle_cut,
-                var_fn, 
-                ismc));
+            if(var.has_field("selector"))
+            {
+                // Full name for the variable.
+                std::string full_name = "true_" + var.get_string_field("selector") + "_" + var_name;
+
+                // Retrieve the selector function.
+                std::string selector_name = "true_" + var.get_string_field("selector");
+                auto selector_factory = SelectorFactoryRegistry<TType>::instance().get(selector_name);
+                auto selector = selector_factory(std::vector<double>{});
+                                
+                // Retrieve the particle-level variable function.
+                var_name = "true_particle_" + var_name;
+                auto factory = VarFactoryRegistry<TParticleType>::instance().get(var_name);
+                auto var_fn = factory(varPars);
+                
+                VarFn<TType> var_fn_with_selector = [var_fn, selector](const TType & e) -> double
+                {
+                    // Apply the selector to the event.
+                    size_t idx = selector(e);
+                    if(idx == kNoMatch) return kNoMatchValue; // No match found.
+                    // Apply the variable function to the selected particle.
+                    return var_fn(e.particles[idx]);
+                };
+                return std::make_pair(full_name, spill_multivar_helper<TType, RType, TParticleType, TType>(
+                    true_cut,
+                    reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
+                    true_particle_cut,
+                    var_fn_with_selector,
+                    ismc));
+            }
+            else
+            {
+                var_name = "true_" + var_name;
+                auto factory = VarFactoryRegistry<TType>::instance().get(var_name);
+                auto var_fn = factory(varPars);
+                return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, TType>(
+                    true_cut,
+                    reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
+                    true_particle_cut,
+                    var_fn, 
+                    ismc));
+            }
         }
-        else if(var_type == "reco")
+        
+        else if(var_type == "reco" || (var.has_field("selector") && var_type == "reco_particle"))
         {
-            var_name = "reco_" + var_name;
-            auto factory = VarFactoryRegistry<RType>::instance().get(var_name);
-            auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, RType>(
-                true_cut,
-                reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
-                true_particle_cut,
-                var_fn,
-                ismc));
+            if(var.has_field("selector"))
+            {
+                // Full name for the variable.
+                std::string full_name = "reco_" + var.get_string_field("selector") + "_" + var_name;
+
+                // Retrieve the selector function.
+                std::string selector_name = "reco_" + var.get_string_field("selector");
+                auto selector_factory = SelectorFactoryRegistry<RType>::instance().get(selector_name);
+                auto selector = selector_factory(std::vector<double>{});
+                                
+                // Retrieve the particle-level variable function.
+                var_name = "reco_particle_" + var_name;
+                auto factory = VarFactoryRegistry<RParticleType>::instance().get(var_name);
+                auto var_fn = factory(varPars);
+                
+                VarFn<RType> var_fn_with_selector = [var_fn, selector](const RType & e) -> double
+                {
+                    // Apply the selector to the event.
+                    size_t idx = selector(e);
+                    if(idx == kNoMatch) return kNoMatchValue; // No match found.
+                    // Apply the variable function to the selected particle.
+                    return var_fn(e.particles[idx]);
+                };
+                return std::make_pair(full_name, spill_multivar_helper<TType, RType, TParticleType, RType>(
+                    true_cut,
+                    reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
+                    true_particle_cut,
+                    var_fn_with_selector,
+                    ismc));
+            }
+            else
+            {
+                var_name = "reco_" + var_name;
+                auto factory = VarFactoryRegistry<RType>::instance().get(var_name);
+                auto var_fn = factory(varPars);
+                return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, RType>(
+                    true_cut,
+                    reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
+                    true_particle_cut,
+                    var_fn,
+                    ismc));
+            }
         }
         else if(var_type == "mctruth")
         {
@@ -304,29 +371,95 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
         if(var.has_field("parameters"))
             varPars = var.get_double_vector("parameters");
 
-        if(var_type == "true")
+        if(var_type == "true" || (var.has_field("selector") && var_type == "true_particle"))
         {
-            var_name = "true_" + var_name;
-            auto factory = VarFactoryRegistry<TType>::instance().get(var_name);
-            auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<RType, TType, TParticleType, TType>(
-                reco_cut,
-                true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
-                true_particle_cut,
-                var_fn,
-                ismc));
+            if(var.has_field("selector"))
+            {
+                // Full name for the variable.
+                std::string full_name = "true_" + var.get_string_field("selector") + "_" + var_name;
+
+                // Retrieve the selector function.
+                std::string selector_name = "true_" + var.get_string_field("selector");
+                auto selector_factory = SelectorFactoryRegistry<TType>::instance().get(selector_name);
+                auto selector = selector_factory(std::vector<double>{});
+                                
+                // Retrieve the particle-level variable function.
+                var_name = "true_particle_" + var_name;
+                auto factory = VarFactoryRegistry<TParticleType>::instance().get(var_name);
+                auto var_fn = factory(varPars);
+                
+                VarFn<TType> var_fn_with_selector = [var_fn, selector](const TType & e) -> double
+                {
+                    // Apply the selector to the event.
+                    size_t idx = selector(e);
+                    if(idx == kNoMatch) return kNoMatchValue; // No match found.
+                    // Apply the variable function to the selected particle.
+                    return var_fn(e.particles[idx]);
+                };
+                return std::make_pair(full_name, spill_multivar_helper<RType, TType, TParticleType, TType>(
+                    reco_cut,
+                    true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
+                    true_particle_cut,
+                    var_fn_with_selector,
+                    ismc));
+            }
+            else
+            {
+                var_name = "true_" + var_name;
+                auto factory = VarFactoryRegistry<TType>::instance().get(var_name);
+                auto var_fn = factory(varPars);
+                return std::make_pair(var_name, spill_multivar_helper<RType, TType, TParticleType, TType>(
+                    reco_cut,
+                    true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
+                    true_particle_cut,
+                    var_fn,
+                    ismc));
+            }
         }
-        else if(var_type == "reco")
+        else if(var_type == "reco" || (var.has_field("selector") && var_type == "reco_particle"))
         {
-            var_name = "reco_" + var_name;
-            auto factory = VarFactoryRegistry<RType>::instance().get(var_name);
-            auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<RType, TType, TParticleType, RType>(
-                reco_cut,
-                true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
-                true_particle_cut,
-                var_fn,
-                ismc));
+            if(var.has_field("selector"))
+            {
+                // Full name for the variable.
+                std::string full_name = "reco_" + var.get_string_field("selector") + "_" + var_name;
+
+                // Retrieve the selector function.
+                std::string selector_name = "reco_" + var.get_string_field("selector");
+                auto selector_factory = SelectorFactoryRegistry<RType>::instance().get(selector_name);
+                auto selector = selector_factory(std::vector<double>{});
+
+                // Retrieve the particle-level variable function.
+                var_name = "reco_particle_" + var_name;
+                auto factory = VarFactoryRegistry<RParticleType>::instance().get(var_name);
+                auto var_fn = factory(varPars);
+
+                VarFn<RType> var_fn_with_selector = [var_fn, selector](const RType & e) -> double
+                {
+                    // Apply the selector to the event.
+                    size_t idx = selector(e);
+                    if(idx == kNoMatch) return kNoMatchValue; // No match found.
+                    // Apply the variable function to the selected particle.
+                    return var_fn(e.particles[idx]);
+                };
+                return std::make_pair(full_name, spill_multivar_helper<RType, TType, RParticleType, RType>(
+                    reco_cut,
+                    true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
+                    reco_particle_cut,
+                    var_fn_with_selector,
+                    ismc));
+            }
+            else
+            {
+                var_name = "reco_" + var_name;
+                auto factory = VarFactoryRegistry<RType>::instance().get(var_name);
+                auto var_fn = factory(varPars);
+                return std::make_pair(var_name, spill_multivar_helper<RType, TType, TParticleType, RType>(
+                    reco_cut,
+                    true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
+                    true_particle_cut,
+                    var_fn,
+                    ismc));
+            }
         }
         else if(var_type == "mctruth")
         {
@@ -592,5 +725,5 @@ template class Registry<VarFactory<RParticleType>>;
 template class Registry<VarFactory<EventType>>;
 
 // Explicit instantiation for selector registries
-template class Registry<SelectorFn<TType>>;
-template class Registry<SelectorFn<RType>>;
+template class Registry<SelectorFactory<TType>>;
+template class Registry<SelectorFactory<RType>>;
