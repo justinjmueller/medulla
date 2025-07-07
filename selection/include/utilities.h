@@ -12,6 +12,7 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
 #include <vector>
+#include <array>
 
 #include "framework.h"
 #include "include/particle_variables.h"
@@ -50,5 +51,49 @@ namespace utilities
             }
             return counts;
         }
+
+    /**
+     * @brief List of good runs for ICARUS Run 2.
+     * @details This list contains the run numbers that are considered good
+     * for analysis in ICARUS Run 2. The list is used to filter out runs that
+     * are known to have issues or are not suitable for analysis.
+     * @note This is intended to be removed once we have a proper version-
+     * controlled run list committed to sbnana.
+     */
+    constexpr std::array<unsigned int, 230>
+    icarus_good_runs_run2{  9301,  9302,  9303,  9307,  9308,  9309,  9310,  9311,  9312,  9313,
+                            9314,  9316,  9317,  9318,  9327,  9328,  9329,  9330,  9332,  9333,
+                            9335,  9337,  9338,  9339,  9340,  9341,  9342,  9343,  9344,  9346,
+                            9347,  9353,  9354,  9356,  9357,  9358,  9359,  9360,  9361,  9362,
+                            9363,  9364,  9365,  9366,  9367,  9380,  9383,  9384,  9385,  9386,
+                            9387,  9388,  9389,  9390,  9391,  9392,  9393,  9394,  9409,  9412,
+                            9415,  9435,  9436,  9437,  9438,  9439,  9441,  9445,  9448,  9450,
+                            9458,  9460,  9472,  9473,  9474,  9477,  9478,  9481,  9482,  9499,
+                            9504,  9518,  9563,  9565,  9569,  9570,  9583,  9587,  9588,  9589,
+                            9590,  9593,  9594,  9595,  9597,  9598,  9599,  9602,  9610,  9626,
+                            9627,  9631,  9647,  9648,  9649,  9658,  9672,  9675,  9688,  9689,
+                            9690,  9691,  9692,  9693,  9694,  9695,  9696,  9697,  9698,  9699,
+                            9700,  9703,  9704,  9705,  9714,  9715,  9716,  9717,  9721,  9723,
+                            9724,  9725,  9726,  9728,  9729,  9730,  9731,  9732,  9733,  9734,
+                            9735,  9743,  9744,  9745,  9746,  9747,  9750,  9752,  9753,  9755,
+                            9758,  9762,  9763,  9764,  9765,  9783,  9788,  9791,  9792,  9793,
+                            9794,  9795,  9796,  9807,  9834,  9835,  9837,  9838,  9840,  9841,
+                            9844,  9847,  9849,  9851,  9854,  9855,  9860,  9862,  9868,  9870,
+                            9892,  9894,  9896,  9897,  9914,  9917,  9919,  9921,  9922,  9924,
+                            9925,  9926,  9929,  9932,  9935,  9940,  9941,  9942,  9944,  9945,
+                            9946,  9949,  9950,  9951,  9953,  9954,  9956,  9959,  9960,  9961,
+                            9970,  9971,  9974,  9977,  9979,  9981,  9982,  9986,  10054, 10059,
+                            10061, 10062, 10064, 10065, 10066, 10067, 10084, 10085, 10096, 10097};
+    
+    /**
+     * @brief Boolean function to check if a run is in the list of good runs
+     * for ICARUS Run 2.
+     * @param run the run number to check.
+     * @return true if the run is in the list of good runs, false otherwise.
+     */
+    bool is_icarus_good_run(unsigned int run)
+    {
+        return std::find(icarus_good_runs_run2.begin(), icarus_good_runs_run2.end(), run) != icarus_good_runs_run2.end();
+    }
 }
 #endif // UTILITIES_H
