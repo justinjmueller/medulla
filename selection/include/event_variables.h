@@ -47,6 +47,114 @@ namespace evar
     double nreco(const T & sr) { return sr.ndlp; }
     REGISTER_VAR_SCOPE(RegistrationScope::Event, nreco, nreco);
 
+    template<typename T>
+    double is_first_in_subrun(const T & sr)
+    {
+        // This variable returns 1 if the event is the first in the subrun,
+        // otherwise it returns 0.
+        return sr.hdr.first_in_subrun;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, is_first_in_subrun, is_first_in_subrun);
+
+    /**
+     * @brief Variable for the POT (Protons on Target) in the event.
+     * @details This variable retrieves the POT (Protons on Target) in the
+     * event by attaching to the pot variable in the header of the record.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the POT in the event.
+     */
+    template<typename T>
+    double pot(const T & sr) { return sr.hdr.pot; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, pot, pot);
+
+    /**
+     * @brief Variable for the POT (Protons on Target) from the spillinfo
+     * vector in the header of the record.
+     * @details This variable retrieves the POT (Protons on Target) from
+     * the spillinfo vector in the header of the record. It sums up the
+     * TOR875 values from all the spills in the BNBInfo vector.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @param params the parameters for the cut. This is used to apply a scale
+     * factor to the POT if needed.
+     * @return the total POT from the spillinfo vector in the header of the record.
+     */
+    template<typename T>
+    double pot_from_spillinfo(const T & sr, std::vector<double> params={1.0})
+    {
+        double pot = 0;
+        for(const auto & spill : sr.hdr.bnbinfo)
+        {
+            pot += params.at(0)*spill.TOR875;
+        }
+        return pot;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, pot_from_spillinfo, pot_from_spillinfo);
+
+    /**
+     * @brief Variable for the number of generated events (MC only) in the
+     * event.
+     * @details This variable retrieves the number of generated events in the
+     * event by attaching to the ngenevt variable in the header of the record.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the number of generated events in the event.
+     */
+    template<typename T>
+    double ngenevt(const T & sr) { return sr.hdr.ngenevt; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, ngenevt, ngenevt);
+
+    /**
+     * @brief Variable for the number of BNB spills in the event.
+     * @details This variable counts the number of BNB spills in the event by
+     * checking the length of the BNBInfo vector in the header of the record.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the number of BNB spills in the event.
+     */
+    template<typename T>
+    double nbnb(const T & sr) { return sr.hdr.bnbinfo.size(); }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, nbnb, nbnb);
+
+    /**
+     * @brief Variable for the number of NuMI spills in the event.
+     * @details This variable counts the number of NuMI spills in the event by
+     * checking the length of the NuMIInfo vector in the header of the record.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the number of NuMI spills in the event.
+     */
+    template<typename T>
+    double nnumi(const T & sr) { return sr.hdr.numiinfo.size(); }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, nnumi, nnumi);
+
+    /**
+     * @brief Variable for the number of off-beam BNB gates in the event.
+     * @details This variable retrieves the number of off-beam BNB gates in the
+     * event by attaching to the noffbeambnb variable in the header of the
+     * record.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the number of off-beam BNB gates in the event.
+     */
+    template<typename T>
+    double noffbeambnb(const T & sr) { return sr.hdr.noffbeambnb; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, noffbeambnb, noffbeambnb);
+
+    /**
+     * @brief Variable for the number of off-beam NuMI gates in the event.
+     * @details This variable retrieves the number of off-beam NuMI gates in
+     * the event by attaching to the noffbeamnumi variable in the header of the
+     * record.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the number of off-beam NuMI gates in the event.
+     */
+    template<typename T>
+    double noffbeamnumi(const T & sr) { return sr.hdr.noffbeamnumi; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, noffbeamnumi, noffbeamnumi);
+
     /**
      * @brief Variable for the time of the global trigger.
      * @details This variable returns the time of the global trigger in Unix
