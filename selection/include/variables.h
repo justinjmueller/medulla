@@ -335,8 +335,8 @@ namespace vars
     REGISTER_VAR_SCOPE(RegistrationScope::Both, dpT_lp, dpT_lp);
 
     /**
-     * @brief Variable for phi_T of the interaction.
-     * @details phi_T is a transverse kinematic imbalance variable defined
+     * @brief Variable for dphi_T of the interaction.
+     * @details dphi_T is a transverse kinematic imbalance variable defined
      * using the transverse momentum of the leading muon and the total hadronic
      * system. This variable is sensitive to the presence of F.S.I. The
      * neutrino direction is assumed to either be the BNB axis direction
@@ -350,7 +350,7 @@ namespace vars
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
     template<class T>
-    double phiT(const T & obj)
+    double dphiT(const T & obj)
     {
         utilities::three_vector lepton_pt = {0, 0, 0};
         utilities::three_vector hadronic_pt = {0, 0, 0};
@@ -372,11 +372,11 @@ namespace vars
         }
         return std::acos(-1 * utilities::dot_product(lepton_pt, hadronic_pt) / (utilities::magnitude(lepton_pt) * utilities::magnitude(hadronic_pt)));
     }
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, phiT, phiT);
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, dphiT, dphiT);
 
     /**
-     * @brief Variable for alpha_T of the interaction.
-     * @details alpha_T is a transverse kinematic imbalance variable defined
+     * @brief Variable for dalpha_T of the interaction.
+     * @details dalpha_T is a transverse kinematic imbalance variable defined
      * using the transverse momentum of the total hadronic system and the
      * outgoing lepton. The neutrino direction is assumed to either be the BNB
      * axis direction (z-axis) or the unit vector pointing from the NuMI target
@@ -389,7 +389,7 @@ namespace vars
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
     template<class T>
-    double alphaT(const T & obj)
+    double dalphaT(const T & obj)
     {
         utilities::three_vector lepton_pt = {0, 0, 0};
         utilities::three_vector total_pt = {0, 0, 0};
@@ -409,7 +409,7 @@ namespace vars
         }
         return std::acos(-1 * utilities::dot_product(total_pt, lepton_pt) / (utilities::magnitude(total_pt) * utilities::magnitude(lepton_pt)));
     }
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, alphaT, alphaT);
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, dalphaT, dalphaT);
 
     /**
      * @brief Variable for the missing longitudinal momentum of the

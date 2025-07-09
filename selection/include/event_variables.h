@@ -230,16 +230,22 @@ namespace evar
      * normalization.
      * @tparam T the top-level record.
      * @param sr the StandardRecord to apply the variable on.
+     * @param params The offset to subtract from the time of the flash in the
+     * minimization process. The default value is 0.0, which means no offset
      * @return the time of the flash closest to the trigger time.
      */
     template<typename T>
-    double time_of_flash_closest_to_trigger(const T & sr)
+    double time_of_flash_closest_to_trigger(const T & sr, std::vector<double> params={0.0})
     {
+        if(params.size() < 1)
+        {
+            throw std::runtime_error("time_of_flash_closest_to_trigger requires at least one parameter for the offset.");
+        }
         double t0 = sr.hdr.triggerinfo.trigger_within_gate;
         double closest_flash_to_trigger = 10000;
         for(const auto & flash : sr.opflashes)
         {
-            if(std::abs(flash.firsttime) < std::abs(closest_flash_to_trigger))
+            if(std::abs(flash.firsttime - params[0]) < std::abs(closest_flash_to_trigger - params[0]))
             {
                 closest_flash_to_trigger = flash.firsttime;
             }
