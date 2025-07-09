@@ -1,0 +1,89 @@
+[general]
+output = "example"
+
+[[sample]]
+name = "cv"
+path = "/pnfs/icarus/persistent/users/mueller/mixed/simulation/nominal/input*.flat.root"
+ismc = true
+
+[[tree]]
+name = "selected_nu"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "fiducial_cut", type = "reco"},
+    {name = "flash_cut", type = "reco", parameters = [0, 1.6]},
+    {name = "base_topology_cut", type = "reco"},
+    {name = "leading_shower_cut", type = "reco"},
+    {name = "pi0_mass_cut", type = "reco"},
+    {name = "neutrino", type = "true"}
+]
+branch = [
+    {name = "neutrino_id", type = "true"},
+    {name = "baseline", type = "mctruth"},
+    {name = "cc", type = "mctruth"},
+    {name = "pdg", type = "mctruth"},
+    {name = "interaction_type", type = "mctruth"},
+    {name = "category", type = "true"},
+    {name = "neutrino_energy", type = "mctruth"},
+    {name = "visible_energy", type = "both"},
+    {name = "dpT", type = "both"},
+    {name = "flash_time", type = "reco"},
+    {name = "muon_momentum_mag", type = "both"},
+    {name = "muon_beam_costheta", type = "both"},
+    {name = "pi0_momentum_mag", type = "both"},
+    {name = "pi0_beam_costheta", type = "both"},
+    {name = "pi0_mass", type = "both"}
+]
+
+[[tree]]
+name = "selected_cos"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "fiducial_cut", type = "reco"},
+    {name = "flash_cut", type = "reco", parameters = [0, 1.6]},
+    {name = "base_topology_cut", type = "reco"},
+    {name = "leading_shower_cut", type = "reco"},
+    {name = "pi0_mass_cut", type = "reco"},
+    {name = "cosmic", type = "true"}
+]
+branch = [
+    {name = "neutrino_id", type = "true"},
+    {name = "baseline", type = "mctruth"},
+    {name = "cc", type = "mctruth"},
+    {name = "pdg", type = "mctruth"},
+    {name = "interaction_type", type = "mctruth"},
+    {name = "category", type = "true"},
+    {name = "neutrino_energy", type = "mctruth"},
+    {name = "visible_energy", type = "both"},
+    {name = "dpT", type = "both"},
+    {name = "flash_time", type = "reco"},
+    {name = "muon_momentum_mag", type = "both"},
+    {name = "muon_beam_costheta", type = "both"},
+    {name = "pi0_momentum_mag", type = "both"},
+    {name = "pi0_beam_costheta", type = "both"},
+    {name = "pi0_mass", type = "both"}
+]
+
+[[tree]]
+name = "signal"
+sim_only = true
+mode = "true"
+cut = [
+    {name = "signal_1mu0pi1pi0", type = "true"}
+]
+branch = [
+    {name = "neutrino_id", type = "true"},
+    {name = "baseline", type = "mctruth"},
+    {name = "cc", type = "mctruth"},
+    {name = "pdg", type = "mctruth"},
+    {name = "interaction_type", type = "mctruth"},
+    {name = "category", type = "true"},
+    {name = "neutrino_energy", type = "mctruth"},
+    {name = "visible_energy", type = "true"},
+    {name = "dpT", type = "true"},
+    {name = "fiducial", type = "reco"},
+    {name = "containment", type = "reco"},
+    {name = "flash_time", type = "reco"},
+]

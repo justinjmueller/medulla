@@ -9,6 +9,7 @@
 #define PLACEHOLDERVALUE std::numeric_limits<double>::quiet_NaN()
 #define PRIMARYFUNC pvars::lax_primary_classification
 #define PIDFUNC pvars::pid
+#define CALOKEFUNC pvars::calo_ke
 #define PROTON_BINDING_ENERGY 30.9 // MeV
 #define BEAM_IS_NUMI false
 
@@ -21,9 +22,9 @@
 #include "configuration.h"
 #include "framework.h"
 #include "cuts.h"
-#include "muon2024/cuts_muon2024.h"
+#include "pi0ana/cuts_ccpi0ana.h"
 #include "variables.h"
-#include "muon2024/variables_muon2024.h"
+#include "pi0ana/variables_ccpi0ana.h"
 #include "mctruth.h"
 #include "event_cuts.h"
 #include "event_variables.h"
