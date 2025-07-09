@@ -55,6 +55,13 @@ int main(int argc, char * argv[])
         loaders.reserve(samples.size());
         for(const auto & sample : samples)
         {
+            // Check if the sample has the "disable" flag set to true
+            if(sample.get_bool_field("disable", false))
+            {
+                std::cout << "Sample '" << sample.get_string_field("name") << "' is disabled, skipping." << std::endl;
+                continue;
+            }
+
             // Create a SpectrumLoader for each sample
             std::unique_ptr<ana::SpectrumLoader> loader = std::make_unique<ana::SpectrumLoader>(sample.get_string_field("path"));
             analysis.AddLoader(sample.get_string_field("name"), loader.get(), sample.get_bool_field("ismc"));
