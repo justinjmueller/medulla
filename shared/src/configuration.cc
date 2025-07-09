@@ -58,6 +58,15 @@ namespace cfg
         return *value;
     }
 
+    // Retrieve the requested boolean field from the configuration table.
+    bool ConfigurationTable::get_bool_field(const std::string & field, bool default_field) const
+    {
+        std::optional<bool> value(config.at_path(field).value<bool>());
+        if(!value)
+            return default_field;
+        return *value;
+    }
+
     // Retrieve the requested string field from the configuration table.
     std::string ConfigurationTable::get_string_field(const std::string & field) const
     {
