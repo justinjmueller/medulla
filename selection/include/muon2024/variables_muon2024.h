@@ -117,10 +117,17 @@ namespace vars::muon2024
     template<class T>
     double opening_angle(const T & obj)
     {
-        auto & m(obj.particles[selectors::leading_particle_index(obj, 2)]);
-        auto & p(obj.particles[selectors::leading_particle_index(obj, 4)]);
-        return std::acos(m.start_dir[0] * p.start_dir[0] + m.start_dir[1] * p.start_dir[1] + m.start_dir[2] * p.start_dir[2]);
+        size_t mi = selectors::leading_muon(obj);
+        size_t pi = selectors::leading_proton(obj);
+        if(mi == kNoMatch || pi == kNoMatch)
+            return kNoMatchValue; // No leading muon or proton found.
+        else
+        {
+            auto & m(obj.particles[mi]);
+            auto & p(obj.particles[pi]);
+            return std::acos(m.start_dir[0] * p.start_dir[0] + m.start_dir[1] * p.start_dir[1] + m.start_dir[2] * p.start_dir[2]);
+        }
     }
-    REGISTER_VAR_SCOPE(RegistrationScope::True, opening_angle, opening_angle);
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, opening_angle, opening_angle);
 }
 #endif // VARS_MUON2024_H
