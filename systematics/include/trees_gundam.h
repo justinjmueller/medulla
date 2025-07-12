@@ -62,7 +62,7 @@ namespace sys::trees
      * @param input The input TFile.
      * @return void
      */
-    void copy_tree(sys::cfg::ConfigurationTable & table, TFile * output, TFile * input);
+    void copy_tree(sys::cfg::ConfigurationTable & config, sys::cfg::ConfigurationTable & table, TFile * output, TFile * input);
 
     /**
      * @brief Add reweightable systematics to the output TTree.

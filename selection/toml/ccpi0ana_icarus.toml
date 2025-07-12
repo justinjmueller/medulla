@@ -1,9 +1,89 @@
 [general]
-output = "example"
+output = "icarus_bnb_ccpi0_onbeam_cv_offbeam_vars"
+
+[[sample]]
+name = "onbeam"
+path = "/pnfs/icarus/persistent/users/mueller/mixed/data/onbeam/input*.flat.root"
+ismc = false
 
 [[sample]]
 name = "cv"
 path = "/pnfs/icarus/persistent/users/mueller/mixed/simulation/nominal/input*.flat.root"
+ismc = true
+
+[[sample]]
+name = "offbeam"
+path = "/pnfs/icarus/persistent/users/mueller/mixed/data/offbeam/input*.flat.root"
+ismc = false
+
+[[sample]]
+name = "var00"
+path = "/pnfs/icarus/persistent/users/mueller/mixed/simulation/var00/input*.flat.root"
+ismc = true
+
+[[sample]]
+name = "var01"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var01/input*.flat.root"
+ismc = true
+
+[[sample]]
+name = "var02"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var02/input*.flat.root"
+ismc = true
+
+[[sample]]
+name = "var03m"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var03m/input*.flat.root"
+ismc = true
+
+[[sample]]
+name = "var03p"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var03p/input*.flat.root"
+ismc = true
+
+[[sample]]
+name = "var04"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var04/input*.flat.root"
+ismc = true
+
+[[sample]]
+name = "var05"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var05/input*.flat.root"
+ismc = true
+
+[[sample]]
+name = "var06"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var06/input*.flat.root"
+ismc = true
+
+[[sample]]
+name = "var07"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var07/input*.flat.root"
+ismc = true
+
+[[sample]]
+name = "var09m"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var09m/input*.flat.root"
+ismc = true
+
+[[sample]]
+name = "var09p"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var09p/input*.flat.root"
+ismc = true
+
+[[sample]]
+name = "var10m"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var10m/input*.flat.root"
+ismc = true
+
+[[sample]]
+name = "var10p"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var10p/input*.flat.root"
+ismc = true
+
+[[sample]]
+name = "var11"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var11/input*.flat.root"
 ismc = true
 
 [[tree]]
@@ -12,28 +92,51 @@ sim_only = false
 mode = "reco"
 cut = [
     {name = "fiducial_cut", type = "reco"},
-    {name = "flash_cut", type = "reco", parameters = [0, 1.6]},
+    {name = "flash_cut", type = "reco", parameters = [-0.5, 1.6]},
     {name = "base_topology_cut", type = "reco"},
     {name = "leading_shower_cut", type = "reco"},
-    {name = "pi0_mass_cut", type = "reco"},
+    {name = "valid_pi0_mass_cut", type = "reco"},
     {name = "neutrino", type = "true"}
 ]
 branch = [
+
+    # True interaction info
     {name = "neutrino_id", type = "true"},
+    {name = "pdg", type = "mctruth"},
     {name = "baseline", type = "mctruth"},
     {name = "cc", type = "mctruth"},
-    {name = "pdg", type = "mctruth"},
+    {name = "neutrino_energy", type = "mctruth"},
     {name = "interaction_type", type = "mctruth"},
     {name = "category", type = "true"},
-    {name = "neutrino_energy", type = "mctruth"},
+
+    # Interaction observables
+    {name = "flash_time", type = "reco"},
     {name = "visible_energy", type = "both"},
     {name = "dpT", type = "both"},
-    {name = "flash_time", type = "reco"},
+    {name = "dphiT", type = "both"},
+    {name = "dalphaT", type = "both"},
+    {name = "vertex_x", type = "both"},
+    {name = "vertex_y", type = "both"},
+    {name = "vertex_z", type = "both"},
+
+    # Muon observables
     {name = "muon_momentum_mag", type = "both"},
     {name = "muon_beam_costheta", type = "both"},
+
+    # Neutral pion observables
     {name = "pi0_momentum_mag", type = "both"},
     {name = "pi0_beam_costheta", type = "both"},
-    {name = "pi0_mass", type = "both"}
+    {name = "pi0_mass", type = "both"},
+    {name = "pi0_photons_costheta", type = "both"},
+    {name = "pi0_leading_photon_energy", type = "both"},
+    {name = "pi0_leading_photon_conv_dist", type = "both"},
+    {name = "pi0_subleading_photon_energy", type = "both"},
+    {name = "pi0_subleading_photon_conv_dist", type = "both"},
+
+    # GUNDAM
+    {name = "is_nu", type = "reco"},
+    {name = "is_data", type = "reco"},
+    {name = "cut_type", type = "reco"}
 ]
 
 [[tree]]
@@ -42,28 +145,51 @@ sim_only = false
 mode = "reco"
 cut = [
     {name = "fiducial_cut", type = "reco"},
-    {name = "flash_cut", type = "reco", parameters = [0, 1.6]},
+    {name = "flash_cut", type = "reco", parameters = [-0.5, 1.6]},
     {name = "base_topology_cut", type = "reco"},
     {name = "leading_shower_cut", type = "reco"},
-    {name = "pi0_mass_cut", type = "reco"},
+    {name = "valid_pi0_mass_cut", type = "reco"},
     {name = "cosmic", type = "true"}
 ]
 branch = [
+
+    # True interaction info
     {name = "neutrino_id", type = "true"},
+    {name = "pdg", type = "mctruth"},
     {name = "baseline", type = "mctruth"},
     {name = "cc", type = "mctruth"},
-    {name = "pdg", type = "mctruth"},
+    {name = "neutrino_energy", type = "mctruth"},
     {name = "interaction_type", type = "mctruth"},
     {name = "category", type = "true"},
-    {name = "neutrino_energy", type = "mctruth"},
+
+    # Interaction observables
+    {name = "flash_time", type = "reco"},
     {name = "visible_energy", type = "both"},
     {name = "dpT", type = "both"},
-    {name = "flash_time", type = "reco"},
+    {name = "dphiT", type = "both"},
+    {name = "dalphaT", type = "both"},
+    {name = "vertex_x", type = "both"},
+    {name = "vertex_y", type = "both"},
+    {name = "vertex_z", type = "both"},
+
+    # Muon observables
     {name = "muon_momentum_mag", type = "both"},
     {name = "muon_beam_costheta", type = "both"},
+
+    # Neutral pion observables
     {name = "pi0_momentum_mag", type = "both"},
     {name = "pi0_beam_costheta", type = "both"},
-    {name = "pi0_mass", type = "both"}
+    {name = "pi0_mass", type = "both"},
+    {name = "pi0_photons_costheta", type = "both"},
+    {name = "pi0_leading_photon_energy", type = "both"},
+    {name = "pi0_leading_photon_conv_dist", type = "both"},
+    {name = "pi0_subleading_photon_energy", type = "both"},
+    {name = "pi0_subleading_photon_conv_dist", type = "both"},
+
+    # GUNDAM
+    {name = "is_nu", type = "reco"},
+    {name = "is_data", type = "reco"},
+    {name = "cut_type", type = "reco"}
 ]
 
 [[tree]]
@@ -74,16 +200,49 @@ cut = [
     {name = "signal_1mu0pi1pi0", type = "true"}
 ]
 branch = [
+
+    # True interaction info
     {name = "neutrino_id", type = "true"},
+    {name = "pdg", type = "mctruth"},
     {name = "baseline", type = "mctruth"},
     {name = "cc", type = "mctruth"},
-    {name = "pdg", type = "mctruth"},
+    {name = "neutrino_energy", type = "mctruth"},
     {name = "interaction_type", type = "mctruth"},
     {name = "category", type = "true"},
-    {name = "neutrino_energy", type = "mctruth"},
-    {name = "visible_energy", type = "true"},
-    {name = "dpT", type = "true"},
+
+    # Interaction observables
+    {name = "visible_energy", type = "both"},
+    {name = "dpT", type = "both"},
+    {name = "dphiT", type = "both"},
+    {name = "dalphaT", type = "both"},
+    {name = "vertex_x", type = "both"},
+    {name = "vertex_y", type = "both"},
+    {name = "vertex_z", type = "both"},
+
+    # Muon observables
+    {name = "muon_momentum_mag", type = "both"},
+    {name = "muon_beam_costheta", type = "both"},
+
+    # Neutral pion observables
+    {name = "pi0_momentum_mag", type = "both"},
+    {name = "pi0_beam_costheta", type = "both"},
+    {name = "pi0_mass", type = "both"},
+    {name = "pi0_photons_costheta", type = "both"},
+    {name = "pi0_leading_photon_energy", type = "both"},
+    {name = "pi0_leading_photon_conv_dist", type = "both"},
+    {name = "pi0_subleading_photon_energy", type = "both"},
+    {name = "pi0_subleading_photon_conv_dist", type = "both"},
+
+    # GUNDAM
+    {name = "is_nu", type = "reco"},
+    {name = "is_data", type = "reco"},
+    {name = "cut_type", type = "reco"},
+
+    # Cuts for efficiency analysis
+    {name = "flash_icarus", type = "reco"},
     {name = "fiducial", type = "reco"},
-    {name = "containment", type = "reco"},
-    {name = "flash_time", type = "reco"},
+    {name = "base_topology", type = "reco"},
+    {name = "leading_shower", type = "reco"},
+    {name = "valid_pi0_mass", type = "reco"},
+    {name = "all", type = "reco"}
 ]

@@ -53,7 +53,7 @@ class Variable:
             The number of bins for the variable.
         binning_scheme : str
             The binning scheme for the variable. This can be either
-            'equal_width' or 'equal_population'. The default is
+            'equal_width', 'equal_population', or custom. The default is
             'equal_width,' which creates bins of equal width
             irrespective of the number of entries in each bin.
         xlabel : str
@@ -116,7 +116,11 @@ class Variable:
                     groups[categories[k]].append(v[0])
 
             for g, v in groups.items():
-                if v and self._binning_scheme == 'equal_population':
+                if self._binning_scheme == 'custom':
+                    self._bin_edges[g] = np.array(self._range)
+                    self._bin_centers[g] = 0.5*(self._bin_edges[g][1:] + self._bin_edges[g][:-1])
+                    self._bin_widths[g] = np.diff(self._bin_edges[g])
+                elif v and self._binning_scheme == 'equal_population':
                     all_entries = pd.concat(v)
                     range_mask = ((all_entries >= self._range[0]) & (all_entries <= self._range[1]))
                     self._bin_edges[g] = np.percentile(all_entries[range_mask], np.linspace(0, 100, self._nbins+1))
@@ -126,6 +130,7 @@ class Variable:
                     self._bin_edges[g] = np.linspace(self._range[0], self._range[1], self._nbins+1)
                     self._bin_centers[g] = 0.5*(self._bin_edges[g][1:] + self._bin_edges[g][:-1])
                     self._bin_widths[g] = self._bin_edges[g][1:] - self._bin_edges[g][:-1]
+
 
     @property
     def mask(self):

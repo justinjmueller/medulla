@@ -144,7 +144,10 @@ class SpineSpectra1D(SpineSpectra):
                 self._plotdata[self._categories[category]] = np.zeros(self._variable._nbins)
                 self._onebincount[self._categories[category]] = 0
             xr = self._variable._range if self._xrange is None else self._xrange
-            h = np.histogram(values, bins=self._variable._nbins, range=xr, weights=weights[category])
+            if self._variable._binning_scheme == 'equal_width':
+                h = np.histogram(values, bins=self._variable._nbins, range=xr, weights=weights[category])
+            elif self._variable._binning_scheme == 'custom':
+                h = np.histogram(values, bins=self._variable._range, weights=weights[category])
             self._onebincount[self._categories[category]] += np.sum(weights[category])
             self._plotdata[self._categories[category]] += h[0]
             self._binedges[self._categories[category]] = h[1]
@@ -197,7 +200,10 @@ class SpineSpectra1D(SpineSpectra):
         """
         ax.set_xlabel(self._variable._xlabel if self._xtitle is None else self._xtitle)
         ax.set_ylabel('Candidates')
-        ax.set_xlim(*self._variable._range if self._xrange is None else self._xrange)
+        if self._variable._binning_scheme == 'equal_width':
+            ax.set_xlim([self._variable._range[0], self._variable._range[1]] if self._xrange is None else self._xrange)
+        if self._variable._binning_scheme == 'custom':
+            ax.set_xlim([self._variable._range[0], self._variable._range[-1]])
         ax.set_title(self._title)
 
         if self._plotdata is not None:
@@ -231,14 +237,27 @@ class SpineSpectra1D(SpineSpectra):
                 reduce = lambda x : [x[i] for i in histogram_mask]
             
             scale = 1.0 if not normalize else 1.0 / np.sum(reduce(data))
-            ax.hist(reduce(bincenters), weights=[scale*x for x in reduce(data)], bins=self._variable._nbins, range=xr, label=reduce(labels), color=reduce(colors), **style.plot_kwargs)
+            if self._variable._binning_scheme == 'equal_width':
+                ax.hist(reduce(bincenters), weights=[scale*x for x in reduce(data)], bins=self._variable._nbins, range=xr, label=reduce(labels), color=reduce(colors), **style.plot_kwargs)
+            elif self._variable._binning_scheme == 'custom':
+                allcat_bin_counts = np.zeros(len(bincenters[0]))
+                # Loop over MC categories
+                bottom = np.zeros(len(bincenters[0]))
+                for (d,l,c) in zip(reduce(data),reduce(labels),reduce(colors)):
+                    ax.bar(bincenters[0], d*scale, width=binwidths[0], bottom=bottom, align='center', label=l, color=c)
+                    bottom+=d*scale
+
             if draw_error:
                 systs = [s[draw_error] for s in self._systematics.values() if draw_error in s]
                 cov = np.sum(s.get_covariance(self._variable._key) for s in systs)
                 x = reduce(bincenters)[0]
                 y = scale * np.sum(reduce(data), axis=0)
                 xerr = [x / 2 for x in binwidths[0]]
-                scov = Systematic.transform_as(cov, scale if not normalize else np.sum(reduce(data), axis=0))
+                #scov = Systematic.transform_as(cov, scale if not normalize else np.sum(reduce(data), axis=0))
+                if normalize:
+                    scov = np.outer(y,y) * (cov / np.outer(np.sum(reduce(data), axis=0), np.sum(reduce(data), axis=0)))
+                else:
+                    scov = Systematic.transform_as(cov, scale)
                 yerr = np.sqrt(np.diag(scov))
                 draw_error_boxes(ax, x, y, xerr, yerr, facecolor='gray', edgecolor='none', alpha=0.5, hatch='///')
 

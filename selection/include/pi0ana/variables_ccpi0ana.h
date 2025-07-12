@@ -97,6 +97,7 @@ namespace vars::ccpi0ana
      * @param obj the interaction to apply the variable on.
      * @return the enumerated category of the interaction.
      */
+    /*
     template<class T>
     double category(const caf::SRInteractionTruthDLPProxy & obj)
     {
@@ -118,7 +119,8 @@ namespace vars::ccpi0ana
 	return cat;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::True, category, category);
- 
+    */
+    
     /**
      * @brief Variable for enumerating interaction categories.
      * @details This variable provides a basic categorization of interactions
@@ -136,7 +138,7 @@ namespace vars::ccpi0ana
      * @param obj the interaction to apply the variable on.
      * @return the enumerated category of the interaction.
      */
-    /*
+    template<class T>
     double category(const caf::SRInteractionTruthDLPProxy & obj)
     {
       truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
@@ -166,54 +168,79 @@ namespace vars::ccpi0ana
         }
       return cat;
     }
-   */
+    REGISTER_VAR_SCOPE(RegistrationScope::True, category, category);
+   
     /**
-     * @brief Variable for enumerating cut type.
-     * @details This variable provides a basic categorization of cuts
-     * using only signal and sideband as the two cateogories.
-     * 1: Signal
-     * 2: Sideband
+     * @brief Dummy GUNDAM variables.
+     * @details "cut_type" specifies a signal or sideband cut.
+     * "is_data" specifies data or MC.  "is_nu" specifies neutrino or cosmic.
      * @param obj the interaction to apply the variable on.
-     * @return the enumerated category of the cut. 
+     * @return the dummy GUNDAM variable. 
      */
     template<class T>
         double cut_type(const T & obj)
         {
-	  // Signal
-	  double cat(1);
+	    // Signal
+	    double cat(1);
 
-	  return cat;
-        }
-
-    template<class T>
-        double is_not_data(const T & obj)
-        {
-	    double cat(0);
+	    // Sideband
+	    //cat = 2;
+	  
 	    return cat;
-	}
- 
+        }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, cut_type, cut_type);
+
     template<class T>
         double is_data(const T & obj)
 	{
-            double cat(1);
+            double cat(-5);
             return cat;
 	}
-
-    template<class T>
-        double is_not_nu(const T & obj)
-        {
-	  double cat(0);
-	  return cat;
-	}
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, is_data, is_data);
 
     template<class T>
         double is_nu(const T & obj)
         {
-            double cat(1);
-            return cat;
+	    double cat(-5);
+	    return cat;
 	}
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, is_nu, is_nu);
 
+    /**
+     * @brief Variable for the base topology status of the interaction.
+     * @details This variable holds the status of whether or not the
+     * the interaction passes the base topology cut defined in cuts_ccpi0ana. 
+     */
+    template<class T>
+    double base_topology(const T & obj) {return cuts::ccpi0ana::base_topology_cut(obj);}
+    REGISTER_VAR_SCOPE(RegistrationScope::Reco, base_topology, base_topology);
 
+    /**
+     * @brief Variable for the leading shower energy threshold status of the interaction.
+     * @details This variable holds the status of whether or not the
+     * the interaction passes the leading shower energy cut defined in cuts_ccpi0ana.
+     */
+    template<class T>
+    double leading_shower(const T & obj) {return cuts::ccpi0ana::leading_shower_cut(obj);}
+    REGISTER_VAR_SCOPE(RegistrationScope::Reco, leading_shower, leading_shower);
+
+    /**
+     * @brief Variable for the pi0 mass cut status of the interaction.
+     * @details This variable holds the status of whether or not the
+     * the interaction passes the pi0 mass cut defined in cuts_ccpi0ana.
+     */
+    template<class T>
+    double valid_pi0_mass(const T & obj) {return cuts::ccpi0ana::valid_pi0_mass_cut(obj);}
+    REGISTER_VAR_SCOPE(RegistrationScope::Reco, valid_pi0_mass, valid_pi0_mass);
+
+    /**
+     * @brief Variable for the status of all interaction cuts.
+     * @details This variable holds the status of whether or not the
+     * the interaction passes the "all" cut defined in cuts_ccpi0ana.
+     */
+    template<class T>
+    double all(const T & obj) {return cuts::ccpi0ana::all_cut(obj);}
+    REGISTER_VAR_SCOPE(RegistrationScope::Reco, all, all);
 
     /**
      * @brief Variable for leading muon momentum magnitude.
@@ -285,6 +312,7 @@ namespace vars::ccpi0ana
 		return s.pi0_leading_photon_energy;
 	    }
 	}
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_leading_photon_energy, pi0_leading_photon_energy);
 
     template<class T>
         double pi0_leading_photon_start_dedx(const T & obj)
@@ -315,6 +343,7 @@ namespace vars::ccpi0ana
 	      return s.pi0_leading_photon_conv_dist;
 	  }
       }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_leading_photon_conv_dist, pi0_leading_photon_conv_dist);
 
     /**
      * @brief Variable for angle between pi0 leading photon cluster direction and vertex direction.
@@ -378,6 +407,7 @@ namespace vars::ccpi0ana
                 return s.pi0_subleading_photon_energy;
 	    }
 	}
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_subleading_photon_energy, pi0_subleading_photon_energy);
 
     template<class T>
         double pi0_subleading_photon_start_dedx(const T & obj)
@@ -408,6 +438,7 @@ namespace vars::ccpi0ana
 	      return s.pi0_subleading_photon_conv_dist;
           }
       }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_subleading_photon_conv_dist, pi0_subleading_photon_conv_dist);
 
     template<class T>
       double pi0_subleading_photon_ip(const T & obj)
@@ -536,6 +567,7 @@ namespace vars::ccpi0ana
 	    }
 
 	}
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_photons_costheta, pi0_photons_costheta);
 
     /**
      * @brief Variable for neutral pion mass.
@@ -584,7 +616,7 @@ namespace vars::ccpi0ana
 	    }
 	    return energy/1000.0;
         }
-
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, visible_energy, visible_energy);
 
     /**
      * @brief Variable for the transverse momentum of the interaction counting
@@ -603,22 +635,23 @@ namespace vars::ccpi0ana
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
     template<class T>
-      double dpT(const T & obj)
-      {
-	utilities::three_vector pt = {0, 0, 0};
-	for(const auto & p : obj.particles)
-	  {
-	    if(utilities_ccpi0ana::final_state_signal(p))
-	      {
-		// Sum up the transverse momentum of all final state particles                                         
-		utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
-		utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
-		utilities::three_vector this_pt = utilities::transverse_momentum(momentum, vtx);
-		pt = utilities::add(pt, this_pt);
-	      }
-	  }
-	return utilities::magnitude(pt)/1000.0;
-      }
+        double dpT(const T & obj)
+        {
+	    utilities::three_vector pt = {0, 0, 0};
+	    for(const auto & p : obj.particles)
+	    {
+	        if(utilities_ccpi0ana::final_state_signal(p))
+		{
+		    // Sum up the transverse momentum of all final state particles                                         
+		    utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+		    utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+		    utilities::three_vector this_pt = utilities::transverse_momentum(momentum, vtx);
+		    pt = utilities::add(pt, this_pt);
+		}
+	    }
+	    return utilities::magnitude(pt)/1000.0;
+	}
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, dpT, dpT);
 
     /**
      * @brief Variable for phi_T of the interaction.                                     
@@ -636,28 +669,29 @@ namespace vars::ccpi0ana
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).                                      
      */
     template<class T>
-      double phiT(const T & obj)
-      {
-	utilities::three_vector lepton_pt = {0, 0, 0};
-	utilities::three_vector hadronic_pt = {0, 0, 0};
-	for(const auto & p : obj.particles)
-	  {
-	    if(utilities_ccpi0ana::final_state_signal(p))
-	      {
-		// There should only be one lepton, so replace the lepton                                        
-		// transverse momentum if the particle is a lepton.                                
-		utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
-		utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
-		utilities::three_vector this_pt = utilities::transverse_momentum(momentum, vtx);
-		if(PIDFUNC(p) == 1 || PIDFUNC(p) == 2)
-		  lepton_pt = this_pt;
-		// The total hadronic system is treated as a single object.
-		else if(PIDFUNC(p) > 2)
-		  hadronic_pt = utilities::add(hadronic_pt, this_pt);
-	      }
-	  }
-	return std::acos(-1 * utilities::dot_product(lepton_pt, hadronic_pt) / (utilities::magnitude(lepton_pt) * utilities::magnitude(hadronic_pt)));
-      }
+        double dphiT(const T & obj)
+        {
+	    utilities::three_vector lepton_pt = {0, 0, 0};
+	    utilities::three_vector hadronic_pt = {0, 0, 0};
+	    for(const auto & p : obj.particles)
+	    {
+	        if(utilities_ccpi0ana::final_state_signal(p))
+		{
+		    // There should only be one lepton, so replace the lepton                                        
+		    // transverse momentum if the particle is a lepton.                                
+		    utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+		    utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+		    utilities::three_vector this_pt = utilities::transverse_momentum(momentum, vtx);
+		    if(PIDFUNC(p) == 1 || PIDFUNC(p) == 2)
+		      lepton_pt = this_pt;
+		    // The total hadronic system is treated as a single object.
+		    else if(PIDFUNC(p) > 2)
+		      hadronic_pt = utilities::add(hadronic_pt, this_pt);
+		}
+	    }
+	    return std::acos(-1 * utilities::dot_product(lepton_pt, hadronic_pt) / (utilities::magnitude(lepton_pt) * utilities::magnitude(hadronic_pt)));
+	}
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, dphiT, dphiT);
 
     /**
      * @brief Variable for alpha_T of the interaction.
@@ -674,27 +708,27 @@ namespace vars::ccpi0ana
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
     template<class T>
-      double alphaT(const T & obj)
-      {
-	utilities::three_vector lepton_pt = {0, 0, 0};
-	utilities::three_vector total_pt = {0, 0, 0};
-	for(const auto & p : obj.particles)
-	  {
-	    if(utilities_ccpi0ana::final_state_signal(p))
-	      {
-		// There should only be one lepton, so replace the lepton
-		// transverse momentum if the particle is a lepton.
-		utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
-		utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
-		utilities::three_vector this_pt = utilities::transverse_momentum(momentum, vtx);
-		if(PIDFUNC(p) == 1 || PIDFUNC(p) == 2)
-		  lepton_pt = this_pt;
-		total_pt = utilities::add(total_pt, this_pt);
-	      }
-	  }
-	return std::acos(-1 * utilities::dot_product(total_pt, lepton_pt) / (utilities::magnitude(total_pt) * utilities::magnitude(lepton_pt)));
-      }
-
+        double dalphaT(const T & obj)
+        {
+	    utilities::three_vector lepton_pt = {0, 0, 0};
+	    utilities::three_vector total_pt = {0, 0, 0};
+	    for(const auto & p : obj.particles)
+	    {
+	        if(utilities_ccpi0ana::final_state_signal(p))
+		{
+		    // There should only be one lepton, so replace the lepton
+		    // transverse momentum if the particle is a lepton.
+		    utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+		    utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+		    utilities::three_vector this_pt = utilities::transverse_momentum(momentum, vtx);
+		    if(PIDFUNC(p) == 1 || PIDFUNC(p) == 2)
+		      lepton_pt = this_pt;
+		    total_pt = utilities::add(total_pt, this_pt);
+		}
+	    }
+	    return std::acos(-1 * utilities::dot_product(total_pt, lepton_pt) / (utilities::magnitude(total_pt) * utilities::magnitude(lepton_pt)));
+	}
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, dalphaT, dalphaT);
 
 }
 #endif // VARS_CCPI0ANA_H

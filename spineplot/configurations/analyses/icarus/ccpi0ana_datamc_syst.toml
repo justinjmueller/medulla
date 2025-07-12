@@ -1,0 +1,426 @@
+[[style]]
+name = 'basic'
+style_sheet = "/exp/icarus/app/users/lkashur/medulla_dev/srcs/medulla/spineplot/pi0ana.mplstyle"
+markers = ['o', '^', 's', 'P', 'D']
+default_figsize = [8,8]
+title = ''
+mark_pot = true
+mark_pot_horizontal = true
+mark_preliminary = 'ICARUS Work-in-Progress'
+plot_kwargs = {'histtype' = 'barstacked', 'stacked' = true}
+
+[[systematic_recipe]]
+name = 'detsys'
+label = 'Detector Systematics'
+pattern = 'var(01|02|03|04|05|06|07|08|09|10)+'
+
+[[systematic_recipe]]
+name = 'flux'
+label = 'Flux Systematics'
+pattern = 'Flux'
+
+[[systematic_recipe]]
+name = 'multisim_xsec'
+label = 'Interaction Systematics: Multisim'
+pattern = 'GENIEReWeight_SBN_v1_multisim_(ZExpAVariation|CCRES|NCRES|NCELVariation|DISBY|FSI)+'
+
+[[systematic_recipe]]
+name = 'multisigma_xsec'
+label = 'Interaction Systematics: Multisigma'
+pattern = 'GENIEReWeight_SBN_v1_multisigma_(VecFFCCQEshape|RPA_CCQE|CoulombCCQE|NormCCMEC|NormNCMEC|RDec|Theta|NormCCCOH|NormNCCOH|NonRES)+'
+
+[[systematic_recipe]]
+name = 'interaction'
+label = 'Interaction Systematics'
+#pattern = 'GENIEReWeight_SBN_v1_multisim'
+pattern = '(multisim|multisigma)_xsec'
+
+[[systematic_recipe]]
+name = 'stats'
+label = 'Statistical Uncertainty'
+pattern = '(mc_nu|mc_cos|offbeam)_statistical'
+
+[[systematic_recipe]]
+name = 'stats_offbeam'
+label = 'Statistical Uncertainty'
+pattern = 'offbeam_statistical'
+
+#[[systematic_recipe]]
+#name = 'flux_xsec'
+#label = 'Flux + Interaction Uncertainty'
+#pattern = '(flux|xsec|stats)'
+
+[[systematic_recipe]]
+name = 'all'
+label = 'Total MC Uncertainty'
+#pattern = '(detsys)'
+#pattern = '(flux)'
+#pattern = '(xsec)'
+#pattern = '(stats)'
+pattern = '(detsys|flux|interaction|stats)'
+
+[samples.mc_nu]
+key = 'cv' 
+exposure_type = "pot"
+trees = ['selected_nu',]
+systematics = ['variationTree', 'multisimTree', 'multisigmaTree']
+#presel = 'matches_energy == 1'
+#presel = 'matches_baseline == 1'
+
+[samples.mc_cos]
+key = 'cv'
+exposure_type = 'pot'
+trees = ['selected_cos']
+
+[samples.onbeam]
+key = "onbeam"
+exposure_type = "pot"
+override_category = -100
+trees = ['selected_nu',]
+
+[samples.offbeam]
+key = "offbeam"
+exposure_type = "livetime"
+override_category = -1
+trees = ['selected_cos',]
+
+[output]
+path = './'
+
+# Analysis including on-beam
+[analysis]
+ordinate_sample = 'onbeam'
+category_branch = 'true_category'
+category_assignment = [[0], [1], [2], [3], [4], [5], [6], [7], [-1,8], [-100]]
+category_labels = ['1$\mu$0$\pi^{±}$1$\pi^{0}$', '1$\mu$0$\pi^{±}$1$\pi^{0}$ (OOPS)', '1$\mu$0$\pi^{±}$1$\pi^{0}$ (OOFV)', '1$\mu$N$\pi^{±}$1$\pi^{0}$', '1$\mu$N$\pi^{±}$0$\pi^{0}$', '1$\mu$N$\pi^{0}$', '0$\mu$1$\pi^{0}$ ', 'Other $\nu$', 'Cosmic', 'Data']
+category_colors = ['#1b9e77', '#b3e2cd', '#dea0fd', '#4c78a8', '#e5c494', '#e45756', '#17becf', '#f58518', '#a6761d', 'black']
+category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'scatter']
+
+# Analysis excluding on-beam, but initially scaled to-onbeam for the sake of off-beam cosmics...
+#[analysis]
+#ordinate_sample = 'onbeam'
+#category_branch = 'category'
+#category_assignment = [[0], [1], [2], [3], [4], [5], [6], [7], [-1,8]]
+#category_labels = ['1$\mu$0$\pi^{±}$1$\pi^{0}$', '1$\mu$0$\pi^{±}$1$\pi^{0}$ (OOPS)', '1$\mu$0$\pi^{±}$1$\pi^{0}$ (OOFV)', '1$\mu$N$\pi^{±}$1$\pi^{0}$', '1$\mu$N$\pi^{±}$0$\pi^{0}$', '1$\mu$N$\pi^{0}$', '0$\mu$1$\pi^{0}$ ', 'Other $\nu$', 'Cosmic']
+#category_colors = ['#1b9e77', '#b3e2cd', '#dea0fd', '#4c78a8', '#e5c494', '#e45756', '#17becf', '#f58518', '#a6761d']
+#category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram']
+
+#[variables.true_muon_momentum_mag]
+#key = 'true_muon_momentum_mag'
+#range = [0.0, 2.5]
+#nbins = 10
+#binning_scheme = 'equal_width'
+#binning_scheme = 'custom'
+#nbins = 7
+#range = [0.225, 0.375, 0.525, 0.700, 0.900, 1.250, 1.750, 2.800]
+#xlabel = 'True Muon Momentum [GeV/c]'
+
+[variables.reco_muon_momentum_mag]
+key = 'reco_muon_momentum_mag'
+#range = [0.0, 2.5]
+#nbins = 10
+#binning_scheme = 'equal_width'
+binning_scheme = 'custom'
+nbins = 7
+range = [0.225, 0.375, 0.525, 0.700, 0.900, 1.250, 1.750, 2.800]
+xlabel = 'Reconstructed Muon Momentum [GeV/c]'
+
+#[variables.true_muon_beam_costheta]
+#key = 'true_muon_beam_costheta'
+#range = [-1, 1]
+#nbins = 8
+#binning_scheme = 'equal_width'
+#binning_scheme = 'custom'
+#nbins = 8
+#range = [-1.0, -0.60, -0.2, 0.1, 0.35, 0.55, 0.7, 0.85, 1.0]
+#xlabel = 'True $\cos(\theta_{\mu})$'
+
+#[variables.reco_muon_beam_costheta]
+#key = 'reco_muon_beam_costheta'
+#range = [-1, 1]
+#nbins = 8
+#binning_scheme = 'equal_width'
+#binning_scheme = 'custom'
+#nbins = 8
+#range = [-1.0, -0.60, -0.2, 0.1, 0.35, 0.55, 0.7, 0.85, 1.0]
+#xlabel = 'Reconstructed $\cos(\theta_{\mu})$'
+
+#[variables.true_pi0_momentum_mag]
+#key = 'true_pi0_momentum_mag'
+#binning_scheme = 'custom'
+#nbins = 8
+#range = [0.0, 0.100, 0.175, 0.250, 0.325, 0.400, 0.525, 0.725, 1.200]
+#xlabel = 'True $\pi^{0}$ Momentum [GeV/c]'
+
+#[variables.reco_pi0_momentum_mag]
+#key = 'reco_pi0_momentum_mag'
+#binning_scheme = 'custom'
+#nbins = 8
+#range = [0.0, 0.100, 0.175, 0.250, 0.350, 0.450, 0.600, 0.800, 1.200]
+#range = [0.0, 0.100, 0.175, 0.250, 0.325, 0.400, 0.525, 0.725, 1.200]
+#xlabel = 'Reconstructed $\pi^{0}$ Momentum [GeV/c]'
+
+#[variables.reco_pi0_leading_photon_energy]
+#key = 'reco_pi0_leading_photon_energy'
+#range = [0, 1000]
+#nbins = 20
+#binning_scheme = 'equal_width'
+#xlabel = 'Reconstructed $\pi^{0}$ Leading Photon Energy [MeV]'
+
+#[variables.reco_pi0_leading_photon_conv_dist]
+#key = 'reco_pi0_leading_photon_conv_dist'
+#range = [0, 100]
+#nbins = 20
+#binning_scheme = 'equal_width'
+#xlabel = 'Reconstructed $\pi^{0}$ Leading Photon Conversion Distance [cm]'
+
+#[variables.reco_pi0_leading_photon_cosphi]
+#key = 'reco_pi0_leading_photon_cosphi'
+#range = [-1, 1]
+#nbins = 100
+#binning_scheme = 'equal_width'
+#xlabel = 'Reconstructed $\pi^{0}$ Leading Photon cos($\phi$) [cm]'
+
+#[variables.reco_pi0_leading_photon_ip]
+#key = 'reco_pi0_leading_photon_ip'
+#range = [0, 20]
+#nbins = 50
+#binning_scheme = 'equal_width'
+#xlabel = 'Reconstructed $\pi^{0}$ Leading Photon IP [cm]'
+
+#[variables.reco_pi0_subleading_photon_energy]
+#key = 'reco_pi0_subleading_photon_energy'
+#range = [0, 1000]
+#nbins = 20
+#binning_scheme = 'equal_width'
+#xlabel = 'Reconstructed $\pi^{0}$ Subleading Photon Energy [MeV]'
+
+#[variables.reco_pi0_subleading_photon_conv_dist]
+#key = 'reco_pi0_subleading_photon_conv_dist'
+#range = [0, 100]
+#nbins = 20
+#binning_scheme = 'equal_width'
+#xlabel = 'Reconstructed $\pi^{0}$ Subleading Photon Conversion Distance [cm]'
+
+#[variables.reco_pi0_subleading_photon_cosphi]
+#key = 'reco_pi0_subleading_photon_cosphi'
+#range = [-1, 1]
+#nbins = 20
+#binning_scheme = 'equal_width'
+#xlabel = 'Reconstructed $\pi^{0}$ Subleading Photon cos($\phi$) [cm]'
+
+#[variables.true_pi0_beam_costheta]
+#key = 'true_pi0_beam_costheta'
+#binning_scheme = 'custom'
+#nbins = 8
+#range = [-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.50, 0.75, 1.0]
+#xlabel = 'Reconstructed $\cos(\theta_{\pi^{0}})$'
+
+#[variables.reco_pi0_beam_costheta]
+#key = 'reco_pi0_beam_costheta'
+#binning_scheme = 'custom'
+#nbins = 8
+#range = [-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.50, 0.75, 1.0]
+#xlabel = 'Reconstructed $\cos(\theta_{\pi^{0}})$'
+
+[variables.reco_pi0_mass]
+key = 'reco_pi0_mass'
+range = [0, 400]
+nbins = 40
+binning_scheme = 'equal_width'
+xlabel = 'Reconstructed Neutral Pion Mass [MeV/c$^{2}$]'
+
+#[variables.reco_visible_energy]
+#key = 'reco_visible_energy'
+#range = [0, 4]
+#nbins = 25
+#binning_scheme = 'equal_width'
+#xlabel = 'Reconstructed Visible Energy [GeV]'
+
+#[variables.reco_dpT]
+#key = 'reco_dpT'
+#range = [0.0, 1.2]
+#nbins = 16
+#binning_scheme = 'equal_width'
+#xlabel = 'Reconstructed $\delta$$p_{T}$ [MeV/c]'
+
+#[variables.reco_dphiT]
+#key = 'reco_dphiT'
+#range = [0.0, 3.14159]
+#range = [-5.0, 5.0]
+#nbins = 16
+#binning_scheme = 'equal_width'
+#xlabel = 'Reconstructed $\delta$$\phi_{T}$ [rad.]'
+
+#[variables.reco_dalphaT]
+#key = 'reco_dalphaT'
+#range = [0.0, 3.14159]
+#nbins = 16
+#nbins = 32
+#binning_scheme = 'equal_width'
+#xlabel = 'Reconstructed $\delta$$\alpha_{T}$ [rad.]'
+
+[[figure]]
+name = 'reco_muon_momentum_mag'
+type = 'SimpleFigure'
+style = 'basic'
+title = 'Selected $\nu_{\mu}$ CC $\pi^{0}$'
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_muon_momentum_mag'
+#yrange=[0,110]
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'all', 'normalize' = false}
+
+#[[figure]]
+#name = 'reco_muon_beam_costheta'
+#type = 'SimpleFigure'
+#style = 'basic'
+#title = 'Selected $\nu_{\mu}$ CC $\pi^{0}$'
+#[[figure.artists]]
+#type = 'SpineSpectra1D'
+#variable = 'reco_muon_beam_costheta'
+#draw_kwargs = {'show_component_number' = false, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'stats', 'normalize' = true}
+
+#[[figure]]
+#name = 'reco_pi0_momentum_mag'
+#type = 'SimpleFigure'
+#style = 'basic'
+#title = 'Selected $\nu_{\mu}$ CC $\pi^{0}$'
+#[[figure.artists]]
+#type = 'SpineSpectra1D'
+#variable = 'reco_pi0_momentum_mag'
+#yrange=[0,180]
+#draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'all', 'normalize' = false}
+
+#[[figure]]
+#name = 'reco_pi0_leading_photon_energy'
+#type = 'SimpleFigure'
+#style = 'basic'
+#title = 'Selected $\nu_{\mu}$ CC $\pi^{0}$'
+#[[figure.artists]]
+#type = 'SpineSpectra1D'
+#variable = 'reco_pi0_leading_photon_energy'
+#draw_kwargs = {'show_component_number' = false, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'stats'}
+
+#[[figure]]
+#name = 'reco_pi0_leading_photon_conv_dist'
+#type = 'SimpleFigure'
+#style = 'basic'
+#title = 'Selected $\nu_{\mu}$ CC $\pi^{0}$'
+#[[figure.artists]]
+#type = 'SpineSpectra1D'
+#variable = 'reco_pi0_leading_photon_conv_dist'
+#yrange = []
+#draw_kwargs = {'show_component_number' = false, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'stats'}
+
+#[[figure]]
+#name = 'reco_pi0_leading_photon_cosphi'
+#type = 'SimpleFigure'
+#style = 'basic'
+#title = 'Selected $\nu_{\mu}$ CC $\pi^{0}$'
+#[[figure.artists]]
+#type = 'SpineSpectra1D'
+#variable = 'reco_pi0_leading_photon_cosphi'
+#draw_kwargs = {'show_component_number' = false, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'stats'}
+
+#[[figure]]
+#name = 'reco_pi0_leading_photon_ip'
+#type = 'SimpleFigure'
+#style = 'basic'
+#title = 'Selected $\nu_{\mu}$ CC $\pi^{0}$'
+#[[figure.artists]]
+#type = 'SpineSpectra1D'
+#variable = 'reco_pi0_leading_photon_ip'
+#draw_kwargs = {'show_component_number' = false, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'stats'}
+
+#[[figure]]
+#name = 'reco_pi0_subleading_photon_energy'
+#type = 'SimpleFigure'
+#style = 'basic'
+#title = 'Selected $\nu_{\mu}$ CC $\pi^{0}$'
+#[[figure.artists]]
+#type = 'SpineSpectra1D'
+#variable = 'reco_pi0_subleading_photon_energy'
+#draw_kwargs = {'show_component_number' = false, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'stats'}
+
+#[[figure]]
+#name = 'reco_pi0_subleading_photon_conv_dist'
+#type = 'SimpleFigure'
+#style = 'basic'
+#title = 'Selected $\nu_{\mu}$ CC $\pi^{0}$'
+#[[figure.artists]]
+#type = 'SpineSpectra1D'
+#variable = 'reco_pi0_subleading_photon_conv_dist'
+#draw_kwargs = {'show_component_number' = false, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'stats'}
+
+#[[figure]]
+#name = 'reco_pi0_subleading_photon_cosphi'
+#type = 'SimpleFigure'
+#style = 'basic'
+#title = 'Selected $\nu_{\mu}$ CC $\pi^{0}$'
+#[[figure.artists]]
+#type = 'SpineSpectra1D'
+#variable = 'reco_pi0_subleading_photon_cosphi'
+#draw_kwargs = {'show_component_number' = false, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'stats'}
+
+#[[figure]]
+#name = 'reco_pi0_beam_costheta'
+#type = 'SimpleFigure'
+#style = 'basic'
+#title = 'Selected $\nu_{\mu}$ CC $\pi^{0}$'
+#[[figure.artists]]
+#type = 'SpineSpectra1D'
+#variable = 'reco_pi0_beam_costheta'
+#draw_kwargs = {'show_component_number' = false, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'stats', 'normalize' = true}
+
+[[figure]]
+name = 'reco_pi0_mass'
+type = 'SimpleFigure'
+style = 'basic'
+#title = 'Selected $\nu_{\mu}$ CC $\pi^{0}$'
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_pi0_mass'
+#yrange = [0, 120]
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'stats', 'normalize' = false}
+
+#[[figure]]
+#name = 'reco_visible_energy'
+#type = 'SimpleFigure'
+#style = 'basic'
+#title = 'Selected $\nu_{\mu}$ CC $\pi^{0}$'
+#[[figure.artists]]
+#type = 'SpineSpectra1D'
+#variable = 'reco_visible_energy'
+#draw_kwargs = {'show_component_number' = false, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'stats'}
+
+#[[figure]]
+#name = 'reco_dpT'
+#type = 'SimpleFigure'
+#style = 'basic'
+#title = 'Selected $\nu_{\mu}$ CC $\pi^{0}$'
+#[[figure.artists]]
+#type = 'SpineSpectra1D'
+#variable = 'reco_dpT'
+#draw_kwargs = {'show_component_number' = false, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'stats', 'normalize' = true}
+
+#[[figure]]
+#name = 'reco_dphiT'
+#type = 'SimpleFigure'
+#style = 'basic'
+#title = 'Selected $\nu_{\mu}$ CC $\pi^{0}$'
+#[[figure.artists]]
+#type = 'SpineSpectra1D'
+#variable = 'reco_dphiT'
+#yrange = [0, 30]
+#draw_kwargs = {'show_component_number' = false, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'stats', 'normalize' = true}
+
+#[[figure]]
+#name = 'reco_dalphaT'
+#type = 'SimpleFigure'
+#style = 'basic'
+#title = 'Selected $\nu_{\mu}$ CC $\pi^{0}$'
+#[[figure.artists]]
+#type = 'SpineSpectra1D'
+#variable = 'reco_dalphaT'
+#draw_kwargs = {'show_component_number' = false, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'stats', 'normalize' = true}

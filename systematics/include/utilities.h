@@ -24,11 +24,11 @@
  * of the variable, the number of bins, the minimum value, and the maximum
  * value. This is used to contain the configuration of the variables that are
  * used in the systematics framework.
- * @see cfg::ConfigurationTable
+ * @see sys::cfg::ConfigurationTable
  */
 struct SysVariable
 {
-    SysVariable(cfg::ConfigurationTable & table)
+    SysVariable(sys::cfg::ConfigurationTable & table)
         : name(table.get_string_field("name"))
     {
         std::vector<double> bins = table.get_double_vector("bins");

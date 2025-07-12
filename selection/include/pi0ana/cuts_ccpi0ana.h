@@ -234,12 +234,12 @@ namespace cuts::ccpi0ana
      * @note This cut is intended to be used for the ccpi0ana analysis.
      */
     template<class T>
-        bool pi0_mass_cut(const T & obj)
+        bool valid_pi0_mass_cut(const T & obj)
         {
 	  reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
 	  return s.pi0_mass < 400;
 	}
-    REGISTER_CUT_SCOPE(RegistrationScope::Both, pi0_mass_cut, pi0_mass_cut);
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, valid_pi0_mass_cut, valid_pi0_mass_cut);
 
     /**
      * @brief Apply a fiducial volume, containment, flash time, 1mu0pi2gamma
@@ -254,8 +254,8 @@ namespace cuts::ccpi0ana
      * @note This cut is intended to be used for the ccpi0ana analysis. 
      */
     template<class T>
-      //bool all_cut(const T & obj) {return fiducial_cut<T>(obj) && flash_cut<T>(obj) && base_topology_cut<T>(obj) && leading_shower_cut<T>(obj) && pi0_mass_cut<T>(obj);}
-      bool all_cut(const T & obj) {return fiducial_cut<T>(obj) && flash_cut<T>(obj) && base_topology_cut<T>(obj) && leading_shower_cut<T>(obj);}
+      bool all_cut(const T & obj) {return fiducial_cut<T>(obj) && flash_cut<T>(obj) && base_topology_cut<T>(obj) && leading_shower_cut<T>(obj) && valid_pi0_mass_cut<T>(obj);}
+      //bool all_cut(const T & obj) {return fiducial_cut<T>(obj) && flash_cut<T>(obj) && base_topology_cut<T>(obj) && leading_shower_cut<T>(obj);}
     
     /**
      * @brief Apply a cut to select the 1mu0pi1pi0 signal.

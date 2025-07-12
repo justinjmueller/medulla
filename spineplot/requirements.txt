@@ -1,7 +1,9 @@
 numpy
 scipy
+scikit-learn
 pandas
 matplotlib
 uproot
 toml
 uproot
+mpltern

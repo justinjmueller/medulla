@@ -31,7 +31,7 @@ namespace sys
         std::vector<double> * zscores;
         
     public:
-        Systematic(cfg::ConfigurationTable & table, TTree * t);
+        Systematic(sys::cfg::ConfigurationTable & table, TTree * t);
         size_t get_index();
         Type get_type();
         TTree * get_tree();

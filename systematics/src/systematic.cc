@@ -11,7 +11,7 @@
 
 #include "TTree.h"
 
-sys::Systematic::Systematic(cfg::ConfigurationTable & table, TTree * t)
+sys::Systematic::Systematic(sys::cfg::ConfigurationTable & table, TTree * t)
     : name(table.get_string_field("name")),
       index(table.get_int_field("index")),
       type(table.get_string_field("type") == "multisim" ? Type::kMULTISIM : table.get_string_field("type") == "multisigma" ? Type::kMULTISIGMA : Type::kVARIATION),

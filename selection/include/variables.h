@@ -104,6 +104,16 @@ namespace vars
     REGISTER_VAR_SCOPE(RegistrationScope::Both, containment, containment);
 
     /**
+     * @brief Variable for the in-time flash status of the interaction.
+     * @details The in-time flash status is determined upstream in the SPINE
+     * post-processing and is a requirement that the interaction be matched to 
+     * an in-time flash.
+     */
+    template<class T>
+      double flash_icarus(const T & obj) {return cuts::flash_cut(obj, {-0.5, 1.6});}
+    REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_icarus, flash_icarus);
+
+    /**
      * @brief Variable for the fiducial volume status of the interaction.
      * @details The fiducial volume status is determined upstream in the SPINE
      * reconstruction and is a requirement that the interaction vertex is within
@@ -122,6 +132,7 @@ namespace vars
      * @param obj interaction to apply the variable on.
      * @return the total visible energy of the interaction.
      */
+    /*
     template<class T>
     double visible_energy(const T & obj)
     {
@@ -137,7 +148,8 @@ namespace vars
         return energy/1000.0;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, visible_energy, visible_energy);
-
+    */
+    
     /**
      * @brief Variable for total visible energy of interaction, including
      * sub-threshold particles.
@@ -265,6 +277,7 @@ namespace vars
      * @note The switch to the NuMI beam direction instead of the BNB axis is
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
+    /*
     template<class T>
     double dpT(const T & obj)
     {
@@ -283,6 +296,7 @@ namespace vars
         return utilities::magnitude(pt);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, dpT, dpT);
+    */
 
     /**
      * @brief Variable for the transverse momentum of the interaction counting
@@ -299,6 +313,7 @@ namespace vars
      * @note The switch to the NuMI beam direction instead of the BNB axis is
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
+    /*
     template<class T>
     double dpT_lp(const T & obj)
     {
@@ -333,6 +348,7 @@ namespace vars
             return utilities::magnitude(utilities::add(l_pt, p_pt));
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, dpT_lp, dpT_lp);
+    */
 
     /**
      * @brief Variable for dphi_T of the interaction.
@@ -349,6 +365,7 @@ namespace vars
      * @note The switch to the NuMI beam direction instead of the BNB axis is
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
+    /*
     template<class T>
     double dphiT(const T & obj)
     {
@@ -373,6 +390,7 @@ namespace vars
         return std::acos(-1 * utilities::dot_product(lepton_pt, hadronic_pt) / (utilities::magnitude(lepton_pt) * utilities::magnitude(hadronic_pt)));
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, dphiT, dphiT);
+    */
 
     /**
      * @brief Variable for dalpha_T of the interaction.
@@ -388,6 +406,7 @@ namespace vars
      * @note The switch to the NuMI beam direction instead of the BNB axis is
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
+    /*
     template<class T>
     double dalphaT(const T & obj)
     {
@@ -410,6 +429,7 @@ namespace vars
         return std::acos(-1 * utilities::dot_product(total_pt, lepton_pt) / (utilities::magnitude(total_pt) * utilities::magnitude(lepton_pt)));
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, dalphaT, dalphaT);
+    */
 
     /**
      * @brief Variable for the missing longitudinal momentum of the
@@ -424,6 +444,7 @@ namespace vars
      * @note The switch to the NuMI beam direction instead of the BNB axis is
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
+    /*
     template<class T>
     double dpL(const T & obj)
     {
@@ -448,6 +469,7 @@ namespace vars
         return utilities::magnitude(utilities::add(hadronic_pl, lepton_pl)) - 1000*vars::visible_energy(obj);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, dpL, dpL);
+    */
 
     /**
      * @brief Variable for the missing longitudinal momentum of the interaction
@@ -463,6 +485,7 @@ namespace vars
      * @note The switch to the NuMI beam direction instead of the BNB axis is
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
+    /*
     template<class T>
     double dpL_lp(const T & obj)
     {
@@ -496,6 +519,7 @@ namespace vars
             return utilities::magnitude(utilities::add(l_pl, p_pl)) - 1000*vars::visible_energy(obj);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, dpL_lp, dpL_lp);
+    */
 
     /**
      * @brief Variable for the estimate of the momentum of the struck nucleon.
@@ -508,9 +532,11 @@ namespace vars
      * @note The switch to the NuMI beam direction instead of the BNB axis is
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
+    /*
     template<class T>
     double pn(const T & obj) { return std::sqrt(std::pow(vars::dpT(obj), 2) + std::pow(vars::dpL(obj), 2)); }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, pn, pn);
+    */
 
     /**
      * @brief Variable for the estimate of the momentum of the struck nucleon
@@ -524,9 +550,11 @@ namespace vars
      * @note The switch to the NuMI beam direction instead of the BNB axis is
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
+    /*
     template<class T>
     double pn_lp(const T & obj) { return std::sqrt(std::pow(vars::dpT_lp(obj), 2) + std::pow(vars::dpL_lp(obj), 2)); }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, pn_lp, pn_lp);
+    */
 
     /**
      * @brief Variable for the (primary) photon multiplicity of the
