@@ -1,16 +1,16 @@
 /**
- * @file vars_ccpi0ana.h
+ * @file vars_ncpi0ana.h
  * @brief Header file for definitions of analysis variables specific to the
- * ccpi0ana analysis.
+ * ncpi0ana analysis.
  * @details This file contains definitions of analysis variables which can be
- * used to extract information from interactions specific to the ccpi0ana
+ * used to extract information from interactions specific to the ncpi0ana
  * analysis. Each variable is implemented as a function which takes an
  * interaction object as an argument and returns a double. These are the
  * building blocks for producing high-level plots of the selected interactions.
  * @author lkashur@colostate.edu
  */
-#ifndef VARS_CCPI0ANA_H
-#define VARS_CCPI0ANA_H
+#ifndef VARS_NCPI0ANA_H
+#define VARS_NCPI0ANA_H
 
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
 #include "sbnanaobj/StandardRecord/SRInteractionDLP.h"
@@ -22,13 +22,13 @@
 #include "include/framework.h"
 
 #include "include/cuts.h"
-#include "include/pi0ana/cuts_ccpi0ana.h"
+#include "include/pi0ana/cuts_ncpi0ana.h"
 
 /**
- * @namespace vars::ccpi0ana
- * @brief Namespace for organizing variables specific to the ccpi0ana analysis.
+ * @namespace vars::ncpi0ana
+ * @brief Namespace for organizing variables specific to the ncpi0ana analysis.
  * @details This namespace is intended to be used for organizing variables which
- * act on interactions specific to the ccpi0ana analysis. Each variable is
+ * act on interactions specific to the ncpi0ana analysis. Each variable is
  * implemented as a function which takes an interaction object as an argument
  * and returns a double. The function should be templated on the type of
  * interaction object if the variable is intended to be used on both true and
@@ -37,7 +37,7 @@
  * namespace, which is used for organizing generic variables which act on
  * interactions.
  */
-namespace vars::ccpi0ana
+namespace vars::ncpi0ana
 {
     /**
      * @brief GUNDAM variable for enumerating interaction categories.        
@@ -53,7 +53,7 @@ namespace vars::ccpi0ana
      */
     double is_signal_mc(const caf::SRInteractionTruthDLPProxy & obj)
     {
-      truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+      truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
 
       // Cosmic                                                                                                              
       uint16_t cat(4);
@@ -101,7 +101,7 @@ namespace vars::ccpi0ana
     template<class T>
     double category(const caf::SRInteractionTruthDLPProxy & obj)
     {
-        truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+        truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
 	
 	// Cosmic
 	uint16_t cat(3);
@@ -109,7 +109,7 @@ namespace vars::ccpi0ana
 	// Neutrino
 	if(s.is_neutrino)
 	{
-	    // 1mu0pi1pi0 (in-phase, fiducial) 
+	    // 1mu0pi1pi0 (in-, fiducial) 
 	    if(s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.is_cc && s.is_fiducial) cat = 0;
 	    // Other nu-induced pi0
 	    else if(s.num_primary_pi0s >= 1) cat = 1;
@@ -125,7 +125,7 @@ namespace vars::ccpi0ana
      * @brief Variable for enumerating interaction categories.
      * @details This variable provides a basic categorization of interactions
      * using the following categories:
-     * 0: 1mu0pi1pi0 (in-phase, fiducial)
+     * 0: 1mu0pi1pi0 (in-, fiducial)
      * 1: 1mu0pi1pi0 (OOPS, fiducial)
      * 2: 1mu0pi1pi0 (OOFV)
      * 3: 1muNpi1pi0
@@ -138,84 +138,66 @@ namespace vars::ccpi0ana
      * @return the enumerated category of the interaction.
      */
     template<class T>
-    double category_topology_v1(const caf::SRInteractionTruthDLPProxy & obj)
-    {
-        truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+      double category_topology_v1(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params={})
+      {
+	truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
 
-        // Cosmic            
+	// Cosmic
 	uint16_t cat(8);
 
-	// Neutrino    
+	// Neutrino
 	if(s.is_neutrino)
-        {
-            // 1mu0pi1pi0 (in-phase, fiducial)
-            if(s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.is_cc && s.is_fiducial) cat = 0;
-	    // 1mu0pi1pi0 (OOPS, fiducial)
-	    else if( (s.num_primary_muons == 1 && s.num_primary_pions == 0 && s.num_primary_pi0s == 1 && s.is_cc && s.is_fiducial) && (s.num_primary_muons_thresh != 1 || s.num_primary_pions_thresh != 0 || s.num_primary_pi0s_thresh != 1) ) cat = 1;
-	    // 1mu0pi1pi0 (OOFV)
-	    else if( (s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.is_cc && !s.is_fiducial) ) cat = 2;
-	    // 1muNpi1pi0
-	    else if(s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh > 0 && s.num_primary_pi0s_thresh == 1 && s.is_cc && s.is_fiducial) cat = 3;
-	    // 1muNpi0pi0
-	    else if(s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh > 0 && s.num_primary_pi0s_thresh == 0 && s.is_cc && s.is_fiducial) cat = 4;
-	    // 1muNpi0
-	    else if(s.num_primary_muons_thresh == 1 && s.num_primary_pi0s_thresh > 1 && s.is_cc && s.is_fiducial) cat = 5;
-	    // NC 1pi0
-	    else if(s.num_primary_muons_thresh == 0 && s.num_primary_pi0s_thresh == 1 && !s.is_cc && s.is_fiducial) cat = 6;
-	    // Other nu
-	    else cat = 7;
-        }
+	  {
+	    if(params.size() == 1)
+	    {
+	        // 0mu0pi1pi0 + specified proton count (in-, fiducial)
+	        if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.num_primary_protons_thresh == params[0] && !s.is_cc && s.is_fiducial) cat = 0;
+	      
+	        // 0mu0pi1pi0 + specified proton count (OOPS, fiducial)
+		else if( (s.num_primary_muons == 0 && s.num_primary_pions == 0 && s.num_primary_pi0s == 1 && s.num_primary_protons == params[0] && !s.is_cc && s.is_fiducial) && (s.num_primary_muons_thresh != 0 || s.num_primary_pions_thresh != 0 || s.num_primary_protons_thresh != params[0] || s.num_primary_pi0s_thresh != 1) ) cat = 1;
+
+		// 0mu0pi1pi0 + specified proton count (OOFV)
+		else if( (s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.num_primary_protons_thresh == params[0] && !s.is_cc && !s.is_fiducial) ) cat = 2;
+		
+		// 0muNpi1pi0
+		else if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh > 0 && s.num_primary_pi0s_thresh == 1 && !s.is_cc && s.is_fiducial) cat = 3;
+		
+		// 0muNpi0pi0
+		else if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh > 0 && s.num_primary_pi0s_thresh == 0 && !s.is_cc && s.is_fiducial) cat = 4;
+		
+		// 0muNpi0
+		else if(s.num_primary_muons_thresh == 0 && s.num_primary_pi0s_thresh > 1 && !s.is_cc && s.is_fiducial) cat = 5;
+		
+		// CC 1pi0
+		else if(s.num_primary_muons_thresh == 1 && s.num_primary_pi0s_thresh == 1 && s.is_cc && s.is_fiducial) cat = 6;
+		
+		// Other nu     
+		else cat = 7;
+	    }
+
+	    else
+	    {
+		  // 0mu0pi1pi0 (in-, fiducial)
+		  if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && !s.is_cc && s.is_fiducial) cat = 0;
+		  // 0mu0pi1pi0 (OOPS, fiducial)
+		  else if( (s.num_primary_muons == 0 && s.num_primary_pions == 0 && s.num_primary_pi0s == 1 && !s.is_cc && s.is_fiducial) && (s.num_primary_muons_thresh != 0 || s.num_primary_pions_thresh != 0 || s.num_primary_pi0s_thresh != 1) ) cat = 1;
+		  // 0mu0pi1pi0 (OOFV)
+		  else if( (s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && !s.is_cc && !s.is_fiducial) ) cat = 2;
+		  // 0muNpi1pi0
+		  else if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh > 0 && s.num_primary_pi0s_thresh == 1 && !s.is_cc && s.is_fiducial) cat = 3;
+		  // 0muNpi0pi0
+		  else if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh > 0 && s.num_primary_pi0s_thresh == 0 && !s.is_cc && s.is_fiducial) cat = 4;
+		  // 0muNpi0
+		  else if(s.num_primary_muons_thresh == 0 && s.num_primary_pi0s_thresh > 1 && !s.is_cc && s.is_fiducial) cat = 5;
+		  // CC 1pi0
+		  else if(s.num_primary_muons_thresh == 1 && s.num_primary_pi0s_thresh == 1 && s.is_cc && s.is_fiducial) cat = 6;
+		  // Other nu
+		  else cat = 7;
+	    }
+	  }
 	return cat;
-    }
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_v1, category_topology_v1);
-   
-    /**
-     * @brief Variable for enumerating interaction categories.
-     * @details This variable provides a basic categorization of interactions
-     * using the following categories:
-     * 0: 1mu0pi1pi0 (in-phase, fiducial)
-     * 1: 1mu0pi1pi0 (OOPS, fiducial)
-     * 2: 1mu0pi1pi0 (OOFV)
-     * 3: 1muNpiXpi0
-     * 4: 1muXpi0pi0N(secondary pi0)
-     * 5: NC Npi0
-     * 6: Other nu
-     * 7: Cosmic
-     * @param obj the interaction to apply the variable on.
-     * @return the enumerated category of the interaction.
-     */
-    template<class T>
-    double category_topology_v2(const caf::SRInteractionTruthDLPProxy & obj)
-    {
-        truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
-
-        // Cosmic
-        uint16_t cat(8);
-
-        // Neutrino
-        if(s.is_neutrino)
-	{
-            // 1mu0pi1pi0 (in-phase, fiducial)
-            if(s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.is_cc && s.is_fiducial) cat = 0;
-            // 1mu0pi1pi0 (OOPS, fiducial)
-            else if( (s.num_primary_muons == 1 && s.num_primary_pions == 0 && s.num_primary_pi0s == 1 && s.is_cc && s.is_fiducial) && (s.num_primary_muons_thresh != 1 || s.num_primary_pions_thresh != 0 || s.num_primary_pi0s_thresh != 1) ) cat = 1;
-            // 1mu0pi1pi0 (OOFV)
-            else if( (s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.is_cc && !s.is_fiducial) ) cat = 2;
-	    // 1mu0pi0pi0 N(nonprimary pi0s) (in-phase, fiducial)
-	    else if( s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 0 && s.num_nonprimary_pi0s > 0 && s.is_cc && s.is_fiducial ) cat = 3;
-	    // 1mu0pi0pi0 0(nonprimary pi0s) (in-phase, fiducial)
-	    else if( s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 0 && s.num_nonprimary_pi0s == 0 && s.is_cc && s.is_fiducial ) cat = 4;
-	    // 1muNpiXpi0
-	    else if( s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh > 0 && s.is_cc && s.is_fiducial ) cat = 5;
-	    // NC Npi0
-	    else if( s.num_primary_muons_thresh == 0 && s.num_primary_pi0s_thresh > 0 && !s.is_cc && s.is_fiducial ) cat = 6;
-	    // Other nu
-	    else cat = 7;
-	}
-        return cat;
-    }
-    REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_v2, category_topology_v2);
-
 
     /**
      * @brief Dummy GUNDAM variables.
@@ -256,86 +238,42 @@ namespace vars::ccpi0ana
     /**
      * @brief Variable for the base topology status of the interaction.
      * @details This variable holds the status of whether or not the
-     * the interaction passes the base topology cut defined in cuts_ccpi0ana. 
+     * the interaction passes the base topology cut defined in cuts_ncpi0ana. 
      */
     template<class T>
-    double base_topology_satisfied(const T & obj) {return cuts::ccpi0ana::base_topology_cut(obj);}
+    double base_topology_satisfied(const T & obj) {return cuts::ncpi0ana::base_topology_cut(obj);}
     REGISTER_VAR_SCOPE(RegistrationScope::Reco, base_topology_satisfied, base_topology_satisfied);
+
+    template<class T>
+    double num_protons_satisfied(const T & obj, std::vector<double> params={}) {return cuts::ncpi0ana::num_protons_cut(obj, params);}
+    REGISTER_VAR_SCOPE(RegistrationScope::Reco, num_protons_satisfied, num_protons_satisfied);  
 
     /**
      * @brief Variable for the leading shower energy threshold status of the interaction.
      * @details This variable holds the status of whether or not the
-     * the interaction passes the leading shower energy cut defined in cuts_ccpi0ana.
+     * the interaction passes the leading shower energy cut defined in cuts_ncpi0ana.
      */
     template<class T>
-    double leading_shower_energy_satisfied(const T & obj) {return cuts::ccpi0ana::leading_shower_energy_cut(obj);}
+    double leading_shower_energy_satisfied(const T & obj) {return cuts::ncpi0ana::leading_shower_energy_cut(obj);}
     REGISTER_VAR_SCOPE(RegistrationScope::Reco, leading_shower_energy_satisfied, leading_shower_energy_satisfied);
 
     /**
      * @brief Variable for the pi0 mass cut status of the interaction.
      * @details This variable holds the status of whether or not the
-     * the interaction passes the pi0 mass cut defined in cuts_ccpi0ana.
+     * the interaction passes the pi0 mass cut defined in cuts_ncpi0ana.
      */
     template<class T>
-    double valid_pi0_mass_satisfied(const T & obj) {return cuts::ccpi0ana::valid_pi0_mass_cut(obj);}
+    double valid_pi0_mass_satisfied(const T & obj) {return cuts::ncpi0ana::valid_pi0_mass_cut(obj);}
     REGISTER_VAR_SCOPE(RegistrationScope::Reco, valid_pi0_mass_satisfied, valid_pi0_mass_satisfied);
 
     /**
      * @brief Variable for the status of all interaction cuts.
      * @details This variable holds the status of whether or not the
-     * the interaction passes the "all" cut defined in cuts_ccpi0ana.
+     * the interaction passes the "all" cut defined in cuts_ncpi0ana.
      */
     template<class T>
-    double all_cuts_satisfied(const T & obj) {return cuts::ccpi0ana::all_cut(obj);}
+    double all_cuts_satisfied(const T & obj) {return cuts::ncpi0ana::all_cut(obj);}
     REGISTER_VAR_SCOPE(RegistrationScope::Reco, all_cuts_satisfied, all_cuts_satisfied);
-
-    /**
-     * @brief Variable for leading muon momentum magnitude.
-     * @details Variable for momentum of the leading muon
-     * candidate [MeV/c].
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to apply the variable on.
-     * @return the muon momentum magnitude.
-     */
-    template<class T> 
-        double muon_momentum_mag(const T & obj)
-        {
-	    if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
-			   {
-			       truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
-			       return s.muon_momentum_mag;
-			   }
-	    else
-            {
-	        reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
-		return s.muon_momentum_mag;
-            }
-        }
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, muon_momentum_mag, muon_momentum_mag);
-
-    /**
-     * @brief Variable for leading muon angle with beam.
-     * @details Variable for the cosine of the angle between
-     * the interaction's leading muon and the beam.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to apply the variable on.
-     * @return the leading muon's angle w.r.t. beam.
-     */
-    template<class T>
-        double muon_beam_costheta(const T & obj)
-        {
-	    if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
-                           {
-			       truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
-			       return s.muon_beam_costheta;
-                           }
-	    else
-	    {
-	      reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
-	      return s.muon_beam_costheta;
-	    }
-        }
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, muon_beam_costheta, muon_beam_costheta);
 
     /**
      * @brief Variable for pi0 leading photon energy.
@@ -350,12 +288,12 @@ namespace vars::ccpi0ana
         {
 	    if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
 			   {
-			       truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+			       truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
 			       return s.pi0_leading_photon_energy;
 			   }
             else
 	    {
-		reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
+		reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
 		return s.pi0_leading_photon_energy;
 	    }
 	}
@@ -364,7 +302,7 @@ namespace vars::ccpi0ana
     template<class T>
         double pi0_leading_photon_start_dedx(const T & obj)
         {
-	    reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
+	    reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
 	    return s.pi0_leading_photon_start_dedx;
 	}
 
@@ -381,12 +319,12 @@ namespace vars::ccpi0ana
       {
 	  if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
 			 {
-			     truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+			     truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
 			     return s.pi0_leading_photon_conv_dist;
 			 }
 	  else
 	  {
-	      reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
+	      reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
 	      return s.pi0_leading_photon_conv_dist;
 	  }
       }
@@ -406,13 +344,13 @@ namespace vars::ccpi0ana
       {
 	if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
 		       {
-			 truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+			 truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
 			 return -5;
 			 //return s.pi0_leading_photon_cosphi;
 		       }
 	else
 	  {
-	    reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
+	    reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
 	    return s.pi0_leading_photon_cosphi;
 	  }
       }
@@ -422,12 +360,12 @@ namespace vars::ccpi0ana
         {
 	    if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
 			   {
-			       truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+			       truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
 			       return -5;
 			   }
 	    else
 	    {
-	        reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
+	        reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
 		return s.pi0_leading_photon_ip;
 	    }
 	}
@@ -445,12 +383,12 @@ namespace vars::ccpi0ana
 	{
 	    if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
                              {
-			       truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+			       truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
 			       return s.pi0_subleading_photon_energy;
                              }
             else
 	    {
-	        reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
+	        reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
                 return s.pi0_subleading_photon_energy;
 	    }
 	}
@@ -459,7 +397,7 @@ namespace vars::ccpi0ana
     template<class T>
         double pi0_subleading_photon_start_dedx(const T & obj)
         {
-	    reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
+	    reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
 	    return s.pi0_subleading_photon_start_dedx;
 	}
 
@@ -476,12 +414,12 @@ namespace vars::ccpi0ana
       {
 	  if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
 		         {
-			     truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+			     truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
 			     return s.pi0_subleading_photon_conv_dist;
 		         }
 	  else
           {
-	      reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
+	      reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
 	      return s.pi0_subleading_photon_conv_dist;
           }
       }
@@ -492,12 +430,12 @@ namespace vars::ccpi0ana
       {
 	if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
 		       {
-			 truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+			 truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
 			 return -5;
 		       }
 	else
 	  {
-	    reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
+	    reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
 	    return s.pi0_subleading_photon_ip;
 	  }
       }
@@ -517,13 +455,13 @@ namespace vars::ccpi0ana
         {
 	    if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
 			   {
-			       truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+			       truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
 			       return -5;
 			       //return s.pi0_subleading_photon_cosphi;
 			   }
 	    else
 	    {
-	      reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
+	      reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
 	      return s.pi0_subleading_photon_cosphi;
 	    }
         }
@@ -541,12 +479,12 @@ namespace vars::ccpi0ana
         {
 	    if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
 		       {
-			   truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+			   truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
 			   return s.pi0_momentum_mag;
 		       }
 	    else
 	    {
-	        reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
+	        reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
 		return s.pi0_momentum_mag;
 	    } 
         }
@@ -557,12 +495,12 @@ namespace vars::ccpi0ana
         {
 	    if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
 			   {
-			       truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+			       truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
 			       return -5;
 			   }
             else
 	    {
-                reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
+                reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
                 return s.pi0_photons_avg_ip;
 	    }
 	}
@@ -580,12 +518,12 @@ namespace vars::ccpi0ana
         {
 	    if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
 		       {
-			   truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+			   truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
 			   return s.pi0_beam_costheta;
 		       }
 	    else
 	    {
-	        reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
+	        reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
 		return s.pi0_beam_costheta;
 	    }
         }
@@ -604,12 +542,12 @@ namespace vars::ccpi0ana
         {
 	    if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
 			   {
-			       truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+			       truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
 			       return s.pi0_photons_costheta;
 			   }
 	    else
 	    {
-	        reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
+	        reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
 		return s.pi0_photons_costheta;
 	    }
 
@@ -629,12 +567,12 @@ namespace vars::ccpi0ana
         {
 	    if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
                            {
-			       truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+			       truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
                                return s.pi0_mass;
                            }
 	    else
 	    {
-	        reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
+	        reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
 	        return s.pi0_mass;
 	    }
 	}
@@ -655,7 +593,7 @@ namespace vars::ccpi0ana
 	    double energy(0);
 	    for(const auto & p : obj.particles)
 	    {
-	        if(utilities_ccpi0ana::final_state_signal(p))
+	        if(utilities_ncpi0ana::final_state_signal(p))
 		{
 		    energy += pvars::energy(p);
 		    if(PIDFUNC(p) == 4) energy -= pvars::mass(p) - PROTON_BINDING_ENERGY;
@@ -687,7 +625,7 @@ namespace vars::ccpi0ana
 	    utilities::three_vector pt = {0, 0, 0};
 	    for(const auto & p : obj.particles)
 	    {
-	        if(utilities_ccpi0ana::final_state_signal(p))
+	        if(utilities_ncpi0ana::final_state_signal(p))
 		{
 		    // Sum up the transverse momentum of all final state particles                                         
 		    utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
@@ -722,7 +660,7 @@ namespace vars::ccpi0ana
 	    utilities::three_vector hadronic_pt = {0, 0, 0};
 	    for(const auto & p : obj.particles)
 	    {
-	        if(utilities_ccpi0ana::final_state_signal(p))
+	        if(utilities_ncpi0ana::final_state_signal(p))
 		{
 		    // There should only be one lepton, so replace the lepton                                        
 		    // transverse momentum if the particle is a lepton.                                
@@ -761,7 +699,7 @@ namespace vars::ccpi0ana
 	    utilities::three_vector total_pt = {0, 0, 0};
 	    for(const auto & p : obj.particles)
 	    {
-	        if(utilities_ccpi0ana::final_state_signal(p))
+	        if(utilities_ncpi0ana::final_state_signal(p))
 		{
 		    // There should only be one lepton, so replace the lepton
 		    // transverse momentum if the particle is a lepton.
@@ -777,31 +715,5 @@ namespace vars::ccpi0ana
 	}
     REGISTER_VAR_SCOPE(RegistrationScope::Both, dalphaT, dalphaT);
 
-    /**
-     * @brief Variable for four-momentum transfer Q**2.
-     * @details Variable for four-momentum transfer from incoming
-     * neutrino to incident nucleon.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to apply the variable on.
-     * @return the four-momentum Q**2. 
-     */
-    template<class T>
-        double Q2(const T & obj)
-        {
-
-	    if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
-			   {
-			       truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
-			       return 2*vars::ccpi0ana::visible_energy(obj)*(s.muon_energy - s.muon_momentum_mag*s.muon_beam_costheta) - std::pow(MUON_MASS/1000.0, 2);
-			   }
-	    else
-	    {
-		reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
-		return 2*vars::ccpi0ana::visible_energy(obj)*(s.muon_energy - s.muon_momentum_mag*s.muon_beam_costheta) - std::pow(MUON_MASS/1000.0, 2);
-	    }
-
-	}
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, Q2, Q2);
-
 }
-#endif // VARS_CCPI0ANA_H
+#endif // VARS_NCPI0ANA_H

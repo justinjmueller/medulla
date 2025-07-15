@@ -1,5 +1,5 @@
 /**
- * @file utilities_ccccpi0ana.h
+ * @file utilities_ncpi0ana.h
  * @brief Header file for definitions of utility functions for supporting
  * analysis variables and cuts.
  * @details This file contains definitions of utility functions which are used
@@ -9,8 +9,8 @@
  * variables and cuts.
  * @author lkashur@colostate.edu
  */
-#ifndef UTILITIES_CCPI0ANA_H
-#define UTILITIES_CCPI0ANA_H
+#ifndef UTILITIES_NCPI0ANA_H
+#define UTILITIES_NCPI0ANA_H
 
 #include <iostream>
 #include <vector>
@@ -18,9 +18,10 @@
 //#include "include/cuts.h"
 #include <unordered_map>
 
-#define MIN_MUON_MOMENTUM 226
+#define MIN_MUON_MOMENTUM 77
 #define MIN_PION_ENERGY 25
 #define MIN_PI0_MOMENTUM 0
+#define MIN_PROTON_ENERGY 25
 #define MIN_LEADING_SHOWER_ENERGY 40
 #define MIN_SUBLEADING_SHOWER_ENERGY 20
 
@@ -29,6 +30,8 @@ struct truth_inter {
   int num_primary_muons_thresh;
   int num_primary_pions;
   int num_primary_pions_thresh;
+  int num_primary_protons;
+  int num_primary_protons_thresh;
   int num_primary_pi0s;
   int num_primary_pi0s_thresh;
   int num_nonprimary_pi0s;
@@ -74,7 +77,7 @@ struct reco_inter {
 
 
 /**
- * @namespace utilities_ccpi0ana
+ * @namespace utilities_ncpi0ana
  * @brief Namespace for organizing utility functions for supporting analysis
  * variables and cuts.
  * @details This namespace is intended to be used for organizing utility
@@ -86,7 +89,7 @@ struct reco_inter {
  * vars and cuts namespaces, which are used for organizing variables and cuts
  * which act on interactions.
  */
-namespace utilities_ccpi0ana
+namespace utilities_ncpi0ana
 {
     /**
      * @brief Check if the particle meets final state signal requirements.
@@ -110,7 +113,7 @@ namespace utilities_ccpi0ana
             if(PIDFUNC(p) == 1 && CALOKEFUNC(p) >= MIN_SUBLEADING_SHOWER_ENERGY) passes = true; // Electrons
             if(PIDFUNC(p) == 2 && momentum_mag >= MIN_MUON_MOMENTUM) passes = true; // Muons
 	    if(PIDFUNC(p) == 3 && momentum_mag >= MIN_PION_ENERGY) passes = true; // Pions
-            if(PIDFUNC(p) == 4) passes = true; // Protons
+            if(PIDFUNC(p) == 4 && p.ke >= MIN_PROTON_ENERGY) passes = true; // Protons
             if(PIDFUNC(p) == 5) passes = true; // Kaons 
 	  }
           return passes;
@@ -183,7 +186,7 @@ namespace utilities_ccpi0ana
      * @tparam T the type of interaction (true).
      * @param obj the interaction to select on.
      * @return a truth_inter structure.
-     * @note This structure is intented to be used for the ccpi0ana analysis. 
+     * @note This structure is intented to be used for the ncpi0ana analysis. 
      */
     template<class T> 
       truth_inter truth_interaction_info(const T & obj)
@@ -215,6 +218,8 @@ namespace utilities_ccpi0ana
 	int primary_muon_count_thresh(0);
 	int primary_pion_count(0);
 	int primary_pion_count_thresh(0);
+	int primary_proton_count(0);
+	int primary_proton_count_thresh(0);
 	int primary_pi0_count(0);
 	int primary_pi0_count_thresh(0);
 	int nonprimary_pi0_count(0);
@@ -269,6 +274,13 @@ namespace utilities_ccpi0ana
 	    {
 	      primary_pion_count++;
 	      if(p.ke >= MIN_PION_ENERGY) primary_pion_count_thresh++;
+	    }
+
+	    // Protons
+	    if(PIDFUNC(p) == 4)
+	    {
+	        primary_proton_count++;
+		if(p.ke >= MIN_PROTON_ENERGY) primary_proton_count_thresh++;
 	    }
 	    
 	    // Neutral pions (photons only)
@@ -355,14 +367,14 @@ namespace utilities_ccpi0ana
 	nonprimary_pi0_count = nonprimary_pi0_map.size();
 
 	// Obtain info about signal particles, if they exist
-	if(primary_muon_count_thresh == 1 && primary_pion_count_thresh == 0 && primary_pi0_count_thresh == 1 && obj.current_type == 0 && cuts::fiducial_cut<T>(obj))
+	if(primary_muon_count_thresh == 0 && primary_pion_count_thresh == 0 && primary_pi0_count_thresh == 1 && obj.current_type == 1 && cuts::fiducial_cut<T>(obj))
 	{      
 	  // Get leading muon info
-	  const auto & muon = obj.particles[leading_muon_index];
-	  double muon_energy = pvars::energy(muon);
-	  TVector3 muon_momentum(muon.momentum[0], muon.momentum[1], muon.momentum[2]);
-	  double muon_momentum_mag = muon_momentum.Mag();
-	  double muon_beam_costheta = muon_momentum.Unit().Dot(beamdir);
+	  //const auto & muon = obj.particles[leading_muon_index];
+	  //double muon_energy = pvars::energy(muon);
+	  //TVector3 muon_momentum(muon.momentum[0], muon.momentum[1], muon.momentum[2]);
+	  //double muon_momentum_mag = muon_momentum.Mag();
+	  //double muon_beam_costheta = muon_momentum.Unit().Dot(beamdir);
 	        
 	  // Get leading/subleading photon info
 	  std::vector<size_t> pi0_daughter_indices;
@@ -429,9 +441,9 @@ namespace utilities_ccpi0ana
 	  }
 	  pi0_beam_costheta = pi0_momentum.Unit().Dot(beamdir);
 	  
-	  s.muon_energy = muon_energy/1000; // GeV
-	  s.muon_momentum_mag = muon_momentum_mag/1000; // GeV
-	  s.muon_beam_costheta = muon_beam_costheta;
+	  s.muon_energy = -5; // GeV
+	  s.muon_momentum_mag = -5; // GeV
+	  s.muon_beam_costheta = -5;
 	  s.pi0_leading_photon_energy = pi0_leading_photon_energy/1000; // GeV
 	  s.pi0_leading_photon_conv_dist = pi0_leading_photon_conv_dist;
 	  s.pi0_subleading_photon_energy = pi0_subleading_photon_energy/1000; // GeV
@@ -460,6 +472,8 @@ namespace utilities_ccpi0ana
 	s.num_primary_muons_thresh = primary_muon_count_thresh;
 	s.num_primary_pions = primary_pion_count;
 	s.num_primary_pions_thresh = primary_pion_count_thresh;
+	s.num_primary_protons = primary_proton_count;
+	s.num_primary_protons_thresh = primary_proton_count_thresh;
 	s.num_primary_pi0s = primary_pi0_count;
 	s.num_primary_pi0s_thresh = primary_pi0_count_thresh;
 	s.num_nonprimary_pi0s = nonprimary_pi0_count;
@@ -481,7 +495,7 @@ namespace utilities_ccpi0ana
      * @tparam T the type of interaction (reco).
      * @param obj the interaction to select on.
      * @return a reco_pi0 structure.
-     * @note This structure is intented to be used for the ccpi0ana analysis.
+     * @note This structure is intented to be used for the ncpi0ana analysis.
      */
     template<class T> 
       reco_inter reco_interaction_info(const T & obj)
@@ -697,13 +711,13 @@ namespace utilities_ccpi0ana
 	  }
 
 	// Get leading muon info
-	TVector3 muon_momentum;
-	muon_momentum.SetX(obj.particles[leading_muon_index].momentum[0]);
-	muon_momentum.SetY(obj.particles[leading_muon_index].momentum[1]);
-	muon_momentum.SetZ(obj.particles[leading_muon_index].momentum[2]);
-	double muon_energy = pvars::energy(obj.particles[leading_muon_index]);
-	double muon_momentum_mag = muon_momentum.Mag();
-	double muon_beam_costheta = muon_momentum.Unit().Dot(beamdir);
+	//TVector3 muon_momentum;
+	//muon_momentum.SetX(obj.particles[leading_muon_index].momentum[0]);
+	//muon_momentum.SetY(obj.particles[leading_muon_index].momentum[1]);
+	//muon_momentum.SetZ(obj.particles[leading_muon_index].momentum[2]);
+	//double muon_energy = pvars::energy(obj.particles[leading_muon_index]);
+	//double muon_momentum_mag = muon_momentum.Mag();
+	//double muon_beam_costheta = muon_momentum.Unit().Dot(beamdir);
 
 	// Get leading photon info
 	double pi0_leading_photon_energy = CALOKEFUNC(obj.particles[leading_photon_index]);
@@ -765,9 +779,9 @@ namespace utilities_ccpi0ana
 
 	// Fill struct
 	s.transverse_momentum_mag = sqrt(pow(pT0, 2) + pow(pT1, 2) + pow(pT2, 2));
-	s.muon_energy = muon_energy/1000; // GeV
-	s.muon_momentum_mag = muon_momentum_mag / 1000; // GeV
-	s.muon_beam_costheta = muon_beam_costheta;
+	s.muon_energy = -5; // GeV
+	s.muon_momentum_mag = -5; // GeV
+	s.muon_beam_costheta = -5;
 	s.pi0_leading_photon_energy = pi0_leading_photon_energy/1000; // GeV
 	//s.pi0_leading_photon_start_dedx = pi0_leading_photon_start_dedx;
 	s.pi0_leading_photon_cosphi = pi0_leading_photon_cosphi;
@@ -788,4 +802,4 @@ namespace utilities_ccpi0ana
       }
 
 }
-#endif // UTILITIES_CCPI0ANA_H
+#endif // UTILITIES_NCPI0ANA_H

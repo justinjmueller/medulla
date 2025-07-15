@@ -110,8 +110,8 @@ namespace vars
      * an in-time flash.
      */
     template<class T>
-      double flash_icarus(const T & obj) {return cuts::flash_cut(obj, {-0.5, 1.6});}
-    REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_icarus, flash_icarus);
+      double flash_icarus_satisfied(const T & obj) {return cuts::flash_cut(obj, {-0.5, 1.6});}
+    REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_icarus_satisfied, flash_icarus_satisfied);
 
     /**
      * @brief Variable for the fiducial volume status of the interaction.
@@ -120,8 +120,8 @@ namespace vars
      * the fiducial volume of the TPC.
      */
     template<class T>
-    double fiducial(const T & obj) { return cuts::fiducial_cut(obj); }
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, fiducial, fiducial);
+    double fiducial_satisfied(const T & obj) { return cuts::fiducial_cut(obj); }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, fiducial_satisfied, fiducial_satisfied);
 
     /**
      * @brief Variable for total visible energy of interaction.

@@ -1,7 +1,5 @@
 [general]
-#output = "icarus_bnb_ccpi0_onbeam_cv_offbeam_vars"
-output = "icarus_bnb_ccpi0_onbeam_cv_offbeam_dev"
-#output = "test"
+output = "test"
 
 
 [[sample]]
@@ -114,6 +112,7 @@ cut = [
     {name = "fiducial_cut", type = "reco"},
     {name = "flash_cut", type = "reco", parameters = [-0.5, 1.6]},
     {name = "base_topology_cut", type = "reco"},
+    {name = "num_protons_cut", type = "reco", parameters = [0]},
     {name = "leading_shower_energy_cut", type = "reco"},
     {name = "valid_pi0_mass_cut", type = "reco"},
     {name = "neutrino", type = "true"}
@@ -127,23 +126,17 @@ branch = [
     {name = "cc", type = "mctruth"},
     {name = "neutrino_energy", type = "mctruth"},
     {name = "interaction_type", type = "mctruth"},
-    {name = "category_topology_v1", type = "true"},
-    {name = "category_topology_v2", type = "true"},
+    {name = "category_topology_v1", type = "true", parameters = [0]},
 
     # Interaction observables
     {name = "flash_time", type = "reco"},
     {name = "visible_energy", type = "both"},
-    {name = "Q2", type = "both"},
     {name = "dpT", type = "both"},
     {name = "dphiT", type = "both"},
     {name = "dalphaT", type = "both"},
     {name = "vertex_x", type = "both"},
     {name = "vertex_y", type = "both"},
     {name = "vertex_z", type = "both"},
-
-    # Muon observables
-    {name = "muon_momentum_mag", type = "both"},
-    {name = "muon_beam_costheta", type = "both"},
 
     # Neutral pion observables
     {name = "pi0_momentum_mag", type = "both"},
@@ -169,6 +162,7 @@ cut = [
     {name = "fiducial_cut", type = "reco"},
     {name = "flash_cut", type = "reco", parameters = [-0.5, 1.6]},
     {name = "base_topology_cut", type = "reco"},
+    {name = "num_protons_cut", type = "reco", parameters = [0]},
     {name = "leading_shower_energy_cut", type = "reco"},
     {name = "valid_pi0_mass_cut", type = "reco"},
     {name = "cosmic", type = "true"}
@@ -182,23 +176,17 @@ branch = [
     {name = "cc", type = "mctruth"},
     {name = "neutrino_energy", type = "mctruth"},
     {name = "interaction_type", type = "mctruth"},
-    {name = "category_topology_v1", type = "true"},
-    {name = "category_topology_v2", type = "true"},
+    {name = "category_topology_v1", type = "true", parameters = [0]},
 
     # Interaction observables
     {name = "flash_time", type = "reco"},
     {name = "visible_energy", type = "both"},
-    {name = "Q2", type = "both"},
     {name = "dpT", type = "both"},
     {name = "dphiT", type = "both"},
     {name = "dalphaT", type = "both"},
     {name = "vertex_x", type = "both"},
     {name = "vertex_y", type = "both"},
     {name = "vertex_z", type = "both"},
-
-    # Muon observables
-    {name = "muon_momentum_mag", type = "both"},
-    {name = "muon_beam_costheta", type = "both"},
 
     # Neutral pion observables
     {name = "pi0_momentum_mag", type = "both"},
@@ -223,9 +211,10 @@ mode = "true"
 cut = [
     {name = "neutrino", type = "true"},
     {name = "fiducial_cut", type = "true"},
-    {name = "cc1mu", type = "true"},
+    {name = "nc0mu", type = "true"},
     {name = "zero_pi", type = "true"},
     {name = "one_pi0", type = "true"},
+    {name = "num_protons_cut", type = "true", parameters = [0]},
 ]
 branch = [
 
@@ -236,22 +225,16 @@ branch = [
     {name = "cc", type = "mctruth"},
     {name = "neutrino_energy", type = "mctruth"},
     {name = "interaction_type", type = "mctruth"},
-    {name = "category_topology_v1", type = "true"},
-    {name = "category_topology_v2", type = "true"},
+    {name = "category_topology_v1", type = "true", parameters = [0]},
 
     # Interaction observables
     {name = "visible_energy", type = "both"},
-    {name = "Q2", type = "both"},
     {name = "dpT", type = "both"},
     {name = "dphiT", type = "both"},
     {name = "dalphaT", type = "both"},
     {name = "vertex_x", type = "both"},
     {name = "vertex_y", type = "both"},
     {name = "vertex_z", type = "both"},
-
-    # Muon observables
-    {name = "muon_momentum_mag", type = "both"},
-    {name = "muon_beam_costheta", type = "both"},
 
     # Neutral pion observables
     {name = "pi0_momentum_mag", type = "both"},
@@ -272,6 +255,7 @@ branch = [
     {name = "flash_icarus_satisfied", type = "reco"},
     {name = "fiducial_satisfied", type = "reco"},
     {name = "base_topology_satisfied", type = "reco"},
+    {name = "num_protons_satisfied", type = "reco", parameters = [0]},
     {name = "leading_shower_energy_satisfied", type = "reco"},
     {name = "valid_pi0_mass_satisfied", type = "reco"},
     {name = "all_cuts_satisfied", type = "reco"}

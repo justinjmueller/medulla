@@ -154,8 +154,8 @@ class SpineSpectra1D(SpineSpectra):
 
     def draw(self, ax, style, show_component_number=False,
              show_component_percentage=False, invert_stack_order=False,
-             fit_type=None, logx=False, logy=False, normalize=False,
-             draw_error=None) -> None:
+             leg_ncol=1, fit_type=None, logx=False, logy=False, 
+             normalize=False, draw_error=None) -> None:
         """
         Plots the data for the SpineSpectra1D object.
 
@@ -176,6 +176,8 @@ class SpineSpectra1D(SpineSpectra):
         invert_stack_order : bool
             A flag to indicate if the stack order in the legend should
             be inverted. The default is False.
+        leg_ncols: int
+            A flat to indicate the number of columns for the plot legend
         fit_type : str
             The type of fit to perform on the data. The default is
             None, which will not perform any fit. The options are:
@@ -271,15 +273,15 @@ class SpineSpectra1D(SpineSpectra):
             if draw_error:
                 h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
                 l.append(systs[0].label)
-                ax.legend(h[-2::-1]+h[-1:], l[-2::-1]+l[-1:])
+                ax.legend(h[-2::-1]+h[-1:], l[-2::-1]+l[-1:], ncol=leg_ncol)
             else:
-                ax.legend(h[::-1], l[::-1])
+                ax.legend(h[::-1], l[::-1], ncol=leg_ncol)
         else:
             h, l = ax.get_legend_handles_labels()
             if draw_error:
                 h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
                 l.append(systs[0].label)
-            ax.legend(h, l)
+            ax.legend(h, l, ncol=leg_ncol)
 
         if isinstance(self._yrange, (tuple, list)):
             ax.set_ylim(*self._yrange)

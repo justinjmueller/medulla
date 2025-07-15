@@ -1,0 +1,140 @@
+[[style]]
+name = 'basic'
+style_sheet = "/exp/icarus/app/users/lkashur/medulla_dev/srcs/medulla/spineplot/pi0ana.mplstyle"
+markers = ['o', '^', 's', 'P', 'D']
+default_figsize = [8,8]
+title = ''
+mark_pot = true
+mark_pot_horizontal = true
+mark_preliminary = 'ICARUS Work-in-Progress'
+plot_kwargs = {'histtype' = 'barstacked', 'stacked' = true}
+
+[output]
+path = './'
+
+#[[systematic_recipe]]
+#name = 'detsys'
+#label = 'Detector Systematics'
+#pattern = 'var(01|02|03|04|05|06|07|08|09|10)+'
+
+#[[systematic_recipe]]
+#name = 'flux'
+#label = 'Flux Systematics'
+#pattern = 'Flux'
+
+#[[systematic_recipe]]
+#name = 'multisim_xsec'
+#label = 'Interaction Systematics: Multisim'
+#pattern = 'GENIEReWeight_SBN_v1_multisim_(ZExpAVariation|CCRES|NCRES|NCELVariation|DISBY|FSI)+'
+
+#[[systematic_recipe]]
+#name = 'multisigma_xsec'
+#label = 'Interaction Systematics: Multisigma'
+#pattern = 'GENIEReWeight_SBN_v1_multisigma_(VecFFCCQEshape|RPA_CCQE|CoulombCCQE|NormCCMEC|NormNCMEC|RDec|Theta|NormCCCOH|NormNCCOH|NonRES)+'
+
+#[[systematic_recipe]]
+#name = 'interaction'
+#label = 'Interaction Systematics'
+#pattern = 'GENIEReWeight_SBN_v1_multisim'
+#pattern = '(multisim|multisigma)_xsec'
+
+[[systematic_recipe]]
+name = 'stats'
+label = 'Statistical Uncertainty'
+pattern = '(mc_nu|mc_cos|offbeam)_statistical'
+
+#[[systematic_recipe]]
+#name = 'flux_xsec'
+#label = 'Flux + Interaction Uncertainty'
+#pattern = '(flux|xsec|stats)'
+
+#[[systematic_recipe]]
+#name = 'all'
+#label = 'Total MC Uncertainty'
+#pattern = '(detsys)'
+#pattern = '(flux)'
+#pattern = '(xsec)'
+#pattern = '(stats)'
+#pattern = '(detsys|flux|interaction|stats)'
+
+[samples.mc_nu]
+key = 'cv' 
+exposure_type = 'pot'
+trees = ['selected_nu',]
+#systematics = ['variationTree', 'multisimTree', 'multisigmaTree']
+
+[samples.mc_cos]
+key = 'cv'
+exposure_type = 'pot'
+trees = ['selected_cos']
+
+[samples.onbeam]
+key = 'onbeam'
+exposure_type = 'pot'
+override_category = -100
+trees = ['selected_nu']
+
+[samples.offbeam]
+key = 'offbeam'
+exposure_type = 'livetime'
+override_category = -1
+trees = ['selected_cos']
+
+[analysis]
+ordinate_sample = 'onbeam'
+category_branch = 'true_category_topology_v1'
+category_assignment = [[0], [1], [2], [3], [4], [5], [6], [7], [-1,8], [-100]]
+category_labels = ['0$\mu$0$\pi^{±}$1$\pi^{0}$', '0$\mu$0$\pi^{±}$1$\pi^{0}$ (OOPS)', '0$\mu$0$\pi^{±}$1$\pi^{0}$ (OOFV)', '0$\mu$N$\pi^{±}$1$\pi^{0}$', '0$\mu$N$\pi^{±}$0$\pi^{0}$', '0$\mu$N$\pi^{0}$', '1$\mu$1$\pi^{0}$ ', 'Other $\nu$', 'Cosmic', 'Data']
+category_colors = ['#1b9e77', '#b3e2cd', '#dea0fd', '#4c78a8', '#e5c494', '#e45756', '#17becf', '#f58518', '#a6761d', 'black']
+category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'scatter']
+
+[variables.reco_pi0_momentum_mag]
+key = 'reco_pi0_momentum_mag'
+binning_scheme = 'custom'
+nbins = 8
+range = [0.0, 0.100, 0.175, 0.250, 0.350, 0.450, 0.600, 0.800, 1.200]
+#range = [0.0, 0.100, 0.175, 0.250, 0.325, 0.400, 0.525, 0.725, 1.200]
+xlabel = 'Reconstructed $\pi^{0}$ Momentum [GeV/c]'
+
+[variables.reco_pi0_beam_costheta]
+key = 'reco_pi0_beam_costheta'
+binning_scheme = 'custom'
+nbins = 8
+range = [-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.50, 0.75, 1.0]
+xlabel = 'Reconstructed $\cos(\theta_{\pi^{0}})$'
+
+[variables.reco_pi0_mass]
+key = 'reco_pi0_mass'
+range = [0, 400]
+nbins = 40
+binning_scheme = 'equal_width'
+xlabel = 'Reconstructed Neutral Pion Mass [MeV/c$^{2}$]'
+
+[[figure]]
+name = 'reco_pi0_momentum_mag'
+type = 'SimpleFigure'
+style = 'basic'
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_pi0_momentum_mag'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'stats', 'normalize' = false}
+
+[[figure]]
+name = 'reco_pi0_beam_costheta'
+type = 'SimpleFigure'
+style = 'basic'
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_pi0_beam_costheta'
+draw_kwargs = {'show_component_number' = false, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'stats', 'normalize' = true}
+
+[[figure]]
+name = 'reco_pi0_mass'
+type = 'SimpleFigure'
+style = 'basic'
+#title = 'Selected $\nu_{\mu}$ CC $\pi^{0}$'
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_pi0_mass'
+#yrange = [0, 120]
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = true, 'draw_error' = 'stats', 'normalize' = false}

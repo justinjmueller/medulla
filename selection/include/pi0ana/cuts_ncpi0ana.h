@@ -1,5 +1,5 @@
 /**
- * @file cuts_ccpi0ana.h
+ * @file cuts_ncpi0ana.h
  * @brief Header file for definitions of analysis cuts specific to the muonana
  * analysis.
  * @details This file contains definitions of analysis cuts which can be used
@@ -7,35 +7,35 @@
  * intended to be used in conjunction with the generic cuts defined in cuts.h.
  * @author lkashur@colostate.edu
 */
-#ifndef CUTS_CCPI0ANA_H
-#define CUTS_CCPI0ANA_H
+#ifndef CUTS_NCPI0ANA_H
+#define CUTS_NCPI0ANA_H
 #include <vector>
 #include <numeric>
 #include <cmath>
 #include <algorithm>
 
-#include "utilities_ccpi0ana.h"
+#include "utilities_ncpi0ana.h"
 #include "framework.h"
 
 /**
- * @namespace cuts::ccpi0ana
- * @brief Namespace for organizing cuts specific to the ccpi0ana analysis.
+ * @namespace cuts::ncpi0ana
+ * @brief Namespace for organizing cuts specific to the ncpi0ana analysis.
  * @details This namespace is intended to be used for organizing cuts which act
- * on interactions specific to the ccpi0ana analysis. Each cut is implemented as
+ * on interactions specific to the ncpi0ana analysis. Each cut is implemented as
  * a function which takes an interaction object as an argument and returns a
  * boolean. The function should be templated on the type of interaction object if
  * the cut is intended to be used on both true and reconstructed interactions.
  * @note The namespace is intended to be used in conjunction with the cuts
  * namespace, which is used for organizing generic cuts which act on interactions.
  */
-namespace cuts::ccpi0ana
+namespace cuts::ncpi0ana
 {
     /**
      * @brief Apply data cut.
      * @details This cut asserts the interaction is from data (not MC).
      * @param sr the Standard Record.
      * @return true if interaction is from data.
-     * @note This cut is intended to be used for the ccpi0ana analysis.
+     * @note This cut is intended to be used for the ncpi0ana analysis.
      */
   //bool is_data(const caf::Proxy<caf::StandardRecord> sr) 
   //{
@@ -44,29 +44,49 @@ namespace cuts::ccpi0ana
   //}
   
     /**
-     * @brief Apply a 1mu0pi2gamma topological (final state) cut.
-     * @details The interaction must have a topology matching 1mu0pi2gamma as defined by
+     * @brief Apply a 0mu0pi + 2or3gamma topological (final state) cut.
+     * @details The interaction must have a topology matching 0mu0pi 2or3gamma as defined by
      * the conditions in the @ref count_primaries() function.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to select on.
-     * @return true if the interaction has a 1mu0pi2gamma topology.
-     * @note This cut is intended to be used for the ccpi0ana analysis.
+     * @return true if the interaction has a 0mu0pi + 2or3gamma topology.
+     * @note This cut is intended to be used for the ncpi0ana analysis.
      */
-    template<class T>
-        bool topological_1mu0pi2gamma_cut(const T & obj)
-        {
-	    std::vector<uint32_t> c(utilities_ccpi0ana::count_primaries(obj));
-	    reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
-            return (utilities_ccpi0ana::reco_shower_criteria(obj) && s.pi0_momentum_mag >= MIN_PI0_MOMENTUM && c[2] == 1 && c[3] == 0);
-        }
-
     template<class T>
         bool base_topology_cut(const T & obj)
         {
-	    std::vector<uint32_t> c(utilities_ccpi0ana::count_primaries(obj));
-	    return c[2] == 1 && c[3] == 0 && c[0] >= 2 && c[0] < 4;
+	    std::vector<uint32_t> c(utilities_ncpi0ana::count_primaries(obj));
+	    return c[2] == 0 && c[3] == 0 && c[0] >= 2 && c[0] < 4;
 	}
     REGISTER_CUT_SCOPE(RegistrationScope::Both, base_topology_cut, base_topology_cut);
+
+    /**
+     * @brief Apply a cut on the number of primary photons (final state).
+     * @details The interaction must have a topology matching Np
+     * where N is specifed in the parameters of this function.
+     * @param obj the interaction to select on.
+     * @return true if the interaction contains N protons.
+     */
+    template<class T>
+      bool num_protons_cut(const T & obj, std::vector<double> params={})
+    {
+        std::vector<uint32_t> c(utilities_ncpi0ana::count_primaries(obj));
+	if(params.size() == 0)
+	{
+	    return true;
+	}
+	else if(params.size() == 1)
+	{
+	    return c[4] == params[0];
+	}
+	else
+	{
+	     return false;
+	}
+	
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, num_protons_cut, num_protons_cut);
+    
 
     template<class T>
       bool leading_shower_energy_cut(const T & obj)
@@ -102,7 +122,7 @@ namespace cuts::ccpi0ana
     template<class T>
         bool zero_charged_pions_cut(const T & obj)
         {
-	    std::vector<uint32_t> c(utilities_ccpi0ana::count_primaries(obj));
+	    std::vector<uint32_t> c(utilities_ncpi0ana::count_primaries(obj));
 	    return c[3] == 0;
 	}
 
@@ -205,21 +225,21 @@ namespace cuts::ccpi0ana
     template<class T>
         bool one_muon_cut(const T & obj)
         {
-	    std::vector<uint32_t> c(utilities_ccpi0ana::count_primaries(obj));
+	    std::vector<uint32_t> c(utilities_ncpi0ana::count_primaries(obj));
 	    return c[2] == 1;
         }
 
     template<class T>
       bool two_photons_cut(const T & obj)
       {
-	std::vector<uint32_t> c(utilities_ccpi0ana::count_primaries(obj));
+	std::vector<uint32_t> c(utilities_ncpi0ana::count_primaries(obj));
         return c[0] == 2;
       }
 
     template<class T>
         bool two_or_three_photons_cut(const T & obj)
         {
-	    std::vector<uint32_t> c(utilities_ccpi0ana::count_primaries(obj));
+	    std::vector<uint32_t> c(utilities_ncpi0ana::count_primaries(obj));
 	    return c[0] > 1 & c[0] < 4;
         }
 
@@ -231,12 +251,12 @@ namespace cuts::ccpi0ana
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to select on.
      * @return true if the interaction passes the pi0 mass cut.
-     * @note This cut is intended to be used for the ccpi0ana analysis.
+     * @note This cut is intended to be used for the ncpi0ana analysis.
      */
     template<class T>
         bool valid_pi0_mass_cut(const T & obj)
         {
-	  reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
+	  reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
 	  return s.pi0_mass < 400;
 	}
     REGISTER_CUT_SCOPE(RegistrationScope::Both, valid_pi0_mass_cut, valid_pi0_mass_cut);
@@ -251,26 +271,28 @@ namespace cuts::ccpi0ana
      * @param obj the interaction to select on.
      * @return true if the interaction passes the fiducial volume, containment,
      * flash time, 1mu0pi2gamma topological, and pi0 mass cut.
-     * @note This cut is intended to be used for the ccpi0ana analysis. 
+     * @note This cut is intended to be used for the ncpi0ana analysis. 
      */
     template<class T>
       bool all_cut(const T & obj) {return fiducial_cut<T>(obj) && flash_cut<T>(obj, {-0.5, 1.6}) && base_topology_cut<T>(obj) && leading_shower_energy_cut<T>(obj) && valid_pi0_mass_cut<T>(obj);}
       //bool all_cut(const T & obj) {return fiducial_cut<T>(obj) && flash_cut<T>(obj) && base_topology_cut<T>(obj) && leading_shower_energy_cut<T>(obj);}
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, all_cut, all_cut);
+
 
     /**
-     * @brief Apply a cut to select true CC 1mu interactions.
+     * @brief Apply a cut to select true NC 0mu interactions.
      * @details This function applies a cut on the final state
-     * of the interaction.
+     * of the interaction (NC 0mu).
      * @param obj the interaction to select on.
-     * @return true if the interaction meets the CC 1mu criteria.
+     * @return true if the interaction meets the NC 0mu criteria
      */
     template<class T>
-    bool cc1mu(const caf::SRInteractionTruthDLPProxy & obj)
+    bool nc0mu(const caf::SRInteractionTruthDLPProxy & obj)
     {
-        truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
-	return s.is_cc && s.num_primary_muons_thresh == 1;
+        truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
+	return !s.is_cc && s.num_primary_muons_thresh == 0;
     }
-    REGISTER_CUT_SCOPE(RegistrationScope::True, cc1mu, cc1mu);
+    REGISTER_CUT_SCOPE(RegistrationScope::True, nc0mu, nc0mu);
 
     /**
      * @brief Apply a cut to select true 0pi interactions.
@@ -282,7 +304,7 @@ namespace cuts::ccpi0ana
     template<class T>
     bool zero_pi(const caf::SRInteractionTruthDLPProxy & obj)
     {
-        truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+        truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
 	return s.num_primary_pions_thresh == 0;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::True, zero_pi, zero_pi);
@@ -297,7 +319,7 @@ namespace cuts::ccpi0ana
     template<class T>
     bool one_pi0(const caf::SRInteractionTruthDLPProxy & obj)
     {
-        truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+        truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
         return s.num_primary_pi0s_thresh == 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::True, one_pi0, one_pi0);
@@ -308,12 +330,12 @@ namespace cuts::ccpi0ana
      * of the interaction.
      * @param obj the interaction to select on.
      * @return true if the interaction meets the signal definition criteria.
-     * @note This cut is intended to be used for the ccpi0ana analysis.
+     * @note This cut is intended to be used for the ncpi0ana analysis.
      */
     template<class T>
     bool signal_1mu0pi1pi0(const caf::SRInteractionTruthDLPProxy & obj)
     {
-        truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+        truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
         return s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.is_cc && s.is_neutrino;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::True, signal_1mu0pi1pi0, signal_1mu0pi1pi0);
@@ -326,13 +348,13 @@ namespace cuts::ccpi0ana
      * @param obj the interaction to select on.
      * @return true if the interaction passes the fiducial volume, containment, 
      * and non-1mu0pi1pi0 topological cut.
-     * @note This cut is intended to be used for the ccpi0ana analysis.
+     * @note This cut is intended to be used for the ncpi0ana analysis.
      */
     bool other_nu_1mu0pi1pi0(const caf::SRInteractionTruthDLPProxy & obj)
         {
-	  truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+	  truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
 	  return !(s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.is_cc) && s.is_neutrino;
         }
 
 }
-#endif // CUTS_CCPI0ANA_H
+#endif // CUTS_NCPI0ANA_H
