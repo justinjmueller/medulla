@@ -47,6 +47,60 @@ namespace evar
     double nreco(const T & sr) { return sr.ndlp; }
     REGISTER_VAR_SCOPE(RegistrationScope::Event, nreco, nreco);
 
+    /**
+     * @brief Variable for the multiplicity of neutrino interactions in the
+     * event.
+     * @details This variable counts the number of neutrino interactions in the
+     * event by checking how many interactions have a neutrino ID greater than
+     * -1 (equivalent to the cuts::neutrino cut).
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return double the multiplicity of neutrino interactions in the event.
+     */
+    template<typename T>
+    double nnu(const T & sr)
+    {
+        size_t count = 0;
+        for(const auto & interaction : sr.dlp_true)
+        {
+            if(interaction.nu_id > -1) ++count;
+        }
+        return count;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, nnu, nnu);
+
+    /**
+     * @brief Variable for the multiplicity of in-time interactions in the
+     * event.
+     * @details This variable counts the number of in-time interactions in the
+     * event by checking how many interactions have a particle with a time
+     * within the beam gate (i.e. the interaction creates activity in the beam
+     * gate).
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @param params The beam gate window in microseconds. The default is
+     * [0.0, 1.6].
+     * @return double the multiplicity of in-time interactions in the event.
+     */
+    template<typename T>
+    double nintime(const T & sr, std::vector<double> params={0.0, 1.6})
+    {
+        size_t count = 0;
+        for(const auto & interaction : sr.dlp_true)
+        {
+            for(const auto & p : interaction.particles)
+            {
+                if(p.t >= params[0] && p.t <= params[1])
+                {
+                    ++count;
+                    break; // Only count the interaction once
+                }
+            }
+        }
+        return count;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, nintime, nintime);
+
     template<typename T>
     double is_first_in_subrun(const T & sr)
     {
