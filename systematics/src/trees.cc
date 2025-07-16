@@ -261,7 +261,12 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     for(cfg::ConfigurationTable & t : config.get_subtables("sys"))
     {
         systematics.insert(std::make_pair<std::string, Systematic *>(t.get_string_field("name"), new Systematic(t, systrees[t.get_string_field("type")])));
-        systematics[t.get_string_field("name")]->get_tree()->Branch(t.get_string_field("name").c_str(), &systematics[t.get_string_field("name")]->get_weights());
+        Systematic * tmp = systematics[t.get_string_field("name")];
+        tmp->get_tree()->Branch(t.get_string_field("name").c_str(), &systematics[t.get_string_field("name")]->get_weights());
+        if(tmp->get_nsigma()->size() > 0)
+        {
+            tmp->get_tree()->Branch((t.get_string_field("name") + "_nsigma").c_str(), &systematics[t.get_string_field("name")]->get_nsigma());
+        }
     }
 
     sys::WeightReader reader(config.get_string_field("input.weights"));
