@@ -120,5 +120,20 @@ namespace pcuts
         return PIDFUNC(p) == static_cast<size_t>(params[0]);
     }
     REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, is_pid, is_pid);
+
+    /**
+     * @brief Check if the particle is in-time.
+     * @details This function checks if the particle is in-time,
+     * where timing window is specified in the function parameters.
+     * @param p the particle to check.
+     * @param params the parameters for the cut.
+     * @return true if particle is in-time.
+     */
+    template<class T>
+    bool in_time(const T & p, std::vector<double> params={0.0,})
+    {
+        return 0.001*p.t > params[0] && 0.001*p.t < params[1];
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::TrueParticle, in_time, in_time);
 }
 #endif // PARTICLE_CUTS_H

@@ -6,7 +6,7 @@
  * systematics using a spline interpolation of the ratio of the nominal and
  * sample histograms. Configuration of the class is done using a TOML-based
  * configuration file.
- * @see sys::cfg::ConfigurationTable
+ * @see cfg::ConfigurationTable
  * @author mueller@fnal.gov
  */
 #ifndef DETSYS_H
@@ -44,7 +44,7 @@ namespace sys::detsys
      * "detsys". The configuration for each detector systematic includes the name
      * of the systematic, the list of points to be used in the spline construction,
      * and the scale factors for each point.
-     * @see sys::cfg::ConfigurationTable
+     * @see cfg::ConfigurationTable
      */
     class DetsysCalculator
     {
@@ -75,9 +75,9 @@ namespace sys::detsys
          * @param table The configuration table.
          * @param output The output file.
          * @param input The input file.
-         * @see sys::cfg::ConfigurationTable
+         * @see cfg::ConfigurationTable
          */
-        DetsysCalculator(sys::cfg::ConfigurationTable & table, TFile * output, TFile * input);
+        DetsysCalculator(cfg::ConfigurationTable & table, TFile * output, TFile * input);
 
         /**
          * @brief Default constructor for the DetsysCalculator class.

@@ -9,8 +9,6 @@
  * @author mueller@fnal.gov
  */
 #include <iostream>
-#include <fstream>
-#include <set>
 
 #include "trees.h"
 #include "detsys.h"
@@ -25,37 +23,8 @@
 #include "TH1D.h"
 #include "TH2D.h"
 
-typedef std::tuple<Double_t, Double_t, Double_t, Double_t, Double_t> index_t;
-typedef std::map<index_t, size_t> map_t;
-
-// Simple hash function for a set of five variables.
-//size_t sys::trees::hash(uint64_t run, uint64_t subrun, uint64_t event, uint64_t true_neutrino_id, float nu_energy)
-//{
-//    return (uint64_t(10000*nu_energy)) | (true_neutrino_id) << 17 | (event << 19) | (subrun << 25) | (run << 32);
-    //return (run << 50) | (subrun << 36) | (event << 12) | (true_neutrino_id) << 8 | uint64_t(10000*nu_energy);
-//}
-
-size_t sys::trees::hash(uint64_t run,
-			uint64_t subrun,
-			uint64_t event,
-			uint64_t true_neutrino_id,
-			float    nu_energy)
-{
-  // run    → 22 bits, shifted into bits 42–63
-  // subrun →  7 bits, shifted into bits 35–41
-  // event  →  6 bits, shifted into bits 29–34
-  // true_neutrino_id  →  4 bits, shifted into bits 25–28
-  // energy → 25 bits (floor(nu_energy*10000)) in bits 0–24
-
-  return (run    << 42)
-    | (subrun << 35)
-    | (event  << 29)
-    | (true_neutrino_id  << 25)
-    | (uint64_t(std::floor(nu_energy * 10000.0f)) & ((1ull<<25) - 1));
-}
-
 // Copy the input TTree to the output TTree.
-void sys::trees::copy_tree(sys::cfg::ConfigurationTable & table, TFile * output, TFile * input)
+void sys::trees::copy_tree(cfg::ConfigurationTable & table, TFile * output, TFile * input)
 {
     /**
      * @brief Create the output subdirectory following the nesting outlined
@@ -136,10 +105,8 @@ void sys::trees::copy_tree(sys::cfg::ConfigurationTable & table, TFile * output,
 }
 
 // Add reweightable systematics to the output TTree.
-void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & config, sys::cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc)
+void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc)
 {
-    //std::ofstream outputFile("checkdups.txt");
-
     /**
      * @brief Create the output subdirectory following the nesting outlined
      * in the configuration file.
@@ -176,19 +143,19 @@ void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & con
      */
     TTree * input_tree = (TTree *) input->Get(table.get_string_field("origin").c_str());
     std::map<std::string, double> brs;
-    double true_neutrino_id;
+    double nu_id;
     Int_t run, subrun, event;
-    double nu_E;
     for(int i(0); i < input_tree->GetNbranches()-3; ++i)
     {
         std::string brname = input_tree->GetListOfBranches()->At(i)->GetName();
         brs[brname] = 0;
         input_tree->SetBranchAddress(brname.c_str(), &brs[brname]);
     }
-    input_tree->SetBranchAddress("true_neutrino_id", &true_neutrino_id);
+    input_tree->SetBranchAddress("true_neutrino_id", &nu_id);
     input_tree->SetBranchAddress("Run", &run);
     input_tree->SetBranchAddress("Subrun", &subrun);
     input_tree->SetBranchAddress("Evt", &event);
+
 
     /**
      * @brief Create the output TTree with the name specified in the
@@ -211,23 +178,19 @@ void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & con
     /**
      * @brief Create the map of selected signal candidates.
      * @details This block creates a map of selected signal candidates. The
-     * map is built by looping over the input TTree and storing a hash of the
-     * run, subrun, event, true_neutrino_id, and nu_energy branches as the key. The
+     * map is built by looping over the input TTree and storing an index of the
+     * run, subrun, event, nu_id, and nu_energy branches as the key. The
      * value is the index of the entry in the input TTree.
-     * @see sys::trees::hash
      */
-    map_t candidates;
-    //std::map<size_t, size_t> candidates;
-    //bool use_additional_hash = config.get_bool_field("input.use_additional_hash");
+    std::map<index_t, size_t> candidates;
+    bool use_additional_hash = config.get_bool_field("input.use_additional_hash", false);
     for(int i(0); i < input_tree->GetEntries(); ++i)
     {
         input_tree->GetEntry(i);
-      //  if(!use_additional_hash)
-      //      candidates.insert(std::make_pair<size_t, size_t>(hash(run, subrun, event, true_neutrino_id), i));
-      //  else
-      //      candidates.insert(std::make_pair<size_t, size_t>(hash(run, subrun, event, true_neutrino_id, brs["true_neutrino_energy"]), i));
-
-	candidates.insert(std::make_pair<index_t, size_t>(std::make_tuple(run, subrun, event, true_neutrino_id, brs["true_neutrino_energy"]), i));
+        if(!use_additional_hash)
+            candidates.insert(std::make_pair<index_t, size_t>(std::make_tuple(run, subrun, event, nu_id, 0), i));
+        else
+            candidates.insert(std::make_pair<index_t, size_t>(std::make_tuple(run, subrun, event, nu_id, brs["true_neutrino_energy"]), i));
     }
 
     /**
@@ -268,7 +231,7 @@ void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & con
     std::vector<SysVariable> sysvariables;
     std::map<syst_t, TH2D *> results2d;
     std::map<syst_t, TH1D *> results1d;
-    for(sys::cfg::ConfigurationTable & t : config.get_subtables("sysvar"))
+    for(cfg::ConfigurationTable & t : config.get_subtables("sysvar"))
     {
         sysvariables.push_back(SysVariable(t));
         calc.add_variable(sysvariables.back());
@@ -291,22 +254,23 @@ void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & con
         systrees[s]->Branch("Run", &run);
         systrees[s]->Branch("Subrun", &subrun);
         systrees[s]->Branch("Evt", &event);
-	systrees[s]->Branch("true_neutrino_id", &true_neutrino_id);
-	systrees[s]->Branch("true_neutrino_energy", &nu_E);
         systrees[s]->SetDirectory(directory);
         systrees[s]->SetAutoFlush(1000);
     }
 
-    for(sys::cfg::ConfigurationTable & t : config.get_subtables("sys"))
+    for(cfg::ConfigurationTable & t : config.get_subtables("sys"))
     {
         systematics.insert(std::make_pair<std::string, Systematic *>(t.get_string_field("name"), new Systematic(t, systrees[t.get_string_field("type")])));
-        systematics[t.get_string_field("name")]->get_tree()->Branch(t.get_string_field("name").c_str(), &systematics[t.get_string_field("name")]->get_weights());
+        Systematic * tmp = systematics[t.get_string_field("name")];
+        tmp->get_tree()->Branch(t.get_string_field("name").c_str(), &systematics[t.get_string_field("name")]->get_weights());
+        if(tmp->get_nsigma()->size() > 0)
+        {
+            tmp->get_tree()->Branch((t.get_string_field("name") + "_nsigma").c_str(), &systematics[t.get_string_field("name")]->get_nsigma());
+        }
     }
 
     sys::WeightReader reader(config.get_string_field("input.weights"));
 
-
-    std::set<index_t> seenEvents;
     double nominal_count(0);
     while(reader.next())
     {
@@ -321,23 +285,13 @@ void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & con
          */
         for(size_t idn(0); idn < reader.get_nnu(); ++idn)
         {
-	  
-	  //size_t index;
-	  //if(!use_additional_hash)
-          //      index = hash(reader.get_run(), reader.get_subrun(), reader.get_event(), idn);
-          //  else
-          //      index = hash(reader.get_run(), reader.get_subrun(), reader.get_event(), idn, (double)reader.get_energy(idn));
-	    
-	    index_t index(reader.get_run(), reader.get_subrun(), reader.get_event(), idn, (double)reader.get_energy(idn));
+            index_t index;
+            if(!use_additional_hash)
+                index = std::make_tuple(reader.get_run(), reader.get_subrun(), reader.get_event(), idn, 0);
+            else
+                index = std::make_tuple(reader.get_run(), reader.get_subrun(), reader.get_event(), idn, (double)reader.get_energy(idn));
             if(candidates.find(index) != candidates.end())
             {
-
-	        // Discard duplicate events from flat CAF weights TChain
-	        if (seenEvents.count(index) > 0) continue;
-		seenEvents.insert(index); // First try with index_t object, if that fails try with string
-
-		//outputFile << reader.get_run() << "," << reader.get_subrun() << "," << reader.get_event() << "," << idn << "," << (double)reader.get_energy(idn) << "," << reader.get_nnu() << std::endl;
-
                 /**
                  * @brief Retrieve the selected signal candidate and copy
                  * the values to the output TTree.
@@ -349,8 +303,6 @@ void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & con
                 run = reader.get_run();
                 subrun = reader.get_subrun();
                 event = reader.get_event();
-		true_neutrino_id = idn;
-		nu_E = (double)reader.get_energy(idn);
                 calc.increment_nominal_count(1.0);
                 nominal_count += 1.0;
                 output_tree->Fill();
@@ -433,6 +385,6 @@ void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & con
     }
 
     // Write detector systematic histograms to the output file.
-    calc.write_results();
-    //outputFile.close();
+    if(calc.is_initialized())
+        calc.write_results();
 }

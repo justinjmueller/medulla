@@ -1,12 +1,12 @@
 [input]
 path = '/exp/icarus/app/users/lkashur/medulla_dev/srcs/medulla/build/icarus_bnb_ccpi0_onbeam_cv_offbeam_vars.root'
-weights = '/pnfs/icarus/persistent/users/mueller/mixed/simulation/nominal/*.flat.root'
+weights = '/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input*.flat.root'
 #weights = '/pnfs/icarus/persistent/users/mueller/mixed/simulation/cvext/*.flat.root'
 use_additional_hash = true
 
 [output]
 #path = '/pnfs/icarus/scratch/users/lkashur/icarus_bnb_ccpi0_mc_onbeam_offbeam_vars_sel_syst_forgundam.root'
-path = '/pnfs/icarus/scratch/users/lkashur/icarus_bnb_ccpi0_onbeam_cv_offbeam_vars_syst_11_july_2025.root'
+path = '/pnfs/icarus/scratch/users/lkashur/icarus_bnb_ccpi0_onbeam_cv_offbeam_vars_syst_17_july_2025.root'
 histogram_destination = 'variations/'
 
 [[sysvar]]
@@ -14,13 +14,13 @@ name = 'reco_muon_beam_costheta'
 bins = [12.0, -1.01, 1.01]
 
 [variations]
-keys = ['cv', 'var00', 'var01', 'var02', 'var03m', 'var03p', 'var05', 'var06', 'var07', 'var09m', 'var09p', 'var10m', 'var10p']
+keys = ['cv', 'var00', 'var01', 'var02', 'var03m', 'var03p', 'var04', 'var05', 'var06', 'var07', 'var09m', 'var09p', 'var10m', 'var10p', 'var11']
 origin = 'events/'
 tree = 'selected_nu'
 result_destination = 'detsys_results/'
 variable = 'reco_muon_beam_costheta'
 bins = [12.0, -1.01, 1.01]
-nuniverses = 10000
+nuniverses = 1000
 
 [[tree]]
 origin = 'events/cv/selected_nu'
@@ -56,7 +56,7 @@ action = 'copy'
 
 [[sys]]
 name = 'var00'
-name_short = 'detvar_bnb_null'
+name_alt = 'detvar_bnb_null'
 type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1, 2, 3]
@@ -66,7 +66,7 @@ points = ['var00', 'var00', 'var00', 'cv', 'var00', 'var00', 'var00']
 
 [[sys]]
 name = 'var01'
-name_short = 'detvar_bnb_hightau'
+name_alt = 'detvar_bnb_hightau'
 type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1, 2, 3]
@@ -76,7 +76,7 @@ points = ['var01', 'var01', 'var01', 'cv', 'var01', 'var01', 'var01']
 
 [[sys]]
 name = 'var02'
-name_short = 'detvar_bnb_lowtau'
+name_alt = 'detvar_bnb_lowtau'
 type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1, 2, 3]
@@ -86,7 +86,7 @@ points = ['var02', 'var02', 'var02', 'cv', 'var02', 'var02', 'var02']
 
 [[sys]]
 name = 'var03'
-name_short = 'detvar_bnb_ind1gain'
+name_alt = 'detvar_bnb_ind1gain'
 type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1, 2, 3]
@@ -94,28 +94,29 @@ scale = [3, 2, 1, 1, 1, 2, 3]
 ordinate = 'cv'
 points = ['var03m', 'var03m', 'var03m', 'cv', 'var03p', 'var03p', 'var03p']
 
-#[[sys]]
-#name = 'var04'
-#type = 'variation'
-#index = -1
-#nsigma = [-3, -2, -1, 0, 1, 2, 3]
-#scale = [-3, -2, -1, 1, 1, 2, 3]
-#ordinate = 'cv'
-#points = ['var04', 'var04', 'var04', 'cv', 'var04', 'var04', 'var04']
+[[sys]]
+name = 'var04'
+name_alt = 'detvar_bnb_ind1gap'
+type = 'variation'
+index = -1
+nsigma = [-3, -2, -1, 0, 1, 2, 3]
+scale = [-3, -2, -1, 1, 1, 2, 3]
+ordinate = 'cv'
+points = ['var04', 'var04', 'var04', 'cv', 'var04', 'var04', 'var04']
 
 [[sys]]
 name = 'var05'
-name_short = 'detvar_bnb_recomb'
+name_alt = 'detvar_bnb_recomb'
 type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1, 2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
 ordinate = 'var00'
-points = ['var05', 'var05', 'var05', 'var00', 'var05', 'var05', 'var05']
+points = ['var05', 'var05', 'var05', 'cv', 'var05', 'var05', 'var05']
 
 [[sys]]
 name = 'var06'
-name_short = 'detvar_bnb_pmtqe'
+name_alt = 'detvar_bnb_pmtqe'
 type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1, 2, 3]
@@ -125,26 +126,27 @@ points = ['var06', 'var06', 'var06', 'cv', 'var06', 'var06', 'var06']
 
 [[sys]]
 name = 'var07'
-name_short = 'detvar_bnb_yz'
+name_alt = 'detvar_bnb_yz'
 type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1, 2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
 ordinate = 'var00'
-points = ['var07', 'var07', 'var07', 'var00', 'var07', 'var07', 'var07']
+points = ['var07', 'var07', 'var07', 'cv', 'var07', 'var07', 'var07']
 
-#[[sys]]
-#name = 'var08'
-#type = 'variation'
-#index = -1
-#nsigma = [-3, -2, -1, 0, 1, 2, 3]
-#scale = [-3, -2, -1, 1, 1, 2, 3]
-#ordinate = 'cv'
-#points = ['var08', 'var08', 'var08', 'cv', 'var08', 'var08', 'var08']
+[[sys]]
+name = 'var08'
+name_alt = 'detvar_bnb_cathode'
+type = 'variation'
+index = -1
+nsigma = [-3, -2, -1, 0, 1, 2, 3]
+scale = [-3, -2, -1, 1, 1, 2, 3]
+ordinate = 'cv'
+points = ['var08', 'var08', 'var08', 'cv', 'var08', 'var08', 'var08']
 
 [[sys]]
 name = 'var09'
-name_short = 'detvar_bnb_intnoise'
+name_alt = 'detvar_bnb_intnoise'
 type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1, 2, 3]
@@ -154,7 +156,7 @@ points = ['var09m', 'var09m', 'var09m', 'cv', 'var09p', 'var09p', 'var09p']
 
 [[sys]]
 name = 'var10'
-name_short = 'detvar_bnb_cohnoise'
+name_alt = 'detvar_bnb_cohnoise'
 type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1, 2, 3]
@@ -163,368 +165,378 @@ ordinate = 'cv'
 points = ['var10m', 'var10m', 'var10m', 'cv', 'var10p', 'var10p', 'var10p']
 
 [[sys]]
+name = 'var11'
+name_alt = 'detvar_bnb_ind1shape'
+type = 'variation'
+index = -1
+nsigma = [-3, -2, -1, 0, 1, 2, 3]
+scale = [-3, -2, -1, 1, 1, 2, 3]
+ordinate = 'nominal'
+points = ['var11', 'var11', 'var11', 'cv', 'var11', 'var11', 'var11']
+
+[[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_ZExpA1CCQE'
-name_short = 'ZExpA1CCQE'
+name_alt = 'ZExpA1CCQE'
 type = 'multisigma'
 index = 0
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_ZExpA2CCQE'
-name_short = 'ZExpA2CCQE'
+name_alt = 'ZExpA2CCQE'
 type = 'multisigma'
 index = 1
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_ZExpA3CCQE'
-name_short = 'ZExpA3CCQE'
+name_alt = 'ZExpA3CCQE'
 type = 'multisigma'
 index = 2
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_ZExpA4CCQE'
-name_short = 'ZExpA4CCQE'
+name_alt = 'ZExpA4CCQE'
 type = 'multisigma'
 index = 3
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 #[[sys]]
 #name = 'GENIEReWeight_SBN_v1_multisigma_VecFFCCQEshape'
-#name_short = 'VecFFCCQEshape'
+#name_alt = 'VecFFCCQEshape'
 #type = 'multisigma'
 #index = 4
-#zscores = [-1, 1, -2, 2, -3, 3]
+#nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_RPA_CCQE'
-name_short = 'RPA_CCQE'
+name_alt = 'RPA_CCQE'
 type = 'multisigma'
 index = 5
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_CoulombCCQE'
-name_short = 'CoulombCCQE'
+name_alt = 'CoulombCCQE'
 type = 'multisigma'
 index = 6
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NormCCMEC'
-name_short = 'NormCCMEC'
+name_alt = 'NormCCMEC'
 type = 'multisigma'
 index = 7
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NormNCMEC'
-name_short = 'NormNCMEC'
+name_alt = 'NormNCMEC'
 type = 'multisigma'
 index = 8
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 #[[sys]]
 #name = 'GENIEReWeight_SBN_v1_multisigma_DecayAngMEC'
-#name_short = 'DecayAngMEC'
+#name_alt = 'DecayAngMEC'
 #type = 'multisigma'
 #index = 9
-#zscores = [-1, 1, -2, 2, -3, 3]
+#nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_MaNCEL'
-name_short = 'MaNCEL'
+name_alt = 'MaNCEL'
 type = 'multisigma'
 index = 10
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_EtaNCEL'
-name_short = 'EtaNCEL'
+name_alt = 'EtaNCEL'
 type = 'multisigma'
 index = 11
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_MaCCRES'
-name_short = 'MaCCRES'
+name_alt = 'MaCCRES'
 type = 'multisigma'
 index = 12
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_MvCCRES'
-name_short = 'MvCCRES'
+name_alt = 'MvCCRES'
 type = 'multisigma'
 index = 13
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_MaNCRES'
-name_short = 'MaNCRES'
+name_alt = 'MaNCRES'
 type = 'multisigma'
 index = 14
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_MvNCRES'
-name_short = 'MvNCRES'
+name_alt = 'MvNCRES'
 type = 'multisigma'
 index = 15
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NonRESBGvpCC1pi'
-name_short = 'NonRESBGvpCC1pi'
+name_alt = 'NonRESBGvpCC1pi'
 type = 'multisigma'
 index = 16
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NonRESBGvpCC2pi'
-name_short = 'NonRESBGvpCC2pi'
+name_alt = 'NonRESBGvpCC2pi'
 type = 'multisigma'
 index = 17
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NonRESBGvpNC1pi'
-name_short = 'NonRESBGvpNC1pi'
+name_alt = 'NonRESBGvpNC1pi'
 type = 'multisigma'
 index = 18
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NonRESBGvpNC2pi'
-name_short = 'NonRESBGvpNC2pi'
+name_alt = 'NonRESBGvpNC2pi'
 type = 'multisigma'
 index = 19
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NonRESBGvnCC1pi'
-name_short = 'NonRESBGvnCC1pi'
+name_alt = 'NonRESBGvnCC1pi'
 type = 'multisigma'
 index = 20
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NonRESBGvnCC2pi'
-name_short = 'NonRESBGvnCC2pi'
+name_alt = 'NonRESBGvnCC2pi'
 type = 'multisigma'
 index = 21
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NonRESBGvnNC1pi'
-name_short = 'NonRESBGvnNC1pi'
+name_alt = 'NonRESBGvnNC1pi'
 type = 'multisigma'
 index = 22
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NonRESBGvnNC2pi'
-name_short = 'NonRESBGvnNC2pi'
+name_alt = 'NonRESBGvnNC2pi'
 type = 'multisigma'
 index = 23
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NonRESBGvbarpCC1pi'
-name_short = 'NonRESBGvbarpCC1pi'
+name_alt = 'NonRESBGvbarpCC1pi'
 type = 'multisigma'
 index = 24
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NonRESBGvbarpCC2pi'
-name_short = 'NonRESBGvbarpCC2pi'
+name_alt = 'NonRESBGvbarpCC2pi'
 type = 'multisigma'
 index = 25
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NonRESBGvbarpNC1pi'
-name_short = 'NonRESBGvbarpNC1pi'
+name_alt = 'NonRESBGvbarpNC1pi'
 type = 'multisigma'
 index = 26
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NonRESBGvbarpNC2pi'
-name_short = 'NonRESBGvbarpNC2pi'
+name_alt = 'NonRESBGvbarpNC2pi'
 type = 'multisigma'
 index = 27
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NonRESBGvbarnCC1pi'
-name_short = 'NonRESBGvbarnCC1pi'
+name_alt = 'NonRESBGvbarnCC1pi'
 type = 'multisigma'
 index = 28
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NonRESBGvbarnCC2pi'
-name_short = 'NonRESBGvbarnCC2pi'
+name_alt = 'NonRESBGvbarnCC2pi'
 type = 'multisigma'
 index = 29
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NonRESBGvbarnNC1pi'
-name_short = 'NonRESBGvbarnNC1pi'
+name_alt = 'NonRESBGvbarnNC1pi'
 type = 'multisigma'
 index = 30
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NonRESBGvbarnNC2pi'
-name_short = 'NonRESBGvbarnNC2pi'
+name_alt = 'NonRESBGvbarnNC2pi'
 type = 'multisigma'
 index = 31
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_RDecBR1gamma'
-name_short = 'RDecBR1gamma'
+name_alt = 'RDecBR1gamma'
 type = 'multisigma'
 index = 32
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_RDecBR1eta'
-name_short = 'RDecBR1eta'
+name_alt = 'RDecBR1eta'
 type = 'multisigma'
 index = 33
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 #[[sys]]
 #name = 'GENIEReWeight_SBN_v1_multisigma_Theta_Delta2Npi'
-#name_short = 'Theta_Delta2Npi'
+#name_alt = 'Theta_Delta2Npi'
 #type = 'multisigma'
 #index = 34
-#zscores = [-1, 1, -2, 2, -3, 3]
+#nsigma = [-1, 1, -2, 2, -3, 3]
 
 #[[sys]]
 #name = 'GENIEReWeight_SBN_v1_multisigma_ThetaDelta2NRad'
-#name_short = 'ThetaDelta2NRad'
+#name_alt = 'ThetaDelta2NRad'
 #type = 'multisigma'
 #index = 35
-#zscores = [-1, 1, -2, 2, -3, 3]
+#nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NormCCCOH'
-name_short = 'NormCCCOH'
+name_alt = 'NormCCCOH'
 type = 'multisigma'
 index = 36
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_NormNCCOH'
-name_short = 'NormNCCOH'
+name_alt = 'NormNCCOH'
 type = 'multisigma'
 index = 37
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_AhtBY'
-name_short = 'AhtBY'
+name_alt = 'AhtBY'
 type = 'multisigma'
 index = 38
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_BhtBY'
-name_short = 'BhtBY'
+name_alt = 'BhtBY'
 type = 'multisigma'
 index = 39
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_CV1uBY'
-name_short = 'CV1uBY'
+name_alt = 'CV1uBY'
 type = 'multisigma'
 index = 40
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_CV2uBY'
-name_short = 'CV2uBY'
+name_alt = 'CV2uBY'
 type = 'multisigma'
 index = 41
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_MFP_pi'
-name_short = 'MFP_pi'
+name_alt = 'MFP_pi'
 type = 'multisigma'
 index = 42
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_FrCEx_pi'
-name_short = 'FrCEx_pi'
+name_alt = 'FrCEx_pi'
 type = 'multisigma'
 index = 43
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_FrInel_pi'
-name_short = 'FrInel_pi'
+name_alt = 'FrInel_pi'
 type = 'multisigma'
 index = 44
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_FrAbs_pi'
-name_short = 'FrAbs_pi'
+name_alt = 'FrAbs_pi'
 type = 'multisigma'
 index = 45
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_FrPiProd_pi'
-name_short = 'FrPiProd_pi'
+name_alt = 'FrPiProd_pi'
 type = 'multisigma'
 index = 46
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_MFP_N'
-name_short = 'MFP_N'
+name_alt = 'MFP_N'
 type = 'multisigma'
 index = 47
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_FrCEx_N'
-name_short = 'FrCEx_N'
+name_alt = 'FrCEx_N'
 type = 'multisigma'
 index = 48
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_FrInel_N'
-name_short = 'FrInel_N'
+name_alt = 'FrInel_N'
 type = 'multisigma'
 index = 49
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_FrAbs_N'
-name_short = 'FrAbs_N'
+name_alt = 'FrAbs_N'
 type = 'multisigma'
 index = 50
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_FrPiProd_N'
-name_short = 'FrPiProd_N'
+name_alt = 'FrPiProd_N'
 type = 'multisigma'
 index = 51
-zscores = [-1, 1, -2, 2, -3, 3]
+nsigma = [-1, 1, -2, 2, -3, 3]
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisim_ZExpAVariationResponse'

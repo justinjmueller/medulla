@@ -6,7 +6,7 @@
  * systematics using a spline interpolation of the ratio of the nominal and
  * sample histograms. Configuration of the class is done using a TOML-based
  * configuration file.
- * @see sys::cfg::ConfigurationTable 
+ * @see cfg::ConfigurationTable 
  * @author mueller@fnal.gov
  */
 #include <map>
@@ -24,7 +24,7 @@
 
 // Constructor for the DetsysCalculator class that initializes the class using
 // the configuration table, the output file, and the input file. 
-sys::detsys::DetsysCalculator::DetsysCalculator(sys::cfg::ConfigurationTable & table, TFile * output, TFile * input)
+sys::detsys::DetsysCalculator::DetsysCalculator(cfg::ConfigurationTable & table, TFile * output, TFile * input)
 {
     // Roll random z-scores to create a set of universes for later.
     std::random_device rd;
@@ -67,7 +67,7 @@ sys::detsys::DetsysCalculator::DetsysCalculator(sys::cfg::ConfigurationTable & t
     // entry in the "sys" block of the configuration file with type "variation"
     // specifies a single detector systematic parameter, but in general may
     // consist of multiple variations spanning the range of the parameter.
-    for(sys::cfg::ConfigurationTable & t : table.get_subtables("sys"))
+    for(cfg::ConfigurationTable & t : table.get_subtables("sys"))
     {
         // Skip non-variation detector systematics.
         if(t.get_string_field("type") != "variation")

@@ -1,78 +1,82 @@
 [general]
-#output = "icarus_bnb_ccpi0_onbeam_cv_offbeam_vars"
-output = "icarus_bnb_ccpi0_onbeam_cv_offbeam_dev"
-#output = "test"
+output = "icarus_bnb_ccpi0_cv_vars_bugfix"
+#output = "icarus_bnb_ccpi0_onbeam_cv_offbeam_dev"
 
+[[sample]]
+name = "cv"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input*.flat.root"
+ismc = true
+disable = false
 
 [[sample]]
 name = "onbeam"
 path = "/pnfs/icarus/persistent/users/mueller/mixed/data/onbeam/input*.flat.root"
-ismc = false
-disable = false
-
-[[sample]]
-name = "cv"
-path = "/pnfs/icarus/persistent/users/mueller/mixed/simulation/nominal/input*.flat.root"
 ismc = true
-disable = false
+disable = true
 
 [[sample]]
 name = "offbeam"
 path = "/pnfs/icarus/persistent/users/mueller/mixed/data/offbeam/input*.flat.root"
-ismc = false
-disable = false
+ismc = true
+disable = true
 
 [[sample]]
 name = "var00"
-path = "/pnfs/icarus/persistent/users/mueller/mixed/simulation/var00/input*.flat.root"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var00/input*.flat.root"
 ismc = true
-disable = true
+disable = false
 
 [[sample]]
 name = "var01"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var01/input*.flat.root"
 ismc = true
-disable = true
+disable = false
 
 [[sample]]
 name = "var02"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var02/input*.flat.root"
 ismc = true
-disable = true
+disable = false
 
 [[sample]]
 name = "var03m"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var03m/input*.flat.root"
 ismc = true
-disable = true
+disable = false
 
 [[sample]]
 name = "var03p"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var03p/input*.flat.root"
 ismc = true
-disable = true
+disable = false
 
 [[sample]]
 name = "var04"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var04/input*.flat.root"
 ismc = true
-disable = true
+disable = false
 
 [[sample]]
 name = "var05"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var05/input*.flat.root"
 ismc = true
-disable = true
+disable = false
 
 [[sample]]
 name = "var06"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var06/input*.flat.root"
 ismc = true
-disable = true
+disable = false
 
 [[sample]]
 name = "var07"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var07/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "var08"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var08/input*.flat.root"
 ismc = true
 disable = true
 
@@ -80,31 +84,32 @@ disable = true
 name = "var09m"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var09m/input*.flat.root"
 ismc = true
-disable = true
+disable = false
 
 [[sample]]
 name = "var09p"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var09p/input*.flat.root"
 ismc = true
-disable = true
+disable = false
 
 [[sample]]
 name = "var10m"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var10m/input*.flat.root"
 ismc = true
-disable = true
+disable = false
 
 [[sample]]
 name = "var10p"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var10p/input*.flat.root"
 ismc = true
-disable = true
+disable = false
 
 [[sample]]
 name = "var11"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var11/input*.flat.root"
 ismc = true
-disable = true
+disable = false
+
 
 [[tree]]
 name = "selected_nu"

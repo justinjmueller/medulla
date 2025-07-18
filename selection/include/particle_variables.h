@@ -273,6 +273,36 @@ namespace pvars
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, calo_ke, calo_ke);
 
     /**
+     * @brief Variable for the calorimetric kinetic energy of the particle,
+     * but adjusted by multiplicative scaling factors.
+     * @details The calorimetric kinetic energy is calculated upstream in the
+     * SPINE reconstruction as the sum of the energy of each spacepoint in the
+     * particle.  Scalign factors are determined by function parameters.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @param params the parameters for the variable.
+     * @return the scaled calorimetric kinetic energy of the particle.
+     */
+    template<class T>
+    double calo_ke_adj(const T & p, std::vector<double> params={0.0,})
+    {
+        if(params.size() == 0)
+	{
+	    return p.calo_ke;
+	}
+	else
+	{
+	    double caloke = p.calo_ke;
+	    for(double c : params)
+	    {
+	        caloke *= c;
+	    }
+	    return caloke;
+	}
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, calo_ke_adj, calo_ke_adj);
+    
+    /**
      * @brief Variable for true particle starting kinetic energy.
      * @details The starting kinetic energy is defined as the total energy
      * minus the rest mass energy of the particle.
