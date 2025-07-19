@@ -134,7 +134,7 @@ void mark_contained(caf::SRInteractionDLP * reco_interaction,
 
 // Set the event metadata.
 void write_event(caf::StandardRecord * rec, int64_t run, int64_t subrun,
-                 int64_t event_num, TH1F * pot, TH1F * nevt, TTree * tree)
+                 int64_t event_num, TH1F * pot, TH1F * nevt, TTree * tree, int32_t trigger_time)
 {
     // Set the size of each interaction vector.
     rec->ndlp = rec->dlp.size();
@@ -142,6 +142,9 @@ void write_event(caf::StandardRecord * rec, int64_t run, int64_t subrun,
 
     // Set the exposure information.
     rec->hdr.pot = 1.0;
+
+    // Set the trigger time.
+    rec->hdr.triggerinfo.global_trigger_time = trigger_time;
 
     // Set the run, subrun, and event numbers in the header.
     rec->hdr.run = run;

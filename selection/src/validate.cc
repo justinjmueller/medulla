@@ -76,7 +76,9 @@ int main(int argc, char * argv[])
          * 
          * - ES00: This represents the case where a reco interaction and a
          *   truth interaction are present, but are not matched. Both have
-         *   valid flash matches, so they are selected.
+         *   valid flash matches, so they are selected. ES00A also has a
+         *   trigger time of 2000, so we can test the global trigger time
+         *   event-level cut.
          * 
          * - ES01: This represents the case where a reco interaction and a
          *   truth interaction are present, but are not matched. Both have
@@ -104,7 +106,7 @@ int main(int argc, char * argv[])
         // ES00A
         rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs));
         rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs));
-        write_event(rec, 1, 0, 0, pot, nevt, t);
+        write_event(rec, 1, 0, 0, pot, nevt, t, 2000);
 
         // ES00B
         rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs));
@@ -1191,8 +1193,11 @@ int main(int argc, char * argv[])
          * each event as a whole, rather than to the interactions or particles
          * within the interactions.
          * 
-         * - SEV00: This represents a sim-like event that does pass the
-         *   selection and has a valid variable.
+         * - SEV00: This represents an event with a trigger time that passes
+         *   the cut on the trigger time.
+         * 
+         * - SEV01: This represents an event with a trigger time that does not
+         *   pass the cut on the trigger time.
          */
         std::cout << "\n\033[1mSimulation-like events with mode == 'event' \033[0m" << std::endl;
 
@@ -1201,7 +1206,8 @@ int main(int argc, char * argv[])
 
         // Expected results for validation.
         conditions = {
-            {"SEV00", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}, {"event_ntrue", 1}}},
+            {"SEV00", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"event_ntrue", 1.0}}},
+            {"!SEV01", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}}},
         };
 
         // Check if each condition_t entry is present in the rows vector.

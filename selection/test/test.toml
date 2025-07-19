@@ -16,7 +16,7 @@ name = "test_event"
 sim_only = false
 mode = "event"
 cut = [
-    {name = "no_cut", type = "event"}
+    {name = "global_trigger_time_cut", type = "event", parameters=[0, 1000]}
 ]
 branch = [
     {name = "ntrue", type = "event"}

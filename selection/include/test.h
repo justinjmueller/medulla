@@ -130,10 +130,13 @@ void mark_contained(caf::SRInteractionDLP * reco_interaction,
  * @param pot The histogram for the total POT (optional).
  * @param nevt The histogram for the total number of events (optional).
  * @param t The TTree to fill with the event data (optional).
+ * @param trigger_time The global trigger time to set in the header (default is
+ * 500).
  * @return void
  */
 void write_event(caf::StandardRecord * rec, int64_t run, int64_t subrun,
-                 int64_t event_num, TH1F * pot, TH1F * nevt, TTree * t);
+                 int64_t event_num, TH1F * pot, TH1F * nevt, TTree * t,
+                 int32_t trigger_time = 500);
 
 /**
  * @brief Read the event data from the TTree at the specified path.
