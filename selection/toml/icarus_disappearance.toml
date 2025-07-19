@@ -1,0 +1,269 @@
+[general]
+output = "icarus_disappearance"
+primfn = "default_primary_classification"
+pidfn = "default_pid"
+
+[[sample]]
+name = "nominal"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "cvext"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "var00"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var00/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "var01"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var01/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "var02"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var02/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "var03m"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var03m/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "var03p"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var03p/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "var04"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var04/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "var05"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var05/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "var06"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var06/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "var07"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var07/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "var09m"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var09m/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "var09p"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var09p/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "var10m"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var10m/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "var10p"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var10p/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "var11"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var11/input*.flat.root"
+ismc = true
+disable = false
+
+[[tree]]
+name = "selected"
+sim_only = false
+mode = "reco"
+cut = [
+    { name = "fiducial_cut",     type = "reco" },
+    { name = "valid_flashmatch", type = "reco" },
+    { name = "no_photons",       type = "reco", parameters = [25.0] },
+    { name = "no_electrons",     type = "reco", parameters = [25.0] },
+    { name = "no_charged_pions", type = "reco", parameters = [25.0] },
+    { name = "single_muon",      type = "reco", parameters = [143.425] },
+    { name = "!no_protons",      type = "reco", parameters = [50.0] }
+]
+branch = [
+    # Interaction-level truth/reco branches
+    { name = "neutrino_id",             type = "true"    },
+    { name = "baseline",                type = "mctruth" },
+    { name = "cc",                      type = "mctruth" },
+    { name = "pdg",                     type = "mctruth" },
+    { name = "interaction_type",        type = "mctruth" },
+    { name = "category",                type = "true"    },
+    { name = "category_no_containment", type = "true"    },
+    { name = "neutrino_energy",         type = "mctruth" },
+    { name = "visible_energy",          type = "both"    },
+    { name = "visible_energy_calosub",  type = "both"    },
+    { name = "proton_multiplicity",     type = "reco",    parameters = [50.0,]},
+
+    # Kinematic imbalance & angles
+    { name = "opening_angle", type = "both" },
+    { name = "dpT",           type = "both" },
+    { name = "dpT_lp",        type = "both" },
+    { name = "dphiT",         type = "both" },
+    { name = "dalphaT",       type = "both" },
+    { name = "dpL",           type = "both" },
+    { name = "dpL_lp",        type = "both" },
+    { name = "pn",            type = "both" },
+    { name = "pn_lp",         type = "both" },
+
+    # Vertex & flash
+    { name = "vertex_x",         type = "both" },
+    { name = "vertex_y",         type = "both" },
+    { name = "vertex_z",         type = "both" },
+    { name = "flash_time",       type = "reco" },
+    { name = "flash_total_pe",   type = "reco" },
+    { name = "flash_hypothesis", type = "reco" },
+    { name = "containment",      type = "reco" },
+
+    # Leading MUON interaction-level
+    { name = "end_x",             type = "both_particle", selector = "leading_muon"   },
+    { name = "end_y",             type = "both_particle", selector = "leading_muon"   },
+    { name = "end_z",             type = "both_particle", selector = "leading_muon"   },
+    { name = "ke",                type = "both_particle", selector = "leading_muon"   },
+    { name = "length",            type = "both_particle", selector = "leading_muon"   },
+    { name = "dpT",               type = "both_particle", selector = "leading_muon"   },
+    { name = "polar_angle",       type = "both_particle", selector = "leading_muon"   },
+    { name = "azimuthal_angle",   type = "both_particle", selector = "leading_muon"   },
+    { name = "primary_softmax",   type = "reco_particle", selector = "leading_muon"   },
+    { name = "secondary_softmax", type = "reco_particle", selector = "leading_muon"   },
+    { name = "muon_softmax",      type = "reco_particle", selector = "leading_muon"   },
+    { name = "pion_softmax",      type = "reco_particle", selector = "leading_muon"   },
+    { name = "proton_softmax",    type = "reco_particle", selector = "leading_muon"   },
+    { name = "mip_softmax",       type = "reco_particle", selector = "leading_muon"   },
+    { name = "hadron_softmax",    type = "reco_particle", selector = "leading_muon"   },
+
+    # Leading PROTON interaction-level
+    { name = "end_x",             type = "both_particle", selector = "leading_proton" },
+    { name = "end_y",             type = "both_particle", selector = "leading_proton" },
+    { name = "end_z",             type = "both_particle", selector = "leading_proton" },
+    { name = "ke",                type = "both_particle", selector = "leading_proton" },
+    { name = "length",            type = "both_particle", selector = "leading_proton" },
+    { name = "dpT",               type = "both_particle", selector = "leading_proton" },
+    { name = "polar_angle",       type = "both_particle", selector = "leading_proton" },
+    { name = "azimuthal_angle",   type = "both_particle", selector = "leading_proton" },
+    { name = "primary_softmax",   type = "reco_particle", selector = "leading_proton" },
+    { name = "secondary_softmax", type = "reco_particle", selector = "leading_proton" },
+    { name = "muon_softmax",      type = "reco_particle", selector = "leading_proton" },
+    { name = "pion_softmax",      type = "reco_particle", selector = "leading_proton" },
+    { name = "proton_softmax",    type = "reco_particle", selector = "leading_proton" },
+    { name = "mip_softmax",       type = "reco_particle", selector = "leading_proton" },
+    { name = "hadron_softmax",    type = "reco_particle", selector = "leading_proton" }
+]
+
+[[tree]]
+name = "signal"
+sim_only = true
+mode = "true"
+cut = [
+    { name = "neutrino",         type = "true"       },
+    { name = "fiducial_cut",     type = "true"       },
+    { name = "no_photons",       type = "true", parameters = [25.0] },
+    { name = "no_electrons",     type = "true", parameters = [25.0] },
+    { name = "no_charged_pions", type = "true", parameters = [25.0] },
+    { name = "single_muon",      type = "true", parameters = [143.425] },
+    { name = "!no_protons",      type = "true", parameters = [50.0] }
+]
+branch = [
+    # Interaction-level truth branches
+    { name = "neutrino_id",            type = "true"    },
+    { name = "containment",            type = "both"    },
+    { name = "fiducial",               type = "both"    },
+    { name = "baseline",               type = "mctruth" },
+    { name = "cc",                     type = "mctruth" },
+    { name = "pdg",                    type = "mctruth" },
+    { name = "interaction_mode",       type = "mctruth" },
+    { name = "interaction_type",       type = "mctruth" },
+    { name = "category",               type = "true"    },
+    { name = "neutrino_energy",        type = "mctruth" },
+    { name = "visible_energy",         type = "true"    },
+    { name = "visible_energy_calosub", type = "true"    },
+
+    # Interaction-level selection variables
+    { name = "photon_multiplicity",   type = "reco", parameters = [25.0,]},
+    { name = "electron_multiplicity", type = "reco", parameters = [25.0,]},
+    { name = "muon_multiplicity",     type = "reco", parameters = [25.0,]},
+    { name = "pion_multiplicity",     type = "reco", parameters = [143.425,]},
+    { name = "proton_multiplicity",   type = "reco", parameters = [50.0,]},
+    { name = "flash_time",            type = "reco" },
+
+    # Kinematic imbalance & angles
+    { name = "opening_angle", type = "true" },
+    { name = "dpT",           type = "true" },
+    { name = "dpT_lp",        type = "true" },
+    { name = "dphiT",         type = "true" },
+    { name = "dalphaT",       type = "true" },
+    { name = "dpL",           type = "true" },
+    { name = "dpL_lp",        type = "true" },
+    { name = "pn",            type = "true" },
+    { name = "pn_lp",         type = "true" },
+
+    # True-vertex
+    { name = "vertex_x", type = "true" },
+    { name = "vertex_y", type = "true" },
+    { name = "vertex_z", type = "true" },
+
+    # Leading MUON particle-level
+    { name = "end_x",             type = "both_particle", selector = "leading_muon" },
+    { name = "end_y",             type = "both_particle", selector = "leading_muon" },
+    { name = "end_z",             type = "both_particle", selector = "leading_muon" },
+    { name = "ke",                type = "both_particle", selector = "leading_muon" },
+    { name = "length",            type = "both_particle", selector = "leading_muon" },
+    { name = "dpT",               type = "both_particle", selector = "leading_muon" },
+    { name = "polar_angle",       type = "both_particle", selector = "leading_muon" },
+    { name = "azimuthal_angle",   type = "both_particle", selector = "leading_muon" },
+    { name = "primary_softmax",   type = "reco_particle", selector = "leading_muon" },
+    { name = "secondary_softmax", type = "reco_particle", selector = "leading_muon" },
+    { name = "muon_softmax",      type = "reco_particle", selector = "leading_muon" },
+    { name = "pion_softmax",      type = "reco_particle", selector = "leading_muon" },
+    { name = "proton_softmax",    type = "reco_particle", selector = "leading_muon" },
+    { name = "mip_softmax",       type = "reco_particle", selector = "leading_muon" },
+    { name = "hadron_softmax",    type = "reco_particle", selector = "leading_muon" },
+
+    # Leading PROTON particle-level
+    { name = "end_x",             type = "both_particle", selector = "leading_proton" },
+    { name = "end_y",             type = "both_particle", selector = "leading_proton" },
+    { name = "end_z",             type = "both_particle", selector = "leading_proton" },
+    { name = "ke",                type = "both_particle", selector = "leading_proton" },
+    { name = "length",            type = "both_particle", selector = "leading_proton" },
+    { name = "dpT",               type = "both_particle", selector = "leading_proton" },
+    { name = "polar_angle",       type = "both_particle", selector = "leading_proton" },
+    { name = "azimuthal_angle",   type = "both_particle", selector = "leading_proton" },
+    { name = "primary_softmax",   type = "reco_particle", selector = "leading_proton" },
+    { name = "secondary_softmax", type = "reco_particle", selector = "leading_proton" },
+    { name = "muon_softmax",      type = "reco_particle", selector = "leading_proton" },
+    { name = "pion_softmax",      type = "reco_particle", selector = "leading_proton" },
+    { name = "proton_softmax",    type = "reco_particle", selector = "leading_proton" },
+    { name = "mip_softmax",       type = "reco_particle", selector = "leading_proton" },
+    { name = "hadron_softmax",    type = "reco_particle", selector = "leading_proton" }
+]
