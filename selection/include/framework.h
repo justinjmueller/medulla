@@ -323,6 +323,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
  * complementary cuts are applied.
  * @param pcuts The callable that implements the cuts on the single-particles.
  * @param var The callable that implements the variable on the selected branch.
+ * @param event_cut The callable that implements the event cut.
  * @param ismc A boolean indicating whether the data is MC (true) or not (false).
  * @return A SpillMultiVar object that applies the cuts and computes the variable.
  */
@@ -332,6 +333,7 @@ ana::SpillMultiVar spill_multivar_helper(
     const std::optional<CutFn<CompsOn>> & comps,
     const CutFn<PCutsOn> & pcuts,
     const VarFn<VarOn> & var,
+    const CutFn<EventType> & event_cut,
     const bool ismc = true
 );
 

@@ -23,6 +23,18 @@ branch = [
 ]
 
 [[tree]]
+name = "test_reco_with_event_cut"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "global_trigger_time_cut", type = "event", parameters=[0, 1000]},
+    {name = "no_cut", type = "reco"}
+]
+branch = [
+    {name = "vertex_x", type = "both"},
+]
+
+[[tree]]
 name = "test_reco"
 sim_only = false
 mode = "reco"

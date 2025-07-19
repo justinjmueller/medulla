@@ -255,6 +255,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                     true_particle_cut,
                     var_fn_with_selector,
+                    event_cut,
                     ismc));
             }
             else
@@ -266,7 +267,8 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     true_cut,
                     reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                     true_particle_cut,
-                    var_fn, 
+                    var_fn,
+                    event_cut,
                     ismc));
             }
         }
@@ -301,6 +303,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                     true_particle_cut,
                     var_fn_with_selector,
+                    event_cut,
                     ismc));
             }
             else
@@ -313,6 +316,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                     true_particle_cut,
                     var_fn,
+                    event_cut,
                     ismc));
             }
         }
@@ -326,6 +330,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                 true_particle_cut,
                 var_fn,
+                event_cut,
                 ismc));
         }
         else if(var_type == "true_particle")
@@ -338,6 +343,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                 true_particle_cut,
                 var_fn,
+                event_cut,
                 ismc));
         }
         else if(var_type == "reco_particle")
@@ -350,6 +356,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                 true_particle_cut,
                 var_fn,
+                event_cut,
                 ismc));
         }
         else
@@ -401,6 +408,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                     true_particle_cut,
                     var_fn_with_selector,
+                    event_cut,
                     ismc));
             }
             else
@@ -413,6 +421,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                     true_particle_cut,
                     var_fn,
+                    event_cut,
                     ismc));
             }
         }
@@ -446,6 +455,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                     reco_particle_cut,
                     var_fn_with_selector,
+                    event_cut,
                     ismc));
             }
             else
@@ -458,6 +468,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                     true_particle_cut,
                     var_fn,
+                    event_cut,
                     ismc));
             }
         }
@@ -471,6 +482,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                 true_particle_cut,
                 var_fn,
+                event_cut,
                 ismc));
         }
         else if(var_type == "true_particle")
@@ -483,6 +495,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                 reco_particle_cut,
                 var_fn,
+                event_cut,
                 ismc));
         }
         else if(var_type == "reco_particle")
@@ -495,6 +508,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                 reco_particle_cut,
                 var_fn,
+                event_cut,
                 ismc));
         }
         else
@@ -537,12 +551,16 @@ ana::SpillMultiVar spill_multivar_helper(
     const std::optional<CutFn<CompsOn>> & comps,
     const CutFn<PCutsOn> & pcuts,
     const VarFn<VarOn> & var,
+    const CutFn<EventType> & event_cut,
     const bool ismc
 )
 {
-    return ana::SpillMultiVar([comps, cuts, pcuts, var, ismc](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
+    return ana::SpillMultiVar([comps, cuts, pcuts, var, ismc, event_cut](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
     {
         std::vector<double> values;
+
+        // Check if this event passes the event cut.
+        if(!event_cut(*sr)) return values;
 
         // Case: configuration parameter "mode" is set to "true."
         if constexpr (std::is_same_v<CutsOn, TType>)

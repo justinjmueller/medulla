@@ -1213,6 +1213,36 @@ int main(int argc, char * argv[])
         // Check if each condition_t entry is present in the rows vector.
         match_conditions(rows, conditions);
 
+        /**
+         * @brief The eight set of events to validate is the "sim-like" events
+         * and the response of the framework when run over them in "reco" mode
+         * with an event-level cut.
+         * @details This set of events effectively tests the framework's
+         * behavior when run in a mode where the selection logic is applied to
+         * reco interactions with an additional event-level cut.
+         * 
+         * - SER00: This represents a reco interaction that passes the
+         *   reco-selection and with a parent event that passes the
+         *   event-level cut.
+         * 
+         * - SER01: This represents a reco interaction that passes the
+         *   reco-selection and with a parent event that does not pass the
+         *   event-level cut.
+         */
+        std::cout << "\n\033[1mSimulation-like events with mode == 'reco' and event-level cut \033[0m" << std::endl;
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_simlike/test_reco_with_event_cut");
+
+        // Expected results for validation.
+        conditions = {
+            {"SER00", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
+            {"!SER01", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        match_conditions(rows, conditions);
+
         // Finished!
         std::cout << "\n\033[1m---        DONE        ---\033[0m" << std::endl;
         f.Close();
