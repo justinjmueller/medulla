@@ -135,8 +135,10 @@ namespace evar
      * @return the total POT from the spillinfo vector in the header of the record.
      */
     template<typename T>
-    double pot_from_spillinfo(const T & sr, std::vector<double> params={1.0})
+    double pot_from_spillinfo(const T & sr, std::vector<double> params)
     {
+        if(params.size() < 1)
+            params.push_back(1.0); // Default scale factor if not provided
         double pot = 0;
         for(const auto & spill : sr.hdr.bnbinfo)
         {
