@@ -76,6 +76,15 @@ namespace cfg
         return *value;
     }
 
+    // Retrieve the requested string field from the configuration table.
+    std::string ConfigurationTable::get_string_field(const std::string & field, const std::string & default_value) const
+    {
+        std::optional<std::string> value(config.at_path(field).value<std::string>());
+        if(!value)
+            return default_value;
+        return *value;
+    }
+
     // Retrieve the requested vector of strings from the configuration table.
     std::vector<std::string> ConfigurationTable::get_string_vector(const std::string & field) const
     {
