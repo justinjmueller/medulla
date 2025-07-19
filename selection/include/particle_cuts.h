@@ -39,7 +39,7 @@ namespace pcuts
     template<class T>
     bool is_primary(const T & p)
     {
-        return PRIMARYFUNC(p) == 1;
+        return pvars::primary_classification(p) == 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, is_primary, is_primary);
 
@@ -74,10 +74,10 @@ namespace pcuts
     bool final_state_signal(const T & p)
     {
         bool passes(false);
-        if(is_primary(p))
+        if(pvars::primary_classification(p))
         {
             double energy(pvars::ke(p));
-            if((PIDFUNC(p) == 2 && energy > 143.425) || (PIDFUNC(p) != 2 && PIDFUNC(p) < 4 && energy > 25) || (PIDFUNC(p) == 4 && energy > 50))
+            if((pvars::pid(p) == 2 && energy > 143.425) || (pvars::pid(p) != 2 && pvars::pid(p) < 4 && energy > 25) || (pvars::pid(p) == 4 && energy > 50))
                 passes = true;
         }
         return passes;
@@ -99,7 +99,7 @@ namespace pcuts
     {
         utilities::three_vector start_point = {p.start_point[0], p.start_point[1], p.start_point[2]};
         utilities::three_vector end_point = {p.end_point[0], p.end_point[1], p.end_point[2]};
-        return PIDFUNC(p) > 1 && utilities::near_boundary(start_point) && utilities::near_boundary(end_point);
+        return pvars::pid(p) > 1 && utilities::near_boundary(start_point) && utilities::near_boundary(end_point);
     }
     REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, throughgoing, throughgoing);
 
@@ -117,7 +117,7 @@ namespace pcuts
     template<class T>
     bool is_pid(const T & p, std::vector<double> params={0.0,})
     {
-        return PIDFUNC(p) == static_cast<size_t>(params[0]);
+        return pvars::pid(p) == static_cast<size_t>(params[0]);
     }
     REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, is_pid, is_pid);
 }

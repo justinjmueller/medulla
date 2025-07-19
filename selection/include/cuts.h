@@ -192,7 +192,7 @@ namespace cuts
         size_t count(0);
         for(const auto & p : obj.particles)
         {
-            if(PIDFUNC(p) == particle_species && PRIMARYFUNC(p) && pvars::ke(p) >= params[0])
+            if(pvars::pid(p) == particle_species && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
                 ++count;
             if(count > 1)
                 break; // No need to count further, we only care about multiplicity of 1.
@@ -311,7 +311,7 @@ namespace cuts
         size_t count(0);
         for(const auto & p : obj.particles)
         {
-            if(PIDFUNC(p) == particle_species && PRIMARYFUNC(p) && pvars::ke(p) >= params[0])
+            if(pvars::pid(p) == particle_species && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
                 ++count;
             if(count > 0)
                 break; // No need to count further, we only care about nonzero multiplicity.

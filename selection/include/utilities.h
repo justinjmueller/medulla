@@ -47,7 +47,7 @@ namespace utilities
             for(auto &p : obj.particles)
             {
                 if(pcuts::final_state_signal(p))
-                    ++counts[PIDFUNC(p)];
+                    ++counts[pvars::pid(p)];
             }
             return counts;
         }

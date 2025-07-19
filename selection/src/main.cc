@@ -7,8 +7,6 @@
  * @author mueller@fnal.gov
  */
 #define PLACEHOLDERVALUE std::numeric_limits<double>::quiet_NaN()
-#define PRIMARYFUNC pvars::lax_primary_classification
-#define PIDFUNC pvars::pid
 #define PROTON_BINDING_ENERGY 30.9 // MeV
 #define BEAM_IS_NUMI false
 
@@ -20,6 +18,7 @@
 
 #include "configuration.h"
 #include "framework.h"
+#include "scorers.h"
 #include "cuts.h"
 #include "muon2024/cuts_muon2024.h"
 #include "variables.h"
@@ -28,7 +27,21 @@
 #include "event_cuts.h"
 #include "event_variables.h"
 #include "selectors.h"
-#include "include/analysis.h"
+#include "analysis.h"
+
+std::shared_ptr<VarFn<RParticleType>> pvars::primfn = std::make_shared<VarFn<RParticleType>>(pvars::default_primary_classification<RParticleType>);
+std::shared_ptr<VarFn<RParticleType>> pvars::pidfn = std::make_shared<VarFn<RParticleType>>(pvars::default_pid<RParticleType>);
+
+template<typename T>
+void set_fcn(std::shared_ptr<VarFn<T>> & fcn, const std::string & name)
+{
+    std::string var_name;
+    if constexpr(std::is_same_v<T, RParticleType>)
+        var_name = "reco_particle_" + name;
+    auto factory = VarFactoryRegistry<T>::instance().get(var_name);
+    auto var_fn = factory({});
+    fcn = std::make_shared<VarFn<T>>(var_fn);
+}
 
 int main(int argc, char * argv[])
 {
@@ -48,6 +61,10 @@ int main(int argc, char * argv[])
 
         // SpectrumLoader
         ana::Analysis analysis(config.get_string_field("general.output"));
+
+        // Set the PID functions.
+        set_fcn(pvars::primfn, config.get_string_field("general.primfn", "default_primary_classification"));
+        set_fcn(pvars::pidfn, config.get_string_field("general.pidfn", "default_pid"));
 
         // Configure the samples in the analysis
         std::vector<cfg::ConfigurationTable> samples = config.get_subtables("sample");
