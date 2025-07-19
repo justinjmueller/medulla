@@ -1,0 +1,103 @@
+[general]
+output = "spine_benchmarks"
+pidfn = "default_pid"
+primfn = "default_primary_classification"
+
+[[sample]]
+name = "icarus"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input*.flat.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "sbnd"
+path = "/pnfs/sbnd/persistent/users/mueller/v10_04_07/input*.flat.root"
+ismc = true
+disable = true
+
+[[tree]]
+name = "pid_efficiency"
+sim_only = false
+mode = "true"
+cut = [
+    {name = "neutrino", type = "true"},
+    {name = "containment_cut", type = "true_particle"}
+]
+branch = [
+    {name = "ke", type = "both_particle"},
+    {name = "csda_ke", type = "reco_particle"},
+    {name = "mcs_ke", type = "reco_particle"},
+    {name = "calo_ke", type = "reco_particle"},
+    {name = "primary_classification", type = "both_particle"},
+    {name = "pid", type = "both_particle"},
+    {name = "start_x", type = "both_particle"},
+    {name = "start_position_x", type = "true_particle"},
+    {name = "start_y", type = "both_particle"},
+    {name = "start_position_y", type = "true_particle"},
+    {name = "start_z", type = "both_particle"},
+    {name = "start_position_z", type = "true_particle"},
+    {name = "start_dir_x", type = "both_particle"},
+    {name = "start_dir_y", type = "both_particle"},
+    {name = "start_dir_z", type = "both_particle"},
+    {name = "end_x", type = "both_particle"},
+    {name = "end_y", type = "both_particle"},
+    {name = "end_z", type = "both_particle"},
+    {name = "end_dir_x", type = "both_particle"},
+    {name = "end_dir_y", type = "both_particle"},
+    {name = "end_dir_z", type = "both_particle"},
+    {name = "polar_angle", type = "both_particle"},
+    {name = "azimuthal_angle", type = "both_particle"},
+    {name = "semantic_type", type = "both_particle"},
+    {name = "iou", type = "both_particle"},
+    {name = "primary_softmax", type = "reco_particle"},
+    {name = "secondary_softmax", type = "reco_particle"},
+    {name = "photon_softmax", type = "reco_particle"},
+    {name = "electron_softmax", type = "reco_particle"},
+    {name = "muon_softmax", type = "reco_particle"},
+    {name = "pion_softmax", type = "reco_particle"},
+    {name = "proton_softmax", type = "reco_particle"},
+    {name = "theta_xw_horizontal", type = "both_particle"},
+    {name = "theta_xw_p60", type = "both_particle"},
+    {name = "theta_xw_m60", type = "both_particle"},
+    {name = "theta_xw_vertical", type = "both_particle"},
+    {name = "theta_xw_p30", type = "both_particle"},
+    {name = "theta_xw_m30", type = "both_particle"},
+]
+
+[[tree]]
+name = "interactions"
+sim_only = false
+mode = "true"
+cut = [
+    {name = "neutrino", type = "true"},
+    {name = "fiducial_cut", type = "true"},
+    {name = "containment_cut", type = "true"},
+]
+branch = [
+    {name = "iou", type = "both"},
+    {name = "vertex_x", type = "both"},
+    {name = "vertex_y", type = "both"},
+    {name = "vertex_z", type = "both"},
+    {name = "fiducial", type = "reco"},
+    {name = "containment", type = "reco"},
+    {name = "flash_time", type = "reco"},
+    {name = "flash_total_pe", type = "reco"},
+    {name = "flash_hypothesis", type = "reco"},
+    {name = "visible_energy", type = "both"},
+    {name = "neutrino_energy", type = "mctruth"},
+    {name = "pdg", type = "mctruth"},
+    {name = "cc", type = "mctruth"},
+    {name = "interaction_mode", type = "mctruth"},
+]
+
+[[tree]]
+name = "events"
+sim_only = false
+mode = "event"
+cut = [
+    {name = "no_cut", type = "event"},
+]
+branch = [
+    {name = "nnu", type = "event"},
+    {name = "nintime", type = "event", parameters = [0.0, 1.6]},
+]
