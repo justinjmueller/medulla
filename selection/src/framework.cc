@@ -726,6 +726,48 @@ ana::SpillMultiVar spill_multivar_helper(const CutFn<EventType> & cut, const Var
     });
 }
 
+// Helper method for constructing a set of SpillMultiVar objects that track the
+// exposure information for a given set of cuts.
+std::vector<NamedSpillMultiVar> construct_exposure_vars(const std::vector<cfg::ConfigurationTable> & cuts)
+{
+    std::vector<NamedSpillMultiVar> exposure_vars;
+    std::vector<CutFn<EventType>> cut_functions;
+
+    // Iterate over the cuts and construct the exposure variables.
+    for(const auto & cut : cuts)
+    {
+        // Check if the cut decrements the exposure.
+        if(cut.get_bool_field("decrements_exposure", false))
+        {
+            // Retrieve the cut parameters.
+            std::vector<double> params;
+            if(cut.has_field("parameters"))
+                params = cut.get_double_vector("parameters");
+
+            // Retrieve the cut function.
+            std::string name = cut.get_string_field("name");
+            name = "event_" + name;
+            auto factory = CutFactoryRegistry<EventType>::instance().get(name);
+            auto cut_fn = factory(params);
+            cut_functions.push_back(cut_fn);
+        }
+    }
+
+    // Compose a common cut function.
+    auto cut = [cut_functions](const EventType & e) -> bool {
+        return std::all_of(cut_functions.begin(), cut_functions.end(), [&e](auto & f) { return f(e); });
+    };
+
+    // Compose the exposure variable.
+    auto livetime_var = [](const EventType & e) -> double {
+        // Return the livetime for the event.
+        return e.hdr.bnbinfo.size() + e.hdr.numiinfo.size() + e.hdr.noffbeambnb + e.hdr.noffbeamnumi;
+    };
+    exposure_vars.push_back(std::make_pair("livetime", spill_multivar_helper(cut, livetime_var)));
+
+    return exposure_vars;
+}
+
 // Explicitly instantiate Registry for the factory types we use:
 // Cut Registry
 template class Registry<CutFactory<TType>>;

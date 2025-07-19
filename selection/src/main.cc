@@ -127,6 +127,21 @@ int main(int argc, char * argv[])
                     }
                 }
                 analysis.AddTreeForSample(sample.get_string_field("name"), tree.get_string_field("name"), vars_map, tree.get_bool_field("sim_only"));
+
+                // Add the exposure tree.
+                if(tree.get_bool_field("add_exposure", false))
+                {
+                    // Construct the exposure variables.
+                    std::map<std::string, ana::SpillMultiVar> exposure_vars_map;
+                    std::vector<NamedSpillMultiVar> exposure_vars = construct_exposure_vars(cuts);
+
+                    // Add the exposure variables to the map.
+                    for(const auto & exposure_var : exposure_vars)
+                        exposure_vars_map.try_emplace(exposure_var.first, exposure_var.second);
+
+                    // Add the exposure tree for the sample.
+                    analysis.AddTreeForSample(sample.get_string_field("name"), tree.get_string_field("name")+"_exposure", exposure_vars_map, tree.get_bool_field("sim_only"));
+                }
             }
         }
 

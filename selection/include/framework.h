@@ -350,4 +350,17 @@ ana::SpillMultiVar spill_multivar_helper(
  */
 ana::SpillMultiVar spill_multivar_helper(const CutFn<EventType> & cut, const VarFn<EventType> & var);
 
+/**
+ * @brief Helper method for constructing a set of SpillMultiVar objects that
+ * track the exposure information for a given set of cuts.
+ * @details Some cuts also need to decrement exposure information, e.g., the
+ * detector was "not sensitive" to the interaction for some detector/spill
+ * related reason. This function constructs a set of SpillMultiVar objects
+ * that track the exposure information for a given set of cuts.
+ * @param cuts The cuts that are applied in the selection.
+ * @return A vector of NamedSpillMultiVar objects that track the exposure
+ * information for the given cuts.
+ */
+std::vector<NamedSpillMultiVar> construct_exposure_vars(const std::vector<cfg::ConfigurationTable> & cuts);
+
 #endif // FRAMEWORK_H
