@@ -1,10 +1,10 @@
 [input]
-path = 'icarus_disappearance.root'
-weights = '/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input*.flat.root'
+path = 'icarus_disappearance_full.root'
+weights = '/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/input*.flat.root'
 use_additional_hash = true
 
 [output]
-path = 'icarus_disappearance_withsys.root'
+path = 'icarus_disappearance_full_withsys.root'
 histogram_destination = 'variations/'
 
 [[sysvar]]
@@ -21,14 +21,14 @@ bins = [10, 0, 3]
 nuniverses = 100
 
 [[tree]]
-origin = 'events/nominal/signal'
-destination = 'events/nominal/'
+origin = 'events/cvext/signal'
+destination = 'events/'
 name = 'signal'
 action = 'copy'
 
 [[tree]]
-origin = 'events/nominal/selected'
-destination = 'events/nominal/'
+origin = 'events/cvext/selected'
+destination = 'events/'
 name = 'selected'
 action = 'add_weights'
 table_types = ['multisim', 'multisigma', 'variation']
