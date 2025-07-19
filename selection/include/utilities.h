@@ -95,5 +95,75 @@ namespace utilities
     {
         return std::find(icarus_good_runs_run2.begin(), icarus_good_runs_run2.end(), run) != icarus_good_runs_run2.end();
     }
+
+    /**
+     * @brief Utility function to find the index of the first optical flash
+     * @details This function returns the index of the first optical flash in
+     * the event, shifted by a given amount. It is intended to be used to find
+     * the flash nearest to the trigger of the event. The optional shift is
+     * used to allow for tuning to correct for the natural offset of the
+     * reconstructed flash time from the trigger time, which is not zero
+     * despite all systems being referenced to the trigger. This function uses
+     * the `firsttime` field of the optical flash.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @param shift the amount to shift the time of the flash by, default is 0.
+     * @return size_t the index of the first optical flash in the event, or
+     * kNoMatch if no flash is found.
+     */
+    template<typename T>
+    size_t first_opflash_firsttime(const T & sr, double shift=0.0)
+    {
+        // This variable returns the index of the first optical flash in the
+        // event, shifted by a given amount.
+        if(sr.opflashes.empty()) return kNoMatch;
+        size_t first_flash_index = 0;
+        double min_time_diff = std::abs(sr.opflashes[0].firsttime - shift);
+        for(size_t i = 1; i < sr.opflashes.size(); ++i)
+        {
+            double time_diff = std::abs(sr.opflashes[i].firsttime - shift);
+            if(time_diff < min_time_diff)
+            {
+                min_time_diff = time_diff;
+                first_flash_index = i;
+            }
+        }
+        return first_flash_index;
+    }
+
+    /**
+     * @brief Utility function to find the index of the first optical flash
+     * @details This function returns the index of the first optical flash in
+     * the event, shifted by a given amount. It is intended to be used to find
+     * the flash nearest to the trigger of the event. The optional shift is
+     * used to allow for tuning to correct for the natural offset of the
+     * reconstructed flash time from the trigger time, which is not zero
+     * despite all systems being referenced to the trigger. This function uses
+     * the `time` field of the optical flash.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @param shift the amount to shift the time of the flash by, default is 0.
+     * @return size_t the index of the first optical flash in the event, or
+     * kNoMatch if no flash is found.
+     */
+    template<typename T>
+    size_t first_opflash_rawtime(const T & sr, double shift=0.0)
+    {
+        // This variable returns the index of the first optical flash in the
+        // event, shifted by a given amount.
+        if(sr.opflashes.empty()) return kNoMatch;
+        size_t first_flash_index = 0;
+        double min_time_diff = std::abs(sr.opflashes[0].time - shift);
+        for(size_t i = 1; i < sr.opflashes.size(); ++i)
+        {
+            double time_diff = std::abs(sr.opflashes[i].time - shift);
+            if(time_diff < min_time_diff)
+            {
+                min_time_diff = time_diff;
+                first_flash_index = i;
+            }
+        }
+        return first_flash_index;
+    }
 }
 #endif // UTILITIES_H
