@@ -1,0 +1,38 @@
+[general]
+output = "cosmics"
+
+[[sample]]
+name = "nominal"
+path = "/pnfs/icarus/persistent/users/mueller/mixed/simulation/nominal/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "onbeam"
+path = "/pnfs/icarus/persistent/users/mueller/mixed/data/onbeam/input*.flat.root"
+ismc = false
+disable = false
+
+[[sample]]
+name = "offbeam"
+path = "/pnfs/icarus/persistent/users/mueller/mixed/data/offbeam/input*.flat.root"
+ismc = false
+disable = false
+
+[[tree]]
+name = "muons"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "is_pid", type = "reco_particle", parameters = [2,]},
+    {name = "is_primary", type = "reco_particle"},
+    {name = "valid_flashmatch", type = "reco"},
+]
+branch = [
+    {name = "start_x", type = "both_particle"},
+    {name = "start_y", type = "both_particle"},
+    {name = "start_z", type = "both_particle"},
+    {name = "end_x", type = "both_particle"},
+    {name = "end_y", type = "both_particle"},
+    {name = "end_z", type = "both_particle"},
+]
