@@ -26,6 +26,7 @@
 #include "mctruth.h"
 #include "event_cuts.h"
 #include "event_variables.h"
+#include "spill_cuts.h"
 #include "selectors.h"
 #include "analysis.h"
 

@@ -30,6 +30,7 @@ using MCTruth = caf::Proxy<caf::SRTrueInteraction>;
 using TParticleType = caf::Proxy<caf::SRParticleTruthDLP>;
 using RParticleType = caf::Proxy<caf::SRParticleDLP>;
 using EventType = caf::Proxy<caf::StandardRecord>;
+using SpillType = caf::Proxy<caf::SRBNBInfo>;
 
 using NamedSpillMultiVar = std::pair<std::string, ana::SpillMultiVar>;
 
@@ -185,7 +186,9 @@ inline std::function<ValueT(const EventT&)> bind(const std::vector<double>& pars
  * This is used in the registration macros to determine which type of object
  * the cut or variable can be reasonably applied to.
  */
-enum class RegistrationScope { True, Reco, Both, MCTruth, TrueParticle, RecoParticle, BothParticle, Event };
+enum class RegistrationScope { True, Reco, Both, MCTruth,
+                               TrueParticle, RecoParticle, BothParticle,
+                               Event, Spill };
 
 // Register a cut with scope, auto‐detecting its signature
 #define REGISTER_CUT_SCOPE(scope, name, fn)                                                \
@@ -211,6 +214,10 @@ namespace                                                                       
         if constexpr((scope)==RegistrationScope::Event)                                    \
             CutFactoryRegistry<EventType>::instance().register_fn(                         \
                 "event_" #name, bind<+fn<EventType>, EventType, bool>                      \
+            );                                                                             \
+        if constexpr((scope)==RegistrationScope::Spill)                                    \
+            CutFactoryRegistry<SpillType>::instance().register_fn(                         \
+                "spill_" #name, bind<+fn<SpillType>, SpillType, bool>                      \
             );                                                                             \
         return true;                                                                       \
     }();                                                                                   \

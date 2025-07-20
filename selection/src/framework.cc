@@ -183,6 +183,27 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 // Otherwise, we just add the function as is.
                 event_cut_functions.push_back(factory(params));
         }
+        else if(cut.get_string_field("type") == "spill")
+        {
+            std::string cut_name = "spill_" + name;
+            std::vector<double> params;
+            if(cut.has_field("parameters"))
+                params = cut.get_double_vector("parameters");
+            auto factory = CutFactoryRegistry<SpillType>::instance().get(cut_name);
+
+            // Transform this to a simple event-level cut.
+            auto fn = [factory, params](const EventType & e) {
+                return factory(params)(e.hdr.spillbnbinfo);
+            };
+            if(invert)
+            {
+                // If the cut is inverted, we need to negate the function.
+                event_cut_functions.push_back([fn](const EventType & e) { return !fn(e); });
+            }
+            else
+                // Otherwise, we just add the function as is.
+                event_cut_functions.push_back(fn);
+        }
         else
         {
             throw std::runtime_error("Illegal cut type '" + cut.get_string_field("type") + "' for cut " + cut.get_string_field("name"));
@@ -732,6 +753,7 @@ std::vector<NamedSpillMultiVar> construct_exposure_vars(const std::vector<cfg::C
 {
     std::vector<NamedSpillMultiVar> exposure_vars;
     std::vector<CutFn<EventType>> cut_functions;
+    std::vector<CutFn<SpillType>> spill_cut_functions;
 
     // Iterate over the cuts and construct the exposure variables.
     for(const auto & cut : cuts)
@@ -746,10 +768,29 @@ std::vector<NamedSpillMultiVar> construct_exposure_vars(const std::vector<cfg::C
 
             // Retrieve the cut function.
             std::string name = cut.get_string_field("name");
-            name = "event_" + name;
-            auto factory = CutFactoryRegistry<EventType>::instance().get(name);
-            auto cut_fn = factory(params);
-            cut_functions.push_back(cut_fn);
+
+            if(cut.get_string_field("type") == "event")
+            {
+                name = "event_" + name;
+                auto factory = CutFactoryRegistry<EventType>::instance().get(name);
+                auto cut_fn = factory(params);
+                cut_functions.push_back(cut_fn);
+            }
+            else if(cut.get_string_field("type") == "spill")
+            {
+                name = "spill_" + name;
+                auto factory = CutFactoryRegistry<SpillType>::instance().get(name);
+                auto cut_fn = factory(params);
+                
+                // We do not transform this to an event-level cut because we
+                // need to apply it to each and every spill that contains
+                // exposure that we want to track.
+                spill_cut_functions.push_back(cut_fn);
+            }
+            else
+            {
+                throw std::runtime_error("Illegal cut type '" + cut.get_string_field("type") + "' for exposure cut " + name);
+            }
         }
     }
 
@@ -757,13 +798,26 @@ std::vector<NamedSpillMultiVar> construct_exposure_vars(const std::vector<cfg::C
     auto cut = [cut_functions](const EventType & e) -> bool {
         return std::all_of(cut_functions.begin(), cut_functions.end(), [&e](auto & f) { return f(e); });
     };
+    
+    // Compose a common spill cut function.
+    auto spill_cut = [spill_cut_functions](const SpillType & s) -> bool {
+        return std::all_of(spill_cut_functions.begin(), spill_cut_functions.end(), [&s](auto & f) { return f(s); });
+    };
 
-    // Compose the exposure variable.
+    // Compose the exposure variables
     auto livetime_var = [](const EventType & e) -> double {
         // Return the livetime for the event.
         return e.hdr.bnbinfo.size() + e.hdr.numiinfo.size() + e.hdr.noffbeambnb + e.hdr.noffbeamnumi;
     };
     exposure_vars.push_back(std::make_pair("livetime", spill_multivar_helper(cut, livetime_var)));
+
+    auto pot_var = [spill_cut](const EventType & e) -> double {
+        double tot(0);
+        for(const auto & bnb : e.hdr.bnbinfo)
+            tot += (spill_cut(bnb) ? (double)bnb.TOR875 : 0);
+        return tot;
+    };
+    exposure_vars.push_back(std::make_pair("pot", spill_multivar_helper(cut, pot_var)));
 
     return exposure_vars;
 }
@@ -775,6 +829,7 @@ template class Registry<CutFactory<RType>>;
 template class Registry<CutFactory<TParticleType>>;
 template class Registry<CutFactory<RParticleType>>;
 template class Registry<CutFactory<EventType>>;
+template class Registry<CutFactory<SpillType>>;
 
 // Var Registry
 template class Registry<VarFactory<TType>>;
