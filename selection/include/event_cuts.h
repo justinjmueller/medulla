@@ -90,6 +90,31 @@ namespace ecut
         }
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Event, data_quality_cut, data_quality_cut);
+
+    /**
+     * @brief Cut that implements trigger emulation on simulated data.
+     * @details This cut emulates the trigger logic on simulated data by
+     * checking if the event has a valid trigger time.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the cut on.
+     * @return true if the event has a valid trigger time, false otherwise.
+     */
+    template<typename T>
+    bool trigger_emulation_cut(const T & sr)
+    {
+        if(sr.hdr.ismc && std::isnan(sr.hdr.triggerinfo.global_trigger_det_time))
+        {
+            // If the event is simulated and the global trigger time is NaN,
+            // we assume the trigger emulation cut fails.
+            return false;
+        }
+        else
+        {
+            // For real data or if the trigger time is valid, we pass the cut.
+            return true;
+        }
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Event, trigger_emulation_cut, trigger_emulation_cut);
 }
 
 #endif // EVENT_CUTS_H
