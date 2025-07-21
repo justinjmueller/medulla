@@ -251,7 +251,10 @@ class Sample:
         # which is used to build a list of Systematic objects to
         # combine.
         for recipe in recipes:
-            regxp = re.compile(recipe['pattern'])
+            pattern = recipe['pattern']
+            exclude = '_nsigma'
+            #regxp = re.compile(recipe['pattern'])
+            regxp = re.compile(rf'^(?!.*{exclude}).*{pattern}.*$')
             systematics = [v for k,v in self._systematics.items() if regxp.search(k)]
                         
             #print(self._name)

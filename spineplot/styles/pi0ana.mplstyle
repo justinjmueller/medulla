@@ -1,0 +1,70 @@
+# Heavily copied from DUNE, but with style preferences as needed/desired from Jaesung Kim, Bruce Howard, and Justin Mueller for ICARUS.
+# see https://github.com/DUNE/dune_plot_style/blob/main/src/matplotlib/stylelib/dune.mplstyle
+
+## FONT
+font.sans-serif:  Helvetica, Helvetica Neue, Nimbus Sans, Liberation Sans, Arial
+
+## FIGURE
+figure.titlesize: 36
+#figure.titlesize: 20
+figure.constrained_layout.use: True
+figure.facecolor: white
+
+## AXES
+# NOTE: here DUNE has other settings, but they already seem default, just take the different ones
+axes.linewidth: 1.0
+axes.labelsize: xx-large
+axes.titlesize: 36
+#axes.titlesize: 20
+# adding an additional padding, tuned based on an example plot and giving room for the preliminary/POT labels, etc.
+axes.titlepad: 28
+
+## PATCHES
+# DUNE claims histograms are patches
+# Here we differ a bit from DUNE settings
+patch.linewidth: 2.0
+
+## TICKS
+xtick.top: True
+xtick.bottom: True
+xtick.direction: in
+xtick.minor.visible: True
+xtick.major.size: 10
+xtick.minor.size: 5
+xtick.labelsize: x-large
+
+ytick.left: True
+ytick.right: True
+ytick.direction: in
+ytick.minor.visible: True
+ytick.major.size: 10
+ytick.minor.size: 5
+ytick.labelsize: x-large
+
+## GRID
+grid.color: b2b2b2
+grid.linestyle: --
+grid.linewidth: 0.5
+
+## LEGEND
+legend.fontsize: 14
+legend.frameon: False
+
+## LINES
+lines.linewidth: 2
+
+## COLORS
+#                                Greenish   Vermilion   Black     Blue      Orange  Purplish  Sky Blue  
+#axes.prop_cycle: cycler('color', ['009E73', 'D55E00', '000000', '0072B2', 'E69F00', 'CC79A7', '56B4E9', 'F0E442',])
+axes.prop_cycle: cycler('color', ['1b9e77', 'dea0fd', '4c78a8', 'e5c494', 'e45756', '17becf', 'a6761d', 'f58518'])
+
+# Cividis is Colo(u)r Vision Deficiency friendly
+image.cmap: cividis
+
+savefig.facecolor: white
+
+
+
+
+
+
