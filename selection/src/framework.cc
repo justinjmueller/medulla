@@ -812,10 +812,16 @@ std::vector<NamedSpillMultiVar> construct_exposure_vars(const std::vector<cfg::C
     exposure_vars.push_back(std::make_pair("livetime", spill_multivar_helper(cut, livetime_var)));
 
     auto pot_var = [spill_cut](const EventType & e) -> double {
-        double tot(0);
-        for(const auto & bnb : e.hdr.bnbinfo)
-            tot += (spill_cut(bnb) ? (double)bnb.TOR875 : 0);
-        return tot;
+        
+        if(e.hdr.ismc)
+            return e.hdr.pot;            
+        else
+        {
+            double tot(0);
+            for(const auto & bnb : e.hdr.bnbinfo)
+                tot += (spill_cut(bnb) ? (double)bnb.TOR875 : 0);
+            return tot;
+        }
     };
     exposure_vars.push_back(std::make_pair("pot", spill_multivar_helper(cut, pot_var)));
 
