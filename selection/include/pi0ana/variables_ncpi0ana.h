@@ -148,52 +148,66 @@ namespace vars::ncpi0ana
 	// Neutrino
 	if(s.is_neutrino)
 	  {
-	    if(params.size() == 1)
-	    {
-	        // 0mu0pi1pi0 + specified proton count (in-, fiducial)
-	        if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.num_primary_protons_thresh == params[0] && !s.is_cc && s.is_fiducial) cat = 0;
-	      
-	        // 0mu0pi1pi0 + specified proton count (OOPS, fiducial)
-		else if( (s.num_primary_muons == 0 && s.num_primary_pions == 0 && s.num_primary_pi0s == 1 && s.num_primary_protons == params[0] && !s.is_cc && s.is_fiducial) && (s.num_primary_muons_thresh != 0 || s.num_primary_pions_thresh != 0 || s.num_primary_protons_thresh != params[0] || s.num_primary_pi0s_thresh != 1) ) cat = 1;
+
+	    /////////////////////////////
+	    /// Exactly params[1] protons
+	    /////////////////////////////
+	    if(params[0] == -2)
+	      {
+		// 0mu0pi1pi0 + specified proton count (in-phase, fiducial)
+		if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.num_primary_protons_thresh == params[1] && !s.is_cc && s.is_fiducial) cat = 0;
+
+		// 0mu0pi1pi0 + specified proton count (OOPS, fiducial)
+		else if( (s.num_primary_muons == 0 && s.num_primary_pions == 0 && s.num_primary_pi0s == 1 && s.num_primary_protons == params[1] && !s.is_cc && s.is_fiducial) && (s.num_primary_muons_thresh != 0 || s.num_primary_pions_thresh != 0 || s.num_primary_protons_thresh != params[1] || s.num_primary_pi0s_thresh != 1) ) cat = 1;
 
 		// 0mu0pi1pi0 + specified proton count (OOFV)
-		else if( (s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.num_primary_protons_thresh == params[0] && !s.is_cc && !s.is_fiducial) ) cat = 2;
-		
+		else if( (s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.num_primary_protons_thresh == params[1] && !s.is_cc && !s.is_fiducial) ) cat = 2;
+	 	
 		// 0muNpi1pi0
 		else if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh > 0 && s.num_primary_pi0s_thresh == 1 && !s.is_cc && s.is_fiducial) cat = 3;
-		
+
 		// 0muNpi0pi0
 		else if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh > 0 && s.num_primary_pi0s_thresh == 0 && !s.is_cc && s.is_fiducial) cat = 4;
-		
+
 		// 0muNpi0
 		else if(s.num_primary_muons_thresh == 0 && s.num_primary_pi0s_thresh > 1 && !s.is_cc && s.is_fiducial) cat = 5;
 		
-		// CC 1pi0
+		// CC1pi0
 		else if(s.num_primary_muons_thresh == 1 && s.num_primary_pi0s_thresh == 1 && s.is_cc && s.is_fiducial) cat = 6;
 		
-		// Other nu     
-		else cat = 7;
-	    }
+		// Other nu
+		else cat = 7;	
+	      }
+	    //////////////////////////////
+	    /// At least params[1] protons
+	    //////////////////////////////
+	    else if(params[0] == -1)
+	      {
+		// 0mu0pi1pi0 + specified proton count (in-phase, fiducial)
+		if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.num_primary_protons_thresh >= params[1] && !s.is_cc && s.is_fiducial) cat = 0;
+		
+		// 0mu0pi1pi0 + specified proton count (OOPS, fiducial)
+		else if( (s.num_primary_muons == 0 && s.num_primary_pions == 0 && s.num_primary_pi0s == 1 && s.num_primary_protons >= params[1] && !s.is_cc && s.is_fiducial) && (s.num_primary_muons_thresh != 0 || s.num_primary_pions_thresh != 0 || s.num_primary_protons_thresh < params[1] || s.num_primary_pi0s_thresh != 1) ) cat = 1;
 
-	    else
-	    {
-		  // 0mu0pi1pi0 (in-, fiducial)
-		  if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && !s.is_cc && s.is_fiducial) cat = 0;
-		  // 0mu0pi1pi0 (OOPS, fiducial)
-		  else if( (s.num_primary_muons == 0 && s.num_primary_pions == 0 && s.num_primary_pi0s == 1 && !s.is_cc && s.is_fiducial) && (s.num_primary_muons_thresh != 0 || s.num_primary_pions_thresh != 0 || s.num_primary_pi0s_thresh != 1) ) cat = 1;
-		  // 0mu0pi1pi0 (OOFV)
-		  else if( (s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && !s.is_cc && !s.is_fiducial) ) cat = 2;
-		  // 0muNpi1pi0
-		  else if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh > 0 && s.num_primary_pi0s_thresh == 1 && !s.is_cc && s.is_fiducial) cat = 3;
-		  // 0muNpi0pi0
-		  else if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh > 0 && s.num_primary_pi0s_thresh == 0 && !s.is_cc && s.is_fiducial) cat = 4;
-		  // 0muNpi0
-		  else if(s.num_primary_muons_thresh == 0 && s.num_primary_pi0s_thresh > 1 && !s.is_cc && s.is_fiducial) cat = 5;
-		  // CC 1pi0
-		  else if(s.num_primary_muons_thresh == 1 && s.num_primary_pi0s_thresh == 1 && s.is_cc && s.is_fiducial) cat = 6;
-		  // Other nu
-		  else cat = 7;
-	    }
+		// 0mu0pi1pi0 + specified proton count (OOFV)
+		else if( (s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.num_primary_protons_thresh >= params[1] && !s.is_cc && !s.is_fiducial) ) cat = 2;
+
+		// 0muNpi1pi0
+                else if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh > 0 && s.num_primary_pi0s_thresh == 1 && !s.is_cc && s.is_fiducial) cat = 3;
+
+                // 0muNpi0pi0
+                else if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh > 0 && s.num_primary_pi0s_thresh == 0 && !s.is_cc && s.is_fiducial) cat = 4;
+
+                // 0muNpi0
+                else if(s.num_primary_muons_thresh == 0 && s.num_primary_pi0s_thresh > 1 && !s.is_cc && s.is_fiducial) cat = 5;
+
+                // CC1pi0
+                else if(s.num_primary_muons_thresh == 1 && s.num_primary_pi0s_thresh == 1 && s.is_cc && s.is_fiducial) cat = 6;
+
+                // Other nu
+                else cat = 7;
+	      }
+	    else cat = -5;	    
 	  }
 	return cat;
       }
@@ -577,6 +591,39 @@ namespace vars::ncpi0ana
 	    }
 	}
     REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_mass, pi0_mass);
+
+    template<class T>
+    double num_primary_protons_thresh(const T & obj)
+    {
+        if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
+		       {
+			   truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
+			   return s.num_primary_protons_thresh;
+		       }
+	else
+	{
+	    reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
+	    return s.num_primary_protons_thresh;
+	}
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, num_primary_protons_thresh, num_primary_protons_thresh);
+
+    template<class T>
+    double num_primary_protons(const T & obj)
+    {
+        if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
+		       {
+			   truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
+			   return s.num_primary_protons;
+		       }
+	else
+	{
+	    reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
+	    return s.num_primary_protons;
+	}
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, num_primary_protons, num_primary_protons);
+
 
     /**
      * @brief Variable for total visible energy of interaction.        

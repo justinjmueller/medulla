@@ -1,12 +1,11 @@
 [general]
-output = "test"
-
+output = "dev"
 
 [[sample]]
 name = "onbeam"
 path = "/pnfs/icarus/persistent/users/mueller/mixed/data/onbeam/input*.flat.root"
 ismc = false
-disable = false
+disable = true
 
 [[sample]]
 name = "cv"
@@ -18,7 +17,7 @@ disable = false
 name = "offbeam"
 path = "/pnfs/icarus/persistent/users/mueller/mixed/data/offbeam/input*.flat.root"
 ismc = false
-disable = false
+disable = true
 
 [[sample]]
 name = "var00"
@@ -112,7 +111,7 @@ cut = [
     {name = "fiducial_cut", type = "reco"},
     {name = "flash_cut", type = "reco", parameters = [-0.5, 1.6]},
     {name = "base_topology_cut", type = "reco"},
-    {name = "num_protons_cut", type = "reco", parameters = [0]},
+    {name = "num_protons_cut", type = "reco", parameters = [-2, 1]},
     {name = "leading_shower_energy_cut", type = "reco"},
     {name = "valid_pi0_mass_cut", type = "reco"},
     {name = "neutrino", type = "true"}
@@ -126,7 +125,7 @@ branch = [
     {name = "cc", type = "mctruth"},
     {name = "neutrino_energy", type = "mctruth"},
     {name = "interaction_type", type = "mctruth"},
-    {name = "category_topology_v1", type = "true", parameters = [0]},
+    {name = "category_topology_v1", type = "true", parameters = [-2, 1]},
 
     # Interaction observables
     {name = "flash_time", type = "reco"},
@@ -147,6 +146,10 @@ branch = [
     {name = "pi0_leading_photon_conv_dist", type = "both"},
     {name = "pi0_subleading_photon_energy", type = "both"},
     {name = "pi0_subleading_photon_conv_dist", type = "both"},
+
+    # Proton observables
+    {name = "num_primary_protons", type = "both"},
+    {name = "num_primary_protons_thresh", type = "both"},
 
     # GUNDAM
     {name = "is_nu", type = "reco"},
@@ -162,7 +165,8 @@ cut = [
     {name = "fiducial_cut", type = "reco"},
     {name = "flash_cut", type = "reco", parameters = [-0.5, 1.6]},
     {name = "base_topology_cut", type = "reco"},
-    {name = "num_protons_cut", type = "reco", parameters = [0]},
+    {name = "num_protons_cut", type = "reco", parameters = [-2, 1]},
+    
     {name = "leading_shower_energy_cut", type = "reco"},
     {name = "valid_pi0_mass_cut", type = "reco"},
     {name = "cosmic", type = "true"}
@@ -176,7 +180,7 @@ branch = [
     {name = "cc", type = "mctruth"},
     {name = "neutrino_energy", type = "mctruth"},
     {name = "interaction_type", type = "mctruth"},
-    {name = "category_topology_v1", type = "true", parameters = [0]},
+    {name = "category_topology_v1", type = "true", parameters = [-2, 1]},
 
     # Interaction observables
     {name = "flash_time", type = "reco"},
@@ -197,6 +201,10 @@ branch = [
     {name = "pi0_leading_photon_conv_dist", type = "both"},
     {name = "pi0_subleading_photon_energy", type = "both"},
     {name = "pi0_subleading_photon_conv_dist", type = "both"},
+
+    # Proton observables
+    {name = "num_primary_protons", type = "both"},
+    {name = "num_primary_protons_thresh", type = "both"}, 
 
     # GUNDAM
     {name = "is_nu", type = "reco"},
@@ -214,7 +222,7 @@ cut = [
     {name = "nc0mu", type = "true"},
     {name = "zero_pi", type = "true"},
     {name = "one_pi0", type = "true"},
-    {name = "num_protons_cut", type = "true", parameters = [0]},
+    {name = "num_protons_cut", type = "true", parameters = [-2, 1]},
 ]
 branch = [
 
@@ -225,7 +233,7 @@ branch = [
     {name = "cc", type = "mctruth"},
     {name = "neutrino_energy", type = "mctruth"},
     {name = "interaction_type", type = "mctruth"},
-    {name = "category_topology_v1", type = "true", parameters = [0]},
+    {name = "category_topology_v1", type = "true", parameters = [-2, 1]},
 
     # Interaction observables
     {name = "visible_energy", type = "both"},
@@ -246,6 +254,10 @@ branch = [
     {name = "pi0_subleading_photon_energy", type = "both"},
     {name = "pi0_subleading_photon_conv_dist", type = "both"},
 
+    # Proton observables
+    {name = "num_primary_protons", type = "both"},
+    {name = "num_primary_protons_thresh", type = "both"},
+
     # GUNDAM
     {name = "is_nu", type = "reco"},
     {name = "is_data", type = "reco"},
@@ -255,7 +267,7 @@ branch = [
     {name = "flash_icarus_satisfied", type = "reco"},
     {name = "fiducial_satisfied", type = "reco"},
     {name = "base_topology_satisfied", type = "reco"},
-    {name = "num_protons_satisfied", type = "reco", parameters = [0]},
+    {name = "num_protons_satisfied", type = "reco", parameters = [-2, 1]},
     {name = "leading_shower_energy_satisfied", type = "reco"},
     {name = "valid_pi0_mass_satisfied", type = "reco"},
     {name = "all_cuts_satisfied", type = "reco"}

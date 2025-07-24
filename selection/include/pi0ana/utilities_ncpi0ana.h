@@ -57,6 +57,8 @@ struct reco_inter {
   double transverse_momentum_mag;
   double muon_energy;
   double muon_momentum_mag;
+  double num_primary_protons;
+  double num_primary_protons_thresh;
   double muon_beam_costheta;
   double pi0_leading_photon_energy;
   double pi0_leading_photon_start_dedx;
@@ -531,6 +533,9 @@ namespace utilities_ncpi0ana
 	double max_calo_ke0(-99999);
 	double max_calo_ke1(-99999);
 
+	int primary_proton_count(0);
+	int primary_proton_count_thresh(0);
+	
 	// Loop over particles
 	for(size_t i(0); i < obj.particles.size(); ++i)
 	{
@@ -552,6 +557,14 @@ namespace utilities_ncpi0ana
 		}
 	    }
 
+	    // Protons
+	    if(PIDFUNC(p) == 4)
+	    {
+	      primary_proton_count++;
+	      if(p.ke > MIN_PROTON_ENERGY)
+		primary_proton_count_thresh++;
+	    }
+	    
 	    // Photons
 	    if(PIDFUNC(p) == 0)
 	    {
@@ -782,6 +795,8 @@ namespace utilities_ncpi0ana
 	s.muon_energy = -5; // GeV
 	s.muon_momentum_mag = -5; // GeV
 	s.muon_beam_costheta = -5;
+	s.num_primary_protons = primary_proton_count;
+	s.num_primary_protons_thresh = primary_proton_count_thresh;
 	s.pi0_leading_photon_energy = pi0_leading_photon_energy/1000; // GeV
 	//s.pi0_leading_photon_start_dedx = pi0_leading_photon_start_dedx;
 	s.pi0_leading_photon_cosphi = pi0_leading_photon_cosphi;

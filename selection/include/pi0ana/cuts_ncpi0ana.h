@@ -68,22 +68,24 @@ namespace cuts::ncpi0ana
      * @return true if the interaction contains N protons.
      */
     template<class T>
-      bool num_protons_cut(const T & obj, std::vector<double> params={})
+    bool num_protons_cut(const T & obj, std::vector<double> params={})
     {
         std::vector<uint32_t> c(utilities_ncpi0ana::count_primaries(obj));
-	if(params.size() == 0)
+
+	// Exactly params[1] protons
+	if (params[0] == -2)
 	{
-	    return true;
+	    return c[4] == params[1];
 	}
-	else if(params.size() == 1)
+	// At least params[1] protons
+	else if (params[0] == -1)
 	{
-	    return c[4] == params[0];
+	    return c[4] >= params[1];
 	}
 	else
 	{
-	     return false;
+	    return false;
 	}
-	
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, num_protons_cut, num_protons_cut);
     
