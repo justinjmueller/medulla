@@ -55,7 +55,11 @@ sys::detsys::DetsysCalculator::DetsysCalculator(cfg::ConfigurationTable & table,
         double value;
         t->SetBranchAddress(variable.c_str(), &value);
         std::vector<double> bins = table.get_double_vector("variations.bins");
-        histograms[variation] = new TH1D(variation.c_str(), variation.c_str(), bins[0], bins[1], bins[2]);
+        bool variable_length = table.get_bool_field("variations.variable_length_bins", false);
+        if(!variable_length)
+            histograms[variation] = new TH1D(variation.c_str(), variation.c_str(), bins[0], bins[1], bins[2]);
+        else
+            histograms[variation] = new TH1D(variation.c_str(), variation.c_str(), bins.size() - 1, bins.data());
         for(int i(0); i < t->GetEntries(); ++i)
         {
             t->GetEntry(i);

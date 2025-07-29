@@ -17,8 +17,9 @@ origin = 'events/'
 tree = 'selected'
 result_destination = 'detsys_results/'
 variable = 'reco_visible_energy'
-bins = [10, 0, 3]
-nuniverses = 100
+variable_length = true
+bins = [0.3, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.25, 1.5, 2.0, 3.0]
+nuniverses = 10
 
 [[tree]]
 origin = 'events/cvext/signal'
