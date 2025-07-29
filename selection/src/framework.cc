@@ -193,12 +193,20 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
 
             // Transform this to a simple event-level cut.
             auto fn = [factory, params](const EventType & e) {
-                return factory(params)(e.hdr.spillbnbinfo);
+                if(!e.hdr.ismc)
+                    return factory(params)(e.hdr.spillbnbinfo);
+                else
+                    return true; // If it's MC, we don't apply the spill cut.
             };
             if(invert)
             {
                 // If the cut is inverted, we need to negate the function.
-                event_cut_functions.push_back([fn](const EventType & e) { return !fn(e); });
+                event_cut_functions.push_back([fn](const EventType & e) {
+                    if(!e.hdr.ismc)
+                        return !fn(e);
+                    else
+                        return true; // If it's MC, we don't invert.
+                });
             }
             else
                 // Otherwise, we just add the function as is.
@@ -807,14 +815,17 @@ std::vector<NamedSpillMultiVar> construct_exposure_vars(const std::vector<cfg::C
     // Compose the exposure variables
     auto livetime_var = [](const EventType & e) -> double {
         // Return the livetime for the event.
-        return e.hdr.bnbinfo.size() + e.hdr.numiinfo.size() + e.hdr.noffbeambnb + e.hdr.noffbeamnumi;
+        if(e.hdr.ismc)
+            return (e.hdr.first_in_subrun) ? (double)e.hdr.ngenevt : 0.0;
+        else
+            return e.hdr.bnbinfo.size() + e.hdr.numiinfo.size() + e.hdr.noffbeambnb + e.hdr.noffbeamnumi;
     };
     exposure_vars.push_back(std::make_pair("livetime", spill_multivar_helper(cut, livetime_var)));
 
     auto pot_var = [spill_cut](const EventType & e) -> double {
         
         if(e.hdr.ismc)
-            return e.hdr.pot;            
+            return (e.hdr.first_in_subrun) ? (double)e.hdr.pot : 0.0;
         else
         {
             double tot(0);
