@@ -102,7 +102,7 @@ name = 'var03'
 type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1, 2, 3]
-scale = [3, 2, 1, 1, 1, 2, 3]
+scale = [1.0, 0.666666, 0.333333, 1, 0.333333, 0.666666, 1.0]
 ordinate = 'nominal'
 points = ['var03m', 'var03m', 'var03m', 'nominal', 'var03p', 'var03p', 'var03p']
 
@@ -174,7 +174,7 @@ name = 'var12'
 type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1, 2, 3]
-scale = [3, 2, 1, 1, 1, 2, 3]
+scale = [1.5, 1.0, 0.5, 1, 0.5, 1.0, 1.5]
 ordinate = 'nominal'
 points = ['var12m', 'var12m', 'var12m', 'nominal', 'var12p', 'var12p', 'var12p']
 
