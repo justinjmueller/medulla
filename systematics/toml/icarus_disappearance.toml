@@ -12,7 +12,7 @@ name = 'reco_visible_energy'
 bins = [25, 0, 3]
 
 [variations]
-keys = ['nominal', 'var00', 'var01', 'var02', 'var03m', 'var03p', 'var04', 'var05', 'var06', 'var07', 'var09m', 'var09p', 'var10m', 'var10p', 'var11']
+keys = ['nominal', 'var00', 'var01', 'var02', 'var03m', 'var03p', 'var04', 'var05', 'var06', 'var07', 'var09m', 'var09p', 'var10m', 'var10p', 'var11', 'var12m', 'var12p', 'var13m', 'var13p']
 origin = 'events/'
 tree = 'selected'
 result_destination = 'detsys_results/'

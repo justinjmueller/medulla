@@ -99,6 +99,30 @@ path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var11/input*
 ismc = true
 disable = false
 
+[[sample]]
+name = "var12m"
+path = "/pnfs/icarus/scratch/users/mueller/production/simulation/var12m/flat/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "var12p"
+path = "/pnfs/icarus/scratch/users/mueller/production/simulation/var12p/flat/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "var13m"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var13m/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "var13p"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var13p/input*.flat.root"
+ismc = true
+disable = false
+
 [[tree]]
 name = "selected"
 sim_only = false
