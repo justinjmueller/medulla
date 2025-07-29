@@ -126,6 +126,7 @@ disable = false
 [[tree]]
 name = "selected"
 sim_only = false
+add_exposure = true
 mode = "reco"
 cut = [
     { name = "fiducial_cut",          type = "reco" },
@@ -211,6 +212,7 @@ branch = [
 [[tree]]
 name = "signal"
 sim_only = true
+add_exposure = true
 mode = "true"
 cut = [
     { name = "fiducial_cut",     type = "true" },
