@@ -22,29 +22,53 @@ bins = [0.3, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1
 nuniverses = 10
 
 [[tree]]
-origin = 'events/cvext/signal'
-destination = 'events/'
+origin = 'events/nominal/signal'
+destination = 'events/nominal/'
 name = 'signal'
 action = 'copy'
 
 [[tree]]
+origin = 'events/nominal/signal_exposure'
+destination = 'events/nominal/'
+name = 'signal_exposure'
+action = 'copy'
+
+[[tree]]
 origin = 'events/cvext/selected'
-destination = 'events/'
+destination = 'events/cvext/'
 name = 'selected'
 action = 'add_weights'
 table_types = ['multisim', 'multisigma', 'variation']
 
-#[[tree]]
-#origin = 'events/offbeam/selected'
-#destination = 'events/offbeam/'
-#name = 'selected'
-#action = 'copy'
+[[tree]]
+origin = 'events/nominal/selected_exposure'
+destination = 'events/nominal/'
+name = 'selected_exposure'
+action = 'copy'
 
-#[[tree]]
-#origin = 'events/onbeam/selected'
-#destination = 'events/onbeam/'
-#name = 'selected'
-#action = 'copy'
+[[tree]]
+origin = 'events/offbeam/selected'
+destination = 'events/offbeam/'
+name = 'selected'
+action = 'copy'
+
+[[tree]]
+origin = 'events/offbeam/selected_exposure'
+destination = 'events/offbeam/'
+name = 'selected_exposure'
+action = 'copy'
+
+[[tree]]
+origin = 'events/onbeam/selected'
+destination = 'events/onbeam/'
+name = 'selected'
+action = 'copy'
+
+[[tree]]
+origin = 'events/onbeam/selected_exposure'
+destination = 'events/onbeam/'
+name = 'selected_exposure'
+action = 'copy'
 
 [[sys]]
 name = 'var00'
@@ -144,6 +168,24 @@ nsigma = [-3, -2, -1, 0, 1, 2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
 ordinate = 'nominal'
 points = ['var11', 'var11', 'var11', 'nominal', 'var11', 'var11', 'var11']
+
+[[sys]]
+name = 'var12'
+type = 'variation'
+index = -1
+nsigma = [-3, -2, -1, 0, 1, 2, 3]
+scale = [3, 2, 1, 1, 1, 2, 3]
+ordinate = 'nominal'
+points = ['var12m', 'var12m', 'var12m', 'nominal', 'var12p', 'var12p', 'var12p']
+
+[[sys]]
+name = 'var13'
+type = 'variation'
+index = -1
+nsigma = [-3, -2, -1, 0, 1, 2, 3]
+scale = [3, 2, 1, 1, 1, 2, 3]
+ordinate = 'nominal'
+points = ['var13m', 'var13m', 'var13m', 'nominal', 'var13p', 'var13p', 'var13p']
 
 [[sys]]
 name = "ZExpPCAWeighter_SBNNuSyst_ZExpPCA_multisigma_b1"
