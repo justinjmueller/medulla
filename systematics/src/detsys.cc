@@ -46,9 +46,31 @@ sys::detsys::DetsysCalculator::DetsysCalculator(cfg::ConfigurationTable & table,
     // the detector model.
     for(std::string variation : variations)
     {
-        std::string pot_name = table.get_string_field("variations.origin") + variation + '/' + "POT";
-        TH1D * h = (TH1D *) input->Get(pot_name.c_str());
-        double pot = h->GetBinContent(1) / 1e18;
+        double pot(0);
+        // Check if the variation has an exposure tree instead of a histogram.
+        std::string exp_tree_name = table.get_string_field("variations.origin") + variation + "/" + table.get_string_field("variations.tree") + "_exposure";
+        if(input->Get(exp_tree_name.c_str()))
+        {
+            // If the exposure tree exists, use it to calculate the POT.
+            // The tree has a branch "pot" that we need to sum over.
+            TTree * exp_tree = input->Get<TTree>(exp_tree_name.c_str());
+            double pot_value;
+            exp_tree->SetBranchAddress("pot", &pot_value);
+            for(int i(0); i < exp_tree->GetEntries(); ++i)
+            {
+                exp_tree->GetEntry(i);
+                pot += pot_value; // Sum the POT values
+            }
+            pot /= 1e18; // Convert to 1e18 POT
+        }
+        else
+        {
+            // If the exposure tree does not exist, use the POT histogram.
+            std::string pot_name = table.get_string_field("variations.origin") + variation + '/' + "POT";
+            TH1D * h = (TH1D *) input->Get(pot_name.c_str());
+            pot = h->GetBinContent(1) / 1e18; // Convert to 1e18 POT
+        }
+        std::cout << "Variation " << variation << " has " << pot << "e18 POT." << std::endl;
 
         std::string name = table.get_string_field("variations.origin") + variation + '/' + table.get_string_field("variations.tree");
         TTree * t = input->Get<TTree>(name.c_str());
