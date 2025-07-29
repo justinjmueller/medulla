@@ -37,6 +37,23 @@ namespace ecut
     REGISTER_CUT_SCOPE(RegistrationScope::Event, no_cut, no_cut);
 
     /**
+     * @brief Apply a cut enforcing that there are nonzero reco interactions.
+     * @details This cut checks if the number of reco interactions in the event
+     * is greater than zero. It is useful for ensuring that the file isn't
+     * corrupted or empty.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the cut on.
+     * @return true if there are nonzero reco interactions, false otherwise.
+     */
+    template<typename T>
+    bool nonzero_reco_interactions(const T & sr)
+    {
+        // Check if the number of reco interactions is greater than zero.
+        return (sr.ndlp > 0);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Event, nonzero_reco_interactions, nonzero_reco_interactions);
+
+    /**
      * @brief Apply a cut on the global trigger time.
      * @details This cut checks if the global trigger time is within some
      * interval of time. This is useful for partitioning the dataset into
