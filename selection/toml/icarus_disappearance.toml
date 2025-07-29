@@ -152,7 +152,11 @@ branch = [
     { name = "neutrino_energy",         type = "mctruth" },
     { name = "visible_energy",          type = "both"    },
     { name = "visible_energy_calosub",  type = "both"    },
-    { name = "proton_multiplicity",     type = "reco",    parameters = [50.0,]},
+    { name = "photon_multiplicity",     type = "both",    parameters = [25.0,]},
+    { name = "electron_multiplicity",   type = "both",    parameters = [25.0,]},
+    { name = "muon_multiplicity",       type = "both",    parameters = [143.425,]},
+    { name = "pion_multiplicity",       type = "both",    parameters = [25.0,]},
+    { name = "proton_multiplicity",     type = "both",    parameters = [50.0,]},
 
     # Kinematic imbalance & angles
     { name = "opening_angle", type = "both" },
@@ -173,6 +177,7 @@ branch = [
     { name = "flash_total_pe",   type = "reco" },
     { name = "flash_hypothesis", type = "reco" },
     { name = "containment",      type = "reco" },
+    { name = "fiducial",         type = "reco" },
 
     # Leading MUON interaction-level
     { name = "end_x",             type = "both_particle", selector = "leading_muon"   },
@@ -215,6 +220,7 @@ sim_only = true
 add_exposure = true
 mode = "true"
 cut = [
+    { name = "neutrino",         type = "true" },
     { name = "fiducial_cut",     type = "true" },
     { name = "containment_cut",  type = "true" },
     { name = "no_photons",       type = "true", parameters = [25.0] },
@@ -236,7 +242,7 @@ branch = [
     { name = "interaction_type",       type = "mctruth" },
     { name = "category",               type = "true"    },
     { name = "neutrino_energy",        type = "mctruth" },
-    { name = "visible_energy",         type = "true"    },
+    { name = "visible_energy",         type = "both"    },
     { name = "visible_energy_calosub", type = "true"    },
 
     # Interaction-level selection variables
@@ -248,15 +254,15 @@ branch = [
     { name = "flash_time",            type = "reco" },
 
     # Kinematic imbalance & angles
-    { name = "opening_angle", type = "true" },
-    { name = "dpT",           type = "true" },
-    { name = "dpT_lp",        type = "true" },
-    { name = "dphiT",         type = "true" },
-    { name = "dalphaT",       type = "true" },
-    { name = "dpL",           type = "true" },
-    { name = "dpL_lp",        type = "true" },
-    { name = "pn",            type = "true" },
-    { name = "pn_lp",         type = "true" },
+    { name = "opening_angle", type = "both" },
+    { name = "dpT",           type = "both" },
+    { name = "dpT_lp",        type = "both" },
+    { name = "dphiT",         type = "both" },
+    { name = "dalphaT",       type = "both" },
+    { name = "dpL",           type = "both" },
+    { name = "dpL_lp",        type = "both" },
+    { name = "pn",            type = "both" },
+    { name = "pn_lp",         type = "both" },
 
     # True-vertex
     { name = "vertex_x", type = "true" },
