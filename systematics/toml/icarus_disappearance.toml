@@ -669,6 +669,12 @@ index = 190
 nsigma = [0, 1]
 
 [[sys]]
+name = "GENIEReWeight_SBNNuSyst_LQCDZExpFit_multisim_ZExpAVariationResponse"
+type = "multisigma"
+index = 191
+nsigma = [0, 1]
+
+[[sys]]
 name = "expskin_Flux"
 type = "multisim"
 index = 115
