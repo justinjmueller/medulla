@@ -54,6 +54,30 @@ namespace ecut
     REGISTER_CUT_SCOPE(RegistrationScope::Event, nonzero_reco_interactions, nonzero_reco_interactions);
 
     /**
+     * @brief Apply a cut enforcing a CRT-PMT veto.
+     * @details This cut rejects events that do not have at least one flash in-
+     * time with the beam that is not associated with a CRT hit.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the cut on.
+     * @param params a vector of parameters for the cut, which can be used to
+     * specify the time window for the flash association.
+     * @return true if the event has at least one flash in-time with the beam
+     * that is not associated with a CRT hit, false otherwise.
+     */
+    template<typename T>
+    bool crtpmt_veto(const T & sr, std::vector<double> params={})
+    {
+        bool crtpmt_matched(sr.ncrtpmt_matches == 0);
+        for(auto const & c : sr.crtpmt_matches)
+        {
+            if(c.flashGateTime > 0 && c.flashGateTime < 1.6 && c.flashClassification == 0)
+                crtpmt_matched = true;
+        }
+        return crtpmt_matched;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Event, crtpmt_veto, crtpmt_veto);
+
+    /**
      * @brief Apply a cut on the global trigger time.
      * @details This cut checks if the global trigger time is within some
      * interval of time. This is useful for partitioning the dataset into
