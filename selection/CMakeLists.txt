@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.14)
 project(cafana LANGUAGES CXX)
 
 # Central environment path resolution
-set(SBNANA_BASE "$ENV{MRB_INSTALL}/sbnana/$ENV{SBNANA_VERSION}")
-set(SBNANAOBJ_BASE "$ENV{MRB_INSTALL}/sbnanaobj/$ENV{SBNANAOBJ_VERSION}")
+set(SBNANA_BASE "${SBNANA_DIR}")
+set(SBNANAOBJ_BASE "${SBNANAOBJ_DIR}")
 
 # Set C++ Standard
 set(CMAKE_CXX_STANDARD 17)
@@ -22,10 +22,6 @@ set(SRPROXY_INC "$ENV{SRPROXY_INC}")
 set(OSCLIB_INC "$ENV{OSCLIB_INC}")
 set(OSCLIB_LIB "$ENV{OSCLIB_LIB}")
 set(EIGEN_INC "$ENV{EIGEN_INC}")
-set(SBNANA_INC "$ENV{MRB_INSTALL}/sbnana/$ENV{SBNANA_VERSION}/include")
-set(SBNANAOBJ_INC "$ENV{MRB_INSTALL}/sbnanaobj/$ENV{SBNANAOBJ_VERSION}/include")
-set(SBNANA_LIB "$ENV{MRB_INSTALL}/sbnana/$ENV{SBNANA_VERSION}/slf7.x86_64.e26.prof/lib")
-set(SBNANAOBJ_LIB "$ENV{MRB_INSTALL}/sbnanaobj/$ENV{SBNANAOBJ_VERSION}/slf7.x86_64.e26.prof/lib")
 
 # Library for the framework
 add_library(framework SHARED src/framework.cc)
