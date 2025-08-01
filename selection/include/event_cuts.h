@@ -67,10 +67,14 @@ namespace ecut
     template<typename T>
     bool crtpmt_veto(const T & sr, std::vector<double> params={})
     {
+        if(params.size() < 2)
+        {
+            throw std::invalid_argument("crtpmt_veto requires at least two parameters: time window start and end.");
+        }
         bool crtpmt_matched(sr.ncrtpmt_matches == 0);
         for(auto const & c : sr.crtpmt_matches)
         {
-            if(c.flashGateTime > 0 && c.flashGateTime < 1.6 && c.flashClassification == 0)
+            if(c.flashGateTime > params[0] && c.flashGateTime < params[1] && c.flashClassification == 0)
                 crtpmt_matched = true;
         }
         return crtpmt_matched;
