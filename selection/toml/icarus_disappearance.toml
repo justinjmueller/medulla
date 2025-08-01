@@ -129,16 +129,15 @@ sim_only = false
 add_exposure = true
 mode = "reco"
 cut = [
-    { name = "fiducial_cut",          type = "reco" },
-    { name = "containment_cut",       type = "reco" },
-    { name = "flash_cut",             type = "reco",  parameters = [-0.5, 1.6] },
-    { name = "no_photons",            type = "reco",  parameters = [25.0] },
-    { name = "no_electrons",          type = "reco",  parameters = [25.0] },
-    { name = "no_charged_pions",      type = "reco",  parameters = [25.0] },
-    { name = "single_muon",           type = "reco",  parameters = [143.425] },
-    { name = "!no_protons",           type = "reco",  parameters = [50.0] },
-    { name = "trigger_emulation_cut", type = "event", decrements_exposure = false },
-    { name = "nonzero_reco_interactions", type = "event", decrements_exposure = true },
+    { name = "fiducial_cut",              type = "reco" },
+    { name = "containment_cut",           type = "reco" },
+    { name = "flash_cut",                 type = "reco",  parameters = [-0.5, 1.6] },
+    { name = "no_photons",                type = "reco",  parameters = [25.0] },
+    { name = "no_electrons",              type = "reco",  parameters = [25.0] },
+    { name = "no_charged_pions",          type = "reco",  parameters = [25.0] },
+    { name = "single_muon",               type = "reco",  parameters = [143.425] },
+    { name = "!no_protons",               type = "reco",  parameters = [50.0] },
+    { name = "trigger_emulation_cut",     type = "event", decrements_exposure = false },
 ]
 branch = [
     # Interaction-level truth/reco branches
@@ -220,14 +219,14 @@ sim_only = true
 add_exposure = true
 mode = "true"
 cut = [
-    { name = "neutrino",         type = "true" },
-    { name = "fiducial_cut",     type = "true" },
-    { name = "containment_cut",  type = "true" },
-    { name = "no_photons",       type = "true", parameters = [25.0] },
-    { name = "no_electrons",     type = "true", parameters = [25.0] },
-    { name = "no_charged_pions", type = "true", parameters = [25.0] },
-    { name = "single_muon",      type = "true", parameters = [143.425] },
-    { name = "!no_protons",      type = "true", parameters = [50.0] },
+    { name = "neutrino",              type = "true" },
+    { name = "fiducial_cut",          type = "true" },
+    { name = "containment_cut",       type = "true" },
+    { name = "no_photons",            type = "true",  parameters = [25.0] },
+    { name = "no_electrons",          type = "true",  parameters = [25.0] },
+    { name = "no_charged_pions",      type = "true",  parameters = [25.0] },
+    { name = "single_muon",           type = "true",  parameters = [143.425] },
+    { name = "!no_protons",           type = "true",  parameters = [50.0] },
     { name = "trigger_emulation_cut", type = "event", decrements_exposure = false },
 ]
 branch = [
