@@ -14,6 +14,7 @@
 
 #include "framework.h"
 #include "utilities.h"
+#include "event_variables.h"
 
 /**
  * @namespace ecut
@@ -160,6 +161,30 @@ namespace ecut
         }
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Event, trigger_emulation_cut, trigger_emulation_cut);
+
+    /**
+     * @brief A cut that places a threshold on the BNB Figure of Merit 2 (FoM2).
+     * @details This cut checks if the FoM2 value is above a certain threshold,
+     * which can be configured by the user. This is intended to be a handle on
+     * the quality of the beam-target overlap of the spill that is associated
+     * with the event
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the cut on.
+     * @param params a vector of parameters for the cut, which can be used to
+     * specify the threshold for the FoM2 value.
+     * @return true if the FoM2 value is above the threshold, false otherwise.
+     */
+    template<typename T>
+    bool bnb_fom2_cut(const T & sr, std::vector<double> params={})
+    {
+        if(params.empty())
+        {
+            throw std::invalid_argument("bnb_fom2_cut requires at least one parameter for the threshold (recommended 0.98).");
+        }
+        double threshold = params[0];
+        return (evar::bnb_fom2(sr) >= threshold);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Event, bnb_fom2_cut, bnb_fom2_cut);
 }
 
 #endif // EVENT_CUTS_H

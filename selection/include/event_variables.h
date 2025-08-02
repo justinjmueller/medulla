@@ -11,6 +11,7 @@
 #ifndef EVENT_VARIABLES_H
 #define EVENT_VARIABLES_H
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
+#include "sbnana/SBNAna/Vars/BNBVars.h"
 
 #include "framework.h"
 #include "utilities.h"
@@ -342,6 +343,24 @@ namespace evar
             return sr.opflashes[closest_flash_index].time + t0;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Event, time_of_flash_closest_to_trigger_rawtime, time_of_flash_closest_to_trigger_rawtime);
+
+    /**
+     * @brief Variable (wrapper) for the FoM2 (Figure of Merit 2) in the event.
+     * @details This variable is a wrapper for the FoM2 variable, which is
+     * defined as a SpillVar in the usual CAFAna parlance. It is used as a
+     * metric that roughly characterizes the overlap of the beam with the
+     * target and can be used as a cut to reject events that correspond to bad
+     * beam conditions.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the FoM2 value for the event.
+     */
+    template<typename T>
+    double bnb_fom2(const T & sr)
+    {
+        return ana::kSpillFoM2(&sr);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, bnb_fom2, bnb_fom2);
 }
 
 #endif
