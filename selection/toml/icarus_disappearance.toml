@@ -123,6 +123,18 @@ path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var13p/input
 ismc = true
 disable = false
 
+[[sample]]
+name = "offbeam"
+path = "/pnfs/icarus/scratch/users/mueller/production/data/onbeam/flat/*/*/*.root"
+ismc = false
+disable = false
+
+[[sample]]
+name = "onbeam"
+path = "/pnfs/icarus/scratch/users/mueller/production/data/onbeam/flat/*/*/*.root"
+ismc = false
+disable = false
+
 [[tree]]
 name = "selected"
 sim_only = false
@@ -138,6 +150,9 @@ cut = [
     { name = "single_muon",               type = "reco",  parameters = [143.425] },
     { name = "!no_protons",               type = "reco",  parameters = [50.0] },
     { name = "trigger_emulation_cut",     type = "event", decrements_exposure = false },
+    { name = "data_quality_cut",          type = "event", decrements_exposure = true },
+    { name = "beam_quality_cut",          type = "spill", decrements_exposure = false }, # Should decrement exposure, but CAF files are bugged
+    { name = "bnb_fom2_cut",              type = "event", decrements_exposure = false }, # Should decrement exposure, but CAF files are bugged
 ]
 branch = [
     # Interaction-level truth/reco branches
