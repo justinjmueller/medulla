@@ -181,8 +181,16 @@ namespace ecut
         {
             throw std::invalid_argument("bnb_fom2_cut requires at least one parameter for the threshold (recommended 0.98).");
         }
-        double threshold = params[0];
-        return (evar::bnb_fom2(sr) >= threshold);
+        if(hdr.ismc)
+        {
+            // If the event is simulated, do not apply the cut.
+            return true;
+        }
+        else
+        {
+            double threshold = params[0];
+            return (evar::bnb_fom2(sr) >= threshold);
+        }
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Event, bnb_fom2_cut, bnb_fom2_cut);
 }
