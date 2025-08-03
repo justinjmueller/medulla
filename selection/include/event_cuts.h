@@ -181,7 +181,7 @@ namespace ecut
         {
             throw std::invalid_argument("bnb_fom2_cut requires at least one parameter for the threshold (recommended 0.98).");
         }
-        if(hdr.ismc)
+        if(sr.hdr.ismc)
         {
             // If the event is simulated, do not apply the cut.
             return true;
