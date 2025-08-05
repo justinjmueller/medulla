@@ -1,10 +1,10 @@
 [input]
-path = 'icarus_disappearance_full.root'
+path = 'icarus_disappearance_08032025.root'
 weights = '/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/input*.flat.root'
 use_additional_hash = true
 
 [output]
-path = 'icarus_disappearance_full_withsys.root'
+path = 'icarus_disappearance_08032025_sys.root'
 histogram_destination = 'variations/'
 
 [[sysvar]]
@@ -35,10 +35,16 @@ action = 'copy'
 
 [[tree]]
 origin = 'events/cvext/selected'
-destination = 'events/cvext/'
+destination = 'events/full/'
 name = 'selected'
 action = 'add_weights'
 table_types = ['multisim', 'multisigma', 'variation']
+
+[[tree]]
+origin = 'events/cvext/selected_exposure'
+destination = 'events/full/'
+name = 'selected_exposure'
+action = 'copy'
 
 [[tree]]
 origin = 'events/nominal/selected_exposure'
