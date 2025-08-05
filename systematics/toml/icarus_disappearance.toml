@@ -507,6 +507,12 @@ type = "multisim"
 index = 128
 
 [[sys]]
+name = "GENIEReWeight_SBNNuSyst_GENIE_multisigma_FracPN_CCMEC"
+type = "multisigma"
+index = 129
+nsigma = [-1, 1, -2, 2, -3, 3]
+
+[[sys]]
 name = "GENIEReWeight_SBN_v1_multisigma_NormNCMEC"
 type = "multisigma"
 index = 8
