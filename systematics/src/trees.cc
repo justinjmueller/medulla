@@ -265,7 +265,7 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
         tmp->get_tree()->Branch(t.get_string_field("name").c_str(), &systematics[t.get_string_field("name")]->get_weights());
         if(tmp->get_nsigma()->size() > 0)
         {
-            tmp->get_tree()->Branch((t.get_string_field("name") + "_nsigma").c_str(), &systematics[t.get_string_field("name")]->get_nsigma());
+            tmp->get_tree()->Branch((t.get_string_field("name") + "_sigma").c_str(), &systematics[t.get_string_field("name")]->get_nsigma());
         }
     }
 
