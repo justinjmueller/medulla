@@ -112,14 +112,19 @@ sys::detsys::DetsysCalculator::DetsysCalculator(cfg::ConfigurationTable & table,
         // deviations the systematic parameter is from the nominal value).
         std::string name = t.get_string_field("name");
         zscores.insert(std::make_pair(name, t.get_double_vector("nsigma")));
-        hdummies.insert(std::make_pair(name, new TH1D("hdummy", "hdummy", histograms[points[0]]->GetNbinsX(), histograms[points[0]]->GetXaxis()->GetXmin(), histograms[points[0]]->GetXaxis()->GetXmax())));
+        TH1D * base = histograms[points[0]];
+        int nbins = base->GetXaxis()->GetNbins();
+        const double * xedges = base->GetXaxis()->GetXbins()->GetArray();
+        hdummies.insert(std::make_pair(name, new TH1D("hdummy", "hdummy", nbins, xedges)));
 
         // This block creates a TH2D that will be used to store the input for
         // the spline construction. The TH2D is filled with the ratio of the
         // variations to the nominal sample (across the range of the variable)
         // for each of the spline points. Each spline point is adjusted by the
         // scale factor configured in the "detsys" block.
-        TH2D * h = new TH2D("tmp", "tmp", hdummies[name]->GetNbinsX(), hdummies[name]->GetXaxis()->GetXmin(), hdummies[name]->GetXaxis()->GetXmax(), points.size(), zscores[name][0], zscores[name].back());
+        double ylow = *std::min_element(zscores[name].begin(), zscores[name].end());
+        double yup = *std::max_element(zscores[name].begin(), zscores[name].end());
+        TH2D * h = new TH2D("tmp", "tmp", nbins, xedges, points.size(), ylow, yup);
         for(size_t i(0); i < points.size(); ++i)
         {
             hdummies[name]->Divide(histograms[points[i]], histograms[t.get_string_field("ordinate")]);
