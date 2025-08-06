@@ -4,9 +4,9 @@ pidfn = "default_pid"
 primfn = "default_primary_classification"
 
 [[sample]]
-name = "mc"
+name = "onbeam"
 path = "/pnfs/sbnd/scratch/users/mueller/sbnd_devsample_test08052025.flat.root"
-ismc = true
+ismc = false
 disable = false
 
 [[tree]]
