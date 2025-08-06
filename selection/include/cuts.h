@@ -421,5 +421,28 @@ namespace cuts
         return !nonzero_particle_multiplicity(obj, 4, params);
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, no_protons, no_protons);
+
+    /**
+     * @brief Cut to select interactions with a single Michel electron.
+     * @details This function applies a cut to select interactions with a
+     * single Michel electron.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the interaction has a single Michel electron.
+    */
+    template<class T>
+    bool single_michel(const T & obj)
+    {
+        size_t count(0);
+        for(const auto & p : obj.particles)
+        {
+            if(pvars::semantic_type(p) == 2)
+                ++count;
+            if(count > 1)
+                break; // No need to count further, we only care about multiplicity of 1.
+        }
+        return count == 1;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, single_michel, single_michel);
 }
 #endif

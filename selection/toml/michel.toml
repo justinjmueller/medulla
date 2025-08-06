@@ -1,0 +1,28 @@
+[general]
+output = "michel"
+pidfn = "default_pid"
+primfn = "default_primary_classification"
+
+[[sample]]
+name = "mc"
+path = "/pnfs/sbnd/scratch/users/mueller/sbnd_devsample_test08052025.flat.root"
+ismc = true
+disable = false
+
+[[tree]]
+name = "michel"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "!valid_flashmatch", type = "reco"},
+    {name = "single_michel", type = "reco"},
+    {name = "containment_cut", type = "reco_particle"},
+    {name = "is_semantic_type", type = "reco_particle", parameters = [2,]},
+    {name = "size_cut", type = "reco_particle", parameters = [20,]},
+]
+branch = [
+    {name = "semantic_type", type = "both_particle"},
+    {name = "iou", type = "both_particle"},
+    {name = "ke", type = "both_particle"},
+    {name = "calo_ke", type = "reco_particle"},
+]
