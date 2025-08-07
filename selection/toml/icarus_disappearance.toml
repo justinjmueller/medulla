@@ -125,13 +125,13 @@ disable = false
 
 [[sample]]
 name = "offbeam"
-path = "/pnfs/icarus/scratch/users/mueller/production/data/onbeam/flat/*/*/*.root"
+path = "/pnfs/icarus/persistent/users/mueller/production/data/offbeam/input*.flat.root"
 ismc = false
 disable = false
 
 [[sample]]
 name = "onbeam"
-path = "/pnfs/icarus/scratch/users/mueller/production/data/onbeam/flat/*/*/*.root"
+path = "/pnfs/icarus/persistent/users/mueller/production/data/onbeam/input*.flat.root"
 ismc = false
 disable = false
 
@@ -152,7 +152,7 @@ cut = [
     { name = "trigger_emulation_cut",     type = "event", decrements_exposure = false },
     { name = "data_quality_cut",          type = "event", decrements_exposure = true },
     { name = "beam_quality_cut",          type = "spill", decrements_exposure = false }, # Should decrement exposure, but CAF files are bugged
-    { name = "bnb_fom2_cut",              type = "event", decrements_exposure = false }, # Should decrement exposure, but CAF files are bugged
+    { name = "bnb_fom2_cut",              type = "event", decrements_exposure = false, parameters = [0.98,]}, # Should decrement exposure, but CAF files are bugged
 ]
 branch = [
     # Interaction-level truth/reco branches
