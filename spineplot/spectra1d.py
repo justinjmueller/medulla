@@ -202,6 +202,8 @@ class SpineSpectra1D(SpineSpectra):
         """
         ax.set_xlabel(self._variable._xlabel if self._xtitle is None else self._xtitle)
         ax.set_ylabel('Candidates')
+        if normalize:
+            ax.set_ylabel('Normalized Candidates')
         if self._variable._binning_scheme == 'equal_width':
             ax.set_xlim([self._variable._range[0], self._variable._range[1]] if self._xrange is None else self._xrange)
         if self._variable._binning_scheme == 'custom':
@@ -212,6 +214,7 @@ class SpineSpectra1D(SpineSpectra):
             labels, data = zip(*self._plotdata.items())
             colors = [self._colors[label] for label in labels]
             bincenters = [self._binedges[l][:-1] + np.diff(self._binedges[l]) / 2 for l in labels]
+            binedges = [self._binedges[l] for l in labels]
             binwidths = [np.diff(self._binedges[l]) for l in labels]
             xr = self._variable._range if self._xrange is None else self._xrange
 
@@ -221,8 +224,8 @@ class SpineSpectra1D(SpineSpectra):
             denominator = np.sum([self._onebincount[labels[i]] for i in histogram_mask])
             counts = [x for x in self._onebincount.values()]
 
-            if fit_type is not None:
-                super().fit_with_function(ax, bincenters[0], np.sum(data, axis=0), self._binedges[labels[0]], fit_type, range=xr)
+            #if fit_type is not None:
+            #    super().fit_with_function(ax, bincenters[0], np.sum(data, axis=0), binedges[0], fit_type, range=xr)
 
             if show_component_number and show_component_percentage:
                 hlabel = lambda x : f'{np.sum(x):.1f}, {np.sum(x)/denominator:.2%}'
@@ -249,11 +252,14 @@ class SpineSpectra1D(SpineSpectra):
                     ax.bar(bincenters[0], d*scale, width=binwidths[0], bottom=bottom, align='center', label=l, color=c)
                     bottom+=d*scale
 
+                
+            y = scale * np.sum(reduce(data), axis=0)
+
             if draw_error:
                 systs = [s[draw_error] for s in self._systematics.values() if draw_error in s]
                 cov = np.sum(s.get_covariance(self._variable._key) for s in systs)
                 x = reduce(bincenters)[0]
-                y = scale * np.sum(reduce(data), axis=0)
+                #y = scale * np.sum(reduce(data), axis=0)
                 xerr = [x / 2 for x in binwidths[0]]
                 #scov = Systematic.transform_as(cov, scale if not normalize else np.sum(reduce(data), axis=0))
                 if normalize:
@@ -267,13 +273,37 @@ class SpineSpectra1D(SpineSpectra):
             for i, label in enumerate(reduce(labels)):
                 scale = 1.0 if not normalize else 1.0 / np.sum(data[scatter_mask[i]])
                 ax.errorbar(bincenters[scatter_mask[i]], scale*data[scatter_mask[i]], yerr=scale*np.sqrt(data[scatter_mask[i]]), fmt='o', label=label, color=colors[scatter_mask[i]])
-        
+                
+                darray = scale*data[scatter_mask[i]]
+                
+                # Fitting (data)
+                super().fit_with_function(ax, bincenters[0], darray, binedges[0], fit_type, range=xr, slabel='onbeam', zorder=101)
+
+        # Fitting (MC)
+        if fit_type is not None:
+            super().fit_with_function(ax, bincenters[scatter_mask[i]], y, binedges[0], fit_type, range=xr, slabel='mc', zorder=100)
+            
         if invert_stack_order:
             h, l = ax.get_legend_handles_labels()
             if draw_error:
+                #h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
+                #l.append(systs[0].label)
+                #ax.legend(h[-2::-1]+h[-1:], l[-2::-1]+l[-1:], ncol=leg_ncol)
+                
+                # With data/MC fits
+                
                 h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
                 l.append(systs[0].label)
-                ax.legend(h[-2::-1]+h[-1:], l[-2::-1]+l[-1:], ncol=leg_ncol)
+                # reverse all but syst. label
+                rev_all_but_syst_h, rev_all_but_syst_l = h[-2::-1] + [h[-1]], l[-2::-1] + [l[-1]]
+                # move 2nd and 3rd element to end
+                mv_syst_h, mv_syst_l = rev_all_but_syst_h[:1] + rev_all_but_syst_h[3:], rev_all_but_syst_l[:1] + rev_all_but_syst_l[3:]
+                mv_syst_h.append(rev_all_but_syst_h[2])
+                mv_syst_h.append(rev_all_but_syst_h[1])
+                mv_syst_l.append(rev_all_but_syst_l[2])
+                mv_syst_l.append(rev_all_but_syst_l[1])
+                ax.legend(mv_syst_h, mv_syst_l, ncol=leg_ncol)
+                
             else:
                 ax.legend(h[::-1], l[::-1], ncol=leg_ncol)
         else:

@@ -133,7 +133,7 @@ namespace vars::ccpi0ana
      * 5: 1muNpi0
      * 6: NC 1pi0
      * 7: Other nu
-     * 8: Cosmic
+     * 10: Cosmic
      * @param obj the interaction to apply the variable on.
      * @return the enumerated category of the interaction.
      */
@@ -143,7 +143,7 @@ namespace vars::ccpi0ana
         truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
 
         // Cosmic            
-	uint16_t cat(8);
+	uint16_t cat(10);
 
 	// Neutrino    
 	if(s.is_neutrino)
@@ -174,13 +174,9 @@ namespace vars::ccpi0ana
      * @details This variable provides a basic categorization of interactions
      * using the following categories:
      * 0: 1mu0pi1pi0 (in-phase, fiducial)
-     * 1: 1mu0pi1pi0 (OOPS, fiducial)
-     * 2: 1mu0pi1pi0 (OOFV)
-     * 3: 1muNpiXpi0
-     * 4: 1muXpi0pi0N(secondary pi0)
-     * 5: NC Npi0
-     * 6: Other nu
-     * 7: Cosmic
+     * 1: To-do...
+     * 2: To-do...
+     * 3: To-do...
      * @param obj the interaction to apply the variable on.
      * @return the enumerated category of the interaction.
      */
@@ -190,32 +186,104 @@ namespace vars::ccpi0ana
         truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
 
         // Cosmic
-        uint16_t cat(8);
+	uint16_t cat(10);
 
-        // Neutrino
-        if(s.is_neutrino)
+	// Neutrino
+	if(s.is_neutrino)
 	{
-            // 1mu0pi1pi0 (in-phase, fiducial)
-            if(s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.is_cc && s.is_fiducial) cat = 0;
-            // 1mu0pi1pi0 (OOPS, fiducial)
-            else if( (s.num_primary_muons == 1 && s.num_primary_pions == 0 && s.num_primary_pi0s == 1 && s.is_cc && s.is_fiducial) && (s.num_primary_muons_thresh != 1 || s.num_primary_pions_thresh != 0 || s.num_primary_pi0s_thresh != 1) ) cat = 1;
-            // 1mu0pi1pi0 (OOFV)
-            else if( (s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.is_cc && !s.is_fiducial) ) cat = 2;
-	    // 1mu0pi0pi0 N(nonprimary pi0s) (in-phase, fiducial)
-	    else if( s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 0 && s.num_nonprimary_pi0s > 0 && s.is_cc && s.is_fiducial ) cat = 3;
-	    // 1mu0pi0pi0 0(nonprimary pi0s) (in-phase, fiducial)
-	    else if( s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 0 && s.num_nonprimary_pi0s == 0 && s.is_cc && s.is_fiducial ) cat = 4;
-	    // 1muNpiXpi0
-	    else if( s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh > 0 && s.is_cc && s.is_fiducial ) cat = 5;
-	    // NC Npi0
-	    else if( s.num_primary_muons_thresh == 0 && s.num_primary_pi0s_thresh > 0 && !s.is_cc && s.is_fiducial ) cat = 6;
-	    // Other nu
-	    else cat = 7;
+	  // 1mu0pi1pi0 (in-phase, fiducial)
+	  if(s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.is_cc && s.is_fiducial) cat = 0;
+	  // Other nu-induced pi0
+	  else if(s.num_primary_pi0s >= 1) cat = 1;
+	  // Other nu without pi0
+	  else if(s.num_primary_pi0s == 0) cat = 2;
 	}
-        return cat;
+      return cat;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_v2, category_topology_v2);
 
+    /**
+     * @brief Variable for enumerating interaction topology categories.
+     * @details This variable provides a basic categorization of interactions
+     * using the following categories:
+     * 0: 1mu 0pi 1pi0 (in-phase, fiducial)
+     * 1: 1mu 0pi 1pi0 (OOPS, fiducial)
+     * 2: 1mu 0pi 1pi0 (OOFV)
+     * 3: 1mu 0pi (2+ pi0)
+     * 4: 1mu 0pi 0pi0 Npi0_nonprim
+     * 5: 1mu 0pi 0pi0 0pi0_nonprim
+     * 6: 1mu Npi Xpi0
+     * 7: NC Npi0
+     * 8: Other nu
+     * 10: Cosmic
+     */
+    template<class T>
+    double category_topology_v3(const caf::SRInteractionTruthDLPProxy & obj)
+    {
+        truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+	
+	// Cosmic
+	uint16_t cat(10);
+
+	// Neutrino
+	if(s.is_neutrino)
+	{
+	    // 1mu 0pi 1pi0 (in-phase, fiducial)
+	    if(s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.is_cc && s.is_fiducial) cat = 0;
+	    // 1mu 0pi 1pi0 (OOPS, fiducial)
+	    else if( (s.num_primary_muons == 1 && s.num_primary_pions == 0 && s.num_primary_pi0s == 1 && s.is_cc && s.is_fiducial) && (s.num_primary_muons_thresh != 1 || s.num_primary_pions_thresh != 0 || s.num_primary_pi0s_thresh != 1) ) cat = 1;
+	    
+	    // 1mu 0pi 1pi0 (OOFV)
+	    else if(s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.is_cc && !s.is_fiducial) cat = 2;
+
+	    // 1mu 0pi (2+ pi0)
+	    else if(s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh >= 2 && s.is_cc && s.is_fiducial) cat = 3;
+
+	    // 1mu 0pi 0pi0 Npi0_nonprim
+	    else if(s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 0 && s.num_nonprimary_pi0s >= 1 && s.is_cc && s.is_fiducial) cat = 4;
+	    
+	    // 1mu 0pi 0pi0 0pi0_nonprim
+	    else if(s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 0 && s.num_nonprimary_pi0s == 0 && s.is_cc && s.is_fiducial) cat = 5;
+
+	    // 1mu Npi Xpi0
+	    else if(s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh >= 1 && s.is_cc && s.is_fiducial) cat = 6;
+
+	    // 0mu Npi0
+	    else if(s.num_primary_muons_thresh == 0 && s.num_primary_pi0s_thresh >= 1 && !s.is_cc && s.is_fiducial) cat = 7;
+
+	    // Other nu
+	    else cat = 8;
+	}
+	return cat;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_v3, category_topology_v3);
+ 
+    template<class T>
+    double category_topology_v4(const caf::SRInteractionTruthDLPProxy & obj)
+    {
+
+        truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+	
+        // Cosmic
+        uint16_t cat(10);
+
+	// Neutrino
+	if(s.is_neutrino)
+	{
+	    // 1mu 0pi 1pi0 (in-phase, fiducial)
+	    if(s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.is_cc && s.is_fiducial) cat = 0;
+	    // 1mu 0pi (2+ pi0)
+            else if(s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh >= 2 && s.is_cc && s.is_fiducial) cat = 1;
+            // 1mu Npi Xpi0
+            else if(s.num_primary_muons_thresh == 1 && s.num_primary_pions_thresh >= 1 && s.is_cc && s.is_fiducial) cat = 2;
+	    // 0mu Npi0
+            else if(s.num_primary_muons_thresh == 0 && s.num_primary_pi0s_thresh >= 1 && !s.is_cc && s.is_fiducial) cat = 3;
+	    // Other nu
+	    else cat = 4;
+	}
+	return cat;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_v4, category_topology_v4);
 
     /**
      * @brief Dummy GUNDAM variables.
@@ -286,8 +354,17 @@ namespace vars::ccpi0ana
      * the interaction passes the "all" cut defined in cuts_ccpi0ana.
      */
     template<class T>
-    double all_cuts_satisfied(const T & obj) {return cuts::ccpi0ana::all_cut(obj);}
-    REGISTER_VAR_SCOPE(RegistrationScope::Reco, all_cuts_satisfied, all_cuts_satisfied);
+    double all_cut_icarus_satisfied(const T & obj) {return cuts::ccpi0ana::all_cut_icarus(obj);}
+    REGISTER_VAR_SCOPE(RegistrationScope::Reco, all_cut_icarus_satisfied, all_cut_icarus_satisfied);
+
+    /**
+     * @brief Variable for the status of all interaction cuts.
+     * @details This variable holds the status of whether or not the
+     * the interaction passes the "all" cut defined in cuts_ccpi0ana.
+     */
+    template<class T>
+    double all_cut_sbnd_satisfied(const T & obj) {return cuts::ccpi0ana::all_cut_sbnd(obj);}
+    REGISTER_VAR_SCOPE(RegistrationScope::Reco, all_cut_sbnd_satisfied, all_cut_sbnd_satisfied);
 
     /**
      * @brief Variable for leading muon momentum magnitude.
@@ -701,6 +778,59 @@ namespace vars::ccpi0ana
     REGISTER_VAR_SCOPE(RegistrationScope::Both, dpT, dpT);
 
     /**
+     * @brief Variable for the missing longitudinal momentum of the
+     * interaction.
+     * @details The missing longitudinal momentum is calculated as the
+     * difference between the total longitudinal momentum of the final state
+     * particles and the best estimate of the neutrino energy. The neutrino
+     * energy is calculated using @ref vars::visible_energy.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the missing longitudinal momentum of the interaction.
+     * @note The switch to the NuMI beam direction instead of the BNB axis is
+     * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
+     */
+    template<class T>
+    double dpL(const T & obj)
+    {
+        utilities::three_vector lepton_pl = {0, 0, 0};
+	utilities::three_vector hadronic_pl = {0, 0, 0};
+	for(const auto & p : obj.particles)
+	{
+	    if(utilities_ccpi0ana::final_state_signal(p))
+	    {
+	      // There should only be one lepton, so replace the lepton
+	      // transverse momentum if the particle is a lepton.
+	      utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+	      utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+	      utilities::three_vector this_pl = utilities::longitudinal_momentum(momentum, vtx);
+	      if(PIDFUNC(p) == 1 || PIDFUNC(p) == 2)
+		lepton_pl = this_pl;
+	      // The total hadronic system is treated as a single object.
+	      else if(PIDFUNC(p) > 2)
+		hadronic_pl = utilities::add(hadronic_pl, this_pl);
+	    }
+	}
+	return (utilities::magnitude(utilities::add(hadronic_pl, lepton_pl)) - 1000*vars::ccpi0ana::visible_energy(obj))/1000.0;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, dpL, dpL);
+
+    /**
+     * @brief Variable for the estimate of the momentum of the struck nucleon.
+     * @details The estimate of the momentum of the struck nucleon is calculated
+     * as the quadrature sum of the transverse momentum (see @ref vars::dpT) and
+     * the missing longitudinal momentum (see @ref vars::dpL).
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the estimate of the momentum of the struck nucleon.
+     * @note The switch to the NuMI beam direction instead of the BNB axis is
+     * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
+     */
+    template<class T>
+    double pn(const T & obj) { return std::sqrt(std::pow(vars::ccpi0ana::dpT(obj), 2) + std::pow(vars::ccpi0ana::dpL(obj), 2)); }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, pn, pn); 
+    
+    /**
      * @brief Variable for phi_T of the interaction.                                     
      * @details phi_T is a transverse kinematic imbalance variable defined                                
      * using the transverse momentum of the leading muon and the total hadronic                                        
@@ -755,7 +885,7 @@ namespace vars::ccpi0ana
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
     template<class T>
-        double dalphaT(const T & obj)
+    double dalphaT(const T & obj)
         {
 	    utilities::three_vector lepton_pt = {0, 0, 0};
 	    utilities::three_vector total_pt = {0, 0, 0};
@@ -786,22 +916,44 @@ namespace vars::ccpi0ana
      * @return the four-momentum Q**2. 
      */
     template<class T>
-        double Q2(const T & obj)
-        {
-
-	    if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
-			   {
-			       truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
-			       return 2*vars::ccpi0ana::visible_energy(obj)*(s.muon_energy - s.muon_momentum_mag*s.muon_beam_costheta) - std::pow(MUON_MASS/1000.0, 2);
-			   }
-	    else
-	    {
-		reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
-		return 2*vars::ccpi0ana::visible_energy(obj)*(s.muon_energy - s.muon_momentum_mag*s.muon_beam_costheta) - std::pow(MUON_MASS/1000.0, 2);
-	    }
-
+    double Q2(const T & obj)
+    {
+        if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
+		       {
+			 truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+			 return 2*vars::ccpi0ana::visible_energy(obj)*(s.muon_energy - s.muon_momentum_mag*s.muon_beam_costheta) - std::pow(MUON_MASS/1000.0, 2);
+		       }
+	else
+	{
+	  reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
+	  return 2*vars::ccpi0ana::visible_energy(obj)*(s.muon_energy - s.muon_momentum_mag*s.muon_beam_costheta) - std::pow(MUON_MASS/1000.0, 2);
 	}
+
+    }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, Q2, Q2);
+
+    /**
+     * @brief Variable for hadronic invariant mass.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the hadronic invariant mass W.
+     */
+    template<class T>
+    double W(const T & obj)
+    {
+        if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
+		       {
+			   truth_inter s = utilities_ccpi0ana::truth_interaction_info(obj);
+			   return std::sqrt( std::pow(NUCLEON_MASS/1000.0, 2) + 2*(NUCLEON_MASS/1000.0)*(vars::ccpi0ana::visible_energy(obj) - s.muon_energy) - vars::ccpi0ana::Q2(obj) );
+		       }
+
+	else
+	{
+	    reco_inter s = utilities_ccpi0ana::reco_interaction_info(obj);
+	    return std::sqrt( std::pow(NUCLEON_MASS/1000.0, 2) + 2*(NUCLEON_MASS/1000.0)*(vars::ccpi0ana::visible_energy(obj) - s.muon_energy) - vars::ccpi0ana::Q2(obj) );
+	}
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, W, W);
 
 }
 #endif // VARS_CCPI0ANA_H

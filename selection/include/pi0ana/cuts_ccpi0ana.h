@@ -254,9 +254,24 @@ namespace cuts::ccpi0ana
      * @note This cut is intended to be used for the ccpi0ana analysis. 
      */
     template<class T>
-      bool all_cut(const T & obj) {return fiducial_cut<T>(obj) && flash_cut<T>(obj, {-0.5, 1.6}) && base_topology_cut<T>(obj) && leading_shower_energy_cut<T>(obj) && valid_pi0_mass_cut<T>(obj);}
+    bool all_cut_icarus(const T & obj) {return fiducial_cut<T>(obj) && flash_cut<T>(obj, {-0.5, 1.6}) && base_topology_cut<T>(obj) && leading_shower_energy_cut<T>(obj) && valid_pi0_mass_cut<T>(obj);}
       //bool all_cut(const T & obj) {return fiducial_cut<T>(obj) && flash_cut<T>(obj) && base_topology_cut<T>(obj) && leading_shower_energy_cut<T>(obj);}
 
+    /**
+     * @brief Apply a fiducial volume, containment, flash time, 1mu0pi2gamma
+     * topological, and pi0 mass cut (logical "and" of each).
+     * @details This function applies a fiducial volume, containment, flash time,
+     * 1mu0pi2gamma topological, and pi0 mass cut on the interaction using the logical "and"
+     * of each previously defined cut.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the interaction passes the fiducial volume, containment,
+     * flash time, 1mu0pi2gamma topological, and pi0 mass cut.
+     * @note This cut is intended to be used for the ccpi0ana analysis.
+     */
+    template<class T>
+    bool all_cut_sbnd(const T & obj) {return fiducial_cut<T>(obj) && valid_flashmatch<T>(obj) && base_topology_cut<T>(obj) && leading_shower_energy_cut<T>(obj) && valid_pi0_mass_cut<T>(obj);}
+    
     /**
      * @brief Apply a cut to select true CC 1mu interactions.
      * @details This function applies a cut on the final state

@@ -213,6 +213,50 @@ namespace vars::ncpi0ana
       }
     REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_v1, category_topology_v1);
 
+    
+    template<class T>
+    double category_topology_v2(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params={})
+    {
+        truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
+	
+	// Cosmic
+	uint16_t cat(10);
+	
+	// Neutrino
+	if(s.is_neutrino)
+	{
+	  /////////////////////////////
+	  /// Exactly params[1] protons
+	  /////////////////////////////
+	  if(params[0] == -2)
+	  {
+	    // 0mu0pi1pi0 (in-phase, fiducial)
+	    if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.num_primary_protons_thresh == params[1] && !s.is_cc && s.is_fiducial) cat = 0;
+	    // Other nu-induced pi0
+	    else if(s.num_primary_pi0s >= 1) cat = 1;
+
+	    // Other nu without pi0
+	    else if(s.num_primary_pi0s == 0) cat = 2;
+	  }
+	  //////////////////////////////
+	  /// At least params[1] protons
+	  //////////////////////////////
+	  else if(params[0] == -1)
+	  {
+	    // 0mu0pi1pi0 (in-phase, fiducial) 
+            if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && s.num_primary_protons_thresh >= params[1] && !s.is_cc && s.is_fiducial) cat = 0;
+            // Other nu-induced pi0
+            else if(s.num_primary_pi0s >= 1) cat = 1;
+
+            // Other nu without pi0
+            else if(s.num_primary_pi0s == 0) cat = 2;
+	  }
+
+	}
+	return cat;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_v2, category_topology_v2);
+
     /**
      * @brief Dummy GUNDAM variables.
      * @details "cut_type" specifies a signal or sideband cut.
@@ -286,8 +330,12 @@ namespace vars::ncpi0ana
      * the interaction passes the "all" cut defined in cuts_ncpi0ana.
      */
     template<class T>
-    double all_cuts_satisfied(const T & obj) {return cuts::ncpi0ana::all_cut(obj);}
-    REGISTER_VAR_SCOPE(RegistrationScope::Reco, all_cuts_satisfied, all_cuts_satisfied);
+    double all_cut_icarus_satisfied(const T & obj) {return cuts::ncpi0ana::all_cut_icarus(obj);}
+    REGISTER_VAR_SCOPE(RegistrationScope::Reco, all_cut_icarus_satisfied, all_cut_icarus_satisfied);
+
+    template<class T>
+    double all_cut_sbnd_satisfied(const T & obj, std::vector<double> params={}) {return cuts::ncpi0ana::all_cut_sbnd(obj, params);}
+    REGISTER_VAR_SCOPE(RegistrationScope::Reco, all_cut_sbnd_satisfied, all_cut_sbnd_satisfied);
 
     /**
      * @brief Variable for pi0 leading photon energy.

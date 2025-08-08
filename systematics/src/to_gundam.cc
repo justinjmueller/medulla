@@ -32,8 +32,8 @@ int main(int argc, char * argv[])
 
   /// Syst trees
   /// To-do: Automate this
-  TTree* multisigma_tree = (TTree*)input->Get("events/cv/multisigmaTree");
-  TTree* variation_tree = (TTree*)input->Get("events/cv/variationTree");
+  TTree* multisigma_tree = (TTree*)input->Get("events/cvext/multisigmaTree");
+  TTree* variation_tree = (TTree*)input->Get("events/cvext/variationTree");
 
   /////////////////////////////////////////////////////////////
   /// Output
@@ -46,7 +46,10 @@ int main(int argc, char * argv[])
   for(cfg::ConfigurationTable & table : tables)
     {
       // Grab input TTree
-      TTree* in_tree = (TTree*)input->Get(table.get_string_field("origin").c_str());                                                                                                                     
+      TTree* in_tree = (TTree*)input->Get(table.get_string_field("origin").c_str());                                                                                                  
+      
+      std::cout << "Processing " <<table.get_string_field("origin").c_str() << std::endl;
+                   
       // Create output TTree
       TDirectory * directory = (TDirectory *) output;
       directory = create_directory(directory, table.get_string_field("destination").c_str());
@@ -88,12 +91,14 @@ void copy_no_syst(cfg::ConfigurationTable table, TTree * out_tree, TTree * in_tr
   in_tree->SetBranchAddress("Evt", &event);
   
   // These are branches we wish to modify
-  double _cut_type, _is_nu, _is_data, _category_topology_v1, _category_topology_v2;
+  double _cut_type, _is_nu, _is_data, _category_topology_v1, _category_topology_v2, _category_topology_v3, _category_topology_v4;
   in_tree->SetBranchAddress("reco_cut_type", &_cut_type);
   in_tree->SetBranchAddress("reco_is_nu", &_is_nu);
   in_tree->SetBranchAddress("reco_is_data", &_is_data);
   in_tree->SetBranchAddress("true_category_topology_v1", &_category_topology_v1);
   in_tree->SetBranchAddress("true_category_topology_v2", &_category_topology_v2);
+  in_tree->SetBranchAddress("true_category_topology_v3", &_category_topology_v3);
+  in_tree->SetBranchAddress("true_category_topology_v4", &_category_topology_v4);
   
   // Output tree
   for (int i = 0; i < in_tree->GetNbranches()-3; i++)
@@ -102,12 +107,14 @@ void copy_no_syst(cfg::ConfigurationTable table, TTree * out_tree, TTree * in_tr
   out_tree->Branch("Subrun", &subrun);
   out_tree->Branch("Evt", &event);
 
-  int cut_type, is_nu, is_data, category_topology_v1, category_topology_v2;
+  int cut_type, is_nu, is_data, category_topology_v1, category_topology_v2, category_topology_v3, category_topology_v4;
   out_tree->Branch("cut_type", &cut_type, "cut_type/I");
   out_tree->Branch("is_nu", &is_nu, "is_nu/I");
   out_tree->Branch("is_data", &is_data, "is_data/I");
   out_tree->Branch("category_topology_v1", &category_topology_v1, "category_topology_v1/I");
   out_tree->Branch("category_topology_v2", &category_topology_v2, "category_topology_v2/I");
+  out_tree->Branch("category_topology_v3", &category_topology_v3, "category_topology_v3/I");
+  out_tree->Branch("category_topology_v4", &category_topology_v4, "category_topology_v4/I");
 
   // Copy entries from input tree to output tree
   for(int i(0); i < in_tree->GetEntries(); ++i)
@@ -129,14 +136,18 @@ void copy_no_syst(cfg::ConfigurationTable table, TTree * out_tree, TTree * in_tr
       if(table.get_bool_field("is_data") == true)
 	{
 	  is_data = 1;
-	  category_topology_v1 = 8;
-	  category_topology_v2 = 8;
+	  category_topology_v1 = (int)10;
+	  category_topology_v2 = (int)10;
+	  category_topology_v3 = (int)10;
+	  category_topology_v4 = (int)10;
 	}
       else
 	{
 	  is_data = 0;
 	  category_topology_v1 = (int)_category_topology_v1;
 	  category_topology_v2 = (int)_category_topology_v2;
+	  category_topology_v3 = (int)_category_topology_v3;
+	  category_topology_v4 = (int)_category_topology_v4;
 	}
       
       out_tree->Fill();

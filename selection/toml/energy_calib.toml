@@ -1,9 +1,10 @@
 [general]
-output = "icarus_bnb_energy_calib"
+output = "icarus_bnb_energy_calib_bugfix"
 
 [[sample]]
 name = "cv"
-path = "/pnfs/icarus/persistent/users/mueller/mixed/simulation/nominal/input*.flat.root"
+#path = "/pnfs/icarus/persistent/users/mueller/mixed/simulation/nominal/input*.flat.root"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input*.flat.root"
 ismc = true
 disable = false
 

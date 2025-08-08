@@ -244,7 +244,6 @@ namespace cuts::ncpi0ana
 	    std::vector<uint32_t> c(utilities_ncpi0ana::count_primaries(obj));
 	    return c[0] > 1 & c[0] < 4;
         }
-
       
     /**
      * @brief Apply pi0 mass cut.
@@ -276,9 +275,12 @@ namespace cuts::ncpi0ana
      * @note This cut is intended to be used for the ncpi0ana analysis. 
      */
     template<class T>
-      bool all_cut(const T & obj) {return fiducial_cut<T>(obj) && flash_cut<T>(obj, {-0.5, 1.6}) && base_topology_cut<T>(obj) && leading_shower_energy_cut<T>(obj) && valid_pi0_mass_cut<T>(obj);}
-      //bool all_cut(const T & obj) {return fiducial_cut<T>(obj) && flash_cut<T>(obj) && base_topology_cut<T>(obj) && leading_shower_energy_cut<T>(obj);}
-    REGISTER_CUT_SCOPE(RegistrationScope::Reco, all_cut, all_cut);
+    bool all_cut_icarus(const T & obj) {return fiducial_cut<T>(obj) && flash_cut<T>(obj, {-0.5, 1.6}) && base_topology_cut<T>(obj) && leading_shower_energy_cut<T>(obj) && valid_pi0_mass_cut<T>(obj);}
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, all_cut_icarus, all_cut_icarus);
+
+    template<class T>
+    bool all_cut_sbnd(const T & obj, std::vector<double> params={}) {return fiducial_cut<T>(obj) && valid_flashmatch<T>(obj) && base_topology_cut<T>(obj) && leading_shower_energy_cut<T>(obj) && valid_pi0_mass_cut<T>(obj) && num_protons_cut<T>(obj, params);}
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, all_cut_sbnd, all_cut_sbnd);
 
 
     /**

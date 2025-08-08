@@ -128,7 +128,7 @@ class SpineSpectra(SpineArtist):
         super().add_sample(sample, is_ordinate)
         self._systematics[sample._name] = sample._systematics
 
-    def fit_with_function(self, ax, bin_centers, data, bin_edges, fit_type, range=(-1,1)) -> None:
+    def fit_with_function(self, ax, bin_centers, data, bin_edges, fit_type, range=(-1,1), slabel='onbeam', zorder=1) -> None:
         """
         Fit the data with a given function and plot the fit on the axis.
 
@@ -154,6 +154,10 @@ class SpineSpectra(SpineArtist):
         -------
         None.
         """
+        bin_centers = bin_centers[:20]
+        data = data[:20]
+        bin_edges = bin_edges[:21]
+
         if fit_type == 'mpv':
             # Find the bin with the maximum value
             max_index = np.argmax(data)
@@ -190,15 +194,31 @@ class SpineSpectra(SpineArtist):
             popt, pcov = curve_fit(self.crystal_ball, bin_centers, data, p0=initial_guess)
             
             # Label with estimated parameters and +/- 1 sigma
-            cb_label = f'Crystal Ball Fit\n'
-            cb_label += f'$\\mu$={popt[2]:.2f}$\\pm${np.sqrt(pcov[2,2]):.2f}\n'
-            cb_label += f'$\\sigma$={popt[3]:.2f}$\\pm${np.sqrt(pcov[3,3]):.2f}\n'
-            cb_label += f'$\\alpha$={popt[0]:.2f}$\\pm${np.sqrt(pcov[0,0]):.2f}\n'
-            cb_label += f'n={popt[1]:.2f}$\\pm${np.sqrt(pcov[1,1]):.2f}'
+            cb_label = '\n'
+            cb_label += r"$\bf{Crystal}$ $\bf{Ball}$ $\bf{Fit}$"
+            if slabel == 'onbeam':
+                cb_label += r" $\bf{(Data)}$"
+                plot_color = 'red'
+            else:
+                cb_label += r" $\bf{(MC)}$"
+                plot_color = 'darkmagenta'
+            cb_label += '\n'
+            cb_label += f'$\\mu$ = {popt[2]:.2f} $\\pm$ {np.sqrt(pcov[2,2]):.2f}\n'
+            cb_label += f'$\\sigma$ = {popt[3]:.2f} $\\pm$ {np.sqrt(pcov[3,3]):.2f}\n'
+            cb_label += f'$\\alpha$ = {popt[0]:.2f} $\\pm$ {np.sqrt(pcov[0,0]):.2f}\n'
+            cb_label += f'n = {popt[1]:.2f} $\\pm$ {np.sqrt(pcov[1,1]):.2f}'
+            cb_label += '\n'
+            
+
+            #cb_label = f'Crystal Ball Fit\n'
+            #cb_label += f'$\\mu$={popt[2]:.2f}$\\pm${np.sqrt(pcov[2,2]):.2f}\n'
+            #cb_label += f'$\\sigma$={popt[3]:.2f}$\\pm${np.sqrt(pcov[3,3]):.2f}\n'
+            #cb_label += f'$\\alpha$={popt[0]:.2f}$\\pm${np.sqrt(pcov[0,0]):.2f}\n'
+            #cb_label += f'n={popt[1]:.2f}$\\pm${np.sqrt(pcov[1,1]):.2f}'
             
             # Plot the fit
             x = np.linspace(*range, 1000)
-            ax.plot(x, self.crystal_ball(x, *popt), 'r-', label=cb_label)
+            ax.plot(x, self.crystal_ball(x, *popt), c=plot_color, label=cb_label, zorder=zorder)
 
         elif fit_type == 'crystal_ball_mxb':
             # Crystal Ball fit with a mx+b background
@@ -216,18 +236,37 @@ class SpineSpectra(SpineArtist):
             print(popt)
 
             # Label with estimated parameters and +/- 1 sigma
-            cb_label = f'Crystal Ball Fit\n'
+            cb_label = '\n'
+            cb_label += r"$\bf{Crystal}$ $\bf{Ball}$ $\bf{Fit}$"
+            if slabel == 'onbeam':
+                cb_label += r" $\bf{(Data)}$"
+                plot_color = 'red'
+            else:
+                cb_label += r" $\bf{(MC)}$"
+                plot_color = 'blue'
+            cb_label += '\n'
+
             cb_label += f'$\\mu$={popt[2]:.2f}$\\pm${np.sqrt(pcov[2,2]):.2f}\n'
             cb_label += f'$\\sigma$={popt[3]:.2f}$\\pm${np.sqrt(pcov[3,3]):.2f}\n'
             cb_label += f'$\\alpha$={popt[0]:.2f}$\\pm${np.sqrt(pcov[0,0]):.2f}\n'
             cb_label += f'n={popt[1]:.2f}$\\pm${np.sqrt(pcov[1,1]):.2f}\n'
             cb_label += f'm={popt[5]:.2f}$\\pm${np.sqrt(pcov[5,5]):.2f}\n'
             cb_label += f'b={popt[6]:.2f}$\\pm${np.sqrt(pcov[6,6]):.2f}'
+            cb_label += '\n'
+
+            #cb_label = f'Crystal Ball Fit\n'
+            #cb_label += f'$\\mu$={popt[2]:.2f}$\\pm${np.sqrt(pcov[2,2]):.2f}\n'
+            #cb_label += f'$\\sigma$={popt[3]:.2f}$\\pm${np.sqrt(pcov[3,3]):.2f}\n'
+            #cb_label += f'$\\alpha$={popt[0]:.2f}$\\pm${np.sqrt(pcov[0,0]):.2f}\n'
+            #cb_label += f'n={popt[1]:.2f}$\\pm${np.sqrt(pcov[1,1]):.2f}\n'
+            #cb_label += f'm={popt[5]:.2f}$\\pm${np.sqrt(pcov[5,5]):.2f}\n'
+            #cb_label += f'b={popt[6]:.2f}$\\pm${np.sqrt(pcov[6,6]):.2f}'
 
             # Plot the fit
             x = np.linspace(*range, 1000)
-            ax.plot(x, self.crystal_ball_mxb(x, *popt), 'r-', label=cb_label)
-        
+            #ax.plot(x, self.crystal_ball_mxb(x, *popt), 'r-', label=cb_label)
+            ax.plot(x, self.crystal_ball_mxb(x, *popt), c=plot_color, label=cb_label, zorder=zorder)
+
         elif fit_type == 'gaussian':
             # Gaussian fit
             # First, estimate the parameters "reasonably" well to avoid

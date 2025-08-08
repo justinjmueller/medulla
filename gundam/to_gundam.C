@@ -6,11 +6,11 @@ void to_gundam()
   /////////////////////////////////////////////////////////////
 
   // Selected
-  string infile_sel_string = "/exp/icarus/app/users/lkashur/medulla_dev/srcs/medulla/build/output_sel.root";
-  string selnutree_string = "/events/cv/selected_nu";
-  string selcostree_string = "/events/cv/selected_cos";
-  string potmc_string = "/events/cv/POT"; // Add to to_gundam.cc
-  string livetimemc_string = "events/cv/Livetime";
+  string infile_sel_string = "/pnfs/icarus/persistent/users/lkashur/spine_analysis_output/gundam/output_sel.root";
+  string selnutree_string = "/events/cvext/selected_nu";
+  string selcostree_string = "/events/cvext/selected_cos";
+  string potmc_string = "/events/cvext/POT"; // Add to to_gundam.cc
+  string livetimemc_string = "events/cvext/Livetime";
   string seloffbeamtree_string = "/events/offbeam/selected_cos";
   string livetimeoffbeam_string = "events/offbeam/Livetime";
   string selonbeamtree_string = "/events/onbeam/selected_nu";
@@ -18,8 +18,8 @@ void to_gundam()
   string livetimeonbeam_string = "/events/onbeam/Livetime";
 
   // Signal
-  string infile_sig_string = "/exp/icarus/app/users/lkashur/medulla_dev/srcs/medulla/build/output_sig.root";
-  string signaltree_string = "events/cv/signal";
+  string infile_sig_string = "/pnfs/icarus/persistent/users/lkashur/spine_analysis_output/gundam/output_sig.root";
+  string signaltree_string = "events/cvext/signal";
 
   /////////////////////////////////////////////////////////////
   /// Output

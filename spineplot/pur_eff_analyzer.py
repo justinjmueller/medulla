@@ -22,6 +22,7 @@ def main(args):
     ######################
     rf = uproot.open(args.input)
     all_samples = []
+    
     for k,v in config['samples'].items():
         
         sample_str = v['key']
@@ -34,7 +35,9 @@ def main(args):
         sample_dict['pot'] = rf[f'events/{sample_str}/POT'].to_numpy()[0][0]
         sample_dict['livetime'] = rf[f'events/{sample_str}/Livetime'].to_numpy()[0][0]
         all_samples.append(sample_dict)
-        
+    
+    
+    '''
     # Add signal, which typically isn't included in TOML plotting config
     # first check for events/mc/signal, followed by events/cv/signal
     if any('events/cv/signal' in s for s in rf.keys()):
@@ -46,6 +49,7 @@ def main(args):
                         'df' : rf[f'{sig_loc}/signal'].arrays(library='pd'),
                         'pot' : rf[f'{sig_loc}/POT'].to_numpy()[0][0],
                         'livetime' : rf[f'{sig_loc}/Livetime'].to_numpy()[0][0]})
+    '''
 
     # Add purity info, which typicaly isn't includedin TOML plotting config
     # To-do
@@ -58,17 +62,17 @@ def main(args):
     calculate_efficiency(all_samples)
     
     # Efficiency calculation (by cut)
-    cuts = {'Flash Cut': ['reco_flash_icarus_satisfied == 1'],
-            'Fiducial Cut' : ['reco_flash_icarus_satisfied == 1', 
+    cuts = {'Flash Cut': ['reco_flash_sbnd_satisfied == 1'],
+            'Fiducial Cut' : ['reco_flash_sbnd_satisfied == 1', 
                               'reco_fiducial_satisfied == 1'],
-            'Base Topology Cut' : ['reco_flash_icarus_satisfied == 1', 
+            'Base Topology Cut' : ['reco_flash_sbnd_satisfied == 1', 
                                    'reco_fiducial_satisfied == 1', 
                                    'reco_base_topology_satisfied == 1'],
-            'Leading Shower Energy Cut' : ['reco_flash_icarus_satisfied == 1', 
+            'Leading Shower Energy Cut' : ['reco_flash_sbnd_satisfied == 1', 
                                            'reco_fiducial_satisfied == 1', 
                                            'reco_base_topology_satisfied == 1', 
                                            'reco_leading_shower_energy_satisfied == 1'],
-            'pi0 Mass Cut' : ['reco_flash_icarus_satisfied == 1', 
+            'pi0 Mass Cut' : ['reco_flash_sbnd_satisfied == 1', 
                               'reco_fiducial_satisfied == 1', 
                               'reco_base_topology_satisfied == 1', 
                               'reco_leading_shower_energy_satisfied == 1', 
@@ -76,21 +80,23 @@ def main(args):
     calculate_efficiency_by_cut(all_samples, cuts, true_category = config['analysis']['category_branch'])
     
     # Purity calculation
-    calculate_purity(all_samples, true_category = config['analysis']['category_branch'])
+    #calculate_purity(all_samples, true_category = config['analysis']['category_branch'])
 
     # Purity calculation (by cut, "purity" tree required)
     #calculate_purity_by_cut(all_samples, cuts, true_category = config['analysis']['category_branch'])
 
     # Efficiency claculation (as a funtion of true variable)
-    plot_eff_by_var(all_samples, 'true_muon_momentum_mag', config, ana_eff_bins_equal=True, nbins_eff=40)
-
-
+    #plot_eff_by_var(all_samples, 'true_muon_momentum_mag', config, ana_eff_bins_equal=True, nbins_eff=30)
+    #plot_eff_by_var(all_samples, 'true_muon_beam_costheta', config, ana_eff_bins_equal=True, nbins_eff=30)
+    #plot_eff_by_var(all_samples, 'true_pi0_momentum_mag', config, ana_eff_bins_equal=True, nbins_eff=30)
+    #plot_eff_by_var(all_samples, 'true_pi0_beam_costheta', config, ana_eff_bins_equal=True, nbins_eff=30)
+    
 def add_plot_labels(ax, pot, adj_y=0.025, title=str()):
     yrange = ax.get_ylim()
     usey = yrange[1] + adj_y*(yrange[1] - yrange[0]) #0.025, #0.045 for confusion matrix
     xrange = ax.get_xlim()
     usex = xrange[0]
-    prelim_label = r'ICARUS Work-in-Progress'
+    prelim_label = r'SBND Work-in-Progress'
     ax.text(x=usex, y=usey, s=prelim_label, fontsize=14, color='#d67a11')
     yrange = ax.get_ylim()
     usey = yrange[1] + adj_y*(yrange[1] - yrange[0]) #0.02, 0.045 for confusion matrix
@@ -114,13 +120,13 @@ Function to calculate selection effiency
 def calculate_efficiency(all_samples):
     
     # Retrieve the signal dataframe
-    sig_df = [d for d in all_samples if d['sample'] == 'signal'][0]['df']
-    
+    sig_df = [d for d in all_samples if d['sample'] == 'mc_nu'][0]['df']
+
     # Numerator
     total_signal_events = len(sig_df)
 
     # Denominator
-    selected_signal_events = len(sig_df[sig_df['reco_all_cuts_satisfied'] == 1])
+    selected_signal_events = len(sig_df[sig_df['reco_all_cut_sbnd_satisfied'] == 1])
     
     eff =  selected_signal_events / total_signal_events
     print(f'{eff:.4f}')
@@ -132,7 +138,7 @@ Function to calculate selection effiency for each cut, sequentially
 def calculate_efficiency_by_cut(all_samples, cuts, true_category = 'true_category'):
 
     # Retrieve signal dataframe
-    sig_df = [d for d in all_samples if d['sample'] == 'signal'][0]['df']
+    sig_df = [d for d in all_samples if d['sample'] == 'mc_nu'][0]['df']
 
     print(f'No Cut Efficiency: 1.000')
     for key, value in cuts.items():
@@ -221,23 +227,31 @@ def plot_eff_by_var(all_samples, var, config, ana_eff_bins_equal=True, nbins_eff
     vals = []
 
     # Retrieve signal dataframe
-    sig_df = [d for d in all_samples if d['sample'] == 'signal'][0]['df']
+    sig_df = [d for d in all_samples if d['sample'] == 'mc_nu'][0]['df']
     
     # Retrieve POT
-    pot = [d for d in all_samples if d['sample'] == 'signal'][0]['pot']
+    pot = [d for d in all_samples if d['sample'] == 'mc_nu'][0]['pot']
 
     # Filtering (keep in range of analyis bins)
     sig_df = sig_df[(sig_df[var] > config['variables'][var]['range'][0]) & (sig_df[var] < config['variables'][var]['range'][-1])]
 
     # Apply analyis binning
-    ana_bins_df = pd.DataFrame(config['variables'][var]['range'], columns=['bin']) # prepare overflow
+    if config['variables'][var]['binning_scheme'] == 'equal_width':
+        ana_bins = np.linspace(config['variables'][var]['range'][0], config['variables'][var]['range'][1], config['variables'][var]['nbins']+1)
+        ana_bins_df = pd.DataFrame(ana_bins, columns=['bin'])
+    elif config['variables'][var]['binning_scheme'] == 'custom':
+        ana_bins_df = pd.DataFrame(config['variables'][var]['range'], columns=['bin'])
+    
     sig_df['var_q_ana'] = pd.cut(sig_df[var], ana_bins_df['bin'])
 
     # Apply eff binning
     _nbins_eff = 0
     if ana_eff_bins_equal:
         _nbins_eff = config['variables'][var]['nbins']
-        sig_df['var_q_eff'] = pd.cut(sig_df[var], np.linspace(config['variables'][var]['range'][0], config['variables'][var]['range'][-1], _nbins_eff+1))
+        if config['variables'][var]['binning_scheme'] == 'equal_width':
+            sig_df['var_q_eff'] = pd.cut(sig_df[var], np.linspace(config['variables'][var]['range'][0], config['variables'][var]['range'][-1], _nbins_eff+1))
+        elif config['variables'][var]['binning_scheme'] == 'custom':
+            sig_df['var_q_eff'] = pd.cut(sig_df[var], config['variables'][var]['range'])
     else:
         _nbins_eff = nbins_eff
         sig_df['var_q_eff'] = pd.cut(sig_df[var], np.linspace(config['variables'][var]['range'][0], config['variables'][var]['range'][-1], _nbins_eff+1))
@@ -269,10 +283,11 @@ def plot_eff_by_var(all_samples, var, config, ana_eff_bins_equal=True, nbins_eff
         bxerr0s.append(name.left)
         bcs.append(name.mid)
         bxerr1s.append(name.right)
-        vals.append(len(group) / len(group[group['reco_all_cuts_satisfied'] == 1]))
-        hpass.SetBinContent(i+1, len(group[group['reco_all_cuts_satisfied'] == 1]))
+        vals.append(len(group[group['reco_all_cut_sbnd_satisfied'] == 1]) / len(group))
+        hpass.SetBinContent(i+1, len(group[group['reco_all_cut_sbnd_satisfied'] == 1]))
         htotal.SetBinContent(i+1, len(group))
 
+ 
     gr = TGraphAsymmErrors()
     gr.Divide(hpass, htotal, 'cl=0.683 b(1,1) mode')                                             
     for i in range(_nbins_eff):
@@ -293,9 +308,9 @@ def plot_eff_by_var(all_samples, var, config, ana_eff_bins_equal=True, nbins_eff
     ax2.tick_params(axis='y', colors='C0')
     #plt.title(r'Signal $\nu_{\mu}$ CC $\pi^{0}$', fontsize=16)
     plottitle=r'Signal $\nu_{\mu}$ CC $\pi^{0}$'
-    add_plot_labels(ax1,pot, adj_y=0.030, title=str())
+    add_plot_labels(ax1,pot, adj_y=0.01, title=str())
     plt.savefig('eff_vs_' + var + '.png')
-    #plt.savefig('eff_vs_' + var + '.pdf', format='pdf')
+    plt.savefig('eff_vs_' + var + '.pdf', format='pdf')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -14,6 +14,8 @@
 #define MUON_MASS 105.6583745
 #define PION_MASS 139.57039
 #define PROTON_MASS 938.2720813
+#define NEUTRON_MASS 939.5654133
+#define NUCLEON_MASS 938.9187473
 
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
 #include "sbnanaobj/StandardRecord/SRInteractionDLP.h"
@@ -110,9 +112,19 @@ namespace vars
      * an in-time flash.
      */
     template<class T>
-      double flash_icarus_satisfied(const T & obj) {return cuts::flash_cut(obj, {-0.5, 1.6});}
+    double flash_icarus_satisfied(const T & obj) {return cuts::flash_cut(obj, {-0.5, 1.6});}
     REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_icarus_satisfied, flash_icarus_satisfied);
 
+    /**
+     * @brief Variable for the flash status of the interaction.
+     * @details The flash status is determined upstream in the SPINE
+     * post-processing and is a requirement that the interaction be matched 
+     * to a valid flash.
+     */
+    template<class T>
+    double flash_sbnd_satisfied(const T & obj) {return cuts::valid_flashmatch(obj);}
+    REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_sbnd_satisfied, flash_sbnd_satisfied);
+    
     /**
      * @brief Variable for the fiducial volume status of the interaction.
      * @details The fiducial volume status is determined upstream in the SPINE

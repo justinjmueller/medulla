@@ -1,10 +1,17 @@
 [general]
-#output = "icarus_bnb_ccpi0_cv_vars_bugfix"
-output = "icarus_bnb_ccpi0_onbeam_offbeam_nobugfix"
-#output = "icarus_bnb_ccpi0_onbeam_cv_offbeam_dev"
+#output = "icarus_bnb_ccpi0_cvext"
+#output = "icarus_bnb_ccpi0_cv_vars"
+output = "icarus_bnb_ccpi0_onbeam_offbeam"
+
+[[sample]]
+name = "cvext"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/input*.flat.root"
+ismc = true
+disable = true
 
 [[sample]]
 name = "cv"
+#path = "/pnfs/icarus/persistent/users/mueller/mixed/simulation/nominal/input*.flat.root"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input*.flat.root"
 ismc = true
 disable = true
@@ -135,12 +142,17 @@ branch = [
     {name = "interaction_type", type = "mctruth"},
     {name = "category_topology_v1", type = "true"},
     {name = "category_topology_v2", type = "true"},
+    {name = "category_topology_v3", type = "true"},
+    {name = "category_topology_v4", type = "true"},
 
     # Interaction observables
     {name = "flash_time", type = "reco"},
     {name = "visible_energy", type = "both"},
     {name = "Q2", type = "both"},
+    {name = "W", type = "both"},
     {name = "dpT", type = "both"},
+    {name = "dpL", type = "both"},
+    {name = "pn", type = "both"},
     {name = "dphiT", type = "both"},
     {name = "dalphaT", type = "both"},
     {name = "vertex_x", type = "both"},
@@ -190,12 +202,17 @@ branch = [
     {name = "interaction_type", type = "mctruth"},
     {name = "category_topology_v1", type = "true"},
     {name = "category_topology_v2", type = "true"},
+    {name = "category_topology_v3", type = "true"},
+    {name = "category_topology_v4", type = "true"},
 
     # Interaction observables
     {name = "flash_time", type = "reco"},
     {name = "visible_energy", type = "both"},
     {name = "Q2", type = "both"},
+    {name = "W", type = "both"},
     {name = "dpT", type = "both"},
+    {name = "dpL", type = "both"},
+    {name = "pn", type = "both"},
     {name = "dphiT", type = "both"},
     {name = "dalphaT", type = "both"},
     {name = "vertex_x", type = "both"},
@@ -244,11 +261,16 @@ branch = [
     {name = "interaction_type", type = "mctruth"},
     {name = "category_topology_v1", type = "true"},
     {name = "category_topology_v2", type = "true"},
+    {name = "category_topology_v3", type = "true"},
+    {name = "category_topology_v4", type = "true"},
 
     # Interaction observables
     {name = "visible_energy", type = "both"},
     {name = "Q2", type = "both"},
+    {name = "W", type = "both"},
     {name = "dpT", type = "both"},
+    {name = "dpL", type = "both"},
+    {name = "pn", type = "both"},
     {name = "dphiT", type = "both"},
     {name = "dalphaT", type = "both"},
     {name = "vertex_x", type = "both"},
@@ -280,5 +302,5 @@ branch = [
     {name = "base_topology_satisfied", type = "reco"},
     {name = "leading_shower_energy_satisfied", type = "reco"},
     {name = "valid_pi0_mass_satisfied", type = "reco"},
-    {name = "all_cuts_satisfied", type = "reco"}
+    {name = "all_cut_icarus_satisfied", type = "reco"}
 ]

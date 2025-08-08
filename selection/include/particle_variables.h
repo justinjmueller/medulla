@@ -273,6 +273,40 @@ namespace pvars
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, calo_ke, calo_ke);
 
     /**
+     * @brief Variable for the calorimetric kinetic energy of the particle.
+     * @details The calorimetic kinetic energy is calculated upstream in the 
+     * SPINE reonstruction as the sum of energy of each spacepoint in the 
+     * particle.  This quanity is then scaled according to the pi0 mass
+     * distribution.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the calorimetric kinetic energy of the particle.
+     */
+    template<class T>
+    double calo_ke_pi0_adj_mc(const T & p)
+    {
+        return 1.0 * p.calo_ke;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, calo_ke_pi0_adj_mc, calo_ke_pi0_adj_mc);
+
+    /**
+     * @brief Variable for the calorimetric kinetic energy of the particle.
+     * @details The calorimetic kinetic energy is calculated upstream in the
+     * SPINE reonstruction as the sum of energy of each spacepoint in the
+     * particle.  This quanity is then scaled according to the pi0 mass
+     * distribution.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the calorimetric kinetic energy of the particle.
+     */
+    template<class T>
+    double calo_ke_pi0_adj_data(const T & p)
+    {
+        return 1.0 * p.calo_ke;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, calo_ke_pi0_adj_data, calo_ke_pi0_adj_data);
+
+    /**
      * @brief Variable for the calorimetric kinetic energy of the particle,
      * but adjusted by multiplicative scaling factors.
      * @details The calorimetric kinetic energy is calculated upstream in the
