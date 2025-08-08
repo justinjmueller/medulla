@@ -156,7 +156,7 @@ void sys::WeightReader::progress_bar(size_t entry, size_t total) const
 
     // Calculate and display fractional progress.
     float percent = (float)entry / total;
-    int percent_int = static_cast<int>(percent * 100.0);
+    int percent_int = static_cast<int>(percent*1000.0);
     if(percent_int == last_printed_percent && entry != total)
         return;
     last_printed_percent = percent_int;

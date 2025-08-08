@@ -80,6 +80,7 @@ target_link_libraries(common INTERFACE
     CAFAnaExperiment
     CAFAnaAnalysis
     SBNAnaCuts
+    SBNAnaVars
     shared
     framework
 )

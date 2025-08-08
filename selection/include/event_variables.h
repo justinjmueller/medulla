@@ -11,8 +11,10 @@
 #ifndef EVENT_VARIABLES_H
 #define EVENT_VARIABLES_H
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
+#include "sbnana/SBNAna/Vars/BNBVars.h"
 
 #include "framework.h"
+#include "utilities.h"
 
 /**
  * @namespace evar
@@ -135,8 +137,10 @@ namespace evar
      * @return the total POT from the spillinfo vector in the header of the record.
      */
     template<typename T>
-    double pot_from_spillinfo(const T & sr, std::vector<double> params={1.0})
+    double pot_from_spillinfo(const T & sr, std::vector<double> params)
     {
+        if(params.size() < 1)
+            params.push_back(1.0); // Default scale factor if not provided
         double pot = 0;
         for(const auto & spill : sr.hdr.bnbinfo)
         {
@@ -281,7 +285,11 @@ namespace evar
      * @details This variable is intended to provide the time of the flash
      * closest to the trigger time of the event. It is useful for producing a
      * "tophat"-style plot for locating the beam window and validating the
-     * normalization.
+     * normalization. This variable uses the `firsttime` field of the optical
+     * flash. The parameterized offset is used to account for the natural
+     * offset of the reconstructed flash time from the trigger time, which is
+     * not zero despite all systems being referenced to the trigger.
+     * 
      * @tparam T the top-level record.
      * @param sr the StandardRecord to apply the variable on.
      * @param params The offset to subtract from the time of the flash in the
@@ -296,17 +304,63 @@ namespace evar
             throw std::runtime_error("time_of_flash_closest_to_trigger requires at least one parameter for the offset.");
         }
         double t0 = sr.hdr.triggerinfo.trigger_within_gate;
-        double closest_flash_to_trigger = 10000;
-        for(const auto & flash : sr.opflashes)
-        {
-            if(std::abs(flash.firsttime - params[0]) < std::abs(closest_flash_to_trigger - params[0]))
-            {
-                closest_flash_to_trigger = flash.firsttime;
-            }
-        }
-        return closest_flash_to_trigger + t0;
+        size_t closest_flash_index = utilities::first_opflash_firsttime(sr, params[0]);
+        if(closest_flash_index == kNoMatch)
+            return kNoMatchValue;
+        else
+            return sr.opflashes[closest_flash_index].firsttime + t0;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Event, time_of_flash_closest_to_trigger, time_of_flash_closest_to_trigger);
+
+    /**
+     * @brief Variable for time of the flash closest to the trigger time.
+     * @details This variable is intended to provide the time of the flash
+     * closest to the trigger time of the event. It is useful for producing a
+     * "tophat"-style plot for locating the beam window and validating the
+     * normalization. This version uses the raw time of the flash instead of
+     * the 'firsttime' field. The parameterized offset is used to account for
+     * the natural offset of the reconstructed flash time from the trigger
+     * time, which is not zero despite all systems being referenced to the
+     * trigger.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @param params The offset to subtract from the time of the flash in the
+     * minimization process. The default value is 0.0, which means no offset
+     * @return the time of the flash closest to the trigger time.
+     */
+    template<typename T>
+    double time_of_flash_closest_to_trigger_rawtime(const T & sr, std::vector<double> params={0.0})
+    {
+        if(params.size() < 1)
+        {
+            throw std::runtime_error("time_of_flash_closest_to_trigger_rawtime requires at least one parameter for the offset.");
+        }
+        double t0 = sr.hdr.triggerinfo.trigger_within_gate;
+        size_t closest_flash_index = utilities::first_opflash_rawtime(sr, params[0]);
+        if(closest_flash_index == kNoMatch)
+            return kNoMatchValue;
+        else
+            return sr.opflashes[closest_flash_index].time + t0;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, time_of_flash_closest_to_trigger_rawtime, time_of_flash_closest_to_trigger_rawtime);
+
+    /**
+     * @brief Variable (wrapper) for the FoM2 (Figure of Merit 2) in the event.
+     * @details This variable is a wrapper for the FoM2 variable, which is
+     * defined as a SpillVar in the usual CAFAna parlance. It is used as a
+     * metric that roughly characterizes the overlap of the beam with the
+     * target and can be used as a cut to reject events that correspond to bad
+     * beam conditions.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the FoM2 value for the event.
+     */
+    template<typename T>
+    double bnb_fom2(const T & sr)
+    {
+        return ana::kSpillFoM2(&sr);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, bnb_fom2, bnb_fom2);
 }
 
 #endif

@@ -39,7 +39,7 @@ namespace pcuts
     template<class T>
     bool is_primary(const T & p)
     {
-        return PRIMARYFUNC(p) == 1;
+        return pvars::primary_classification(p) == 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, is_primary, is_primary);
 
@@ -61,6 +61,29 @@ namespace pcuts
     REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, containment_cut, containment_cut);
 
     /**
+     * @brief Place a size cut on the particle.
+     * @details This function places a size cut on the particle. The size
+     * of the particle is defined as the number of spacepoints in the
+     * particle. This cut is intended to be used to remove very small
+     * particles which are likely to be noise or reconstruction
+     * artifacts.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to check.
+     * @param params the parameters for the cut. In this case, this sets the
+     * minimum number of spacepoints required for the particle to pass
+     * the cut. Defaults to 20 spacepoints.
+     * @return true if the particle has a size above the threshold.
+     */
+    template<class T>
+    bool size_cut(const T & p, std::vector<double> params={20.0,})
+    {
+        if(params.size() != 1)
+            throw std::invalid_argument("size_cut requires exactly one parameter: the minimum number of spacepoints.");
+        return p.size > params[0];
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, size_cut, size_cut);
+
+    /**
      * @brief Check if the particle meets final state signal requirements.
      * @details must be primary and have an energy above threshold.
      * Muons must have a length of at least 50 cm (143.425 MeV), protons
@@ -74,10 +97,10 @@ namespace pcuts
     bool final_state_signal(const T & p)
     {
         bool passes(false);
-        if(is_primary(p))
+        if(pvars::primary_classification(p))
         {
             double energy(pvars::ke(p));
-            if((PIDFUNC(p) == 2 && energy > 143.425) || (PIDFUNC(p) != 2 && PIDFUNC(p) < 4 && energy > 25) || (PIDFUNC(p) == 4 && energy > 50))
+            if((pvars::pid(p) == 2 && energy > 143.425) || (pvars::pid(p) != 2 && pvars::pid(p) < 4 && energy > 25) || (pvars::pid(p) == 4 && energy > 50))
                 passes = true;
         }
         return passes;
@@ -99,7 +122,7 @@ namespace pcuts
     {
         utilities::three_vector start_point = {p.start_point[0], p.start_point[1], p.start_point[2]};
         utilities::three_vector end_point = {p.end_point[0], p.end_point[1], p.end_point[2]};
-        return PIDFUNC(p) > 1 && utilities::near_boundary(start_point) && utilities::near_boundary(end_point);
+        return pvars::pid(p) > 1 && utilities::near_boundary(start_point) && utilities::near_boundary(end_point);
     }
     REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, throughgoing, throughgoing);
 
@@ -117,9 +140,31 @@ namespace pcuts
     template<class T>
     bool is_pid(const T & p, std::vector<double> params={0.0,})
     {
-        return PIDFUNC(p) == static_cast<size_t>(params[0]);
+        return pvars::pid(p) == static_cast<size_t>(params[0]);
     }
     REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, is_pid, is_pid);
+
+    /**
+     * @brief Check if the particle is of the given semantic type.
+     * @details This function checks if the particle is of the given semantic
+     * type. The semantic type is determined by the shape variable, which is
+     * assigned upstream in SPINE based on the pixel-level semantic
+     * segmentation.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to check.
+     * @param params the parameters for the cut. In this case, this sets the
+     * semantic type to check against. Defaults to 0, which corresponds to
+     * a shower.
+     * @return true if the particle is of the given semantic type.
+     */
+    template<class T>
+    bool is_semantic_type(const T & p, std::vector<double> params={0.0,})
+    {
+        if(params.size() != 1)
+            throw std::invalid_argument("is_semantic_type requires exactly one parameter: the semantic type to check against.");
+        return pvars::semantic_type(p) == static_cast<int>(params[0]);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, is_semantic_type, is_semantic_type);
 
     /**
      * @brief Check if the particle is in-time.
@@ -132,7 +177,7 @@ namespace pcuts
     template<class T>
     bool in_time(const T & p, std::vector<double> params={0.0,})
     {
-        return 0.001*p.t > params[0] && 0.001*p.t < params[1];
+      return 0.001*p.t > params[0] && 0.001*p.t < params[1];
     }
     REGISTER_CUT_SCOPE(RegistrationScope::TrueParticle, in_time, in_time);
 }

@@ -1,10 +1,10 @@
 [input]
-path = 'icarus_disappearance.root'
-weights = '/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input*.flat.root'
+path = 'icarus_disappearance_08032025.root'
+weights = '/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/input*.flat.root'
 use_additional_hash = true
 
 [output]
-path = 'icarus_disappearance_withsys.root'
+path = 'icarus_disappearance_08032025_sys.root'
 histogram_destination = 'variations/'
 
 [[sysvar]]
@@ -12,13 +12,14 @@ name = 'reco_visible_energy'
 bins = [25, 0, 3]
 
 [variations]
-keys = ['nominal', 'var00', 'var01', 'var02', 'var03m', 'var03p', 'var04', 'var05', 'var06', 'var07', 'var09m', 'var09p', 'var10m', 'var10p', 'var11']
+keys = ['nominal', 'var00', 'var01', 'var02', 'var03m', 'var03p', 'var04', 'var05', 'var06', 'var07', 'var09m', 'var09p', 'var10m', 'var10p', 'var11', 'var12m', 'var12p', 'var13m', 'var13p']
 origin = 'events/'
 tree = 'selected'
 result_destination = 'detsys_results/'
 variable = 'reco_visible_energy'
-bins = [10, 0, 3]
-nuniverses = 100
+variable_length = true
+bins = [0.3, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0]
+nuniverses = 10
 
 [[tree]]
 origin = 'events/nominal/signal'
@@ -27,23 +28,53 @@ name = 'signal'
 action = 'copy'
 
 [[tree]]
-origin = 'events/nominal/selected'
+origin = 'events/nominal/signal_exposure'
 destination = 'events/nominal/'
+name = 'signal_exposure'
+action = 'copy'
+
+[[tree]]
+origin = 'events/cvext/selected'
+destination = 'events/full/'
 name = 'selected'
 action = 'add_weights'
 table_types = ['multisim', 'multisigma', 'variation']
 
-#[[tree]]
-#origin = 'events/offbeam/selected'
-#destination = 'events/offbeam/'
-#name = 'selected'
-#action = 'copy'
+[[tree]]
+origin = 'events/cvext/selected_exposure'
+destination = 'events/full/'
+name = 'selected_exposure'
+action = 'copy'
 
-#[[tree]]
-#origin = 'events/onbeam/selected'
-#destination = 'events/onbeam/'
-#name = 'selected'
-#action = 'copy'
+[[tree]]
+origin = 'events/nominal/selected_exposure'
+destination = 'events/nominal/'
+name = 'selected_exposure'
+action = 'copy'
+
+[[tree]]
+origin = 'events/offbeam/selected'
+destination = 'events/offbeam/'
+name = 'selected'
+action = 'copy'
+
+[[tree]]
+origin = 'events/offbeam/selected_exposure'
+destination = 'events/offbeam/'
+name = 'selected_exposure'
+action = 'copy'
+
+[[tree]]
+origin = 'events/onbeam/selected'
+destination = 'events/onbeam/'
+name = 'selected'
+action = 'copy'
+
+[[tree]]
+origin = 'events/onbeam/selected_exposure'
+destination = 'events/onbeam/'
+name = 'selected_exposure'
+action = 'copy'
 
 [[sys]]
 name = 'var00'
@@ -77,7 +108,7 @@ name = 'var03'
 type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1, 2, 3]
-scale = [3, 2, 1, 1, 1, 2, 3]
+scale = [1.0, 0.666666, 0.333333, 1, 0.333333, 0.666666, 1.0]
 ordinate = 'nominal'
 points = ['var03m', 'var03m', 'var03m', 'nominal', 'var03p', 'var03p', 'var03p']
 
@@ -143,6 +174,24 @@ nsigma = [-3, -2, -1, 0, 1, 2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
 ordinate = 'nominal'
 points = ['var11', 'var11', 'var11', 'nominal', 'var11', 'var11', 'var11']
+
+[[sys]]
+name = 'var12'
+type = 'variation'
+index = -1
+nsigma = [-3, -2, -1, 0, 1, 2, 3]
+scale = [1.5, 1.0, 0.5, 1, 0.5, 1.0, 1.5]
+ordinate = 'nominal'
+points = ['var12m', 'var12m', 'var12m', 'nominal', 'var12p', 'var12p', 'var12p']
+
+[[sys]]
+name = 'var13'
+type = 'variation'
+index = -1
+nsigma = [-3, -2, -1, 0, 1, 2, 3]
+scale = [3, 2, 1, 1, 1, 2, 3]
+ordinate = 'nominal'
+points = ['var13m', 'var13m', 'var13m', 'nominal', 'var13p', 'var13p', 'var13p']
 
 [[sys]]
 name = "ZExpPCAWeighter_SBNNuSyst_ZExpPCA_multisigma_b1"
@@ -464,6 +513,12 @@ type = "multisim"
 index = 128
 
 [[sys]]
+name = "GENIEReWeight_SBNNuSyst_GENIE_multisigma_FracPN_CCMEC"
+type = "multisigma"
+index = 129
+nsigma = [-1, 1, -2, 2, -3, 3]
+
+[[sys]]
 name = "GENIEReWeight_SBN_v1_multisigma_NormNCMEC"
 type = "multisigma"
 index = 8
@@ -623,6 +678,12 @@ nsigma = [0, 1]
 name = "FSIReweight_SBNNuSyst_FSI_G4BCReweight_multisigma_FSIReweight"
 type = "multisigma"
 index = 190
+nsigma = [0, 1]
+
+[[sys]]
+name = "GENIEReWeight_SBNNuSyst_LQCDZExpFit_multisim_ZExpAVariationResponse"
+type = "multisigma"
+index = 191
 nsigma = [0, 1]
 
 [[sys]]

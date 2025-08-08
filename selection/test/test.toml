@@ -16,10 +16,22 @@ name = "test_event"
 sim_only = false
 mode = "event"
 cut = [
-    {name = "no_cut", type = "event"}
+    {name = "global_trigger_time_cut", type = "event", parameters=[0, 1000]}
 ]
 branch = [
     {name = "ntrue", type = "event"}
+]
+
+[[tree]]
+name = "test_reco_with_event_cut"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "global_trigger_time_cut", type = "event", parameters=[0, 1000]},
+    {name = "no_cut", type = "reco"}
+]
+branch = [
+    {name = "vertex_x", type = "both"},
 ]
 
 [[tree]]

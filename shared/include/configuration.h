@@ -128,12 +128,12 @@ namespace cfg
         /**
          * @brief Get the requested boolean field from the ConfigurationTable.
          * @details This function gets the requested boolean field from the
-         * ConfigurationTable. If the field is not present, the function throws
-         * an exception.
+         * ConfigurationTable. If the field is not present, the provided
+         * default value is returned instead of throwing an exception.
          * @param field The name of the field that is requested.
-         * @param default_value The default value to return if the field is not present.
+         * @param default_value The default value to return if the field is not
+         * present.
          * @return The value of the requested boolean field.
-         * @throw ConfigurationError
          */
         bool get_bool_field(const std::string & field, bool default_value) const;
 
@@ -147,6 +147,18 @@ namespace cfg
          * @throw ConfigurationError
          */
         std::string get_string_field(const std::string & field) const;
+
+        /**
+         * @brief Get the requested string field from the ConfigurationTable.
+         * @details This function gets the requested string field from the
+         * ConfigurationTable. If the field is not present, the provided
+         * default value is returned instead of throwing an exception.
+         * @param field The name of the field that is requested.
+         * @param default_value The default value to return if the field is not
+         * present.
+         * @return The value of the requested string field.
+         */
+        std::string get_string_field(const std::string & field, const std::string & default_value) const;
 
         /**
          * @brief Get a list of all strings matching the requested field name.

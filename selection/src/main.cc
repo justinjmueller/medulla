@@ -23,6 +23,7 @@
 
 #include "configuration.h"
 #include "framework.h"
+#include "scorers.h"
 #include "cuts.h"
 //#include "pi0ana/cuts_ccpi0ana.h"
 #include "pi0ana/cuts_ncpi0ana.h"
@@ -32,8 +33,23 @@
 #include "mctruth.h"
 #include "event_cuts.h"
 #include "event_variables.h"
+#include "spill_cuts.h"
 #include "selectors.h"
-#include "include/analysis.h"
+#include "analysis.h"
+
+std::shared_ptr<VarFn<RParticleType>> pvars::primfn = std::make_shared<VarFn<RParticleType>>(pvars::default_primary_classification<RParticleType>);
+std::shared_ptr<VarFn<RParticleType>> pvars::pidfn = std::make_shared<VarFn<RParticleType>>(pvars::default_pid<RParticleType>);
+
+template<typename T>
+void set_fcn(std::shared_ptr<VarFn<T>> & fcn, const std::string & name)
+{
+    std::string var_name;
+    if constexpr(std::is_same_v<T, RParticleType>)
+        var_name = "reco_particle_" + name;
+    auto factory = VarFactoryRegistry<T>::instance().get(var_name);
+    auto var_fn = factory({});
+    fcn = std::make_shared<VarFn<T>>(var_fn);
+}
 
 int main(int argc, char * argv[])
 {
@@ -53,6 +69,10 @@ int main(int argc, char * argv[])
 
         // SpectrumLoader
         ana::Analysis analysis(config.get_string_field("general.output"));
+
+        // Set the PID functions.
+        set_fcn(pvars::primfn, config.get_string_field("general.primfn", "default_primary_classification"));
+        set_fcn(pvars::pidfn, config.get_string_field("general.pidfn", "default_pid"));
 
         // Configure the samples in the analysis
         std::vector<cfg::ConfigurationTable> samples = config.get_subtables("sample");
@@ -115,6 +135,21 @@ int main(int argc, char * argv[])
                     }
                 }
                 analysis.AddTreeForSample(sample.get_string_field("name"), tree.get_string_field("name"), vars_map, tree.get_bool_field("sim_only"));
+
+                // Add the exposure tree.
+                if(tree.get_bool_field("add_exposure", false))
+                {
+                    // Construct the exposure variables.
+                    std::map<std::string, ana::SpillMultiVar> exposure_vars_map;
+                    std::vector<NamedSpillMultiVar> exposure_vars = construct_exposure_vars(cuts);
+
+                    // Add the exposure variables to the map.
+                    for(const auto & exposure_var : exposure_vars)
+                        exposure_vars_map.try_emplace(exposure_var.first, exposure_var.second);
+
+                    // Add the exposure tree for the sample.
+                    analysis.AddTreeForSample(sample.get_string_field("name"), tree.get_string_field("name")+"_exposure", exposure_vars_map, tree.get_bool_field("sim_only"));
+                }
             }
         }
 

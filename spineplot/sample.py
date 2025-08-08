@@ -251,17 +251,20 @@ class Sample:
         # which is used to build a list of Systematic objects to
         # combine.
         for recipe in recipes:
+            # Exclude the "nsigma" branches
+            exclude = ['_nsigma', '_sigma']
+            exclude_pat = '|'.join(re.escape(x) for x in exclude)
+
+            # Compile the regex pattern for matching the systematic
             pattern = recipe['pattern']
-            exclude = '_nsigma'
-            #regxp = re.compile(recipe['pattern'])
-            regxp = re.compile(rf'^(?!.*{exclude}).*{pattern}.*$')
+            regxp = re.compile(rf'^(?!.*(?:{exclude_pat})).*{pattern}.*$')
             systematics = [v for k,v in self._systematics.items() if regxp.search(k)]
-                        
+
             #print(self._name)
             #print(recipe)
             #print(systematics)
             #print('')
-            
+
             # If there are no systematics to combine, skip the recipe.
             if len(systematics) == 0:
                 continue

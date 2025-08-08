@@ -30,6 +30,7 @@ using MCTruth = caf::Proxy<caf::SRTrueInteraction>;
 using TParticleType = caf::Proxy<caf::SRParticleTruthDLP>;
 using RParticleType = caf::Proxy<caf::SRParticleDLP>;
 using EventType = caf::Proxy<caf::StandardRecord>;
+using SpillType = caf::Proxy<caf::SRBNBInfo>;
 
 using NamedSpillMultiVar = std::pair<std::string, ana::SpillMultiVar>;
 
@@ -185,7 +186,9 @@ inline std::function<ValueT(const EventT&)> bind(const std::vector<double>& pars
  * This is used in the registration macros to determine which type of object
  * the cut or variable can be reasonably applied to.
  */
-enum class RegistrationScope { True, Reco, Both, MCTruth, TrueParticle, RecoParticle, BothParticle, Event };
+enum class RegistrationScope { True, Reco, Both, MCTruth,
+                               TrueParticle, RecoParticle, BothParticle,
+                               Event, Spill };
 
 // Register a cut with scope, auto‐detecting its signature
 #define REGISTER_CUT_SCOPE(scope, name, fn)                                                \
@@ -211,6 +214,10 @@ namespace                                                                       
         if constexpr((scope)==RegistrationScope::Event)                                    \
             CutFactoryRegistry<EventType>::instance().register_fn(                         \
                 "event_" #name, bind<+fn<EventType>, EventType, bool>                      \
+            );                                                                             \
+        if constexpr((scope)==RegistrationScope::Spill)                                    \
+            CutFactoryRegistry<SpillType>::instance().register_fn(                         \
+                "spill_" #name, bind<+fn<SpillType>, SpillType, bool>                      \
             );                                                                             \
         return true;                                                                       \
     }();                                                                                   \
@@ -323,6 +330,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
  * complementary cuts are applied.
  * @param pcuts The callable that implements the cuts on the single-particles.
  * @param var The callable that implements the variable on the selected branch.
+ * @param event_cut The callable that implements the event cut.
  * @param ismc A boolean indicating whether the data is MC (true) or not (false).
  * @return A SpillMultiVar object that applies the cuts and computes the variable.
  */
@@ -332,6 +340,7 @@ ana::SpillMultiVar spill_multivar_helper(
     const std::optional<CutFn<CompsOn>> & comps,
     const CutFn<PCutsOn> & pcuts,
     const VarFn<VarOn> & var,
+    const CutFn<EventType> & event_cut,
     const bool ismc = true
 );
 
@@ -347,5 +356,18 @@ ana::SpillMultiVar spill_multivar_helper(
  * variable.
  */
 ana::SpillMultiVar spill_multivar_helper(const CutFn<EventType> & cut, const VarFn<EventType> & var);
+
+/**
+ * @brief Helper method for constructing a set of SpillMultiVar objects that
+ * track the exposure information for a given set of cuts.
+ * @details Some cuts also need to decrement exposure information, e.g., the
+ * detector was "not sensitive" to the interaction for some detector/spill
+ * related reason. This function constructs a set of SpillMultiVar objects
+ * that track the exposure information for a given set of cuts.
+ * @param cuts The cuts that are applied in the selection.
+ * @return A vector of NamedSpillMultiVar objects that track the exposure
+ * information for the given cuts.
+ */
+std::vector<NamedSpillMultiVar> construct_exposure_vars(const std::vector<cfg::ConfigurationTable> & cuts);
 
 #endif // FRAMEWORK_H
