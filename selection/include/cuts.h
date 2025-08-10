@@ -159,7 +159,7 @@ namespace cuts
      * observed in data and simulation.
      */
     template<class T>
-    bool flash_cut(const T & obj, std::vector<double> params={})
+    bool flash_cut(const T & obj, std::vector<double> & params={})
     {
         if(!valid_flashmatch(obj))
             return false;
@@ -187,7 +187,7 @@ namespace cuts
      * particle species.
      */
     template<class T>
-    bool single_particle_multiplicity(const T & obj, size_t particle_species, std::vector<double> params={})
+    bool single_particle_multiplicity(const T & obj, size_t particle_species, std::vector<double> & params={})
     {
         size_t count(0);
         for(const auto & p : obj.particles)
@@ -212,7 +212,7 @@ namespace cuts
      * @return true if the interaction has a single primary photon.
      */
     template<class T>
-    bool single_photon(const T & obj, std::vector<double> params={25.0,})
+    bool single_photon(const T & obj, std::vector<double> & params={25.0,})
     {
         return single_particle_multiplicity(obj, 0, params);
     }
@@ -230,7 +230,7 @@ namespace cuts
      * @return true if the interaction has a single primary electron.
      */
     template<class T>
-    bool single_electron(const T & obj, std::vector<double> params={25.0,})
+    bool single_electron(const T & obj, std::vector<double> & params={25.0,})
     {
         return single_particle_multiplicity(obj, 1, params);
     }
@@ -249,7 +249,7 @@ namespace cuts
      * @return true if the interaction has a single primary muon.
      */
     template<class T>
-    bool single_muon(const T & obj, std::vector<double> params={143.425,})
+    bool single_muon(const T & obj, std::vector<double> & params={143.425,})
     {
         return single_particle_multiplicity(obj, 2, params);
     }
@@ -267,7 +267,7 @@ namespace cuts
      * @return true if the interaction has a single primary charged pion.
      */
     template<class T>
-    bool single_pion(const T & obj, std::vector<double> params={25.0,})
+    bool single_pion(const T & obj, std::vector<double> & params={25.0,})
     {
         return single_particle_multiplicity(obj, 3, params);
     }
@@ -285,7 +285,7 @@ namespace cuts
      * @return true if the interaction has a single primary proton.
      */
     template<class T>
-    bool single_proton(const T & obj, std::vector<double> params={50.0,})
+    bool single_proton(const T & obj, std::vector<double> & params={50.0,})
     {
         return single_particle_multiplicity(obj, 4, params);
     }
@@ -306,7 +306,7 @@ namespace cuts
      * specified particle species.
      */
     template<class T>
-    bool nonzero_particle_multiplicity(const T & obj, size_t particle_species, std::vector<double> params={})
+    bool nonzero_particle_multiplicity(const T & obj, size_t particle_species, std::vector<double> & params={})
     {
         size_t count(0);
         for(const auto & p : obj.particles)
@@ -333,7 +333,7 @@ namespace cuts
      * @return true if the interaction has a nonzero primary photon.
      */
     template<class T>
-    bool no_photons(const T & obj, std::vector<double> params={25.0,})
+    bool no_photons(const T & obj, std::vector<double> & params={25.0,})
     {
         return !nonzero_particle_multiplicity(obj, 0, params);
     }
@@ -354,7 +354,7 @@ namespace cuts
      * @return true if the interaction has a nonzero primary electron.
      */
     template<class T>
-    bool no_electrons(const T & obj, std::vector<double> params={25.0,})
+    bool no_electrons(const T & obj, std::vector<double> & params={25.0,})
     {
         return !nonzero_particle_multiplicity(obj, 1, params);
     }
@@ -376,7 +376,7 @@ namespace cuts
      */
 
     template<class T>
-    bool no_muons(const T & obj, std::vector<double> params={143.425,})
+    bool no_muons(const T & obj, std::vector<double> & params={143.425,})
     {
         return !nonzero_particle_multiplicity(obj, 2, params);
     }
@@ -396,7 +396,7 @@ namespace cuts
      * @return true if the interaction has a nonzero primary charged pion.
      */
     template<class T>
-    bool no_charged_pions(const T & obj, std::vector<double> params={25.0,})
+    bool no_charged_pions(const T & obj, std::vector<double> & params={25.0,})
     {
         return !nonzero_particle_multiplicity(obj, 3, params);
     }
@@ -416,7 +416,7 @@ namespace cuts
      * @return true if the interaction has a nonzero primary proton.
      */
     template<class T>
-    bool no_protons(const T & obj, std::vector<double> params={50.0,})
+    bool no_protons(const T & obj, std::vector<double> & params={50.0,})
     {
         return !nonzero_particle_multiplicity(obj, 4, params);
     }
