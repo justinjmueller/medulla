@@ -545,7 +545,7 @@ namespace vars
      * @return the multiplicity of primary photons in the interaction.
      */
     template<class T>
-    double photon_multiplicity(const T & obj, std::vector<double> & params={25.0,})
+    double photon_multiplicity(const T & obj, std::vector<double> params={25.0,})
     {
         size_t count(0);
         for(const auto & p : obj.particles)
@@ -573,7 +573,7 @@ namespace vars
      * @return the multiplicity of primary electrons in the interaction.
      */
     template<class T>
-    double electron_multiplicity(const T & obj, std::vector<double> & params={25.0,})
+    double electron_multiplicity(const T & obj, std::vector<double> params={25.0,})
     {
         size_t count(0);
         for(const auto & p : obj.particles)
@@ -601,7 +601,7 @@ namespace vars
      * @return the multiplicity of primary muons in the interaction.
      */
     template<class T>
-    double muon_multiplicity(const T & obj, std::vector<double> & params={25.0,})
+    double muon_multiplicity(const T & obj, std::vector<double> params={25.0,})
     {
         size_t count(0);
         for(const auto & p : obj.particles)
@@ -629,7 +629,7 @@ namespace vars
      * @return the multiplicity of primary pions in the interaction.
      */
     template<class T>
-    double pion_multiplicity(const T & obj, std::vector<double> & params={25.0,})
+    double pion_multiplicity(const T & obj, std::vector<double> params={25.0,})
     {
         size_t count(0);
         for(const auto & p : obj.particles)
@@ -657,7 +657,7 @@ namespace vars
      * @return the multiplicity of primary protons in the interaction.
      */
     template<class T>
-    double proton_multiplicity(const T & obj, std::vector<double> & params={25.0,})
+    double proton_multiplicity(const T & obj, std::vector<double> params={25.0,})
     {
         size_t count(0);
         for(const auto & p : obj.particles)

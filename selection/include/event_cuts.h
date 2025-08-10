@@ -66,7 +66,7 @@ namespace ecut
      * that is not associated with a CRT hit, false otherwise.
      */
     template<typename T>
-    bool crtpmt_veto(const T & sr, std::vector<double> & params={})
+    bool crtpmt_veto(const T & sr, std::vector<double> params={})
     {
         if(params.size() < 2)
         {
@@ -93,7 +93,7 @@ namespace ecut
      * @return true if the global trigger time is within the specified interval,
      */
     template<typename T>
-    bool global_trigger_time_cut(const T & sr, std::vector<double> & params={})
+    bool global_trigger_time_cut(const T & sr, std::vector<double> params={})
     {
         if(params.empty())
         {
@@ -175,7 +175,7 @@ namespace ecut
      * @return true if the FoM2 value is above the threshold, false otherwise.
      */
     template<typename T>
-    bool bnb_fom2_cut(const T & sr, std::vector<double> & params={})
+    bool bnb_fom2_cut(const T & sr, std::vector<double> params={})
     {
         if(params.empty())
         {

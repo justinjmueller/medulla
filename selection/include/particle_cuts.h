@@ -75,7 +75,7 @@ namespace pcuts
      * @return true if the particle has a size above the threshold.
      */
     template<class T>
-    bool size_cut(const T & p, std::vector<double> & params={20.0,})
+    bool size_cut(const T & p, std::vector<double> params={20.0,})
     {
         if(params.size() != 1)
             throw std::invalid_argument("size_cut requires exactly one parameter: the minimum number of spacepoints.");
@@ -138,7 +138,7 @@ namespace pcuts
      * a photon.
      */
     template<class T>
-    bool is_pid(const T & p, std::vector<double> & params={0.0,})
+    bool is_pid(const T & p, std::vector<double> params={0.0,})
     {
         return pvars::pid(p) == static_cast<size_t>(params[0]);
     }
@@ -158,7 +158,7 @@ namespace pcuts
      * @return true if the particle is of the given semantic type.
      */
     template<class T>
-    bool is_semantic_type(const T & p, std::vector<double> & params={0.0,})
+    bool is_semantic_type(const T & p, std::vector<double> params={0.0,})
     {
         if(params.size() != 1)
             throw std::invalid_argument("is_semantic_type requires exactly one parameter: the semantic type to check against.");

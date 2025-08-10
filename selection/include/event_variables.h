@@ -85,7 +85,7 @@ namespace evar
      * @return double the multiplicity of in-time interactions in the event.
      */
     template<typename T>
-    double nintime(const T & sr, std::vector<double> & params={0.0, 1.6})
+    double nintime(const T & sr, std::vector<double> params={0.0, 1.6})
     {
         size_t count = 0;
         for(const auto & interaction : sr.dlp_true)
@@ -137,7 +137,7 @@ namespace evar
      * @return the total POT from the spillinfo vector in the header of the record.
      */
     template<typename T>
-    double pot_from_spillinfo(const T & sr, std::vector<double> & params={})
+    double pot_from_spillinfo(const T & sr, std::vector<double> params={})
     {
         if(params.size() < 1)
             params.push_back(1.0); // Default scale factor if not provided
@@ -297,7 +297,7 @@ namespace evar
      * @return the time of the flash closest to the trigger time.
      */
     template<typename T>
-    double time_of_flash_closest_to_trigger(const T & sr, std::vector<double> & params={0.0})
+    double time_of_flash_closest_to_trigger(const T & sr, std::vector<double> params={0.0})
     {
         if(params.size() < 1)
         {
@@ -329,7 +329,7 @@ namespace evar
      * @return the time of the flash closest to the trigger time.
      */
     template<typename T>
-    double time_of_flash_closest_to_trigger_rawtime(const T & sr, std::vector<double> & params={0.0})
+    double time_of_flash_closest_to_trigger_rawtime(const T & sr, std::vector<double> params={0.0})
     {
         if(params.size() < 1)
         {
