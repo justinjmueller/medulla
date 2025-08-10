@@ -20,9 +20,7 @@
 #include "framework.h"
 #include "scorers.h"
 #include "cuts.h"
-#include "muon2024/cuts_muon2024.h"
 #include "variables.h"
-#include "muon2024/variables_muon2024.h"
 #include "mctruth.h"
 #include "event_cuts.h"
 #include "event_variables.h"
@@ -59,6 +57,75 @@ int main(int argc, char * argv[])
     {
         // Load the configuration file
         config.set_config(argv[1]);
+
+        // Construct the category function.
+        if(config.has_field("category"))
+        {
+            // Map of category enumeration to cut functions.
+            std::map<double, CutFn<TType>> category_cut_functions;
+
+            // Iterate over the categories and construct the cut functions.
+            std::vector<cfg::ConfigurationTable> categories(config.get_subtables("category"));
+            for(const auto & category : categories)
+            {
+                std::vector<CutFn<TType>> true_cut_functions;
+                std::vector<cfg::ConfigurationTable> cuts = category.get_subtables("cuts");
+                for(const auto & cut : cuts)
+                {
+                    // Retrieve the cut name and check for negation.
+                    std::string name = cut.get_string_field("name");
+                    bool invert = false;
+                    if(name.at(0) == '!')
+                    {
+                        invert = true;
+                        name = name.substr(1); // Remove the negation character.
+                    }
+                    name = "true_" + name;
+
+                    // Load parameters (if any) for the cut.
+                    std::vector<double> params;
+                    if(cut.has_field("parameters"))
+                        params = cut.get_double_vector("parameters");
+
+                    auto factory = CutFactoryRegistry<TType>::instance().get(name);
+                    if(invert)
+                    {
+                        // If the cut is inverted, we need to negate the function.
+                        auto fn = factory(params);
+                        true_cut_functions.push_back([fn](const TType & e) { return !fn(e); });
+                    }
+                    else
+                        // Otherwise, we just add the function as is.
+                        true_cut_functions.push_back(factory(params));
+                }
+                // Compose a common cut function for the category.
+                auto category_cut = [true_cut_functions](const TType & e) -> bool {
+                    return std::all_of(true_cut_functions.begin(), true_cut_functions.end(), [&e](auto & f) { return f(e); });
+                };
+                category_cut_functions.try_emplace(
+                    category_cut_functions.size(),
+                    category_cut
+                );
+            }
+
+            // Create the category function.
+            auto category_fn = [category_cut_functions](const TType & e) -> double
+            {
+                // Iterate over the category cut functions and return the first
+                // one that returns true.
+                for(const auto & [category, cut_fn] : category_cut_functions)
+                {
+                    if(cut_fn(e))
+                        return category; // Return the category number.
+                }
+                return PLACEHOLDERVALUE; // No category matched.
+            };
+            // Register the category function.
+            VarFactoryRegistry<TType>::instance().register_fn(
+                "true_category",
+                [category_fn](const std::vector<double>&) -> VarFn<TType> { return category_fn; }
+            );
+        }
 
         // SpectrumLoader
         ana::Analysis analysis(config.get_string_field("general.output"));

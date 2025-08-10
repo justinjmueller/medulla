@@ -3,6 +3,81 @@ output = "icarus_disappearance"
 primfn = "default_primary_classification"
 pidfn = "default_pid"
 
+[[category]] # 0 : Contained, fiducial, single muon, single proton
+cuts = [
+    { name = "neutrino"        },
+    { name = "fiducial_cut"    },
+    { name = "containment_cut" },
+    { name = "no_photons",       parameters = [25.0] },
+    { name = "no_electrons",     parameters = [25.0] },
+    { name = "no_charged_pions", parameters = [25.0] },
+    { name = "single_muon",      parameters = [143.425] },
+    { name = "single_proton",    parameters = [50.0] },
+]
+
+[[category]] # 1 : Single muon, single proton
+cuts = [
+    { name = "neutrino" },
+    { name = "no_photons",       parameters = [25.0] },
+    { name = "no_electrons",     parameters = [25.0] },
+    { name = "no_charged_pions", parameters = [25.0] },
+    { name = "single_muon",      parameters = [143.425] },
+    { name = "single_proton",    parameters = [50.0] },
+]
+
+[[category]] # 2 : Contained, fiducial, single muon, multiple protons
+cuts = [
+    { name = "neutrino"        },
+    { name = "fiducial_cut"    },
+    { name = "containment_cut" },
+    { name = "no_photons",       parameters = [25.0] },
+    { name = "no_electrons",     parameters = [25.0] },
+    { name = "no_charged_pions", parameters = [25.0] },
+    { name = "single_muon",      parameters = [143.425] },
+    { name = "!no_protons",      parameters = [50.0] },
+]
+
+[[category]] # 3 : Single muon, multiple protons
+cuts = [
+    { name = "neutrino" },
+    { name = "no_photons",       parameters = [25.0] },
+    { name = "no_electrons",     parameters = [25.0] },
+    { name = "no_charged_pions", parameters = [25.0] },
+    { name = "single_muon",      parameters = [143.425] },
+    { name = "!no_protons",      parameters = [50.0] },
+]
+
+[[category]] # 4 : Contained, fiducial, single muon
+cuts = [
+    { name = "neutrino"        },
+    { name = "fiducial_cut"    },
+    { name = "containment_cut" },
+    { name = "single_muon", parameters = [143.425] }, 
+]
+
+[[category]] # 5 : Single muon
+cuts = [
+    { name = "neutrino" },
+    { name = "single_muon", parameters = [143.425] }, 
+]
+
+[[category]] # 6 : Neutrino, charged current
+cuts = [
+    { name = "neutrino" },
+    { name = "iscc"     },
+]
+
+[[category]] # 7 : Neutrino, neutral current
+cuts = [
+    { name = "neutrino" },
+    { name = "!iscc"    },
+]
+
+[[category]] # 8 : Cosmic
+cuts = [
+    { name = "!neutrino" },
+]
+
 [[sample]]
 name = "nominal"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input*.flat.root"
@@ -162,7 +237,6 @@ branch = [
     { name = "pdg",                     type = "mctruth" },
     { name = "interaction_type",        type = "mctruth" },
     { name = "category",                type = "true"    },
-    { name = "category_no_containment", type = "true"    },
     { name = "neutrino_energy",         type = "mctruth" },
     { name = "visible_energy",          type = "both"    },
     { name = "visible_energy_calosub",  type = "both"    },

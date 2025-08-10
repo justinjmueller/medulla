@@ -1,6 +1,23 @@
 [general]
 output = "example"
 
+[[category]] # 0 : Neutrino, charged current
+cuts = [
+    { name = "neutrino" },
+    { name = "iscc"     },
+]
+
+[[category]] # 1 : Neutrino, neutral current
+cuts = [
+    { name = "neutrino" },
+    { name = "!iscc"    },
+]
+
+[[category]] # 2 : Cosmic
+cuts = [
+    { name = "!neutrino" },
+]
+
 [[sample]]
 name = "simulation"
 path = "/pnfs/sbnd/persistent/users/mueller/v10_04_07/input*.flat.root"
