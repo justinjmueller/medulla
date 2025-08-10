@@ -321,8 +321,8 @@ cut = [
 branch = [
     # Interaction-level truth branches
     { name = "neutrino_id",            type = "true"    },
-    { name = "containment",            type = "both"    },
-    { name = "fiducial",               type = "both"    },
+    { name = "containment_cut",        type = "both"    },
+    { name = "fiducial_cut",           type = "both"    },
     { name = "baseline",               type = "mctruth" },
     { name = "cc",                     type = "mctruth" },
     { name = "pdg",                    type = "mctruth" },
