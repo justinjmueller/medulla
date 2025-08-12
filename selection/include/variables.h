@@ -27,6 +27,7 @@
 #include "include/cuts.h"
 #include "include/utilities.h"
 #include "include/particle_utilities.h"
+#include "include/selectors.h"
 #include "framework.h"
 
 /**
@@ -567,6 +568,32 @@ namespace vars
     double pn_lp(const T & obj) { return std::sqrt(std::pow(vars::dpT_lp(obj), 2) + std::pow(vars::dpL_lp(obj), 2)); }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, pn_lp, pn_lp);
     */
+
+    /**
+     * @brief Variable for the opening angle between leading muon and proton.
+     * @details The leading muon and proton are defined as the particles with the
+     * highest kinetic energy. The opening angle is defined as the arccosine of
+     * the dot product of the momentum vectors of the leading muon and proton.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the opening angle between the leading muon and
+     * proton.
+     */
+    template<class T>
+    double opening_angle(const T & obj)
+    {
+        size_t mi = selectors::leading_muon(obj);
+        size_t pi = selectors::leading_proton(obj);
+        if(mi == kNoMatch || pi == kNoMatch)
+            return kNoMatchValue; // No leading muon or proton found.
+        else
+        {
+            auto & m(obj.particles[mi]);
+            auto & p(obj.particles[pi]);
+            return std::acos(m.start_dir[0] * p.start_dir[0] + m.start_dir[1] * p.start_dir[1] + m.start_dir[2] * p.start_dir[2]);
+        }
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, opening_angle, opening_angle);
 
     /**
      * @brief Variable for the (primary) photon multiplicity of the

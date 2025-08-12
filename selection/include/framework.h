@@ -221,7 +221,8 @@ namespace                                                                       
             );                                                                             \
         return true;                                                                       \
     }();                                                                                   \
-}
+}                                                                                          \
+REGISTER_VAR_SCOPE(scope, name, fn) // Register the variable with the same scope
 
 // Register a variable with scope, auto‐detecting its signature
 #define REGISTER_VAR_SCOPE(scope, name, fn)                                                \
