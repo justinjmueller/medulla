@@ -1,10 +1,11 @@
 [general]
-output = "icarus_bnb_energy_calib_bugfix"
+output = "icarus_bnb_energy_calib_derivefudge"
 
 [[sample]]
-name = "cv"
+name = "cvext"
 #path = "/pnfs/icarus/persistent/users/mueller/mixed/simulation/nominal/input*.flat.root"
-path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input*.flat.root"
+#path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input*.flat.root"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/input*.flat.root"
 ismc = true
 disable = false
 
@@ -13,7 +14,7 @@ name = "muon"
 sim_only = true
 mode = "true"
 cut = [
-    {name = "in_time", type = "true_particle", parameters=[0, 1.6]},
+    {name = "in_time", type = "true_particle", parameters=[-0.5, 1.6]},
     {name = "is_pid", type = "true_particle", parameters=[2]},
     {name = "is_primary", type = "true_particle"},
     {name = "containment_cut", type = "true_particle"}
@@ -33,7 +34,7 @@ name = "photon"
 sim_only = true
 mode = "true"
 cut = [
-    {name = "in_time", type = "true_particle", parameters=[0, 1.6]},
+    {name = "in_time", type = "true_particle", parameters=[-0.5, 1.6]},
     {name = "is_pid", type = "true_particle", parameters=[0]},
     {name = "is_primary", type = "true_particle"},
     {name = "containment_cut", type = "true_particle"}
@@ -41,7 +42,28 @@ cut = [
 branch = [
        {name = "ke", type = "both_particle"},
        {name = "calo_ke", type = "both_particle"},
-       {name = "calo_ke_adj", type = "both_particle", parameters = [0.8091]},
+       # (1/82.03) * 78.10 * (1/1.2359)
+       {name = "calo_ke_adj", type = "both_particle", parameters = [0.7704]},
+       {name = "primary_classification", type = "both_particle"},
+       {name = "pid", type = "both_particle"},
+       {name = "containment", type = "both_particle"}
+]
+
+[[tree]]
+name = "electron"
+sim_only = true
+mode = "true"
+cut = [
+    {name = "in_time", type = "true_particle", parameters=[-0.5, 1.6]},
+    {name = "is_pid", type = "true_particle", parameters=[1]},
+    {name = "is_primary", type = "true_particle"},
+    {name = "containment_cut", type = "true_particle"}
+]
+branch = [
+       {name = "ke", type = "both_particle"},
+       {name = "calo_ke", type = "both_particle"},
+       # (1/82.03) * 78.10 * (1/1.2359) 
+       {name = "calo_ke_adj", type = "both_particle", parameters = [0.7704]},
        {name = "primary_classification", type = "both_particle"},
        {name = "pid", type = "both_particle"},
        {name = "containment", type = "both_particle"}

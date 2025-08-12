@@ -23,7 +23,7 @@
  * which act on events. Each cut is implemented as a function which takes
  * a StandardRecord object as an argument and returns a boolean.
  */
-namespace ecut
+namespace ecuts
 {
     /**
      * @brief Apply no cut to the event.

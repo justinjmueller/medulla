@@ -361,6 +361,15 @@ namespace evar
         return ana::kSpillFoM2(&sr);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Event, bnb_fom2, bnb_fom2);
+
+    /**
+     * @brief Variable for the triger emulation status of the interaction.
+     * @details TO DO 
+     */
+    //template<class T>
+    //double trigger_emulation_satisfied(const T & obj) { return ecuts::trigger_emulation_cut(obj); }
+    //REGISTER_VAR_SCOPE(RegistrationScope::Event, trigger_emulation_satisfied, trigger_emulation_satisfied);
+
 }
 
 #endif

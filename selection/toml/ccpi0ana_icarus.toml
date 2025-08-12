@@ -1,7 +1,8 @@
 [general]
 #output = "icarus_bnb_ccpi0_cvext"
 #output = "icarus_bnb_ccpi0_cv_vars"
-output = "icarus_bnb_ccpi0_onbeam_offbeam"
+#output = "icarus_bnb_ccpi0_onbeam_offbeam"
+output = "icarus_bnb_ccpi0_dev"
 
 [[sample]]
 name = "cvext"
@@ -11,22 +12,21 @@ disable = true
 
 [[sample]]
 name = "cv"
-#path = "/pnfs/icarus/persistent/users/mueller/mixed/simulation/nominal/input*.flat.root"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input*.flat.root"
 ismc = true
-disable = true
+disable = false
 
 [[sample]]
 name = "onbeam"
-path = "/pnfs/icarus/persistent/users/mueller/mixed/data/onbeam/input*.flat.root"
+path = "/pnfs/icarus/persistent/users/mueller/production/data/onbeam/input*.flat.root"
 ismc = false
-disable = false
+disable = true
 
 [[sample]]
 name = "offbeam"
-path = "/pnfs/icarus/persistent/users/mueller/mixed/data/offbeam/input*.flat.root"
+path = "/pnfs/icarus/persistent/users/mueller/production/data/offbeam/input*.flat.root"
 ismc = false
-disable = false
+disable = true
 
 [[sample]]
 name = "var00"
@@ -118,6 +118,29 @@ path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var11/input*
 ismc = true
 disable = true
 
+[[sample]]
+name = "var12m"
+path = "/pnfs/icarus/scratch/users/mueller/production/simulation/var12m/flat/input*.flat.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "var12p"
+path = "/pnfs/icarus/scratch/users/mueller/production/simulation/var12p/flat/input*.flat.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "var13m"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var13m/input*.flat.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "var13p"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/var13p/input*.flat.root"
+ismc = true
+disable = true
 
 [[tree]]
 name = "selected_nu"
@@ -129,7 +152,11 @@ cut = [
     {name = "base_topology_cut", type = "reco"},
     {name = "leading_shower_energy_cut", type = "reco"},
     {name = "valid_pi0_mass_cut", type = "reco"},
-    {name = "neutrino", type = "true"}
+    {name = "neutrino", type = "true"},
+    {name = "trigger_emulation_cut",     type = "event", decrements_exposure = false },
+    {name = "data_quality_cut",          type = "event", decrements_exposure = true },
+    {name = "beam_quality_cut",          type = "spill", decrements_exposure = false }, # Should decrement exposure, but CAF files are bugged
+    {name = "bnb_fom2_cut",              type = "event", decrements_exposure = false, parameters = [0.98,]}, # Should decrement exposure, but CAF files are bugged
 ]
 branch = [
 
@@ -189,7 +216,11 @@ cut = [
     {name = "base_topology_cut", type = "reco"},
     {name = "leading_shower_energy_cut", type = "reco"},
     {name = "valid_pi0_mass_cut", type = "reco"},
-    {name = "cosmic", type = "true"}
+    {name = "cosmic", type = "true"},
+    {name = "trigger_emulation_cut",     type = "event", decrements_exposure = false },
+    {name = "data_quality_cut",          type = "event", decrements_exposure = true },
+    {name = "beam_quality_cut",          type = "spill", decrements_exposure = false }, # Should decrement exposure, but CAF files are bugged
+    {name = "bnb_fom2_cut",              type = "event", decrements_exposure = false, parameters = [0.98,]}, # Should decrement exposure, but CAF files are bugged
 ]
 branch = [
 
@@ -249,6 +280,7 @@ cut = [
     {name = "cc1mu", type = "true"},
     {name = "zero_pi", type = "true"},
     {name = "one_pi0", type = "true"},
+    {name = "trigger_emulation_cut", type = "event", decrements_exposure = false },
 ]
 branch = [
 
@@ -301,6 +333,6 @@ branch = [
     {name = "fiducial_satisfied", type = "reco"},
     {name = "base_topology_satisfied", type = "reco"},
     {name = "leading_shower_energy_satisfied", type = "reco"},
-    {name = "valid_pi0_mass_satisfied", type = "reco"},
-    {name = "all_cut_icarus_satisfied", type = "reco"}
+    {name = "valid_pi0_mass_satisfied", type = "reco"}
+    #{name = "trigger_emulation_satisfied", type = "event"}
 ]

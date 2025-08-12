@@ -260,10 +260,10 @@ class Sample:
             regxp = re.compile(rf'^(?!.*(?:{exclude_pat})).*{pattern}.*$')
             systematics = [v for k,v in self._systematics.items() if regxp.search(k)]
 
-            #print(self._name)
-            #print(recipe)
-            #print(systematics)
-            #print('')
+            print(self._name)
+            print(recipe)
+            print(systematics)
+            print('')
 
             # If there are no systematics to combine, skip the recipe.
             if len(systematics) == 0:
