@@ -15,6 +15,7 @@
 #include <memory>
 
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
+#include "TError.h"
 
 #include "configuration.h"
 #include "framework.h"
@@ -42,8 +43,29 @@ void set_fcn(std::shared_ptr<VarFn<T>> & fcn, const std::string & name)
     fcn = std::make_shared<VarFn<T>>(var_fn);
 }
 
+void error_handler(int level, bool abort, const char * location, const char * message)
+{
+    if(level > kWarning)
+    {
+        // Check for XRootD authentication errors
+        if(std::string(message).find("Auth failed: No protocols left to try") != std::string::npos ||
+           std::string(message).find("Server responded with an error") != std::string::npos)
+        {
+            std::string error_message = "Authentication error: No valid token found for XRootD access.";
+            error_message += "\n\tPlease ensure you have a valid token with:";
+            error_message += "\n\thtgettoken -a htvaultprod.fnal.gov -i <experiment>";
+            throw std::runtime_error(error_message);
+        }
+    }
+    ::DefaultErrorHandler(level, abort, location, message);
+}
+
 int main(int argc, char * argv[])
 {
+    // Set the ROOT error handler to our custom error handler. This allows us
+    // to catch errors related to XRootD authentication.
+    SetErrorHandler(error_handler);
+
     // Check if the configuration file is provided as a command line argument
     if (argc < 2)
     {
