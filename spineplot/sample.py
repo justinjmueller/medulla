@@ -95,7 +95,7 @@ class Sample:
 
         self._data = pd.concat([self._file_handle[tree].arrays(library='pd') for tree in trees])
         if self._category_branch not in self._data.columns:
-            self._data[self._category_branch] = 0
+            raise ValueError(f'Category branch `{self._category_branch}` not found in sample `{self._name}`.')
         if override_category is not None:
             self._data[self._category_branch] = override_category
         
