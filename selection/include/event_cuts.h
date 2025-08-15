@@ -193,6 +193,24 @@ namespace ecut
         }
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Event, bnb_fom2_cut, bnb_fom2_cut);
+
+    /**
+     * @brief A cut that checks if the event is the first in the subrun.
+     * @details This cut checks if the event is the first event in the subrun.
+     * This can be relevant for certain attributes (e.g. spill info) that is
+     * stored only once per subrun in the first event.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the cut on.
+     * @return true if the event is the first in the subrun, false otherwise.
+     */
+    template<typename T>
+    bool is_first_in_subrun_cut(const T & sr)
+    {
+        // This cut checks if the event is the first in the subrun.
+        // It returns true if it is the first event in the subrun, false otherwise.
+        return sr.hdr.first_in_subrun;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Event, is_first_in_subrun_cut, is_first_in_subrun_cut);
 }
 
 #endif // EVENT_CUTS_H
