@@ -11,10 +11,23 @@
 #ifndef EVENT_VARIABLES_H
 #define EVENT_VARIABLES_H
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
+#include "sbnanaobj/StandardRecord/SRBNBInfo.h"
 #include "sbnana/SBNAna/Vars/BNBVars.h"
 
 #include "framework.h"
 #include "utilities.h"
+
+/**
+ * @brief Global vector to store BNB information across events.
+ * @details This vector is used to store the BNB information across events,
+ * which is necessary for certain calculations because the spill information is
+ * only stored for the first event in the subrun. The vector is cleared when
+ * the first event in the subrun is encountered, and it is filled with the
+ * event number and the TOR875 value from the BNBInfo vector in the header of
+ * the record.
+ */
+std::vector<std::tuple<uint32_t, double>> global_bnb_info;
+size_t global_bnb_event_number = 0;
 
 /**
  * @namespace evar
@@ -361,6 +374,89 @@ namespace evar
         return ana::kSpillFoM2(&sr);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Event, bnb_fom2, bnb_fom2);
+
+    /**
+     * @brief Variable for the unfolded event POT (Protons on Target).
+     * @details This variable retrieves the unfolded event POT by summing up
+     * the TOR875 values from the BNBInfo vector in the header of the record.
+     * This uses the stored global BNB info to ensure that the POT is bookkept
+     * correctly for each event.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the unfolded event POT in the event.
+     */
+    template<typename T>
+    double unfolded_event_pot(const T & sr)
+    {
+        // If this is the first event in the subrun, we need to reset the
+        // global BNB info.
+        if(sr.hdr.first_in_subrun && global_bnb_event_number != sr.hdr.evt)
+        {
+            global_bnb_info.clear();
+            for(const auto & bnb_info : sr.hdr.bnbinfo)
+            {
+                // Store the event number and the TOR875 value.
+                global_bnb_info.emplace_back((uint32_t)bnb_info.event, (double)bnb_info.TOR875);
+            }
+            global_bnb_event_number = sr.hdr.evt;
+        }
+
+        // Loop over the global BNB info and filter out the events that are not
+        // this one.
+        double pot = 0.0;
+        for(const auto & bnb_info : global_bnb_info)
+        {
+            if(std::get<0>(bnb_info) == sr.hdr.evt)
+            {
+                // Add the TOR875 value to the pot.
+                pot += std::get<1>(bnb_info);
+            }
+        }
+
+        return pot;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, unfolded_event_pot, unfolded_event_pot);
+
+    /**
+     * @brief Variable for the number of unfolded BNB events in the event.
+     * @details This variable counts the number of unfolded BNB events in the
+     * event by checking the global BNB info vector. It is used to ensure that
+     * the number of BNB events is bookkept correctly for each event.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the number of unfolded BNB events in the event.
+     */
+    template<typename T>
+    double unfolded_event_nbnb(const T & sr)
+    {
+        // If this is the first event in the subrun, we need to reset the
+        // global BNB info.
+        if(sr.hdr.first_in_subrun && global_bnb_event_number != sr.hdr.evt)
+        {
+            global_bnb_info.clear();
+            for(const auto & bnb_info : sr.hdr.bnbinfo)
+            {
+                // Store the event number and the TOR875 value.
+                global_bnb_info.emplace_back((uint32_t)bnb_info.event, (double)bnb_info.TOR875);
+            }
+            global_bnb_event_number = sr.hdr.evt;
+        }
+
+        // Loop over the global BNB info and filter out the events that are not
+        // this one.
+        size_t nbnbs = 0;
+        for(const auto & bnb_info : global_bnb_info)
+        {
+            if(std::get<0>(bnb_info) == sr.hdr.evt)
+            {
+                // Count the number of BNB events.
+                ++nbnbs;
+            }
+        }
+
+        return nbnbs;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, unfolded_event_nbnb, unfolded_event_nbnb);
 }
 
 #endif
