@@ -187,6 +187,24 @@ namespace vars
     REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_time, flash_time);
 
     /**
+     * @brief Variable for the flash score of the interaction.
+     * @details The flash score is the likelihood score of the flash observed
+     * in the PMTs and associated with the charge deposition in the interaction
+     * by the OpT0Finder likelihood method.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the flash score of the interaction.
+     */
+    template<class T>
+    double flash_score(const T & obj)
+    {
+        if(obj.flash_scores.size() > 0)
+            return obj.flash_scores[0];
+        return PLACEHOLDERVALUE;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_score, flash_score);
+
+    /**
      * @brief Variable for the flash total photoelectron count of the
      * interaction.
      * @details The flash total photoelectron count is the total number of
