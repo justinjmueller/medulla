@@ -69,13 +69,15 @@ namespace cfg
 
         /**
          * @brief Constructor for the Configuration class.
-         * @details This constructor takes a TOML configuration table as an
-         * argument and stores it as a class member. This constructor is meant
-         * to be used in instances where this class is encapsulating a
-         * sub-table of the original configuration file.
-         * @param config The TOML configuration table.
+         * @details This constructor takes a pointer to the root TOML table and
+         * a node_view representing the scope of the sub-table. The constructor
+         * stores the root table and the scope as class members.
+         * @param root A pointer to the root TOML table of the configuration
+         * file.
+         * @param scope A node_view representing the scope of the sub-table.
          */
-        ConfigurationTable(const toml::table & config);
+        ConfigurationTable(const toml::table * r, toml::node_view<const toml::node> s)
+        : root(r), scope(s) {}
 
         /**
          * @brief Set the configuration table to a table loaded from a file.
@@ -213,9 +215,61 @@ namespace cfg
          * @see ConfigurationTable
          */
         std::vector<ConfigurationTable> get_subtables(const std::string & table) const;
-    
+
     private:
-        toml::table config; ///< The TOML configuration table.
+        /**
+         * @brief Resolve a scalar that may be given as a literal or a string
+         * reference.
+         * @details This function resolves a scalar that may be given as a literal
+         * or a string reference to a parameter defined elsewhere in the
+         * configuration file. The function checks if the node_view is a valid
+         * numeric type (integer or floating point). If so, it returns the value
+         * directly. If the node_view is a string, it treats the string as a
+         * reference to a parameter defined elsewhere in the configuration file.
+         * Some examples:
+         * "@value"            -> "parameters.value"
+         * "other_block.value" -> "other_block.value" (as is)
+         * @param nv the node_view to resolve.
+         * @throws ConfigurationError on missing or type-mismatched references.
+         */
+        double resolve_numeric_node(toml::node_view<const toml::node> nv) const;
+
+        /**
+         * @brief Helper function to look up a path in either the current scope
+         * or the root scope.
+         * @details This function looks up a path in first the current scope,
+         * then failing that, in the root scope. It returns a node_view 
+         * representing the value at the specified path.
+         * @param path The path to look up in the configuration table.
+         * @return toml::node_view<const toml::node> representing the value at
+         * the specified path.
+         */
+        toml::node_view<const toml::node> lookup(const std::string & path) const;
+
+        /**
+         * @brief The full TOML configuration table.
+         * @details This is the full TOML configuration table that is loaded
+         * from the configuration file. It is used to look up paths that are
+         * not found in the current scope.
+         */
+        toml::table doc;
+
+        /**
+         * @brief The root TOML table of the configuration file.
+         * @details This is the root TOML table of the configuration file,
+         * which is kept as a reference even when the scope changes. This
+         * allows us to look up paths that are found in the root table.
+         */
+        const toml::table * root{nullptr};
+
+        /**
+         * @brief The scope of the current configuration table.
+         * @details This is the scope of the current configuration table, which
+         * is used to look up paths that are relative to the current table. It
+         * will take precedence over the root table when looking up parameter
+         * paths, but will exclusively be used for all other lookups.
+         */
+        toml::node_view<const toml::node> scope;
     };
 }
 #endif // CONFIGURATION_H
