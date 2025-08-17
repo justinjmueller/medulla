@@ -101,6 +101,16 @@ int main(int argc, char * argv[])
         // Load the configuration file
         config.set_config(argv[1]);
 
+        // Construct the "final_state_signal" particle-level cut function.
+        if(config.has_field("general.fsthresh"))
+        {
+            // Retrieve the threshold for final state signal particles.
+            std::vector<double> fsthresh = config.get_double_vector("general.fsthresh");
+
+            // Set the global vector for final state signal thresholds.
+            pcuts::final_state_signal_thresholds = fsthresh;
+        }
+
         // Construct the category function.
         if(config.has_field("category"))
         {

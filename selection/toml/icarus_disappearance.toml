@@ -2,6 +2,13 @@
 output = "icarus_disappearance"
 primfn = "default_primary_classification"
 pidfn = "default_pid"
+fsthresh = [
+    "@photon_threshold",
+    "@electron_threshold",
+    "@muon_threshold",
+    "@pion_threshold",
+    "@proton_threshold",
+]
 
 [parameters]
 photon_threshold = 25.0
