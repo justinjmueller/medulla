@@ -250,6 +250,7 @@ branch = [
     { name = "neutrino_energy",         type = "mctruth" },
     { name = "visible_energy",          type = "both"    },
     { name = "visible_energy_calosub",  type = "both"    },
+    { name = "leading_muon_vertex_gap", type = "both"    },
     { name = "photon_multiplicity",     type = "both", parameters = [ "@photon_threshold"   ]},
     { name = "electron_multiplicity",   type = "both", parameters = [ "@electron_threshold" ]},
     { name = "muon_multiplicity",       type = "both", parameters = [ "@muon_threshold"     ]},
@@ -342,6 +343,7 @@ branch = [
     { name = "neutrino_energy",        type = "mctruth" },
     { name = "visible_energy",         type = "both"    },
     { name = "visible_energy_calosub", type = "true"    },
+    { name = "leading_muon_vertex_gap", type = "both"   },
 
     # Interaction-level selection variables
     { name = "photon_multiplicity",   type = "reco", parameters = [ "@photon_threshold"   ]},

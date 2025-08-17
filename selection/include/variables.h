@@ -713,5 +713,34 @@ namespace vars
         return count;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, proton_multiplicity, proton_multiplicity);
+
+    /**
+     * @brief Variable for the distance between the interaction vertex and the
+     * leading muon start point.
+     * @details This function calculates the distance from the leading muon
+     * start point to the interaction vertex. The leading muon is defined as
+     * the particle with the highest kinetic energy that is identified as a
+     * muon. If no leading muon is found, the function returns the usual 
+     * PLACEHOLDERVALUE.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the distance from the leading muon start point to the
+     * interaction vertex.
+     */
+    template<class T>
+    double leading_muon_vertex_gap(const T & obj)
+    {
+        // Find the leading muon in the interaction.
+        size_t mi = selectors::leading_muon(obj);
+        if(mi == kNoMatch) return PLACEHOLDERVALUE;
+        auto & m(obj.particles[mi]);
+        
+        // Calculate the distance from the leading muon start point to the
+        // interaction vertex.
+        utilities::three_vector vtx = {obj.vertex[0], obj.vertex[1], obj.vertex[2]};
+        utilities::three_vector muon_start = {pvars::start_x(m), pvars::start_y(m), pvars::start_z(m)};
+        return utilities::magnitude(utilities::subtract(muon_start, vtx));
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, leading_muon_vertex_gap, leading_muon_vertex_gap);
 }
 #endif // VARIABLES_H
