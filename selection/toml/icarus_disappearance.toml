@@ -2,27 +2,44 @@
 output = "icarus_disappearance"
 primfn = "default_primary_classification"
 pidfn = "default_pid"
+fsthresh = [
+    "@photon_threshold",
+    "@electron_threshold",
+    "@muon_threshold",
+    "@pion_threshold",
+    "@proton_threshold",
+]
+
+[parameters]
+photon_threshold = 25.0
+electron_threshold = 25.0
+muon_threshold = 143.425
+pion_threshold = 25.0
+proton_threshold = 50.0
+flash_low_t = -0.5
+flash_high_t = 1.6
+bnb_fom2_cut = 0.98
 
 [[category]] # 0 : Contained, fiducial, single muon, single proton
 cuts = [
     { name = "neutrino"        },
     { name = "fiducial_cut"    },
     { name = "containment_cut" },
-    { name = "no_photons",       parameters = [25.0] },
-    { name = "no_electrons",     parameters = [25.0] },
-    { name = "no_charged_pions", parameters = [25.0] },
-    { name = "single_muon",      parameters = [143.425] },
-    { name = "single_proton",    parameters = [50.0] },
+    { name = "no_photons",       parameters = [ "@photon_threshold"   ] },
+    { name = "no_electrons",     parameters = [ "@electron_threshold" ] },
+    { name = "no_charged_pions", parameters = [ "@pion_threshold"     ] },
+    { name = "single_muon",      parameters = [ "@muon_threshold"     ] },
+    { name = "single_proton",    parameters = [ "@proton_threshold"   ] },
 ]
 
 [[category]] # 1 : Single muon, single proton
 cuts = [
     { name = "neutrino" },
-    { name = "no_photons",       parameters = [25.0] },
-    { name = "no_electrons",     parameters = [25.0] },
-    { name = "no_charged_pions", parameters = [25.0] },
-    { name = "single_muon",      parameters = [143.425] },
-    { name = "single_proton",    parameters = [50.0] },
+    { name = "no_photons",       parameters = [ "@photon_threshold"   ] },
+    { name = "no_electrons",     parameters = [ "@electron_threshold" ] },
+    { name = "no_charged_pions", parameters = [ "@pion_threshold"     ] },
+    { name = "single_muon",      parameters = [ "@muon_threshold"     ] },
+    { name = "single_proton",    parameters = [ "@proton_threshold"   ] },
 ]
 
 [[category]] # 2 : Contained, fiducial, single muon, multiple protons
@@ -30,21 +47,21 @@ cuts = [
     { name = "neutrino"        },
     { name = "fiducial_cut"    },
     { name = "containment_cut" },
-    { name = "no_photons",       parameters = [25.0] },
-    { name = "no_electrons",     parameters = [25.0] },
-    { name = "no_charged_pions", parameters = [25.0] },
-    { name = "single_muon",      parameters = [143.425] },
-    { name = "!no_protons",      parameters = [50.0] },
+    { name = "no_photons",       parameters = [ "@photon_threshold"   ] },
+    { name = "no_electrons",     parameters = [ "@electron_threshold" ] },
+    { name = "no_charged_pions", parameters = [ "@pion_threshold"     ] },
+    { name = "single_muon",      parameters = [ "@muon_threshold"     ] },
+    { name = "!no_protons",      parameters = [ "@proton_threshold"   ] },
 ]
 
 [[category]] # 3 : Single muon, multiple protons
 cuts = [
     { name = "neutrino" },
-    { name = "no_photons",       parameters = [25.0] },
-    { name = "no_electrons",     parameters = [25.0] },
-    { name = "no_charged_pions", parameters = [25.0] },
-    { name = "single_muon",      parameters = [143.425] },
-    { name = "!no_protons",      parameters = [50.0] },
+    { name = "no_photons",       parameters = [ "@photon_threshold"   ] },
+    { name = "no_electrons",     parameters = [ "@electron_threshold" ] },
+    { name = "no_charged_pions", parameters = [ "@pion_threshold"     ] },
+    { name = "single_muon",      parameters = [ "@muon_threshold"     ] },
+    { name = "!no_protons",      parameters = [ "@proton_threshold"   ] },
 ]
 
 [[category]] # 4 : Contained, fiducial, single muon
@@ -52,13 +69,13 @@ cuts = [
     { name = "neutrino"        },
     { name = "fiducial_cut"    },
     { name = "containment_cut" },
-    { name = "single_muon", parameters = [143.425] }, 
+    { name = "single_muon", parameters = [ "@muon_threshold" ] },
 ]
 
 [[category]] # 5 : Single muon
 cuts = [
     { name = "neutrino" },
-    { name = "single_muon", parameters = [143.425] }, 
+    { name = "single_muon", parameters = [ "@muon_threshold" ] },
 ]
 
 [[category]] # 6 : Neutrino, charged current
@@ -218,16 +235,16 @@ mode = "reco"
 cut = [
     { name = "fiducial_cut",              type = "reco" },
     { name = "containment_cut",           type = "reco" },
-    { name = "flash_cut",                 type = "reco",  parameters = [-0.5, 1.6] },
-    { name = "no_photons",                type = "reco",  parameters = [25.0] },
-    { name = "no_electrons",              type = "reco",  parameters = [25.0] },
-    { name = "no_charged_pions",          type = "reco",  parameters = [25.0] },
-    { name = "single_muon",               type = "reco",  parameters = [143.425] },
-    { name = "!no_protons",               type = "reco",  parameters = [50.0] },
+    { name = "flash_cut",                 type = "reco",  parameters = [ "@flash_low_t", "@flash_high_t" ] },
+    { name = "no_photons",                type = "reco",  parameters = [ "@photon_threshold"             ] },
+    { name = "no_electrons",              type = "reco",  parameters = [ "@electron_threshold"           ] },
+    { name = "no_charged_pions",          type = "reco",  parameters = [ "@pion_threshold"               ] },
+    { name = "single_muon",               type = "reco",  parameters = [ "@muon_threshold"               ] }, 
+    { name = "!no_protons",               type = "reco",  parameters = [ "@proton_threshold"             ] },    
     { name = "trigger_emulation_cut",     type = "event", decrements_exposure = false },
     { name = "data_quality_cut",          type = "event", decrements_exposure = true },
     { name = "beam_quality_cut",          type = "spill", decrements_exposure = false }, # Should decrement exposure, but CAF files are bugged
-    { name = "bnb_fom2_cut",              type = "event", decrements_exposure = false, parameters = [0.98,]}, # Should decrement exposure, but CAF files are bugged
+    { name = "bnb_fom2_cut",              type = "event", decrements_exposure = false, parameters = [ "@bnb_fom2_cut" ]}, # Should decrement exposure, but CAF files are bugged
 ]
 branch = [
     # Interaction-level truth/reco branches
@@ -240,11 +257,12 @@ branch = [
     { name = "neutrino_energy",         type = "mctruth" },
     { name = "visible_energy",          type = "both"    },
     { name = "visible_energy_calosub",  type = "both"    },
-    { name = "photon_multiplicity",     type = "both",    parameters = [25.0,]},
-    { name = "electron_multiplicity",   type = "both",    parameters = [25.0,]},
-    { name = "muon_multiplicity",       type = "both",    parameters = [143.425,]},
-    { name = "pion_multiplicity",       type = "both",    parameters = [25.0,]},
-    { name = "proton_multiplicity",     type = "both",    parameters = [50.0,]},
+    { name = "leading_muon_vertex_gap", type = "both"    },
+    { name = "photon_multiplicity",     type = "both", parameters = [ "@photon_threshold"   ]},
+    { name = "electron_multiplicity",   type = "both", parameters = [ "@electron_threshold" ]},
+    { name = "muon_multiplicity",       type = "both", parameters = [ "@muon_threshold"     ]},
+    { name = "pion_multiplicity",       type = "both", parameters = [ "@pion_threshold"     ]},
+    { name = "proton_multiplicity",     type = "both", parameters = [ "@proton_threshold"   ]},
 
     # Kinematic imbalance & angles
     { name = "opening_angle", type = "both" },
@@ -311,11 +329,11 @@ cut = [
     { name = "neutrino",              type = "true" },
     { name = "fiducial_cut",          type = "true" },
     { name = "containment_cut",       type = "true" },
-    { name = "no_photons",            type = "true",  parameters = [25.0] },
-    { name = "no_electrons",          type = "true",  parameters = [25.0] },
-    { name = "no_charged_pions",      type = "true",  parameters = [25.0] },
-    { name = "single_muon",           type = "true",  parameters = [143.425] },
-    { name = "!no_protons",           type = "true",  parameters = [50.0] },
+    { name = "no_photons",            type = "true",  parameters = [ "@photon_threshold"   ] },
+    { name = "no_electrons",          type = "true",  parameters = [ "@electron_threshold" ] },
+    { name = "no_charged_pions",      type = "true",  parameters = [ "@pion_threshold"     ] },
+    { name = "single_muon",           type = "true",  parameters = [ "@muon_threshold"     ] },
+    { name = "!no_protons",           type = "true",  parameters = [ "@proton_threshold"   ] },
     { name = "trigger_emulation_cut", type = "event", decrements_exposure = false },
 ]
 branch = [
@@ -332,13 +350,14 @@ branch = [
     { name = "neutrino_energy",        type = "mctruth" },
     { name = "visible_energy",         type = "both"    },
     { name = "visible_energy_calosub", type = "true"    },
+    { name = "leading_muon_vertex_gap", type = "both"   },
 
     # Interaction-level selection variables
-    { name = "photon_multiplicity",   type = "reco", parameters = [25.0,]},
-    { name = "electron_multiplicity", type = "reco", parameters = [25.0,]},
-    { name = "muon_multiplicity",     type = "reco", parameters = [25.0,]},
-    { name = "pion_multiplicity",     type = "reco", parameters = [143.425,]},
-    { name = "proton_multiplicity",   type = "reco", parameters = [50.0,]},
+    { name = "photon_multiplicity",   type = "reco", parameters = [ "@photon_threshold"   ]},
+    { name = "electron_multiplicity", type = "reco", parameters = [ "@electron_threshold" ]},
+    { name = "muon_multiplicity",     type = "reco", parameters = [ "@muon_threshold"     ]},
+    { name = "pion_multiplicity",     type = "reco", parameters = [ "@pion_threshold"     ]},
+    { name = "proton_multiplicity",   type = "reco", parameters = [ "@proton_threshold"   ]},
     { name = "flash_time",            type = "reco" },
 
     # Kinematic imbalance & angles

@@ -21,6 +21,7 @@
 #include <memory>
 
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
+#include "TError.h"
 
 #include "configuration.h"
 #include "framework.h"
@@ -41,6 +42,15 @@
 std::shared_ptr<VarFn<RParticleType>> pvars::primfn = std::make_shared<VarFn<RParticleType>>(pvars::default_primary_classification<RParticleType>);
 std::shared_ptr<VarFn<RParticleType>> pvars::pidfn = std::make_shared<VarFn<RParticleType>>(pvars::default_pid<RParticleType>);
 
+/**
+ * @brief Set a function pointer for a variable function.
+ * @details This function sets a function pointer for a variable function of
+ * type T. It is intended to be used to set scoring function to the user-
+ * defined function registered in the framework.
+ * @tparam T The type of the variable function.
+ * @param fcn A shared pointer to the variable function to be set.
+ * @param name The name of the variable function to be set.
+ */
 template<typename T>
 void set_fcn(std::shared_ptr<VarFn<T>> & fcn, const std::string & name)
 {
@@ -52,8 +62,41 @@ void set_fcn(std::shared_ptr<VarFn<T>> & fcn, const std::string & name)
     fcn = std::make_shared<VarFn<T>>(var_fn);
 }
 
+/**
+ * @brief An error handler for ROOT errors related to XRootD authentication.
+ * @details This function is a custom error handler for ROOT errors. It checks
+ * for specific error messages related to XRootD authentication and throws
+ * a runtime error with a more user-friendly message if such errors are
+ * detected. If the error level is greater than kWarning, it will also
+ * call the default error handler to handle other errors.
+ * @param level The error level (e.g., kError, kWarning).
+ * @param abort Whether to abort the program on error.
+ * @param location The location of the error (file and line number).
+ * @param message The error message.
+ */
+void error_handler(int level, bool abort, const char * location, const char * message)
+{
+    if(level > kWarning)
+    {
+        // Check for XRootD authentication errors
+        if(std::string(message).find("Auth failed: No protocols left to try") != std::string::npos ||
+           std::string(message).find("Server responded with an error") != std::string::npos)
+        {
+            std::string error_message = "Authentication error: No valid token found for XRootD access.";
+            error_message += "\n\tPlease ensure you have a valid token with:";
+            error_message += "\n\thtgettoken -a htvaultprod.fnal.gov -i <experiment>";
+            throw std::runtime_error(error_message);
+        }
+    }
+    ::DefaultErrorHandler(level, abort, location, message);
+}
+
 int main(int argc, char * argv[])
 {
+    // Set the ROOT error handler to our custom error handler. This allows us
+    // to catch errors related to XRootD authentication.
+    SetErrorHandler(error_handler);
+
     // Check if the configuration file is provided as a command line argument
     if (argc < 2)
     {
@@ -67,6 +110,16 @@ int main(int argc, char * argv[])
     {
         // Load the configuration file
         config.set_config(argv[1]);
+
+        // Construct the "final_state_signal" particle-level cut function.
+        if(config.has_field("general.fsthresh"))
+        {
+            // Retrieve the threshold for final state signal particles.
+            std::vector<double> fsthresh = config.get_double_vector("general.fsthresh");
+
+            // Set the global vector for final state signal thresholds.
+            pcuts::final_state_signal_thresholds = fsthresh;
+        }
 
         // Construct the category function.
         if(config.has_field("category"))

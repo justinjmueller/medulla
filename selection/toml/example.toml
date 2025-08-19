@@ -28,21 +28,21 @@ name = "selected"
 sim_only = false
 mode = "reco"
 cut = [
-    {name = "fiducial_cut", type = "reco"},
-    {name = "containment_cut", type = "reco"},
-    {name = "valid_flashmatch", type = "reco"},
+    { name = "fiducial_cut",     type = "reco" },
+    { name = "containment_cut",  type = "reco" },
+    { name = "valid_flashmatch", type = "reco" },
 ]
 branch = [
-    {name = "neutrino_id", type = "true"},
-    {name = "baseline", type = "mctruth"},
-    {name = "cc", type = "mctruth"},
-    {name = "pdg", type = "mctruth"},
-    {name = "interaction_type", type = "mctruth"},
-    {name = "category", type = "true"},
-    {name = "neutrino_energy", type = "mctruth"},
-    {name = "visible_energy", type = "both"},
-    {name = "dpT", type = "both"},
-    {name = "flash_time", type = "reco"},
+    { name = "neutrino_id",      type = "true"    },
+    { name = "baseline",         type = "mctruth" },
+    { name = "cc",               type = "mctruth" },
+    { name = "pdg",              type = "mctruth" },
+    { name = "interaction_type", type = "mctruth" },
+    { name = "category",         type = "true"    },
+    { name = "neutrino_energy",  type = "mctruth" },
+    { name = "visible_energy",   type = "both"    },
+    { name = "dpT",              type = "both"    },
+    { name = "flash_time",       type = "reco"    },
 ]
 
 [[tree]]
@@ -50,21 +50,21 @@ name = "signal"
 sim_only = true
 mode = "true"
 cut = [
-    {name = "fiducial_cut", type = "true"},
-    {name = "containment_cut", type = "true"},
-    {name = "neutrino", type = "true"},
+    { name = "fiducial_cut",    type = "true" },
+    { name = "containment_cut", type = "true" },
+    { name = "neutrino",        type = "true" },
 ]
 branch = [
-    {name = "neutrino_id", type = "true"},
-    {name = "baseline", type = "mctruth"},
-    {name = "cc", type = "mctruth"},
-    {name = "pdg", type = "mctruth"},
-    {name = "interaction_type", type = "mctruth"},
-    {name = "category", type = "true"},
-    {name = "neutrino_energy", type = "mctruth"},
-    {name = "visible_energy", type = "true"},
-    {name = "dpT", type = "true"},
-    {name = "fiducial", type = "reco"},
-    {name = "containment", type = "reco"},
-    {name = "flash_time", type = "reco"},
+    { name = "neutrino_id",      type = "true"    },
+    { name = "baseline",         type = "mctruth" },
+    { name = "cc",               type = "mctruth" },
+    { name = "pdg",              type = "mctruth" },
+    { name = "interaction_type", type = "mctruth" },
+    { name = "category",         type = "true"    },
+    { name = "neutrino_energy",  type = "mctruth" },
+    { name = "visible_energy",   type = "true"    },
+    { name = "dpT",              type = "true"    },
+    { name = "fiducial",         type = "reco"    },
+    { name = "containment",      type = "reco"    },
+    { name = "flash_time",       type = "reco"    },
 ]

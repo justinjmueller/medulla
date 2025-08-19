@@ -28,6 +28,11 @@
 namespace pcuts
 {
     /**
+     * @brief The per-particle thresholds for final state signal particles.
+     */
+    static std::vector<double> final_state_signal_thresholds = {25.0, 25.0, 143.425, 25.0, 50.0};
+
+    /**
      * @brief Check if the particle is a primary particle.
      * @details This function checks if the particle is a primary particle.
      * Primary designation is handled upstream in SPINE and is based on the
@@ -85,10 +90,9 @@ namespace pcuts
 
     /**
      * @brief Check if the particle meets final state signal requirements.
-     * @details must be primary and have an energy above threshold.
-     * Muons must have a length of at least 50 cm (143.425 MeV), protons
-     * must have an energy above 50 MeV, and all other particles must have
-     * an energy above 25 MeV.
+     * @details The particle must be marked as a primary particle and have a
+     * kinetic energy above a certain threshold. The per-particle thresholds
+     * are stored in a global vector and filled with user-provided values
      * @tparam T the type of particle (true or reco).
      * @param p the particle to check.
      * @return true if the particle is a final state signal particle.
@@ -96,14 +100,7 @@ namespace pcuts
     template<class T>
     bool final_state_signal(const T & p)
     {
-        bool passes(false);
-        if(pvars::primary_classification(p))
-        {
-            double energy(pvars::ke(p));
-            if((pvars::pid(p) == 2 && energy > 143.425) || (pvars::pid(p) != 2 && pvars::pid(p) < 4 && energy > 25) || (pvars::pid(p) == 4 && energy > 50))
-                passes = true;
-        }
-        return passes;
+        return pvars::primary_classification(p) && pvars::ke(p) > final_state_signal_thresholds[pvars::pid(p)];
     }
     REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, final_state_signal, final_state_signal);
 
