@@ -43,8 +43,10 @@ struct truth_inter {
   double muon_energy;
   double muon_momentum_mag;
   double muon_beam_costheta;
+  size_t pi0_leading_photon_index;
   double pi0_leading_photon_energy;
   double pi0_leading_photon_conv_dist;
+  size_t pi0_subleading_photon_index;
   double pi0_subleading_photon_energy;
   double pi0_subleading_photon_conv_dist;
   double pi0_photons_costheta;
@@ -60,11 +62,13 @@ struct reco_inter {
   double num_primary_protons;
   double num_primary_protons_thresh;
   double muon_beam_costheta;
+  size_t pi0_leading_photon_index;
   double pi0_leading_photon_energy;
   double pi0_leading_photon_start_dedx;
   double pi0_leading_photon_cosphi;
   double pi0_leading_photon_ip;
   double pi0_leading_photon_conv_dist;
+  size_t pi0_subleading_photon_index;
   double pi0_subleading_photon_energy;
   double pi0_subleading_photon_start_dedx;
   double pi0_subleading_photon_cosphi;
@@ -232,9 +236,11 @@ namespace utilities_ncpi0ana
 	std::unordered_map<int, std::vector<std::pair<size_t, double>> > nonprimary_pi0_map;
 	double muon_momentum_mag;
 	double muon_beam_costheta;
+	size_t pi0_leading_photon_index(kNoMatch);
 	double pi0_leading_photon_energy(-5);
 	TVector3 pi0_leading_photon_dir;
 	double pi0_leading_photon_conv_dist(-5);
+	size_t pi0_subleading_photon_index(kNoMatch);
 	double pi0_subleading_photon_energy(-5);
 	TVector3 pi0_subleading_photon_dir;
 	double pi0_subleading_photon_conv_dist(-5);
@@ -412,6 +418,7 @@ namespace utilities_ncpi0ana
 	    const auto & pi0_subleading_photon = obj.particles[subleading_photon_index];
 
 	    // Leading
+	    pi0_leading_photon_index = leading_photon_index;
 	    pi0_leading_photon_energy = pi0_leading_photon.ke;
 	    TVector3 pi0_leading_photon_start_point(pi0_leading_photon.start_point[0], pi0_leading_photon.start_point[1], pi0_leading_photon.start_point[2]);
 	    TVector3 pi0_leading_photon_dir(pi0_leading_photon.momentum[0], pi0_leading_photon.momentum[1], pi0_leading_photon.momentum[2]);
@@ -420,6 +427,7 @@ namespace utilities_ncpi0ana
 	    TVector3 pi0_leading_photon_momentum(pi0_leading_photon.momentum[0], pi0_leading_photon.momentum[1], pi0_leading_photon.momentum[2]);
 
 	    // Subleading
+	    pi0_subleading_photon_index = subleading_photon_index;
 	    pi0_subleading_photon_energy = pi0_subleading_photon.ke;
 	    TVector3 pi0_subleading_photon_start_point(pi0_subleading_photon.start_point[0], pi0_subleading_photon.start_point[1], pi0_subleading_photon.start_point[2]);
 	    TVector3 pi0_subleading_photon_dir(pi0_subleading_photon.momentum[0], pi0_subleading_photon.momentum[1], pi0_subleading_photon.momentum[2]);
@@ -446,8 +454,10 @@ namespace utilities_ncpi0ana
 	  s.muon_energy = -5; // GeV
 	  s.muon_momentum_mag = -5; // GeV
 	  s.muon_beam_costheta = -5;
+	  s.pi0_leading_photon_index = pi0_leading_photon_index;
 	  s.pi0_leading_photon_energy = pi0_leading_photon_energy/1000; // GeV
 	  s.pi0_leading_photon_conv_dist = pi0_leading_photon_conv_dist;
+	  s.pi0_subleading_photon_index = pi0_subleading_photon_index;
 	  s.pi0_subleading_photon_energy = pi0_subleading_photon_energy/1000; // GeV
 	  s.pi0_subleading_photon_conv_dist = pi0_subleading_photon_conv_dist;
 	  s.pi0_photons_costheta = pi0_photons_costheta;
@@ -460,8 +470,10 @@ namespace utilities_ncpi0ana
 	  s.muon_energy = -5;
 	  s.muon_momentum_mag = -5;
           s.muon_beam_costheta = -5;
+	  s.pi0_leading_photon_index = kNoMatch;
           s.pi0_leading_photon_energy = -5;
           s.pi0_leading_photon_conv_dist = -5;
+	  s.pi0_subleading_photon_index = kNoMatch;
           s.pi0_subleading_photon_energy = -5;
           s.pi0_subleading_photon_conv_dist = -5;
           s.pi0_photons_costheta = -5;
@@ -797,11 +809,13 @@ namespace utilities_ncpi0ana
 	s.muon_beam_costheta = -5;
 	s.num_primary_protons = primary_proton_count;
 	s.num_primary_protons_thresh = primary_proton_count_thresh;
+	s.pi0_leading_photon_index = leading_photon_index;
 	s.pi0_leading_photon_energy = pi0_leading_photon_energy/1000; // GeV
 	//s.pi0_leading_photon_start_dedx = pi0_leading_photon_start_dedx;
 	s.pi0_leading_photon_cosphi = pi0_leading_photon_cosphi;
 	s.pi0_leading_photon_ip = pi0_leading_photon_ip;
 	s.pi0_leading_photon_conv_dist = pi0_leading_photon_conv_dist;
+	s.pi0_subleading_photon_index = subleading_photon_index;
 	s.pi0_subleading_photon_energy = pi0_subleading_photon_energy/1000; // GeV
 	//s.pi0_subleading_photon_start_dedx = pi0_subleading_photon_start_dedx;
 	s.pi0_subleading_photon_cosphi = pi0_subleading_photon_cosphi;

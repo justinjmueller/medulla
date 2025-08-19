@@ -5,9 +5,9 @@
 font.sans-serif:  Helvetica, Helvetica Neue, Nimbus Sans, Liberation Sans, Arial
 
 ## FIGURE
-figure.titlesize: 36
-#figure.titlesize: 20
-figure.constrained_layout.use: True
+figure.titlesize: 25
+#figure.titlesize: 36
+figure.constrained_layout.use: False
 figure.facecolor: white
 
 ## AXES
@@ -47,7 +47,7 @@ grid.linestyle: --
 grid.linewidth: 0.5
 
 ## LEGEND
-legend.fontsize: 14
+legend.fontsize: 12
 legend.frameon: False
 
 ## LINES

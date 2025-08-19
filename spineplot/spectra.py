@@ -200,7 +200,7 @@ class SpineSpectra(SpineArtist):
                 cb_label += r" $\bf{(Data)}$"
                 plot_color = 'red'
             else:
-                cb_label += r" $\bf{(MC)}$"
+                #cb_label += r" $\bf{(MC)}$"
                 plot_color = 'darkmagenta'
             cb_label += '\n'
             cb_label += f'$\\mu$ = {popt[2]:.2f} $\\pm$ {np.sqrt(pcov[2,2]):.2f}\n'

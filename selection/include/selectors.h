@@ -133,5 +133,47 @@ namespace selectors
         return leading_particle_index(obj, 4);
     }
     REGISTER_SELECTOR(leading_proton, leading_proton);
+
+    // TEST
+    template<class T>
+    size_t pi0_leading_shower(const T & obj)
+    {
+      
+        // Truth
+        if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
+		       {
+			   truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
+			   return s.pi0_leading_photon_index;
+		       }
+	// Reco
+	else
+	{
+	    reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
+	    return s.pi0_leading_photon_index;
+	}
+
+    }
+    REGISTER_SELECTOR(pi0_leading_shower, pi0_leading_shower);
+
+    template<class T>
+    size_t pi0_subleading_shower(const T & obj)
+    {
+
+        // Truth
+        if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
+                       {
+			   truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
+			   return s.pi0_subleading_photon_index;
+                       }
+        // Reco
+        else
+	{
+            reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
+            return s.pi0_subleading_photon_index;
+	}
+
+    }
+    REGISTER_SELECTOR(pi0_subleading_shower, pi0_subleading_shower);    
+
 }
 #endif // SELECTORS_H

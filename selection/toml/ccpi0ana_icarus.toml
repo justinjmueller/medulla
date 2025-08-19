@@ -2,19 +2,23 @@
 #output = "icarus_bnb_ccpi0_cvext"
 #output = "icarus_bnb_ccpi0_cv_vars"
 #output = "icarus_bnb_ccpi0_onbeam_offbeam"
-output = "icarus_bnb_ccpi0_dev"
+#output = "icarus_bnb_ccpi0_cv_nocrtpmt_pi0adj_12_08_2025"
+#output = "icarus_bnb_ccpi0_vars_nocrtpmt_pi0adj_12_08_2025"
+#output = "icarus_bnb_ccpi0_onbeam_nocrtpmt_pi0adj_test_12_08_2025"
+#output = "icarus_bnb_ccpi0_offbeam_nocrtpmt_pi0adj_12_08_2025"
+output = "icarus_bnb_ccpi0_cvext_nocrtpmt_pi0adj_12_08_2025"
 
 [[sample]]
 name = "cvext"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/input*.flat.root"
 ismc = true
-disable = true
+disable = false
 
 [[sample]]
 name = "cv"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input*.flat.root"
 ismc = true
-disable = false
+disable = true
 
 [[sample]]
 name = "onbeam"
@@ -149,6 +153,7 @@ mode = "reco"
 cut = [
     {name = "fiducial_cut", type = "reco"},
     {name = "flash_cut", type = "reco", parameters = [-0.5, 1.6]},
+    #{name = "crtpmt_veto", type = "event", parameters = [-0.5, 1.6]},
     {name = "base_topology_cut", type = "reco"},
     {name = "leading_shower_energy_cut", type = "reco"},
     {name = "valid_pi0_mass_cut", type = "reco"},
@@ -166,6 +171,7 @@ branch = [
     {name = "baseline", type = "mctruth"},
     {name = "cc", type = "mctruth"},
     {name = "neutrino_energy", type = "mctruth"},
+    {name = "interaction_mode", type = "mctruth"},
     {name = "interaction_type", type = "mctruth"},
     {name = "category_topology_v1", type = "true"},
     {name = "category_topology_v2", type = "true"},
@@ -213,6 +219,7 @@ mode = "reco"
 cut = [
     {name = "fiducial_cut", type = "reco"},
     {name = "flash_cut", type = "reco", parameters = [-0.5, 1.6]},
+    #{name = "crtpmt_veto", type = "event", parameters = [-0.5, 1.6]},
     {name = "base_topology_cut", type = "reco"},
     {name = "leading_shower_energy_cut", type = "reco"},
     {name = "valid_pi0_mass_cut", type = "reco"},
@@ -230,6 +237,7 @@ branch = [
     {name = "baseline", type = "mctruth"},
     {name = "cc", type = "mctruth"},
     {name = "neutrino_energy", type = "mctruth"},
+    {name = "interaction_mode", type = "mctruth"},
     {name = "interaction_type", type = "mctruth"},
     {name = "category_topology_v1", type = "true"},
     {name = "category_topology_v2", type = "true"},
@@ -290,6 +298,7 @@ branch = [
     {name = "baseline", type = "mctruth"},
     {name = "cc", type = "mctruth"},
     {name = "neutrino_energy", type = "mctruth"},
+    {name = "interaction_mode", type = "mctruth"},
     {name = "interaction_type", type = "mctruth"},
     {name = "category_topology_v1", type = "true"},
     {name = "category_topology_v2", type = "true"},
@@ -329,10 +338,11 @@ branch = [
     {name = "cut_type", type = "reco"},
 
     # Cuts for efficiency analysis
-    {name = "flash_icarus_satisfied", type = "reco"},
-    {name = "fiducial_satisfied", type = "reco"},
-    {name = "base_topology_satisfied", type = "reco"},
-    {name = "leading_shower_energy_satisfied", type = "reco"},
-    {name = "valid_pi0_mass_satisfied", type = "reco"}
-    #{name = "trigger_emulation_satisfied", type = "event"}
+    {name = "fiducial_cut", type = "both"},
+    {name = "flash_cut", type = "reco", parameters = [-0.5, 1.6]},
+    #{name = "crtpmt_veto", type = "event", parameters = [-0.5, 1.6]},
+    {name = "base_topology_cut", type = "reco"},
+    {name = "leading_shower_energy_cut", type = "reco"},
+    {name = "valid_pi0_mass_cut", type = "reco"},
+    #{name = "trigger_emulation_cut", type = "event", decrements_exposure = false},
 ]

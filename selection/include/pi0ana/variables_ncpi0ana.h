@@ -257,6 +257,52 @@ namespace vars::ncpi0ana
     }
     REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_v2, category_topology_v2);
 
+    
+    template<class T>
+    double category_topology_v3(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params={})
+    {
+        truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
+
+        // Cosmic
+	uint16_t cat(10);
+
+	// Neutrino
+	if(s.is_neutrino)
+	{
+	  
+	  // 0mu 0pi 1pi0 (in-phase, fiducial)
+	  if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && !s.is_cc && s.is_fiducial) cat = 0;
+
+	  // 0mu 0pi 1pi0 (OOPS, fiducial)
+	  else if( (s.num_primary_muons == 0 && s.num_primary_pions == 0 && s.num_primary_pi0s == 1 && !s.is_cc && s.is_fiducial) && (s.num_primary_muons_thresh != 0 || s.num_primary_pions_thresh != 0 || s.num_primary_pi0s_thresh != 1) ) cat = 1;
+
+	  // 0mu 0pi 1pi0 (OOFV)
+	  else if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 1 && !s.is_cc && !s.is_fiducial) cat = 2;
+
+	  // 0mu 0pi (2+ pi0)
+	  else if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh >= 2 && !s.is_cc && s.is_fiducial) cat = 3;
+
+	  // 0mu 0pi 0pi0 Npi0_nonprim
+	  else if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 0 && s.num_nonprimary_pi0s >= 1 && !s.is_cc && s.is_fiducial) cat = 4;
+
+	  // 0mu 0pi 0pi0 0pi0_nonprim
+	  else if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh == 0 && s.num_primary_pi0s_thresh == 0 && s.num_nonprimary_pi0s == 0 && !s.is_cc && s.is_fiducial) cat = 5;
+
+	  // 0mu Npi Xpi0
+	  else if(s.num_primary_muons_thresh == 0 && s.num_primary_pions_thresh >= 1 && !s.is_cc && s.is_fiducial) cat = 6;
+
+	  // 1mu Npi0                                                                                                                                                                                    
+	  else if(s.num_primary_muons_thresh == 1 && s.num_primary_pi0s_thresh >= 1 && s.is_cc && s.is_fiducial) cat = 7;
+
+	  // Other nu
+	  else cat = 8;	  
+	  
+	}
+	
+	return cat;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_v3, category_topology_v3);
+
     /**
      * @brief Dummy GUNDAM variables.
      * @details "cut_type" specifies a signal or sideband cut.

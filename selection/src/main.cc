@@ -10,6 +10,7 @@
 #define PRIMARYFUNC pvars::primary_classification
 #define PIDFUNC pvars::pid
 #define CALOKEFUNC pvars::calo_ke
+//#define CALOKEFUNC pvars::custom_calo_ke
 //#define CALOKEFUNC pvars::calo_ke_pi0_adj_mc
 //#define CALOKEFUNC pvars::calo_ke_pi0_adj_data
 #define PROTON_BINDING_ENERGY 30.9 // MeV
@@ -25,11 +26,11 @@
 #include "framework.h"
 #include "scorers.h"
 #include "cuts.h"
-#include "pi0ana/cuts_ccpi0ana.h"
-//#include "pi0ana/cuts_ncpi0ana.h"
+//#include "pi0ana/cuts_ccpi0ana.h"
+#include "pi0ana/cuts_ncpi0ana.h"
 #include "variables.h"
-#include "pi0ana/variables_ccpi0ana.h"
-//#include "pi0ana/variables_ncpi0ana.h"
+//#include "pi0ana/variables_ccpi0ana.h"
+#include "pi0ana/variables_ncpi0ana.h"
 #include "mctruth.h"
 #include "event_cuts.h"
 #include "event_variables.h"

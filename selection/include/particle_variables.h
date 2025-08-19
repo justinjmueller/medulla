@@ -235,7 +235,7 @@ namespace pvars
     template<class T>
     double calo_ke_pi0_adj_mc(const T & p)
     {
-        return 1.0 * p.calo_ke;
+        return (1/82.03) * 78.10 * (1/1.2359) * 1/(0.77) * (1/(133.31/134.9768)) * p.calo_ke;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, calo_ke_pi0_adj_mc, calo_ke_pi0_adj_mc);
 
@@ -252,7 +252,7 @@ namespace pvars
     template<class T>
     double calo_ke_pi0_adj_data(const T & p)
     {
-        return 1.0 * p.calo_ke;
+        return (1/1.2359) * 1/(0.77) * (1/(138.32/134.9768)) * p.calo_ke;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, calo_ke_pi0_adj_data, calo_ke_pi0_adj_data);
 
@@ -285,6 +285,18 @@ namespace pvars
 	}
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, calo_ke_adj, calo_ke_adj);
+    
+    template<class T>
+    double custom_calo_ke(const T & p)
+    {
+      // MC (fix gain and fudge, no pi0 mass tweak applied)
+      return (1/82.03) * 78.10 * (1/1.2359) * 1/(0.77) * p.calo_ke;
+
+      // Data (fix fudge, no pi0 mass tweak applied)
+      //return (1/1.2359) * 1/(0.77) * p.calo_ke;
+
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, custom_calo_ke, custom_calo_ke);
     
     /**
      * @brief Variable for true particle starting kinetic energy.

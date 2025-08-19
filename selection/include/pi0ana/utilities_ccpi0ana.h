@@ -11,12 +11,13 @@
  */
 #ifndef UTILITIES_CCPI0ANA_H
 #define UTILITIES_CCPI0ANA_H
-
+ 
 #include <iostream>
 #include <vector>
 #include <TVector3.h>
 //#include "include/cuts.h"
 #include <unordered_map>
+#include "include/framework.h"
 
 #define MIN_MUON_MOMENTUM 226
 #define MIN_PION_ENERGY 25
@@ -40,8 +41,10 @@ struct truth_inter {
   double muon_energy;
   double muon_momentum_mag;
   double muon_beam_costheta;
+  size_t pi0_leading_photon_index;
   double pi0_leading_photon_energy;
   double pi0_leading_photon_conv_dist;
+  size_t pi0_subleading_photon_index;
   double pi0_subleading_photon_energy;
   double pi0_subleading_photon_conv_dist;
   double pi0_photons_costheta;
@@ -55,11 +58,13 @@ struct reco_inter {
   double muon_energy;
   double muon_momentum_mag;
   double muon_beam_costheta;
+  double pi0_leading_photon_index;
   double pi0_leading_photon_energy;
   double pi0_leading_photon_start_dedx;
   double pi0_leading_photon_cosphi;
   double pi0_leading_photon_ip;
   double pi0_leading_photon_conv_dist;
+  double pi0_subleading_photon_index;
   double pi0_subleading_photon_energy;
   double pi0_subleading_photon_start_dedx;
   double pi0_subleading_photon_cosphi;
@@ -225,9 +230,11 @@ namespace utilities_ccpi0ana
 	std::unordered_map<int, std::vector<std::pair<size_t, double>> > nonprimary_pi0_map;
 	double muon_momentum_mag;
 	double muon_beam_costheta;
+	size_t pi0_leading_photon_index(kNoMatch);
 	double pi0_leading_photon_energy(-5);
 	TVector3 pi0_leading_photon_dir;
 	double pi0_leading_photon_conv_dist(-5);
+	size_t pi0_subleading_photon_index(kNoMatch);
 	double pi0_subleading_photon_energy(-5);
 	TVector3 pi0_subleading_photon_dir;
 	double pi0_subleading_photon_conv_dist(-5);
@@ -398,6 +405,7 @@ namespace utilities_ccpi0ana
 	    const auto & pi0_subleading_photon = obj.particles[subleading_photon_index];
 
 	    // Leading
+	    pi0_leading_photon_index = leading_photon_index;
 	    pi0_leading_photon_energy = pi0_leading_photon.ke;
 	    TVector3 pi0_leading_photon_start_point(pi0_leading_photon.start_point[0], pi0_leading_photon.start_point[1], pi0_leading_photon.start_point[2]);
 	    TVector3 pi0_leading_photon_dir(pi0_leading_photon.momentum[0], pi0_leading_photon.momentum[1], pi0_leading_photon.momentum[2]);
@@ -406,6 +414,7 @@ namespace utilities_ccpi0ana
 	    TVector3 pi0_leading_photon_momentum(pi0_leading_photon.momentum[0], pi0_leading_photon.momentum[1], pi0_leading_photon.momentum[2]);
 
 	    // Subleading
+	    pi0_subleading_photon_index = subleading_photon_index;
 	    pi0_subleading_photon_energy = pi0_subleading_photon.ke;
 	    TVector3 pi0_subleading_photon_start_point(pi0_subleading_photon.start_point[0], pi0_subleading_photon.start_point[1], pi0_subleading_photon.start_point[2]);
 	    TVector3 pi0_subleading_photon_dir(pi0_subleading_photon.momentum[0], pi0_subleading_photon.momentum[1], pi0_subleading_photon.momentum[2]);
@@ -432,8 +441,10 @@ namespace utilities_ccpi0ana
 	  s.muon_energy = muon_energy/1000; // GeV
 	  s.muon_momentum_mag = muon_momentum_mag/1000; // GeV
 	  s.muon_beam_costheta = muon_beam_costheta;
+	  s.pi0_leading_photon_index = pi0_leading_photon_index;
 	  s.pi0_leading_photon_energy = pi0_leading_photon_energy/1000; // GeV
 	  s.pi0_leading_photon_conv_dist = pi0_leading_photon_conv_dist;
+	  s.pi0_subleading_photon_index = pi0_subleading_photon_index;
 	  s.pi0_subleading_photon_energy = pi0_subleading_photon_energy/1000; // GeV
 	  s.pi0_subleading_photon_conv_dist = pi0_subleading_photon_conv_dist;
 	  s.pi0_photons_costheta = pi0_photons_costheta;
@@ -446,8 +457,10 @@ namespace utilities_ccpi0ana
 	  s.muon_energy = -5;
 	  s.muon_momentum_mag = -5;
           s.muon_beam_costheta = -5;
+	  s.pi0_leading_photon_index = kNoMatch;
           s.pi0_leading_photon_energy = -5;
           s.pi0_leading_photon_conv_dist = -5;
+	  s.pi0_subleading_photon_index = kNoMatch;
           s.pi0_subleading_photon_energy = -5;
           s.pi0_subleading_photon_conv_dist = -5;
           s.pi0_photons_costheta = -5;
@@ -553,8 +566,9 @@ namespace utilities_ccpi0ana
 	} // end particle loop
 	  
 	// Find pi0s
-	std::vector<std::pair< std::pair<size_t, size_t>, double> > photons_angle;
-	std::vector<std::pair< std::pair<size_t, size_t>, double> > photons_mass;
+	//std::vector<std::pair< std::pair<size_t, size_t>, double> > photons_angle;
+	//std::vector<std::pair< std::pair<size_t, size_t>, double> > photons_mass;
+	std::vector<std::pair< std::pair<size_t, size_t>, double> > photons_metric;
 	for(size_t i(0); i < obj.particles.size(); ++i)
 	  {
 	    // First shower
@@ -666,24 +680,23 @@ namespace utilities_ccpi0ana
 		    TVector3 v0 = (sh0_start - vtx).Unit();
 		    angle += acos( sh0_dir.Dot(v0) )/2;
 		  }
-
-		photons_angle.push_back(make_pair(make_pair(i, j), angle));
 		*/
 		
-		photons_mass.push_back(std::make_pair(std::make_pair(i, j), mass));
-		//sort(photons_angle.begin(), photons_angle.end(), [](const pair<pair<size_t, size_t>, double> &a, const pair<pair<size_t, size_t>, double> &b)
-		//{ return a.second < b.second;});
+		//photons_metric.push_back(std::make_pair(std::make_pair(i, j), angle));
+		//sort(photons_metric.begin(), photons_metric.end(), [](const std::pair<std::pair<size_t, size_t>, double> &a, const std::pair<std::pair<size_t, size_t>, double> &b)
+		//     { return a.second < b.second;});
 
-		std::sort(photons_mass.begin(), photons_mass.end(), [](const std::pair<std::pair<size_t, size_t>, double> &a, const std::pair<std::pair<size_t, size_t>, double> &b) 
-		     { return abs(a.second - 134.9768) < abs(b.second - 134.9768);});
+		photons_metric.push_back(std::make_pair(std::make_pair(i, j), mass));
+		std::sort(photons_metric.begin(), photons_metric.end(), [](const std::pair<std::pair<size_t, size_t>, double> &a, const std::pair<std::pair<size_t, size_t>, double> &b) 
+			  { return abs(a.second - 134.9768) < abs(b.second - 134.9768);});
 
 	      } // end loop 2
 	  } // end loop 1
 
-	// Get pi0 pair
-	if(!photons_mass.empty())
+	// Get pi0 pair (by mass)
+	if(!photons_metric.empty())
 	  {
-	    std::pair<size_t, size_t> ph_pair_ids = photons_mass[0].first; // best pi0 mass agreement
+	    std::pair<size_t, size_t> ph_pair_ids = photons_metric[0].first; // best metric agreement
 	    if(CALOKEFUNC(obj.particles[ph_pair_ids.first]) > CALOKEFUNC(obj.particles[ph_pair_ids.second]))
 	      {
 		leading_photon_index = ph_pair_ids.first;
@@ -768,11 +781,13 @@ namespace utilities_ccpi0ana
 	s.muon_energy = muon_energy/1000; // GeV
 	s.muon_momentum_mag = muon_momentum_mag / 1000; // GeV
 	s.muon_beam_costheta = muon_beam_costheta;
+	s.pi0_leading_photon_index = leading_photon_index;
 	s.pi0_leading_photon_energy = pi0_leading_photon_energy/1000; // GeV
 	//s.pi0_leading_photon_start_dedx = pi0_leading_photon_start_dedx;
 	s.pi0_leading_photon_cosphi = pi0_leading_photon_cosphi;
 	s.pi0_leading_photon_ip = pi0_leading_photon_ip;
 	s.pi0_leading_photon_conv_dist = pi0_leading_photon_conv_dist;
+	s.pi0_subleading_photon_index = subleading_photon_index;
 	s.pi0_subleading_photon_energy = pi0_subleading_photon_energy/1000; // GeV
 	//s.pi0_subleading_photon_start_dedx = pi0_subleading_photon_start_dedx;
 	s.pi0_subleading_photon_cosphi = pi0_subleading_photon_cosphi;

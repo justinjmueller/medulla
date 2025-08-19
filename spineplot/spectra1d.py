@@ -259,13 +259,13 @@ class SpineSpectra1D(SpineSpectra):
                 systs = [s[draw_error] for s in self._systematics.values() if draw_error in s]
                 cov = np.sum(s.get_covariance(self._variable._key) for s in systs)
                 x = reduce(bincenters)[0]
-                #y = scale * np.sum(reduce(data), axis=0)
                 xerr = [x / 2 for x in binwidths[0]]
-                #scov = Systematic.transform_as(cov, scale if not normalize else np.sum(reduce(data), axis=0))
-                if normalize:
-                    scov = np.outer(y,y) * (cov / np.outer(np.sum(reduce(data), axis=0), np.sum(reduce(data), axis=0)))
-                else:
-                    scov = Systematic.transform_as(cov, scale)
+                y = scale * np.sum(reduce(data), axis=0)
+                scov = Systematic.transform_as(cov, scale if not normalize else np.sum(reduce(data), axis=0))
+                #if normalize:
+                #    scov = np.outer(y,y) * (cov / np.outer(np.sum(reduce(data), axis=0), np.sum(reduce(data), axis=0)))
+                #else:
+                #    scov = Systematic.transform_as(cov, scale)
                 yerr = np.sqrt(np.diag(scov))
                 draw_error_boxes(ax, x, y, xerr, yerr, facecolor='gray', edgecolor='none', alpha=0.5, hatch='///')
 
@@ -277,21 +277,36 @@ class SpineSpectra1D(SpineSpectra):
                 darray = scale*data[scatter_mask[i]]
                 
                 # Fitting (data)
-                super().fit_with_function(ax, bincenters[0], darray, binedges[0], fit_type, range=xr, slabel='onbeam', zorder=101)
+                #super().fit_with_function(ax, bincenters[0], darray, binedges[0], fit_type, range=xr, slabel='onbeam', zorder=101)
 
         # Fitting (MC)
         if fit_type is not None:
-            super().fit_with_function(ax, bincenters[scatter_mask[i]], y, binedges[0], fit_type, range=xr, slabel='mc', zorder=100)
+            #super().fit_with_function(ax, bincenters[scatter_mask[i]], y, binedges[0], fit_type, range=xr, slabel='mc', zorder=100)
+            super().fit_with_function(ax, bincenters[0], y, binedges[0], fit_type, range=xr, slabel='mc', zorder=100)
             
         if invert_stack_order:
             h, l = ax.get_legend_handles_labels()
             if draw_error:
-                #h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
-                #l.append(systs[0].label)
-                #ax.legend(h[-2::-1]+h[-1:], l[-2::-1]+l[-1:], ncol=leg_ncol)
                 
+                # Data and MC, no fits
+                h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
+                l.append(systs[0].label)
+                ax.legend(h[-2::-1]+h[-1:], l[-2::-1]+l[-1:], ncol=leg_ncol)
+
+                # With MC fit
+                '''
+                h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
+                l.append(systs[0].label)
+                # reverse all but syst. label
+                rev_all_but_syst_h, rev_all_but_syst_l = h[-2::-1] + [h[-1]], l[-2::-1] + [l[-1]]
+                # move first element to end
+                first_to_last_h = rev_all_but_syst_h[1:] + [rev_all_but_syst_h[0]]
+                first_to_last_l = rev_all_but_syst_l[1:] + [rev_all_but_syst_l[0]]
+                ax.legend(first_to_last_h, first_to_last_l, ncol=leg_ncol)
+                '''
+
                 # With data/MC fits
-                
+                '''
                 h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
                 l.append(systs[0].label)
                 # reverse all but syst. label
@@ -303,7 +318,7 @@ class SpineSpectra1D(SpineSpectra):
                 mv_syst_l.append(rev_all_but_syst_l[2])
                 mv_syst_l.append(rev_all_but_syst_l[1])
                 ax.legend(mv_syst_h, mv_syst_l, ncol=leg_ncol)
-                
+                '''
             else:
                 ax.legend(h[::-1], l[::-1], ncol=leg_ncol)
         else:
