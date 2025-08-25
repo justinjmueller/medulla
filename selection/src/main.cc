@@ -7,12 +7,6 @@
  * @author mueller@fnal.gov
  */
 #define PLACEHOLDERVALUE std::numeric_limits<double>::quiet_NaN()
-#define PRIMARYFUNC pvars::primary_classification
-#define PIDFUNC pvars::pid
-#define CALOKEFUNC pvars::calo_ke
-//#define CALOKEFUNC pvars::custom_calo_ke
-//#define CALOKEFUNC pvars::calo_ke_pi0_adj_mc
-//#define CALOKEFUNC pvars::calo_ke_pi0_adj_data
 #define PROTON_BINDING_ENERGY 30.9 // MeV
 #define BEAM_IS_NUMI false
 
@@ -27,11 +21,9 @@
 #include "framework.h"
 #include "scorers.h"
 #include "cuts.h"
-//#include "pi0ana/cuts_ccpi0ana.h"
-#include "pi0ana/cuts_ncpi0ana.h"
+#include "pi0ana/cuts_pi0ana.h"
 #include "variables.h"
-//#include "pi0ana/variables_ccpi0ana.h"
-#include "pi0ana/variables_ncpi0ana.h"
+#include "pi0ana/variables_pi0ana.h"
 #include "mctruth.h"
 #include "event_cuts.h"
 #include "event_variables.h"
@@ -41,6 +33,7 @@
 
 std::shared_ptr<VarFn<RParticleType>> pvars::primfn = std::make_shared<VarFn<RParticleType>>(pvars::default_primary_classification<RParticleType>);
 std::shared_ptr<VarFn<RParticleType>> pvars::pidfn = std::make_shared<VarFn<RParticleType>>(pvars::default_pid<RParticleType>);
+std::shared_ptr<VarFn<RParticleType>> pvars::calofn = std::make_shared<VarFn<RParticleType>>(pvars::default_calo_ke<RParticleType>);
 
 /**
  * @brief Set a function pointer for a variable function.
@@ -119,6 +112,12 @@ int main(int argc, char * argv[])
 
             // Set the global vector for final state signal thresholds.
             pcuts::final_state_signal_thresholds = fsthresh;
+
+	    // Retrieve the threshold for neutral pion reconstruction.
+	    std::vector<double> recopi0thresh = config.get_double_vector("general.recopi0thresh");
+	    
+	    // Set the global vectors for neutral pion reconstuction thresholds.
+	    utilities_pi0ana::reco_pi0_shower_thresholds = recopi0thresh;
         }
 
         // Construct the category function.
@@ -196,6 +195,9 @@ int main(int argc, char * argv[])
         // Set the PID functions.
         set_fcn(pvars::primfn, config.get_string_field("general.primfn", "default_primary_classification"));
         set_fcn(pvars::pidfn, config.get_string_field("general.pidfn", "default_pid"));
+
+	// Set the Calo KE function.
+	set_fcn(pvars::calofn, config.get_string_field("general.calofn", "default_calo_ke"));
 
         // Configure the samples in the analysis
         std::vector<cfg::ConfigurationTable> samples = config.get_subtables("sample");

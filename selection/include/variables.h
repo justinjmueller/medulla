@@ -7,14 +7,13 @@
  * double. These are the building blocks for producing high-level plots of the
  * selected interactions.
  * @author mueller@fnal.gov
-*/
+ */
 #ifndef VARIABLES_H
 #define VARIABLES_H
 #define ELECTRON_MASS 0.5109989461
 #define MUON_MASS 105.6583745
 #define PION_MASS 139.57039
 #define PROTON_MASS 938.2720813
-#define NEUTRON_MASS 939.5654133
 #define NUCLEON_MASS 938.9187473
 
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
@@ -44,19 +43,19 @@
  */
 namespace vars
 {
-    /**
-     * @brief Variable for the neutrino ID of the interaction.
-     * @details This variable is intended to provide a unique identifier for
-     * each parent neutrino within the event record. This number is assigned
-     * starting at 0 for the first neutrino in the event and is incremented
-     * for each subsequent neutrino. Non-neutrino interactions are assigned
-     * a value of -1.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to apply the variable on.
-     * @return the neutrino ID.
-     */
+  /**
+   * @brief Variable for the neutrino ID of the interaction.
+   * @details This variable is intended to provide a unique identifier for
+   * each parent neutrino within the event record. This number is assigned
+   * starting at 0 for the first neutrino in the event and is incremented
+   * for each subsequent neutrino. Non-neutrino interactions are assigned
+   * a value of -1.
+   * @tparam T the type of interaction (true or reco).
+   * @param obj the interaction to apply the variable on.
+   * @return the neutrino ID.
+   */
     template<class T>
-    double neutrino_id(const T & obj) { return obj.nu_id; }
+      double neutrino_id(const T & obj) { return obj.nu_id; }
     REGISTER_VAR_SCOPE(RegistrationScope::True, neutrino_id, neutrino_id);
 
     /**
@@ -71,7 +70,7 @@ namespace vars
      * @return the interaction ID.
      */
     template<class T>
-    double interaction_id(const T & obj) { return obj.id; }
+      double interaction_id(const T & obj) { return obj.id; }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, interaction_id, interaction_id);
 
     /**
@@ -84,13 +83,13 @@ namespace vars
      * @return the best-match IoU of the interaction.
      */
     template<class T>
-    double iou(const T & obj)
-    {
+      double iou(const T & obj)
+      {
         if(obj.match_ids.size() > 0)
-            return obj.match_overlaps[0];
+	  return obj.match_overlaps[0];
         else 
-            return PLACEHOLDERVALUE;
-    }
+	  return PLACEHOLDERVALUE;
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, iou, iou);
 
     /**
@@ -103,29 +102,9 @@ namespace vars
      * @return the containment status of the interaction.
      */
     template<class T>
-    double containment(const T & obj) { return cuts::containment_cut(obj); }
+      double containment(const T & obj) { return cuts::containment_cut(obj); }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, containment, containment);
 
-    /**
-     * @brief Variable for the in-time flash status of the interaction.
-     * @details The in-time flash status is determined upstream in the SPINE
-     * post-processing and is a requirement that the interaction be matched to 
-     * an in-time flash.
-     */
-    template<class T>
-    double flash_icarus_satisfied(const T & obj) {return cuts::flash_cut(obj, {-0.5, 1.6});}
-    REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_icarus_satisfied, flash_icarus_satisfied);
-
-    /**
-     * @brief Variable for the flash status of the interaction.
-     * @details The flash status is determined upstream in the SPINE
-     * post-processing and is a requirement that the interaction be matched 
-     * to a valid flash.
-     */
-    template<class T>
-    double flash_sbnd_satisfied(const T & obj) {return cuts::valid_flashmatch(obj);}
-    REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_sbnd_satisfied, flash_sbnd_satisfied);
-    
     /**
      * @brief Variable for the fiducial volume status of the interaction.
      * @details The fiducial volume status is determined upstream in the SPINE
@@ -133,8 +112,8 @@ namespace vars
      * the fiducial volume of the TPC.
      */
     template<class T>
-    double fiducial_satisfied(const T & obj) { return cuts::fiducial_cut(obj); }
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, fiducial_satisfied, fiducial_satisfied);
+      double fiducial(const T & obj) { return cuts::fiducial_cut(obj); }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, fiducial, fiducial);
 
     /**
      * @brief Variable for total visible energy of interaction.
@@ -145,24 +124,22 @@ namespace vars
      * @param obj interaction to apply the variable on.
      * @return the total visible energy of the interaction.
      */
-    /*
     template<class T>
-    double visible_energy(const T & obj)
-    {
+      double visible_energy(const T & obj)
+      {
         double energy(0);
         for(const auto & p : obj.particles)
-        {
+	  {
             if(pcuts::final_state_signal(p))
-            {
+	      {
                 energy += pvars::energy(p);
                 if(pvars::pid(p) == 4) energy -= pvars::mass(p) - PROTON_BINDING_ENERGY;
-            }
-        }
+	      }
+	  }
         return energy/1000.0;
-    }
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, visible_energy, visible_energy);
-    */
-    
+
     /**
      * @brief Variable for total visible energy of interaction, including
      * sub-threshold particles.
@@ -170,26 +147,26 @@ namespace vars
      * interaction by summing the energy of all particles that are identified
      * as counting towards the final state of the interaction. Sub-threshold
      * particles are included calorimetrically.
-     * @tparam T the type of interaction (true or reco).
+				   * @tparam T the type of interaction (true or reco).
      * @param obj interaction to apply the variable on.
      * @return the total visible energy of the interaction.
      */
     template<class T>
-    double visible_energy_calosub(const T & obj)
-    {
+      double visible_energy_calosub(const T & obj)
+      {
         double energy(0);
         for(const auto & p : obj.particles)
-        {
+	  {
             if(pcuts::final_state_signal(p))
-            {
+	      {
                 energy += pvars::energy(p);
                 if(pvars::pid(p) == 4) energy -= PROTON_MASS - PROTON_BINDING_ENERGY;
-            }
+	      }
             else if(pcuts::is_primary(p))
-                energy += p.calo_ke;
-        }
+	      energy += p.calo_ke;
+	  }
         return energy/1000.0;
-    }
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, visible_energy_calosub, visible_energy_calosub);
 
     /**
@@ -202,12 +179,12 @@ namespace vars
      * @return the flash time of the interaction.
      */
     template<class T>
-    double flash_time(const T & obj)
-    {
+      double flash_time(const T & obj)
+      {
         if(obj.flash_times.size() > 0)
-            return obj.flash_times[0];
+	  return obj.flash_times[0];
         return PLACEHOLDERVALUE;
-    }
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_time, flash_time);
 
     /**
@@ -220,12 +197,12 @@ namespace vars
      * @return the flash score of the interaction.
      */
     template<class T>
-    double flash_score(const T & obj)
-    {
+      double flash_score(const T & obj)
+      {
         if(obj.flash_scores.size() > 0)
-            return obj.flash_scores[0];
+	  return obj.flash_scores[0];
         return PLACEHOLDERVALUE;
-    }
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_score, flash_score);
 
     /**
@@ -239,7 +216,7 @@ namespace vars
      * @return the flash total photoelectron count of the interaction.
      */
     template<class T>
-    double flash_total_pe(const T & obj) { return obj.flash_total_pe; }
+      double flash_total_pe(const T & obj) { return obj.flash_total_pe; }
     REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_total_pe, flash_total_pe);
 
     /**
@@ -253,7 +230,7 @@ namespace vars
      * @return the flash hypothesis total photoelectron count of the interaction.
      */
     template<class T>
-    double flash_hypothesis(const T & obj) { return obj.flash_hypo_pe; }
+      double flash_hypothesis(const T & obj) { return obj.flash_hypo_pe; }
     REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_hypothesis, flash_hypothesis);
 
     /**
@@ -265,7 +242,7 @@ namespace vars
      * @return the x-coordinate of the interaction vertex.
      */
     template<class T>
-    double vertex_x(const T & obj) { return obj.vertex[0]; }
+      double vertex_x(const T & obj) { return obj.vertex[0]; }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, vertex_x, vertex_x);
 
     /**
@@ -277,7 +254,7 @@ namespace vars
      * @return the y-coordinate of the interaction vertex.
      */
     template<class T>
-    double vertex_y(const T & obj) { return obj.vertex[1]; }
+      double vertex_y(const T & obj) { return obj.vertex[1]; }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, vertex_y, vertex_y);
 
     /**
@@ -289,7 +266,7 @@ namespace vars
      * @return the z-coordinate of the interaction vertex.
      */
     template<class T>
-    double vertex_z(const T & obj) { return obj.vertex[2]; }
+      double vertex_z(const T & obj) { return obj.vertex[2]; }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, vertex_z, vertex_z);
 
     /**
@@ -300,34 +277,32 @@ namespace vars
      * identified as counting towards the final state of the interaction. The
      * neutrino direction is assumed to either be the BNB axis direction
      * (z-axis) or the unit vector pointing from the NuMI target to the
-     * interaction vertex. See @ref utilities::transverse_momentum for details
+				 * interaction vertex. See @ref utilities::transverse_momentum for details
      * on the extraction of the transverse momentum.
-     * @tparam T the type of interaction (true or reco).
+       * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to apply the variable on.
      * @return the transverse momentum of the primary particles.
      * @note The switch to the NuMI beam direction instead of the BNB axis is
-     * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
+			     * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
-    /*
     template<class T>
-    double dpT(const T & obj)
-    {
-        utilities::three_vector pt = {0, 0, 0};
+      double dpT(const T & obj)
+      {
+	utilities::three_vector pt = {0, 0, 0};
         for(const auto & p : obj.particles)
-        {
+	  {
             if(pcuts::final_state_signal(p))
-            {
+	      {
                 // Sum up the transverse momentum of all final state particles
-                utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
-                utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
-                utilities::three_vector this_pt = utilities::transverse_momentum(momentum, vtx);
+		utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+		utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+		utilities::three_vector this_pt = utilities::transverse_momentum(momentum, vtx);
                 pt = utilities::add(pt, this_pt);
-            }
-        }
+	      }
+	  }
         return utilities::magnitude(pt);
-    }
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, dpT, dpT);
-    */
 
     /**
      * @brief Variable for the transverse momentum of the interaction counting
@@ -344,42 +319,40 @@ namespace vars
      * @note The switch to the NuMI beam direction instead of the BNB axis is
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
-    /*
     template<class T>
-    double dpT_lp(const T & obj)
-    {
+      double dpT_lp(const T & obj)
+      {
         
-        utilities::three_vector l_pt = {0, 0, 0};
-        utilities::three_vector p_pt = {0, 0, 0};
+	utilities::three_vector l_pt = {0, 0, 0};
+	utilities::three_vector p_pt = {0, 0, 0};
         double l_ke(0), p_ke(0);
         for(const auto & p : obj.particles)
-        {
+	  {
             if(pcuts::final_state_signal(p))
-            {
+	      {
                 // Find the leading charged lepton and proton
                 if((pvars::pid(p) == 1 || pvars::pid(p) == 2) && pvars::ke(p) > l_ke)
-                {
+		  {
                     l_ke = pvars::ke(p);
-                    utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
-                    utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+		    utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+		    utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
                     l_pt = utilities::transverse_momentum(momentum, vtx);
-                }
+		  }
                 else if(pvars::pid(p) == 4 && pvars::ke(p) > p_ke)
-                {
+		  {
                     p_ke = pvars::ke(p);
-                    utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
-                    utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+		    utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+		    utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
                     p_pt = utilities::transverse_momentum(momentum, vtx);
-                }
-            }
-        }
+		  }
+	      }
+	  }
         if(l_ke == 0 || p_ke == 0)
-            return PLACEHOLDERVALUE;
+	  return PLACEHOLDERVALUE;
         else
-            return utilities::magnitude(utilities::add(l_pt, p_pt));
-    }
+	  return utilities::magnitude(utilities::add(l_pt, p_pt));
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, dpT_lp, dpT_lp);
-    */
 
     /**
      * @brief Variable for dphi_T of the interaction.
@@ -396,32 +369,30 @@ namespace vars
      * @note The switch to the NuMI beam direction instead of the BNB axis is
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
-    /*
     template<class T>
-    double dphiT(const T & obj)
-    {
-        utilities::three_vector lepton_pt = {0, 0, 0};
-        utilities::three_vector hadronic_pt = {0, 0, 0};
+      double dphiT(const T & obj)
+      {
+	utilities::three_vector lepton_pt = {0, 0, 0};
+	utilities::three_vector hadronic_pt = {0, 0, 0};
         for(const auto & p : obj.particles)
-        {
+	  {
             if(pcuts::final_state_signal(p))
-            {
+	      {
                 // There should only be one lepton, so replace the lepton
                 // transverse momentum if the particle is a lepton.
-                utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
-                utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
-                utilities::three_vector this_pt = utilities::transverse_momentum(momentum, vtx);
+		utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+		utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+		utilities::three_vector this_pt = utilities::transverse_momentum(momentum, vtx);
                 if(pvars::pid(p) == 1 || pvars::pid(p) == 2)
-                    lepton_pt = this_pt;
+		  lepton_pt = this_pt;
                 // The total hadronic system is treated as a single object.
                 else if(pvars::pid(p) > 2)
-                    hadronic_pt = utilities::add(hadronic_pt, this_pt);
-            }
-        }
+		  hadronic_pt = utilities::add(hadronic_pt, this_pt);
+	      }
+	  }
         return std::acos(-1 * utilities::dot_product(lepton_pt, hadronic_pt) / (utilities::magnitude(lepton_pt) * utilities::magnitude(hadronic_pt)));
-    }
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, dphiT, dphiT);
-    */
 
     /**
      * @brief Variable for dalpha_T of the interaction.
@@ -431,36 +402,34 @@ namespace vars
      * axis direction (z-axis) or the unit vector pointing from the NuMI target
      * to the interaction vertex. See @ref utilities::transverse_momentum for
      * details on the extraction of the transverse momentum.
-     * @tparam T the type of interaction (true or reco).
+		 * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to apply the variable on.
      * @return the alpha_T of the interaction.
      * @note The switch to the NuMI beam direction instead of the BNB axis is
-     * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
+			     * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
-    /*
     template<class T>
-    double dalphaT(const T & obj)
-    {
-        utilities::three_vector lepton_pt = {0, 0, 0};
-        utilities::three_vector total_pt = {0, 0, 0};
+      double dalphaT(const T & obj)
+      {
+	utilities::three_vector lepton_pt = {0, 0, 0};
+	utilities::three_vector total_pt = {0, 0, 0};
         for(const auto & p : obj.particles)
-        {
+	  {
             if(pcuts::final_state_signal(p))
-            {
+	      {
                 // There should only be one lepton, so replace the lepton
                 // transverse momentum if the particle is a lepton.
-                utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
-                utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
-                utilities::three_vector this_pt = utilities::transverse_momentum(momentum, vtx);
+		utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+		utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+		utilities::three_vector this_pt = utilities::transverse_momentum(momentum, vtx);
                 if(pvars::pid(p) == 1 || pvars::pid(p) == 2)
-                    lepton_pt = this_pt;
+		  lepton_pt = this_pt;
                 total_pt = utilities::add(total_pt, this_pt);
-            }
-        }
+	      }
+	  }
         return std::acos(-1 * utilities::dot_product(total_pt, lepton_pt) / (utilities::magnitude(total_pt) * utilities::magnitude(lepton_pt)));
-    }
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, dalphaT, dalphaT);
-    */
 
     /**
      * @brief Variable for the missing longitudinal momentum of the
@@ -475,32 +444,30 @@ namespace vars
      * @note The switch to the NuMI beam direction instead of the BNB axis is
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
-    /*
     template<class T>
-    double dpL(const T & obj)
-    {
-        utilities::three_vector lepton_pl = {0, 0, 0};
-        utilities::three_vector hadronic_pl = {0, 0, 0};
+      double dpL(const T & obj)
+      {
+	utilities::three_vector lepton_pl = {0, 0, 0};
+	utilities::three_vector hadronic_pl = {0, 0, 0};
         for(const auto & p : obj.particles)
-        {
+	  {
             if(pcuts::final_state_signal(p))
-            {
+	      {
                 // There should only be one lepton, so replace the lepton
                 // transverse momentum if the particle is a lepton.
-                utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
-                utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
-                utilities::three_vector this_pl = utilities::longitudinal_momentum(momentum, vtx);
+		utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+		utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+		utilities::three_vector this_pl = utilities::longitudinal_momentum(momentum, vtx);
                 if(pvars::pid(p) == 1 || pvars::pid(p) == 2)
-                    lepton_pl = this_pl;
+		  lepton_pl = this_pl;
                 // The total hadronic system is treated as a single object.
                 else if(pvars::pid(p) > 2)
-                    hadronic_pl = utilities::add(hadronic_pl, this_pl);
-            }
-        }
+		  hadronic_pl = utilities::add(hadronic_pl, this_pl);
+	      }
+	  }
         return utilities::magnitude(utilities::add(hadronic_pl, lepton_pl)) - 1000*vars::visible_energy(obj);
-    }
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, dpL, dpL);
-    */
 
     /**
      * @brief Variable for the missing longitudinal momentum of the interaction
@@ -516,41 +483,39 @@ namespace vars
      * @note The switch to the NuMI beam direction instead of the BNB axis is
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
-    /*
     template<class T>
-    double dpL_lp(const T & obj)
-    {
-        utilities::three_vector l_pl = {0, 0, 0};
-        utilities::three_vector p_pl = {0, 0, 0};
+      double dpL_lp(const T & obj)
+      {
+	utilities::three_vector l_pl = {0, 0, 0};
+	utilities::three_vector p_pl = {0, 0, 0};
         double l_ke(0), p_ke(0);
         for(const auto & p : obj.particles)
-        {
+	  {
             if(pcuts::final_state_signal(p))
-            {
+	      {
                 // Find the leading charged lepton and proton
                 if((pvars::pid(p) == 1 || pvars::pid(p) == 2) && pvars::ke(p) > l_ke)
-                {
+		  {
                     l_ke = pvars::ke(p);
-                    utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
-                    utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+		    utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+		    utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
                     l_pl = utilities::longitudinal_momentum(momentum, vtx);
-                }
+		  }
                 else if(pvars::pid(p) == 4 && pvars::ke(p) > p_ke)
-                {
+		  {
                     p_ke = pvars::ke(p);
-                    utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
-                    utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+		    utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+		    utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
                     p_pl = utilities::longitudinal_momentum(momentum, vtx);
-                }
-            }
-        }
+		  }
+	      }
+	  }
         if(l_ke == 0 || p_ke == 0)
-            return PLACEHOLDERVALUE;
+	  return PLACEHOLDERVALUE;
         else
-            return utilities::magnitude(utilities::add(l_pl, p_pl)) - 1000*vars::visible_energy(obj);
-    }
+	  return utilities::magnitude(utilities::add(l_pl, p_pl)) - 1000*vars::visible_energy(obj);
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, dpL_lp, dpL_lp);
-    */
 
     /**
      * @brief Variable for the estimate of the momentum of the struck nucleon.
@@ -563,11 +528,9 @@ namespace vars
      * @note The switch to the NuMI beam direction instead of the BNB axis is
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
-    /*
     template<class T>
-    double pn(const T & obj) { return std::sqrt(std::pow(vars::dpT(obj), 2) + std::pow(vars::dpL(obj), 2)); }
+      double pn(const T & obj) { return std::sqrt(std::pow(vars::dpT(obj), 2) + std::pow(vars::dpL(obj), 2)); }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, pn, pn);
-    */
 
     /**
      * @brief Variable for the estimate of the momentum of the struck nucleon
@@ -581,11 +544,9 @@ namespace vars
      * @note The switch to the NuMI beam direction instead of the BNB axis is
      * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
      */
-    /*
     template<class T>
-    double pn_lp(const T & obj) { return std::sqrt(std::pow(vars::dpT_lp(obj), 2) + std::pow(vars::dpL_lp(obj), 2)); }
+      double pn_lp(const T & obj) { return std::sqrt(std::pow(vars::dpT_lp(obj), 2) + std::pow(vars::dpL_lp(obj), 2)); }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, pn_lp, pn_lp);
-    */
 
     /**
      * @brief Variable for the opening angle between leading muon and proton.
@@ -598,19 +559,19 @@ namespace vars
      * proton.
      */
     template<class T>
-    double opening_angle(const T & obj)
-    {
+      double opening_angle(const T & obj)
+      {
         size_t mi = selectors::leading_muon(obj);
         size_t pi = selectors::leading_proton(obj);
         if(mi == kNoMatch || pi == kNoMatch)
-            return kNoMatchValue; // No leading muon or proton found.
+	  return kNoMatchValue; // No leading muon or proton found.
         else
-        {
+	  {
             auto & m(obj.particles[mi]);
             auto & p(obj.particles[pi]);
             return std::acos(m.start_dir[0] * p.start_dir[0] + m.start_dir[1] * p.start_dir[1] + m.start_dir[2] * p.start_dir[2]);
-        }
-    }
+	  }
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, opening_angle, opening_angle);
 
     /**
@@ -630,16 +591,16 @@ namespace vars
      * @return the multiplicity of primary photons in the interaction.
      */
     template<class T>
-    double photon_multiplicity(const T & obj, std::vector<double> params={25.0,})
-    {
+      double photon_multiplicity(const T & obj, std::vector<double> params={25.0,})
+      {
         size_t count(0);
         for(const auto & p : obj.particles)
-        {
+	  {
             if(pvars::pid(p) == 0 && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
-                ++count;
-        }
+	      ++count;
+	  }
         return count;
-    }
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, photon_multiplicity, photon_multiplicity);
 
     /**
@@ -658,16 +619,16 @@ namespace vars
      * @return the multiplicity of primary electrons in the interaction.
      */
     template<class T>
-    double electron_multiplicity(const T & obj, std::vector<double> params={25.0,})
-    {
+      double electron_multiplicity(const T & obj, std::vector<double> params={25.0,})
+      {
         size_t count(0);
         for(const auto & p : obj.particles)
-        {
+	  {
             if(pvars::pid(p) == 1 && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
-                ++count;
-        }
+	      ++count;
+	  }
         return count;
-    }
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, electron_multiplicity, electron_multiplicity);
 
     /**
@@ -686,16 +647,16 @@ namespace vars
      * @return the multiplicity of primary muons in the interaction.
      */
     template<class T>
-    double muon_multiplicity(const T & obj, std::vector<double> params={25.0,})
-    {
+      double muon_multiplicity(const T & obj, std::vector<double> params={25.0,})
+      {
         size_t count(0);
         for(const auto & p : obj.particles)
-        {
+	  {
             if(pvars::pid(p) == 2 && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
-                ++count;
-        }
+	      ++count;
+	  }
         return count;
-    }
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, muon_multiplicity, muon_multiplicity);
 
     /**
@@ -714,16 +675,16 @@ namespace vars
      * @return the multiplicity of primary pions in the interaction.
      */
     template<class T>
-    double pion_multiplicity(const T & obj, std::vector<double> params={25.0,})
-    {
+      double pion_multiplicity(const T & obj, std::vector<double> params={25.0,})
+      {
         size_t count(0);
         for(const auto & p : obj.particles)
-        {
+	  {
             if(pvars::pid(p) == 3 && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
-                ++count;
-        }
+	      ++count;
+	  }
         return count;
-    }
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, pion_multiplicity, pion_multiplicity);
 
     /**
@@ -742,16 +703,16 @@ namespace vars
      * @return the multiplicity of primary protons in the interaction.
      */
     template<class T>
-    double proton_multiplicity(const T & obj, std::vector<double> params={25.0,})
-    {
+      double proton_multiplicity(const T & obj, std::vector<double> params={25.0,})
+      {
         size_t count(0);
         for(const auto & p : obj.particles)
-        {
+	  {
             if(pvars::pid(p) == 4 && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
-                ++count;
-        }
+	      ++count;
+	  }
         return count;
-    }
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, proton_multiplicity, proton_multiplicity);
 
     /**
@@ -760,16 +721,16 @@ namespace vars
      * @details This function calculates the distance from the leading muon
      * start point to the interaction vertex. The leading muon is defined as
      * the particle with the highest kinetic energy that is identified as a
-     * muon. If no leading muon is found, the function returns the usual 
+				 * muon. If no leading muon is found, the function returns the usual 
      * PLACEHOLDERVALUE.
-     * @tparam T the type of interaction (true or reco).
+				 * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to apply the variable on.
      * @return the distance from the leading muon start point to the
      * interaction vertex.
      */
     template<class T>
-    double leading_muon_vertex_gap(const T & obj)
-    {
+      double leading_muon_vertex_gap(const T & obj)
+      {
         // Find the leading muon in the interaction.
         size_t mi = selectors::leading_muon(obj);
         if(mi == kNoMatch) return PLACEHOLDERVALUE;
@@ -777,10 +738,50 @@ namespace vars
         
         // Calculate the distance from the leading muon start point to the
         // interaction vertex.
-        utilities::three_vector vtx = {obj.vertex[0], obj.vertex[1], obj.vertex[2]};
-        utilities::three_vector muon_start = {pvars::start_x(m), pvars::start_y(m), pvars::start_z(m)};
+	utilities::three_vector vtx = {obj.vertex[0], obj.vertex[1], obj.vertex[2]};
+	utilities::three_vector muon_start = {pvars::start_x(m), pvars::start_y(m), pvars::start_z(m)};
         return utilities::magnitude(utilities::subtract(muon_start, vtx));
-    }
+      }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, leading_muon_vertex_gap, leading_muon_vertex_gap);
+
+
+    /**
+     * @brief Variable for four-momentum transfer Q**2.
+     * @details Variable for four-momentum transfer from incoming
+     * neutrino to incident nucleon.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the four-momentum Q**2.
+     */
+    template<class T>
+    double Q2(const T & obj)
+    {
+      // Find the leading muon in the interaction
+      size_t mi = selectors::leading_muon(obj);
+      if(mi == kNoMatch) return PLACEHOLDERVALUE;
+      auto & m(obj.particles[mi]);
+      return 2*visible_energy(obj)*((pvars::energy(m)/1000.0) - (pvars::momentum(m)/1000.0)*pvars::beam_costheta(m)) - std::pow(MUON_MASS/1000.0, 2);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, Q2, Q2);
+    
+    /**
+     * @brief Variable for hadronic invariant mass.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the hadronic invariant mass W.
+     */
+    template<class T>
+    double W(const T & obj)
+    {
+        // Find the leading muon in the interaction
+        size_t mi = selectors::leading_muon(obj);
+	if(mi == kNoMatch) return PLACEHOLDERVALUE;
+	auto & m(obj.particles[mi]);
+	return std::sqrt( std::pow(NUCLEON_MASS/1000.0, 2) + 2*(NUCLEON_MASS/1000.0)*(visible_energy(obj) - (pvars::energy(m)/1000.0)) - Q2(obj) );
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, W, W);
+    
+
+
 }
 #endif // VARIABLES_H

@@ -134,7 +134,13 @@ namespace selectors
     }
     REGISTER_SELECTOR(leading_proton, leading_proton);
 
-    // TEST
+    /**
+     * @brief Find the index corresponding to the pi0 leading shower.
+     * @details The leading shower is described as the pi0 daughter
+     * shower with the highest kinetic energy.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     */
     template<class T>
     size_t pi0_leading_shower(const T & obj)
     {
@@ -142,19 +148,26 @@ namespace selectors
         // Truth
         if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
 		       {
-			   truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
-			   return s.pi0_leading_photon_index;
+			   pi0 s = utilities_pi0ana::pi0_info(obj);
+			   return s.leading_shower_index;
 		       }
 	// Reco
 	else
 	{
-	    reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
-	    return s.pi0_leading_photon_index;
+	    pi0 s = utilities_pi0ana::pi0_info(obj);
+	    return s.leading_shower_index;
 	}
 
     }
     REGISTER_SELECTOR(pi0_leading_shower, pi0_leading_shower);
 
+    /**
+     * @brief Find the index corresponding to the pi0 subleading shower.
+     * @details The leading shower is described as the pi0 daughter
+     * shower with the lowest kinetic energy.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     */
     template<class T>
     size_t pi0_subleading_shower(const T & obj)
     {
@@ -162,14 +175,14 @@ namespace selectors
         // Truth
         if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
                        {
-			   truth_inter s = utilities_ncpi0ana::truth_interaction_info(obj);
-			   return s.pi0_subleading_photon_index;
+			   pi0 s = utilities_pi0ana::pi0_info(obj);
+			   return s.subleading_shower_index;
                        }
         // Reco
         else
 	{
-            reco_inter s = utilities_ncpi0ana::reco_interaction_info(obj);
-            return s.pi0_subleading_photon_index;
+            pi0 s = utilities_pi0ana::pi0_info(obj);
+            return s.subleading_shower_index;
 	}
 
     }
