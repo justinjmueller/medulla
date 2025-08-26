@@ -197,8 +197,8 @@ branch = [
     # Interaction observables
     {name = "flash_time", type = "reco"},
     {name = "visible_energy", type = "both"},
-    {name = "Q2", type = "both"},
-    {name = "W", type = "both"},
+    #{name = "Q2", type = "both"},
+    #{name = "W", type = "both"},
     {name = "dpT", type = "both"},
     {name = "dpL", type = "both"},
     {name = "pn", type = "both"},
@@ -279,8 +279,8 @@ branch = [
     # Interaction observables
     {name = "flash_time", type = "reco"},
     {name = "visible_energy", type = "both"},
-    {name = "Q2", type = "both"},
-    {name = "W", type = "both"},
+    #{name = "Q2", type = "both"},
+    #{name = "W", type = "both"},
     {name = "dpT", type = "both"},
     {name = "dpL", type = "both"},
     {name = "pn", type = "both"},
@@ -354,8 +354,8 @@ branch = [
 
     # Interaction observables
     {name = "visible_energy", type = "both"},
-    {name = "Q2", type = "both"},
-    {name = "W", type = "both"},
+    #{name = "Q2", type = "both"},
+    #{name = "W", type = "both"},
     {name = "dpT", type = "both"},
     {name = "dpL", type = "both"},
     {name = "pn", type = "both"},
