@@ -221,8 +221,8 @@ branch = [
     {name = "pi0_subleading_shower_conv_dist", type = "both"},
 
     # Neutral pion observables (particle-level)
-    {name = "id", type = "both_particle", selector = "pi0_leading_shower"},
-    {name = "match_id", type = "both_particle", selector = "pi0_leading_shower"},
+    #{name = "id", type = "both_particle", selector = "pi0_leading_shower"},
+    #{name = "match_id", type = "both_particle", selector = "pi0_leading_shower"},
     {name = "pid", type = "both_particle", selector = "pi0_leading_shower"},
     {name = "primary_classification", type = "both_particle", selector = "pi0_leading_shower"},
     {name = "ke", type = "both_particle", selector = "pi0_leading_shower"},
@@ -303,8 +303,8 @@ branch = [
     {name = "pi0_subleading_shower_conv_dist", type = "both"},
 
     # Neutral pion observables (particle-level)
-    {name = "id", type = "both_particle", selector = "pi0_leading_shower"},
-    {name = "match_id", type = "both_particle", selector = "pi0_leading_shower"},
+    #{name = "id", type = "both_particle", selector = "pi0_leading_shower"},
+    #{name = "match_id", type = "both_particle", selector = "pi0_leading_shower"},
     {name = "pid", type = "both_particle", selector = "pi0_leading_shower"},
     {name = "primary_classification", type = "both_particle", selector = "pi0_leading_shower"},
     {name = "ke", type = "both_particle", selector = "pi0_leading_shower"},
