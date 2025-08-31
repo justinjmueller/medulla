@@ -59,6 +59,103 @@ namespace selectors
     }
 
     /**
+     * @brief Finds the index corresponding to the longest track.
+     * @details The longest track is defined as the track with the longest
+     * length, which is calculated upstream in SPINE. The particle instance is
+     * required to have a semantic type of 1 (track) and have a start point
+     * within 6 cm of the interaction vertex.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the longest track.
+     */
+    template<class T>
+    size_t longest_track(const T & obj)
+    {
+        double longest_length(0);
+        size_t index(kNoMatch);
+        for(size_t i(0); i < obj.particles.size(); ++i)
+        {
+            const auto & p = obj.particles[i];
+
+            // Distance between interaction vertex and particle start.
+            double vertex_distance = std::sqrt(
+                std::pow(pvars::start_x(p) - obj.vertex[0], 2) +
+                std::pow(pvars::start_y(p) - obj.vertex[1], 2) +
+                std::pow(pvars::start_z(p) - obj.vertex[2], 2)
+            );
+
+            // Skip particles that are not tracks or are too far from the
+            // interaction vertex.
+            if(pvars::semantic_type(p) != 1 || vertex_distance >= 6)
+                continue;
+            
+            // Update the longest length and index if the current particle
+            // is longer than the longest found so far.
+            if(pvars::length(p) > longest_length)
+            {
+                longest_length = pvars::length(p);
+                index = i;
+            }
+        }
+        return index;
+    }
+    REGISTER_SELECTOR(longest_track, longest_track);
+
+    /**
+     * @brief Finds the index corresponding to the second longest track.
+     * @details The second longest track is defined as the track with the
+     * second longest length, which is calculated upstream in SPINE. The
+     * particle instance is required to have a semantic type of 1 (track) and
+     * have a start point within 6 cm of the interaction vertex.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the second longest track.
+    */
+    template<class T>
+    size_t second_longest_track(const T & obj)
+    {
+        double longest_length(0);
+        double second_longest_length(0);
+        size_t index(kNoMatch), second_index(kNoMatch);
+        for(size_t i(0); i < obj.particles.size(); ++i)
+        {
+            const auto & p = obj.particles[i];
+
+            // Distance between interaction vertex and particle start.
+            double vertex_distance = std::sqrt(
+                std::pow(pvars::start_x(p) - obj.vertex[0], 2) +
+                std::pow(pvars::start_y(p) - obj.vertex[1], 2) +
+                std::pow(pvars::start_z(p) - obj.vertex[2], 2)
+            );
+
+            // Skip particles that are not tracks or are too far from the
+            // interaction vertex.
+            if(pvars::semantic_type(p) != 1 || vertex_distance >= 6)
+                continue;
+
+            // Check if the current particle is longer than the longest found
+            // so far. If so, update the longest and second longest lengths.
+            if(pvars::length(p) > longest_length)
+            {
+                second_longest_length = longest_length;
+                longest_length = pvars::length(p);
+                second_index = index;
+                index = i;
+            }
+
+            // If the current particle is not longer than the longest but
+            // is longer than the second longest, update the second longest.
+            else if(pvars::length(p) > second_longest_length)
+            {
+                second_longest_length = pvars::length(p);
+                second_index = i;
+            }
+        }
+        return index;
+    }
+    REGISTER_SELECTOR(second_longest_track, second_longest_track);
+
+    /**
      * @brief Finds the index corresponding to the leading photon.
      * @details The leading photon is defined as the photon with the highest
      * kinetic energy.
