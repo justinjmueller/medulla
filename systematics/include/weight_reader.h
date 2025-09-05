@@ -79,7 +79,7 @@ namespace sys
          * entry.
          * @return The run number.
          */
-        uint32_t get_run() const { return **run; }
+        uint32_t get_run() const { return run_value; }
 
         /**
          * @brief Get the subrun number.
@@ -87,7 +87,7 @@ namespace sys
          * entry.
          * @return The subrun number.
          */
-        uint32_t get_subrun() const { return **subrun; }
+        uint32_t get_subrun() const { return subrun_value; }
 
         /**
          * @brief Get the event number.
@@ -95,7 +95,7 @@ namespace sys
          * entry.
          * @return The event number.
          */
-        uint32_t get_event() const { return **event; }
+        uint32_t get_event() const { return event_value; }
 
         /**
          * @brief Accessor method for the number of neutrinos.
@@ -147,7 +147,7 @@ namespace sys
          * @return The neutrino energy for the specified neutrino.
          */
         float get_energy(size_t idn) const;
-
+        size_t entry;
         private:
 
         /**
@@ -162,7 +162,7 @@ namespace sys
 
         bool isflat; // Flag to indicate if the input file is flat or structured
         TChain chain; // TChain to hold the input files
-        size_t entry; // Current entry index in the TChain
+        //size_t entry; // Current entry index in the TChain
 
         std::unique_ptr<TTreeReader> reader; // TTreeReader for structured CAF files
         
@@ -170,6 +170,9 @@ namespace sys
         std::unique_ptr<TTreeReaderValue<uint32_t>> run; // Run number
         std::unique_ptr<TTreeReaderValue<uint32_t>> subrun; // Subrun number
         std::unique_ptr<TTreeReaderValue<uint32_t>> event; // Event number
+        uint32_t run_value; // Run number
+        uint32_t subrun_value; // Subrun number
+        uint32_t event_value; // Event number
 
         // Event-level indexing
         Int_t nnu; // Number of neutrinos
@@ -185,7 +188,7 @@ namespace sys
         // Systematic-level indexing
         Int_t nuniv[10000]; // Number of universes for each weight group
         Int_t iuniv[10000]; // Index of the universe for each weight group
-        Float_t wgts[100000]; // Weight values for each universe
+        Float_t wgts[150000]; // Weight values for each universe
 
         // MC-truth branch
         std::unique_ptr<TTreeReaderArray<caf::SRTrueInteraction>> mc; // MC-truth data for structured CAF files
