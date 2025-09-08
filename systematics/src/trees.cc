@@ -249,18 +249,22 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     std::vector<std::string> table_types = table.get_string_vector("table_types");
     for(const std::string & s : table_types)
     {
-        systrees[s] = new TTree((s+"Tree").c_str(), (s+"Tree").c_str());
-        systrees[s]->SetDirectory(nullptr);
-        systrees[s]->Branch("Run", &run);
-        systrees[s]->Branch("Subrun", &subrun);
-        systrees[s]->Branch("Evt", &event);
-        systrees[s]->SetDirectory(directory);
-        systrees[s]->SetAutoFlush(1000);
+        std::string tname = table.get_string_field("name") + '_' + s;
+        systrees[tname] = new TTree(
+            (tname + "Tree").c_str(),
+            (tname + "Tree").c_str());
+        systrees[tname]->SetDirectory(nullptr);
+        systrees[tname]->Branch("Run", &run);
+        systrees[tname]->Branch("Subrun", &subrun);
+        systrees[tname]->Branch("Evt", &event);
+        systrees[tname]->SetDirectory(directory);
+        systrees[tname]->SetAutoFlush(1000);
     }
 
     for(cfg::ConfigurationTable & t : config.get_subtables("sys"))
     {
-        systematics.insert(std::make_pair<std::string, Systematic *>(t.get_string_field("name"), new Systematic(t, systrees[t.get_string_field("type")])));
+        std::string tname = table.get_string_field("name") + '_' + t.get_string_field("type");
+        systematics.insert(std::make_pair<std::string, Systematic *>(t.get_string_field("name"), new Systematic(t, systrees[tname])));
         Systematic * tmp = systematics[t.get_string_field("name")];
         tmp->get_tree()->Branch(t.get_string_field("name").c_str(), &systematics[t.get_string_field("name")]->get_weights());
         if(tmp->get_nsigma()->size() > 0)

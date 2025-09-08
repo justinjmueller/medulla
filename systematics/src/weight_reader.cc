@@ -171,7 +171,7 @@ float sys::WeightReader::get_weight(size_t idn, size_t idu) const
             throw std::out_of_range("WeightReader: Weight group index out of range in 'get_weight()'");
         
         size_t univ_offset = iuniv[n] + idu;
-        if(univ_offset >= 100000 || iuniv[n] < 0)
+        if(univ_offset >= 150000 || iuniv[n] < 0)
             throw std::out_of_range("WeightReader: Universe index out of range in 'get_weight()'");
         
         return wgts[univ_offset + idu];
