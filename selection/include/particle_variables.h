@@ -683,10 +683,10 @@ namespace pvars
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, polar_angle, polar_angle);
 
     /**
-     * @brief Variable for the azimuthal angle (w.r.t the z-axis) of the particle.
-     * @details The azimuthal angle is defined as the arccosine of the x-component
-     * of the momentum vector divided by the square root of the sum of the squares
-     * of the x and y components of the momentum vector.
+     * @brief Variable for the azimuthal angle of the particle.
+     * @details The azimuthal angle is defined as the arctangent of the y- and
+     * x-components of the momentum vector. That is, the angle in the x-y plane
+     * from the x-axis.
      * @tparam T the type of particle (true or reco).
      * @param p the particle to apply the variable on.
      * @return the azimuthal angle of the particle.
