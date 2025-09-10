@@ -585,6 +585,22 @@ namespace pvars
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, end_dir_z, end_dir_z);
 
     /**
+     * @brief Variable for the offset of the particle from the cathode.
+     * @details The cathode offset represents the offset due to out-of-timeness
+     * of the particle. A negative offset indicates that the particle's t0 is
+     * before t=0.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the offset of the particle from the cathode.
+     */
+    template<class T>
+    double cathode_offset(const T & p)
+    {
+        return (std::isinf(p.cathode_offset) ? PLACEHOLDERVALUE : (double)p.cathode_offset);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, cathode_offset, cathode_offset);
+
+    /**
      * @brief Variable for the magnitude of the particle momentum.
      * @details The momentum is calculated upstream in the SPINE reconstruction
      * using the kinetic energy and mass of the particle.
