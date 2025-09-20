@@ -715,6 +715,21 @@ namespace pvars
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, azimuthal_angle, azimuthal_angle);
 
     /**
+     * @brief Variable for the start dE/dx of the particle.
+     * @details The start dE/dx is calculated upstream in the SPINE
+     * reconstruction using the segment of the track near the start point.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the start dE/dx of the particle.
+     */
+    template<class T>
+    double start_dedx(const T & p)
+    {
+        return p.start_dedx;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, start_dedx, start_dedx);
+
+    /**
      * @brief Variable for the photon softmax score of the particle.
      * @details The photon softmax score represents the confidence that the
      * network has in the particle being a photon. The score is between 0 and 1,
