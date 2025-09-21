@@ -23,8 +23,8 @@
 
 // Constructor for the WeightReader class.
 sys::WeightReader::WeightReader(const std::string & input)
-: entry(0),
-  chain("recTree"),
+: chain("recTree"),
+  entry(0),
   idx(0),
   progress_started(false)
 {
@@ -50,16 +50,16 @@ sys::WeightReader::WeightReader(const std::string & input)
         chain.Add(input.c_str());
     }
     
+    // Create the TTreeReader
+    reader = std::make_unique<TTreeReader>(&chain);
+    
+    // Metadata branches
+    run = std::make_unique<TTreeReaderValue<uint32_t>>(*reader, "rec.hdr.run");
+    subrun = std::make_unique<TTreeReaderValue<uint32_t>>(*reader, "rec.hdr.subrun");
+    event = std::make_unique<TTreeReaderValue<uint32_t>>(*reader, "rec.hdr.evt");
+
     if(isflat)
     {
-        // Set the TTreeReader to nullptr for flat CAF files
-        reader = nullptr;
-
-        // Metadata branches
-        chain.SetBranchAddress("rec.hdr.run", &run_value);
-        chain.SetBranchAddress("rec.hdr.subrun", &subrun_value);
-        chain.SetBranchAddress("rec.hdr.evt", &event_value);
-
         // Event-level indexing
         chain.SetBranchAddress("rec.mc.nu..length", &nnu);
 
@@ -71,50 +71,27 @@ sys::WeightReader::WeightReader(const std::string & input)
         // Systematic-level indexing
         chain.SetBranchAddress("rec.mc.nu.wgt.univ..length", &nuniv);
         chain.SetBranchAddress("rec.mc.nu.wgt.univ..idx", &iuniv);
-        chain.SetBranchAddress("rec.mc.nu.wgt.univ", wgts);
+        chain.SetBranchAddress("rec.mc.nu.wgt.univ", &wgts);
         chain.GetEntry(0);
     }
     else
     {
-        // Create the TTreeReader
-        reader = std::make_unique<TTreeReader>(&chain);
-
-        // Metadata branches
-        run = std::make_unique<TTreeReaderValue<uint32_t>>(*reader, "rec.hdr.run");
-        subrun = std::make_unique<TTreeReaderValue<uint32_t>>(*reader, "rec.hdr.subrun");
-        event = std::make_unique<TTreeReaderValue<uint32_t>>(*reader, "rec.hdr.evt");
-
         // MC-truth branches
         nnu_structured = std::make_unique<TTreeReaderValue<uint64_t>>(*reader, "rec.mc.nnu");
         mc = std::make_unique<TTreeReaderArray<caf::SRTrueInteraction>>(*reader, "rec.mc.nu");
         nu_energy_structured = std::make_unique<TTreeReaderArray<Float_t>>(*reader, "rec.mc.nu.E");
     }
-    //reader->Next();
+    reader->Next();
 }
 
 // Advance to the next entry in the TChain.
 bool sys::WeightReader::next()
 {
-    // Update the progress bar
     this->progress_bar(entry+1, chain.GetEntries());
-
-    // Handler for flat CAF files
-    if(isflat)
-    {
-        if(!chain.GetTree() || chain.GetEntry(entry) == 0)
-            return false;
-    }
-    // Handler for structured CAF files
-    else
-    {
-        if(!reader || !reader->Next())
-            return false;
-        run_value = **run;
-        subrun_value = **subrun;
-        event_value = **event;
-    }
-    ++entry;
-
+    if(!chain.GetTree() || !reader) return false;
+    if(entry >= (size_t)chain.GetEntries()) return false;
+    if(!reader->Next()) return false;
+    chain.GetEntry(++entry);
     return true;
 }
 
@@ -145,17 +122,7 @@ uint32_t sys::WeightReader::get_nuniv(size_t idn) const
     if(idn >= get_nnu() || idx >= get_nwgt(idn))
         throw std::out_of_range("WeightReader: Index out of range in 'get_nuniv()'");
 
-    if(isflat)
-    {
-        size_t n = iwgt[idn] + idx;
-        if(n >= 10000)
-            throw std::out_of_range("WeightReader: Weight group index out of range in 'get_nuniv()'");
-        return nuniv[n];
-    }
-    else
-    {
-        return (*mc)[idn].wgt[idx].univ.size();
-    }
+    return isflat ? nuniv[iwgt[idn] + idx] : (*mc)[idn].wgt[idx].univ.size();
 }
 
 // Accessor method for the weight value.
@@ -163,17 +130,8 @@ float sys::WeightReader::get_weight(size_t idn, size_t idu) const
 {
     if(isflat)
     {
-        if(idn >= get_nnu())
-            throw std::out_of_range("WeightReader: Neutrino index out of range in 'get_weight()'");
-
         size_t n = iwgt[idn] + idx;
-        if(n >= 10000)        
-            throw std::out_of_range("WeightReader: Weight group index out of range in 'get_weight()'");
-        
-        size_t univ_offset = iuniv[n] + idu;
-        if(univ_offset >= 150000 || iuniv[n] < 0)
-            throw std::out_of_range("WeightReader: Universe index out of range in 'get_weight()'");
-        
+        size_t univ_offset = iuniv[n];
         return wgts[univ_offset + idu];
     }
     else
