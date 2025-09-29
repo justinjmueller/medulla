@@ -181,6 +181,18 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::Both, containment_cut, containment_cut);
 
     /**
+     * @brief Apply a cut on the "time containment" of the interaction.
+     * @details The time containment cut applies additional restriction that
+     * stipulate that all spacepoints must be reconstructed in a feasible TPC.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the interaction is time-contained.
+     */
+    template<class T>
+    bool time_containment_cut(const T & obj) { return obj.is_time_contained; }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, time_containment_cut, time_containment_cut);
+
+    /**
      * @brief Apply a flash time cut on the interaction.
      * @details The flash time cut is applied on the interaction. The flash time
      * is required to be within the beam window, which is expected to be
