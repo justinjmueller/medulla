@@ -174,11 +174,35 @@ namespace cuts
      * assumed t0 that is very out-of-time.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to select on.
-     * @return true if the vertex is contained.
+     * @return true if the interaction is contained.
      */
     template<class T>
     bool containment_cut(const T & obj) { return obj.is_contained; }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, containment_cut, containment_cut);
+
+    /**
+     * @brief Apply a cut to reject events that have a non-muon particle that
+     * is not contained.
+     * @details This cut is intended to be used in analyses that select muons
+     * in the final state and wish to allow for muons that exit the detector.
+     * All other particles in the interaction must be contained, which is
+     * consistent with our ability to reconstruct exiting muons using the MCS
+     * technique.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if all non-muon particles are contained.
+     */
+    template<class T>
+    bool nonmuon_containment_cut(const T & obj)
+    {
+        for(const auto & p : obj.particles)
+        {
+            if(pvars::pid(p) != 2 && !pcuts::containment_cut(p))
+                return false;
+        }
+        return true;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, nonmuon_containment_cut, nonmuon_containment_cut);
 
     /**
      * @brief Apply a cut on the "time containment" of the interaction.
