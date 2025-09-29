@@ -7,5 +7,10 @@
 *.log
 *.cpython*
 *dev.*
+*.json
+.DS_Store
 
 build/
+*/CMakeFiles/*
+*.cmake
+Makefile

@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import re
+import uproot
 
 from systematic import Systematic
 
@@ -94,7 +95,7 @@ class Sample:
 
         self._data = pd.concat([self._file_handle[tree].arrays(library='pd') for tree in trees])
         if self._category_branch not in self._data.columns:
-            self._data[self._category_branch] = 0
+            raise ValueError(f'Category branch `{self._category_branch}` not found in sample `{self._name}`.')
         if override_category is not None:
             self._data[self._category_branch] = override_category
         
@@ -249,8 +250,14 @@ class Sample:
         # which is used to build a list of Systematic objects to
         # combine.
         for recipe in recipes:
-            regxp = re.compile(recipe['pattern'])
-            systematics = [syst for syst in self._systematics.values() if regxp.match(syst._name)]
+            # Exclude the "nsigma" branches
+            exclude = ['_nsigma', '_sigma']
+            exclude_pat = '|'.join(re.escape(x) for x in exclude)
+
+            # Compile the regex pattern for matching the systematic
+            pattern = recipe['pattern']
+            regxp = re.compile(rf'^(?!.*(?:{exclude_pat})).*{pattern}.*$')
+            systematics = [syst for k, syst in self._systematics.items() if regxp.match(k)]
 
             # If there are no systematics to combine, skip the recipe.
             if len(systematics) == 0:

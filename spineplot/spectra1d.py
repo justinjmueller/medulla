@@ -151,7 +151,7 @@ class SpineSpectra1D(SpineSpectra):
 
     def draw(self, ax, style, show_component_number=False,
              show_component_percentage=False, invert_stack_order=False,
-             fit_type=None, logx=False, logy=False,
+             fit_type=None, logx=False, logy=False, normalize=False,
              draw_error=None) -> None:
         """
         Plots the data for the SpineSpectra1D object.
@@ -184,6 +184,9 @@ class SpineSpectra1D(SpineSpectra):
         logy : bool
             A flag to indicate if the y-axis should be logarithmic.
             The default is False.
+        normalize : bool
+            A flag to indicate if the histogram should be normalized
+            to unity. The default is False.
         draw_error : str, optional
             Indicates the name of the Systematic object to use for
             drawing the error boxes. The default is None.
@@ -227,26 +230,31 @@ class SpineSpectra1D(SpineSpectra):
             else:
                 reduce = lambda x : [x[i] for i in histogram_mask]
             
-            ax.hist(reduce(bincenters), weights=reduce(data), bins=self._variable._nbins, range=xr, label=reduce(labels), color=reduce(colors), **style.plot_kwargs)
+            scale = 1.0 if not normalize else 1.0 / np.sum(reduce(data))
+            ax.hist(reduce(bincenters), weights=[scale*x for x in reduce(data)], bins=self._variable._nbins, range=xr, label=reduce(labels), color=reduce(colors), **style.plot_kwargs)
             if draw_error:
                 systs = [s[draw_error] for s in self._systematics.values() if draw_error in s]
                 cov = np.sum(s.get_covariance(self._variable._key) for s in systs)
                 x = reduce(bincenters)[0]
-                y = np.sum(reduce(data), axis=0)
+                y = scale * np.sum(reduce(data), axis=0)
                 xerr = [x / 2 for x in binwidths[0]]
-                yerr = np.sqrt(np.diag(cov))
+                scov = Systematic.transform_as(cov, scale if not normalize else np.sum(reduce(data), axis=0))
+                yerr = np.sqrt(np.diag(scov))
                 draw_error_boxes(ax, x, y, xerr, yerr, facecolor='gray', edgecolor='none', alpha=0.5, hatch='///')
 
             reduce = lambda x : [x[i] for i in scatter_mask]
             for i, label in enumerate(reduce(labels)):
-                ax.errorbar(bincenters[scatter_mask[i]], data[scatter_mask[i]], yerr=np.sqrt(data[scatter_mask[i]]), fmt='o', label=label, color=colors[scatter_mask[i]])
+                scale = 1.0 if not normalize else 1.0 / np.sum(data[scatter_mask[i]])
+                ax.errorbar(bincenters[scatter_mask[i]], scale*data[scatter_mask[i]], yerr=scale*np.sqrt(data[scatter_mask[i]]), fmt='o', label=label, color=colors[scatter_mask[i]])
         
         if invert_stack_order:
             h, l = ax.get_legend_handles_labels()
             if draw_error:
                 h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
                 l.append(systs[0].label)
-            ax.legend(h[-2::-1]+h[-1:], l[-2::-1]+l[-1:])
+                ax.legend(h[-2::-1]+h[-1:], l[-2::-1]+l[-1:])
+            else:
+                ax.legend(h[::-1], l[::-1])
         else:
             h, l = ax.get_legend_handles_labels()
             if draw_error:

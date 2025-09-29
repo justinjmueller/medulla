@@ -1,0 +1,131 @@
+[general]
+output = "test"
+
+[[sample]]
+name = "test_simlike"
+path = "validation_simlike.root"
+ismc = true
+
+[[sample]]
+name = "test_datalike"
+path = "validation_datalike.root"
+ismc = false
+
+[[tree]]
+name = "test_event"
+sim_only = false
+mode = "event"
+cut = [
+    {name = "global_trigger_time_cut", type = "event", parameters=[0, 1000]}
+]
+branch = [
+    {name = "ntrue", type = "event"}
+]
+
+[[tree]]
+name = "test_reco_with_event_cut"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "global_trigger_time_cut", type = "event", parameters=[0, 1000]},
+    {name = "no_cut", type = "reco"}
+]
+branch = [
+    {name = "vertex_x", type = "both"},
+]
+
+[[tree]]
+name = "test_reco"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "valid_flashmatch", type = "reco"}
+]
+branch = [
+    {name = "vertex_x", type = "both"},
+]
+
+[[tree]]
+name = "test_reco_with_truth_cut"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "valid_flashmatch", type = "reco"},
+    {name = "no_cut", type = "true"},
+]
+branch = [
+    {name = "vertex_x", type = "both"},
+]
+
+[[tree]]
+name = "test_truth"
+sim_only = true
+mode = "true"
+cut = [
+    {name = "valid_flashmatch", type = "true"}
+]
+branch = [
+    {name = "vertex_x", type = "both"},
+]
+
+[[tree]]
+name = "test_truth_with_reco_cut"
+sim_only = true
+mode = "true"
+cut = [
+    {name = "valid_flashmatch", type = "true"},
+    {name = "no_cut", type = "reco"},
+]
+branch = [
+    {name = "vertex_x", type = "both"},
+]
+
+[[tree]]
+name = "test_reco_particles"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "valid_flashmatch", type = "reco"},
+    {name = "containment_cut", type = "reco_particle"}
+]
+branch = [
+    {name = "ke", type = "both_particle"},
+]
+
+[[tree]]
+name = "test_reco_particles_with_truth_cut"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "valid_flashmatch", type = "reco"},
+    {name = "containment_cut", type = "reco_particle"},
+    {name = "no_cut", type = "true"}
+]
+branch = [
+    {name = "ke", type = "both_particle"},
+]
+
+[[tree]]
+name = "test_truth_particles"
+sim_only = true
+mode = "true"
+cut = [
+    {name = "valid_flashmatch", type = "true"},
+    {name = "containment_cut", type = "true_particle"}
+]
+branch = [
+    {name = "ke", type = "both_particle"},
+]
+
+[[tree]]
+name = "test_truth_particles_with_reco_cut"
+sim_only = true
+mode = "true"
+cut = [
+    {name = "valid_flashmatch", type = "true"},
+    {name = "containment_cut", type = "true_particle"},
+    {name = "no_cut", type = "reco"}
+]
+branch = [
+    {name = "ke", type = "both_particle"},
+]

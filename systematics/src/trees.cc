@@ -23,14 +23,8 @@
 #include "TH1D.h"
 #include "TH2D.h"
 
-// Simple hash function for a set of five variables.
-size_t sys::trees::hash(uint64_t run, uint64_t subrun, uint64_t event, uint64_t nu_id, float nu_energy)
-{
-    return (run << 50) | (subrun << 36) | (event << 12) | (nu_id) << 8 | uint64_t(10000*nu_energy);
-}
-
 // Copy the input TTree to the output TTree.
-void sys::trees::copy_tree(sys::cfg::ConfigurationTable & table, TFile * output, TFile * input)
+void sys::trees::copy_tree(cfg::ConfigurationTable & table, TFile * output, TFile * input)
 {
     /**
      * @brief Create the output subdirectory following the nesting outlined
@@ -111,7 +105,7 @@ void sys::trees::copy_tree(sys::cfg::ConfigurationTable & table, TFile * output,
 }
 
 // Add reweightable systematics to the output TTree.
-void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & config, sys::cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc)
+void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc)
 {
     /**
      * @brief Create the output subdirectory following the nesting outlined
@@ -145,7 +139,7 @@ void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & con
      * a single array to store the values of the double branches and three
      * separate variables to store the values of the int branches. There is
      * one quirk, however, as we would also like to have access to the
-     * "nu_id" branch in the input TTree directly.
+     * "true_neutrino_id" branch in the input TTree directly.
      */
     TTree * input_tree = (TTree *) input->Get(table.get_string_field("origin").c_str());
     std::map<std::string, double> brs;
@@ -157,7 +151,7 @@ void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & con
         brs[brname] = 0;
         input_tree->SetBranchAddress(brname.c_str(), &brs[brname]);
     }
-    input_tree->SetBranchAddress("nu_id", &nu_id);
+    input_tree->SetBranchAddress("true_neutrino_id", &nu_id);
     input_tree->SetBranchAddress("Run", &run);
     input_tree->SetBranchAddress("Subrun", &subrun);
     input_tree->SetBranchAddress("Evt", &event);
@@ -184,20 +178,19 @@ void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & con
     /**
      * @brief Create the map of selected signal candidates.
      * @details This block creates a map of selected signal candidates. The
-     * map is built by looping over the input TTree and storing a hash of the
+     * map is built by looping over the input TTree and storing an index of the
      * run, subrun, event, nu_id, and nu_energy branches as the key. The
      * value is the index of the entry in the input TTree.
-     * @see sys::trees::hash
      */
-    std::map<size_t, size_t> candidates;
-    bool use_additional_hash = config.get_bool_field("input.use_additional_hash");
+    std::map<index_t, size_t> candidates;
+    bool use_additional_hash = config.get_bool_field("input.use_additional_hash", false);
     for(int i(0); i < input_tree->GetEntries(); ++i)
     {
         input_tree->GetEntry(i);
         if(!use_additional_hash)
-            candidates.insert(std::make_pair<size_t, size_t>(hash(run, subrun, event, nu_id), i));
+            candidates.insert(std::make_pair<index_t, size_t>(std::make_tuple(run, subrun, event, nu_id, 0), i));
         else
-            candidates.insert(std::make_pair<size_t, size_t>(hash(run, subrun, event, nu_id, brs["true_energy"]), i));
+            candidates.insert(std::make_pair<index_t, size_t>(std::make_tuple(run, subrun, event, nu_id, brs["true_neutrino_energy"]), i));
     }
 
     /**
@@ -238,7 +231,7 @@ void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & con
     std::vector<SysVariable> sysvariables;
     std::map<syst_t, TH2D *> results2d;
     std::map<syst_t, TH1D *> results1d;
-    for(sys::cfg::ConfigurationTable & t : config.get_subtables("sysvar"))
+    for(cfg::ConfigurationTable & t : config.get_subtables("sysvar"))
     {
         sysvariables.push_back(SysVariable(t));
         calc.add_variable(sysvariables.back());
@@ -256,19 +249,28 @@ void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & con
     std::vector<std::string> table_types = table.get_string_vector("table_types");
     for(const std::string & s : table_types)
     {
-        systrees[s] = new TTree((s+"Tree").c_str(), (s+"Tree").c_str());
-        systrees[s]->SetDirectory(nullptr);
-        systrees[s]->Branch("Run", &run);
-        systrees[s]->Branch("Subrun", &subrun);
-        systrees[s]->Branch("Evt", &event);
-        systrees[s]->SetDirectory(directory);
-        systrees[s]->SetAutoFlush(1000);
+        std::string tname = table.get_string_field("name") + '_' + s;
+        systrees[tname] = new TTree(
+            (tname + "Tree").c_str(),
+            (tname + "Tree").c_str());
+        systrees[tname]->SetDirectory(nullptr);
+        systrees[tname]->Branch("Run", &run);
+        systrees[tname]->Branch("Subrun", &subrun);
+        systrees[tname]->Branch("Evt", &event);
+        systrees[tname]->SetDirectory(directory);
+        systrees[tname]->SetAutoFlush(1000);
     }
 
-    for(sys::cfg::ConfigurationTable & t : config.get_subtables("sys"))
+    for(cfg::ConfigurationTable & t : config.get_subtables("sys"))
     {
-        systematics.insert(std::make_pair<std::string, Systematic *>(t.get_string_field("name"), new Systematic(t, systrees[t.get_string_field("type")])));
-        systematics[t.get_string_field("name")]->get_tree()->Branch(t.get_string_field("name").c_str(), &systematics[t.get_string_field("name")]->get_weights());
+        std::string tname = table.get_string_field("name") + '_' + t.get_string_field("type");
+        systematics.insert(std::make_pair<std::string, Systematic *>(t.get_string_field("name"), new Systematic(t, systrees[tname])));
+        Systematic * tmp = systematics[t.get_string_field("name")];
+        tmp->get_tree()->Branch(t.get_string_field("name").c_str(), &systematics[t.get_string_field("name")]->get_weights());
+        if(tmp->get_nsigma()->size() > 0)
+        {
+            tmp->get_tree()->Branch((t.get_string_field("name") + "_sigma").c_str(), &systematics[t.get_string_field("name")]->get_nsigma());
+        }
     }
 
     sys::WeightReader reader(config.get_string_field("input.weights"));
@@ -287,11 +289,11 @@ void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & con
          */
         for(size_t idn(0); idn < reader.get_nnu(); ++idn)
         {
-            size_t index;
+            index_t index;
             if(!use_additional_hash)
-                index = hash(reader.get_run(), reader.get_subrun(), reader.get_event(), idn);
+                index = std::make_tuple(reader.get_run(), reader.get_subrun(), reader.get_event(), idn, 0);
             else
-                index = hash(reader.get_run(), reader.get_subrun(), reader.get_event(), idn, (double)reader.get_energy(idn));
+                index = std::make_tuple(reader.get_run(), reader.get_subrun(), reader.get_event(), idn, (double)reader.get_energy(idn));
             if(candidates.find(index) != candidates.end())
             {
                 /**
@@ -387,5 +389,6 @@ void sys::trees::copy_with_weight_systematics(sys::cfg::ConfigurationTable & con
     }
 
     // Write detector systematic histograms to the output file.
-    calc.write_results();
+    if(calc.is_initialized())
+        calc.write_results();
 }

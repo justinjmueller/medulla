@@ -183,9 +183,9 @@ namespace sys
         std::unique_ptr<TTreeReaderArray<Float_t>> nu_energy_structured; // Neutrino energy for structured CAF files
 
         // Systematic-level indexing
-        Int_t nuniv[10000]; // Number of universes for each weight group
-        Int_t iuniv[10000]; // Index of the universe for each weight group
-        Float_t wgts[100000]; // Weight values for each universe
+        Int_t nuniv[15000]; // Number of universes for each weight group
+        Int_t iuniv[15000]; // Index of the universe for each weight group
+        Float_t wgts[500000]; // Weight values for each universe
 
         // MC-truth branch
         std::unique_ptr<TTreeReaderArray<caf::SRTrueInteraction>> mc; // MC-truth data for structured CAF files

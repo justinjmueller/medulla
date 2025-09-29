@@ -141,7 +141,8 @@ class ROCCurve(SpineArtist):
         None.
         """
         for gi, (k, v) in enumerate(self._roc_data.items()):
-            fpr, tpr, _ = roc_curve(v['class'], v['score'], pos_label=self._pos_label[gi])
+            mask = (~np.isnan(v['class']) & ~np.isnan(v['score']))
+            fpr, tpr, _ = roc_curve(v['class'][mask], v['score'][mask], pos_label=self._pos_label[gi])
             roc_auc = auc(fpr, tpr)
             ax.plot(fpr, tpr, label=f'{k} (AUC = {roc_auc:.2f})')
             ax.plot([0, 1], [0, 1], 'k--')
