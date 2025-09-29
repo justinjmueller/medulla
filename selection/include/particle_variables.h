@@ -730,6 +730,73 @@ namespace pvars
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, start_dedx, start_dedx);
 
     /**
+     * @brief Variable for the "straightness" of the particle near the start.
+     * @details The start straightness is calculated upstream in the SPINE as 
+     * the principal explained variance ratio (PCA) of the 3D coordinates for
+     * points within distance r from the start point.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the start straightness of the particle.
+     */
+    template<class T>
+    double start_straightness(const T & p)
+    {
+        return std::isinf(p.start_straightness) ? PLACEHOLDERVALUE : (double)p.start_straightness;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, start_straightness, start_straightness);
+
+    /**
+     * @brief Variable for the "axial spread" of the particle.
+     * @details The axial spread is calculated upstream in the SPINE as the 
+     * measure of correlation between the transverse coordinate of each point
+     * and the longitudinal coordinate along the particle axis.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the axial spread of the particle.
+     */
+    template<class T>
+    double axial_spread(const T & p)
+    {
+        return std::isinf(p.axial_spread) ? PLACEHOLDERVALUE : (double)p.axial_spread;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, axial_spread, axial_spread);
+
+    /**
+     * @brief Variable for the "directional spread" of the particle.
+     * @details The directional spread is calculated upstream in the SPINE as a
+     * measure of the spread of unit vectors pointing from the start to each 
+     * point in the particle. 
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the directional spread of the particle.
+     */
+    template<class T>
+    double directional_spread(const T & p)
+    {
+        return std::isinf(p.directional_spread) ? PLACEHOLDERVALUE : (double)p.directional_spread;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, directional_spread, directional_spread);
+
+    /**
+     * @brief Variable for the distance of the particle start point from the
+     * parent interaction vertex.
+     * @details The vertex distance is calculated upstream in the SPINE as the
+     * Euclidean distance between the start point of the particle and the 
+     * interaction vertex. It is intended to be a handle on the shower
+     * conversion distance and can be used to discriminate between electron
+     * and photon induced showers.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the vertex distance of the particle.
+     */
+    template<class T>
+    double vertex_distance(const T & p)
+    {
+        return std::isinf(p.vertex_distance) ? PLACEHOLDERVALUE : (double)p.vertex_distance;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, vertex_distance, vertex_distance);
+
+    /**
      * @brief Variable for the photon softmax score of the particle.
      * @details The photon softmax score represents the confidence that the
      * network has in the particle being a photon. The score is between 0 and 1,
