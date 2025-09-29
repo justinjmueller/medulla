@@ -230,5 +230,57 @@ namespace selectors
         return leading_particle_index(obj, 4);
     }
     REGISTER_SELECTOR(leading_proton, leading_proton);
+
+    /**
+     * @brief Find the index corresponding to the pi0 leading shower.
+     * @details The leading shower is described as the pi0 daughter
+     * shower with the highest kinetic energy.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     */
+    template<class T>
+    size_t pi0_leading_shower(const T & obj)
+    {
+      
+        // Truth
+        if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
+		       {
+			       pi0 s = utilities_pi0ana::pi0_info(obj);
+			       return s.leading_shower_index;
+		       }
+	    // Reco
+	    else
+    	{
+	        pi0 s = utilities_pi0ana::pi0_info(obj);
+	        return s.leading_shower_index;
+	    }    
+    }
+    REGISTER_SELECTOR(pi0_leading_shower, pi0_leading_shower);
+
+    /**
+     * @brief Find the index corresponding to the pi0 subleading shower.
+     * @details The leading shower is described as the pi0 daughter
+     * shower with the lowest kinetic energy.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     */
+    template<class T>
+    size_t pi0_subleading_shower(const T & obj)
+    {
+
+        // Truth
+        if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
+                       {
+			               pi0 s = utilities_pi0ana::pi0_info(obj);
+			               return s.subleading_shower_index;
+                       }
+        // Reco
+        else
+	    {
+            pi0 s = utilities_pi0ana::pi0_info(obj);
+            return s.subleading_shower_index;
+	    }
+    }
+    REGISTER_SELECTOR(pi0_subleading_shower, pi0_subleading_shower); 
 }
 #endif // SELECTORS_H
