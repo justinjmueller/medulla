@@ -32,6 +32,18 @@ namespace utilities
     typedef std::tuple<double, double, double> three_vector;
 
     /**
+     * @brief Convert a caf::Proxy<float[3]> to a three_vector;
+     * @details caf::Proxy is an annoying type to deal with sometimes.
+     * Here we define a conversion between the two.
+     * @param proxyArr the caf::Proxy<float[3]> to convert
+     * @return the three_vector made of the caf::Proxy's three entries
+     */
+    three_vector to_three_vector(const caf::Proxy<float[3]>& proxyArr)
+    {
+      return std::make_tuple(proxyArr[0], proxyArr[1], proxyArr[2]);
+    }
+
+    /**
      * @brief Calculates the dot product of two three-vectors.
      * @details The dot product of two three-vectors is calculated as the sum
      * of the products of the corresponding components of the two vectors.
@@ -42,6 +54,20 @@ namespace utilities
     double dot_product(const three_vector & a, const three_vector & b)
     {
         return std::get<0>(a)*std::get<0>(b) + std::get<1>(a)*std::get<1>(b) + std::get<2>(a)*std::get<2>(b);
+    }
+
+    /**
+     * @brief Calculates the cross product of two three-vectors.
+     * @param a the first three-vector.
+     * @param b the second three-vector.
+     * @return the cross product of the two three-vectors.
+     */
+    three_vector cross_product(const three_vector & a, const three_vector & b)
+    {
+        double c0 = std::get<1>(a)*std::get<2>(b) - std::get<2>(a)*std::get<1>(b) 
+        double c1 = std::get<2>(a)*std::get<0>(b) - std::get<0>(a)*std::get<2>(b) 
+        double c2 = std::get<0>(a)*std::get<1>(b) - std::get<1>(a)*std::get<0>(b) 
+        return std::make_tuple(c0, c1, c2);
     }
 
     /**

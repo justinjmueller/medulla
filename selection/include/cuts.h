@@ -197,7 +197,7 @@ namespace cuts
     {
         for(const auto & p : obj.particles)
         {
-            if(pvars::pid(p) != 2 && !pcuts::containment_cut(p))
+            if(pvars::pid(p) != pvars::kMuon && !pcuts::containment_cut(p))
                 return false;
         }
         return true;
