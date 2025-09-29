@@ -144,19 +144,19 @@ namespace pvars
         {
             switch(int(pvars::pid(p)))
             {
-                case 0:
+                case pvars::kPhoton:
                     mass = 0;
                     break;
-                case 1:
+                case pvars::kElectron:
                     mass = ELECTRON_MASS;
                     break;
-                case 2:
+                case pvars::kMuon:
                     mass = MUON_MASS;
                     break;
-                case 3:
+                case pvars::kPion:
                     mass = PION_MASS;
                     break;
-                case 4:
+                case pvars::kProton:
                     mass = PROTON_MASS;
                     break;
                 default:
@@ -741,7 +741,7 @@ namespace pvars
     template<class T>
     double photon_softmax(const caf::SRParticleDLPProxy & p)
     {
-        return p.pid_scores[0];
+        return p.pid_scores[pvars::kPhoton];
     }
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, photon_softmax, photon_softmax);
 
@@ -757,7 +757,7 @@ namespace pvars
     template<class T>
     double electron_softmax(const caf::SRParticleDLPProxy & p)
     {
-        return p.pid_scores[1];
+        return p.pid_scores[pvars::kElectron];
     }
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, electron_softmax, electron_softmax);
     
@@ -773,7 +773,7 @@ namespace pvars
     template<class T>
     double muon_softmax(const caf::SRParticleDLPProxy & p)
     {
-        return p.pid_scores[2];
+        return p.pid_scores[pvars::kMuon];
     }
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, muon_softmax, muon_softmax);
 
@@ -789,7 +789,7 @@ namespace pvars
     template<class T>
     double pion_softmax(const caf::SRParticleDLPProxy & p)
     {
-        return p.pid_scores[3];
+        return p.pid_scores[pvars::kPion];
     }
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, pion_softmax, pion_softmax);
 
@@ -805,7 +805,7 @@ namespace pvars
     template<class T>
     double proton_softmax(const caf::SRParticleDLPProxy & p)
     {
-        return p.pid_scores[4];
+        return p.pid_scores[pvars::kProton];
     }
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, proton_softmax, proton_softmax);
 
@@ -821,7 +821,7 @@ namespace pvars
     template<class T>
     double mip_softmax(const caf::SRParticleDLPProxy & p)
     {
-        return p.pid_scores[2] + p.pid_scores[3];
+        return p.pid_scores[pvars::kMuon] + p.pid_scores[pvars::kPion];
     }
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, mip_softmax, mip_softmax);
 
@@ -837,7 +837,7 @@ namespace pvars
     template<class T>
     double hadron_softmax(const caf::SRParticleDLPProxy & p)
     {
-        return p.pid_scores[3] + p.pid_scores[4];
+        return p.pid_scores[pvars::kPion] + p.pid_scores[pvars::kProton];
     }
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, hadron_softmax, hadron_softmax);
 

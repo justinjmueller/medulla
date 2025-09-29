@@ -15,6 +15,21 @@
 namespace pvars
 {
     /**
+     * @brief Enumeration for particle primary classification.
+     * @details This is the order that the particle ids occur in (most) vectors in the framework,
+     * with a unknown option to handle exceptions.
+     */
+    enum Particle_t
+    {
+        kPhoton   =  0,
+        kElectron =  1,
+        kMuon     =  2,
+        kPion     =  3,
+        kProton   =  4,
+        kUnknown  = -1
+    };
+
+    /**
      * @brief Function pointer for the primary classification function.
      * @details This function pointer is used to allow the user to configure
      * the primary classification function used in the analysis. The primary
@@ -103,7 +118,7 @@ namespace pvars
     double lax_muon_pid(const T & p)
     {
         double pid = std::numeric_limits<double>::quiet_NaN();
-        if(p.pid_scores[2] > 0.25)
+        if(p.pid_scores[pvars::kMuon] > 0.25)
             pid = 2;
         else
         {

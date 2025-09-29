@@ -132,7 +132,7 @@ namespace vars
             if(pcuts::final_state_signal(p))
             {
                 energy += pvars::energy(p);
-                if(pvars::pid(p) == 4) energy -= pvars::mass(p) - PROTON_BINDING_ENERGY;
+                if(pvars::pid(p) == pvars::kProton) energy -= pvars::mass(p) - PROTON_BINDING_ENERGY;
             }
         }
         return energy/1000.0;
@@ -159,7 +159,7 @@ namespace vars
             if(pcuts::final_state_signal(p))
             {
                 energy += pvars::energy(p);
-                if(pvars::pid(p) == 4) energy -= PROTON_MASS - PROTON_BINDING_ENERGY;
+                if(pvars::pid(p) == pvars::kProton) energy -= PROTON_MASS - PROTON_BINDING_ENERGY;
             }
             else if(pcuts::is_primary(p))
                 energy += p.calo_ke;
@@ -330,14 +330,14 @@ namespace vars
             if(pcuts::final_state_signal(p))
             {
                 // Find the leading charged lepton and proton
-                if((pvars::pid(p) == 1 || pvars::pid(p) == 2) && pvars::ke(p) > l_ke)
+                if((pvars::pid(p) == pvars::kElectron || pvars::pid(p) == pvars::kMuon) && pvars::ke(p) > l_ke)
                 {
                     l_ke = pvars::ke(p);
                     utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
                     utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
                     l_pt = utilities::transverse_momentum(momentum, vtx);
                 }
-                else if(pvars::pid(p) == 4 && pvars::ke(p) > p_ke)
+                else if(pvars::pid(p) == pvars::kProton && pvars::ke(p) > p_ke)
                 {
                     p_ke = pvars::ke(p);
                     utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
@@ -382,7 +382,7 @@ namespace vars
                 utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
                 utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
                 utilities::three_vector this_pt = utilities::transverse_momentum(momentum, vtx);
-                if(pvars::pid(p) == 1 || pvars::pid(p) == 2)
+                if(pvars::pid(p) == pvars::kElectron || pvars::pid(p) == pvars::kMuon)
                     lepton_pt = this_pt;
                 // The total hadronic system is treated as a single object.
                 else if(pvars::pid(p) > 2)
@@ -421,7 +421,7 @@ namespace vars
                 utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
                 utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
                 utilities::three_vector this_pt = utilities::transverse_momentum(momentum, vtx);
-                if(pvars::pid(p) == 1 || pvars::pid(p) == 2)
+                if(pvars::pid(p) == pvars::kElectron || pvars::pid(p) == pvars::kMuon)
                     lepton_pt = this_pt;
                 total_pt = utilities::add(total_pt, this_pt);
             }
@@ -457,7 +457,7 @@ namespace vars
                 utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
                 utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
                 utilities::three_vector this_pl = utilities::longitudinal_momentum(momentum, vtx);
-                if(pvars::pid(p) == 1 || pvars::pid(p) == 2)
+                if(pvars::pid(p) == pvars::kElectron || pvars::pid(p) == pvars::kMuon)
                     lepton_pl = this_pl;
                 // The total hadronic system is treated as a single object.
                 else if(pvars::pid(p) > 2)
@@ -493,14 +493,14 @@ namespace vars
             if(pcuts::final_state_signal(p))
             {
                 // Find the leading charged lepton and proton
-                if((pvars::pid(p) == 1 || pvars::pid(p) == 2) && pvars::ke(p) > l_ke)
+                if((pvars::pid(p) == pvars::kElectron || pvars::pid(p) == pvars::kMuon) && pvars::ke(p) > l_ke)
                 {
                     l_ke = pvars::ke(p);
                     utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
                     utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
                     l_pl = utilities::longitudinal_momentum(momentum, vtx);
                 }
-                else if(pvars::pid(p) == 4 && pvars::ke(p) > p_ke)
+                else if(pvars::pid(p) == pvars::kProton && pvars::ke(p) > p_ke)
                 {
                     p_ke = pvars::ke(p);
                     utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
@@ -595,7 +595,7 @@ namespace vars
         size_t count(0);
         for(const auto & p : obj.particles)
         {
-            if(pvars::pid(p) == 0 && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
+            if(pvars::pid(p) == pvars::kPhoton && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
                 ++count;
         }
         return count;
@@ -623,7 +623,7 @@ namespace vars
         size_t count(0);
         for(const auto & p : obj.particles)
         {
-            if(pvars::pid(p) == 1 && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
+            if(pvars::pid(p) == pvars::kElectron && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
                 ++count;
         }
         return count;
@@ -651,7 +651,7 @@ namespace vars
         size_t count(0);
         for(const auto & p : obj.particles)
         {
-            if(pvars::pid(p) == 2 && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
+            if(pvars::pid(p) == pvars::kMuon && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
                 ++count;
         }
         return count;
@@ -679,7 +679,7 @@ namespace vars
         size_t count(0);
         for(const auto & p : obj.particles)
         {
-            if(pvars::pid(p) == 3 && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
+            if(pvars::pid(p) == pvars::kPion && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
                 ++count;
         }
         return count;
@@ -707,7 +707,7 @@ namespace vars
         size_t count(0);
         for(const auto & p : obj.particles)
         {
-            if(pvars::pid(p) == 4 && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
+            if(pvars::pid(p) == pvars::kProton && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
                 ++count;
         }
         return count;
