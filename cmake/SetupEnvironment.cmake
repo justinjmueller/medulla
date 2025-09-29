@@ -1,9 +1,8 @@
 # cmake/SetupEnvironment.cmake
 
 # Set paths to external dependencies based on environment variables
-
-set(SBNANA_BASE "$ENV{MRB_INSTALL}/sbnana/$ENV{SBNANA_VERSION}")
-set(SBNANAOBJ_BASE "$ENV{MRB_INSTALL}/sbnanaobj/$ENV{SBNANAOBJ_VERSION}")
+set(SBNANA_BASE "$ENV{SBNANA_DIR}")
+set(SBNANAOBJ_BASE "$ENV{SBNANAOBJ_DIR}")
 
 set(SRPROXY_INC "$ENV{SRPROXY_INC}")
 set(OSCLIB_INC "$ENV{OSCLIB_INC}")

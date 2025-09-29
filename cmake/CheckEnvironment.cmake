@@ -7,7 +7,6 @@ macro(require_env_var VAR_NAME)
 endmacro()
 
 # Required for path setup
-require_env_var(MRB_INSTALL)
 require_env_var(SBNANA_VERSION)
 require_env_var(SBNANAOBJ_VERSION)
 
