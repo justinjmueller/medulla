@@ -181,6 +181,28 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::Both, containment_cut, containment_cut);
 
     /**
+     * @brief Apply a cut to reject events that have a non-electron particle that
+     * is not contained.
+     * @details This cut is intended to be used in analyses that select electrons
+     * in the final state and wish to allow for electrons that exit the detector.
+     * All other particles in the interaction must be contained.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if all non-electron particles are contained.
+     */
+    template<class T>
+    bool nonelectron_containment_cut(const T & obj)
+    {
+        for(const auto & p : obj.particles)
+        {
+            if(pvars::pid(p) != pvars::kElectron && !pcuts::containment_cut(p))
+                return false;
+        }
+        return true;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, nonelectron_containment_cut, nonelectron_containment_cut);
+
+    /**
      * @brief Apply a cut to reject events that have a non-muon particle that
      * is not contained.
      * @details This cut is intended to be used in analyses that select muons
