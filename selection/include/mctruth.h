@@ -63,6 +63,18 @@ namespace mctruth
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, pdg, pdg);
 
     /**
+     * @brief Variable for the PDG code of the parent of the neutrino.
+     * @details This variable is intended to provide the PDG code of the
+     * parent of the neutrino that produced the interaction.
+     * @tparam T the type of the object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the PDG code of the parent of the neutrino.
+     */
+    template<typename T>
+        double parent_pdg(const T & obj) { return obj.parent_pdg; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, parent_pdg, parent_pdg);
+
+    /**
      * @brief Variable for the true neutrino current value.
      * @details This variable is intended to provide the true current value of
      * the parent neutrino that produced the interaction.
