@@ -1,0 +1,56 @@
+[parameters]
+photon_threshold = 25.0
+electron_threshold = 25.0
+muon_threshold = 143.425
+pion_threshold = 25.0
+proton_threshold = 50.0
+
+[general]
+output = "example02_muons"
+primfn = "default_primary_classification"
+pidfn = "default_pid"
+fsthresh = [
+    "@photon_threshold",
+    "@electron_threshold",
+    "@muon_threshold",
+    "@pion_threshold",
+    "@proton_threshold",
+]
+
+# SBND sample
+[[sample]]
+name = "offbeamlight"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/offbeamlight/input000.flat.root"
+ismc = false
+disable = false # Optional: default = false
+
+# ICARUS sample
+[[sample]]
+name = "offbeamlight"
+path = "/pnfs/icarus/persistent/users/mueller/production/data/offbeam/input000.flat.root"
+ismc = false
+disable = true # Optional: default = false
+
+[[tree]]
+name = "selected"
+sim_only = false
+mode = "reco"
+cut = [
+    { name = "is_pid",           type = "reco_particle", parameters = [2,] },
+]
+branch = [
+    { name = "start_dedx",       type = "reco_particle"    },
+    { name = "start_x",          type = "reco_particle"    },
+    { name = "start_y",          type = "reco_particle"    },
+    { name = "start_z",          type = "reco_particle"    },
+    { name = "end_x",            type = "reco_particle"    },
+    { name = "end_y",            type = "reco_particle"    },
+    { name = "end_z",            type = "reco_particle"    },
+    { name = "length",           type = "reco_particle"    },
+    { name = "polar_angle",      type = "reco_particle"    },
+    { name = "azimuthal_angle",  type = "reco_particle"    },
+    { name = "mcs_ke",           type = "reco_particle"    },
+    { name = "containment",      type = "reco_particle"    },
+    { name = "muon_softmax",     type = "reco_particle"    },
+    { name = "mip_softmax",      type = "reco_particle"    },
+]
