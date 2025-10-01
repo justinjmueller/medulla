@@ -174,7 +174,7 @@ namespace ecut
      * specify the threshold for the FoM2 value.
      * @return true if the FoM2 value is above the threshold, false otherwise.
      */
-    template<typename T>
+    /*template<typename T>
     bool bnb_fom2_cut(const T & sr, std::vector<double> params={})
     {
         if(params.empty())
@@ -192,7 +192,7 @@ namespace ecut
             return (evar::bnb_fom2(sr) >= threshold);
         }
     }
-    REGISTER_CUT_SCOPE(RegistrationScope::Event, bnb_fom2_cut, bnb_fom2_cut);
+    REGISTER_CUT_SCOPE(RegistrationScope::Event, bnb_fom2_cut, bnb_fom2_cut);*/
 
     /**
      * @brief A cut that checks if the event is the first in the subrun.
