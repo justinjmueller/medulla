@@ -7,7 +7,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Set optimization flags
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG")
-#set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 
 # Find ROOT
 find_package(ROOT REQUIRED COMPONENTS Core RIO Hist Tree)
@@ -72,9 +71,9 @@ target_link_libraries(common INTERFACE
 
 target_compile_features(common INTERFACE cxx_std_17)
 
-add_executable(main src/main.cc)
-target_link_libraries(main PRIVATE shared framework common)
-target_include_directories(main PRIVATE . include/ ${SBNANA_INC} ${SBNANAOBJ_INC} ${SRPROXY_INC})
+add_executable(medulla src/main.cc)
+target_link_libraries(medulla PRIVATE shared framework common)
+target_include_directories(medulla PRIVATE . include/ ${SBNANA_INC} ${SBNANAOBJ_INC} ${SRPROXY_INC})
 
 add_executable(validate src/validate.cc)
 target_link_libraries(validate PRIVATE test common sbnanaobj_StandardRecord)
