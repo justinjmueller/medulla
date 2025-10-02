@@ -78,7 +78,7 @@ fsthresh = [
 ### Sample Block
 An analysis necessarily consists of datasets that the selection is run over. Each `sample` block configures an independent sample in the analysis, and is intended to decouple the sample configuration from the selection configuration. The `sample` block is defined as an entry in a list (note the double '[' in `[[sample]]`), which allows the user to define *all* samples they wish to use and run the selection (identically) on each one sequentially. The parameters available to the user are:
 * `name` - a name that uniquely identifies the sample in the output ROOT file. For example, the name `simulation` will result in all selection TTrees being placed in the `events/simulation` TDirectory.
-* `path` - a path or SAM definition specifying the input CAF files. A path may contain wildcards, but otherwise only supports basic pattern matching.
+* `path` - a path or SAM definition specifying the input CAF files. A path may contain wildcards, but otherwise only supports basic pattern matching. This may also be a list of file names.
 * `ismc` - a flag marking the file as Monte Carlo simulation. Some selections (e.g. defining signal) are only relevant for MC, so this allows a user to mark a sample accordingly.
 * `disable` - an optional flag that skips the sample when running the selection. This is useful for development work. The default is false, which will not skip the sample.
 
@@ -86,6 +86,19 @@ An analysis necessarily consists of datasets that the selection is run over. Eac
 [[sample]]
 name = "simulation"
 path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input000.flat.root"
+ismc = true
+disable = false # Optional: default = false
+```
+
+Or, for multiple files:
+
+```toml
+[[sample]]
+name = "simulation"
+path = [
+    "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input000.flat.root",
+    "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input001.flat.root",
+]
 ismc = true
 disable = false # Optional: default = false
 ```

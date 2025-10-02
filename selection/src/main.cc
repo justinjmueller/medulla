@@ -201,7 +201,16 @@ int main(int argc, char * argv[])
             }
 
             // Create a SpectrumLoader for each sample
-            std::unique_ptr<ana::SpectrumLoader> loader = std::make_unique<ana::SpectrumLoader>(sample.get_string_field("path"));
+            std::unique_ptr<ana::SpectrumLoader> loader;
+            try
+            {
+                sample.get_string_field("path");
+                loader = std::make_unique<ana::SpectrumLoader>(sample.get_string_field("path"));
+            }
+            catch(const cfg::ConfigurationError &)
+            {
+                loader = std::make_unique<ana::SpectrumLoader>(sample.get_string_vector("path"));
+            }
             analysis.AddLoader(sample.get_string_field("name"), loader.get(), sample.get_bool_field("ismc"));
             loaders.push_back(std::move(loader));
 
