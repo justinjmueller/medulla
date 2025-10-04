@@ -140,6 +140,98 @@ namespace vars
     REGISTER_VAR_SCOPE(RegistrationScope::Both, visible_energy, visible_energy);
 
     /**
+     * @brief Variable for energy reconstruction assuming CCQE kinematics using
+     * the lepton.
+     * @details This function calculates the neutrino energy assuming CCQE
+     * kinematics using the leading lepton in the interaction. The leading
+     * lepton is defined as the highest kinetic energy electron or muon in the
+     * interaction. If no electron or muon is found, the function returns
+     * PLACEHOLDERVALUE. This does not check that the interaction is actually
+     * QE-like.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj interaction to apply the variable on.
+     * @return the reconstructed neutrino energy assuming CCQE kinematics.
+     */
+    template<class T>
+    double energy_qel(const T & obj)
+    {
+        size_t ei = selectors::leading_electron(obj);
+        size_t mi = selectors::leading_muon(obj);
+        size_t li = kNoMatch;
+
+        if(ei != kNoMatch && mi != kNoMatch)
+            li = (pvars::ke(obj.particles[ei]) > pvars::ke(obj.particles[mi])) ? ei : mi;
+        else if(ei != kNoMatch)
+            li = ei;
+        else if(mi != kNoMatch)
+            li = mi;
+        else
+            return PLACEHOLDERVALUE;
+
+        double Mn = 939.565;
+        double Mp = 938.272;
+        double Ml = (li == ei) ? ELECTRON_MASS : MUON_MASS;
+        double EB = PROTON_BINDING_ENERGY;
+
+        double El = pvars::energy(obj.particles[li]);
+        double pz = pvars::pz(obj.particles[li]);
+
+        double numerator   = 2*(Mn - EB)*El - ((Mn - EB)*(Mn - EB) + Ml*Ml - Mp*Mp);
+        double denominator = 2*((Mn - EB) - El + pz);
+
+        return (numerator / denominator) / 1000.0;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, energy_qel, energy_qel);
+
+    /**
+     * @brief Variable for energy reconstruction assuming CCQE kinematics using
+     * the proton.
+     * @details This function calculates the neutrino energy assuming CCQE
+     * kinematics using the leading proton in the interaction. The leading
+     * proton is defined as the highest kinetic energy proton in the
+     * interaction. If no proton is found, the function returns 
+     * PLACEHOLDERVALUE. This does not check that the interaction is actually
+     * QE-like.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj interaction to apply the variable on.
+     * @return the reconstructed neutrino energy assuming CCQE kinematics.
+     */
+    template<class T>
+    double energy_qep(const T & obj)
+    {
+        size_t ei = selectors::leading_electron(obj);
+        size_t mi = selectors::leading_muon(obj);
+        size_t pi = selectors::leading_proton(obj);
+        size_t li = kNoMatch;
+
+        if(ei != kNoMatch && mi != kNoMatch)
+            li = (pvars::ke(obj.particles[ei]) > pvars::ke(obj.particles[mi])) ? ei : mi;
+        else if(ei != kNoMatch)
+            li = ei;
+        else if(mi != kNoMatch)
+            li = mi;
+        else
+            return PLACEHOLDERVALUE;
+
+        if(pi == kNoMatch)
+            return PLACEHOLDERVALUE;
+
+        double Mn = 939.565;
+        double Mp = 938.272;
+        double Ml = (li == ei) ? ELECTRON_MASS : MUON_MASS;
+        double EB = PROTON_BINDING_ENERGY;
+
+        double Ep = pvars::energy(obj.particles[pi]);
+        double pz = pvars::pz(obj.particles[pi]);
+
+        double numerator   = 2*(Mn - EB)*Ep - ((Mn - EB)*(Mn - EB) + Mp*Mp - Ml*Ml);
+        double denominator = 2*((Mn - EB) - Ep + pz);
+
+        return (numerator / denominator) / 1000.0;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, energy_qep, energy_qep);
+
+    /**
      * @brief Variable for total visible energy of interaction, including
      * sub-threshold particles.
      * @details This function calculates the total visible energy of the
