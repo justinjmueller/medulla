@@ -34,6 +34,39 @@
 namespace pvars
 {
     /**
+     * @brief Variable for the particle's ID.
+     * @details This variable returns the particle's ID
+     * and is unique within a given interaction.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the particle ID.
+     */
+    template<class T>
+    double id(const T & p)
+    {
+        return p.id;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, id, id);
+
+    /**
+     * @brief Variable for particle's matched ID.
+     * @details This variable returns the particle's matched ID,
+     * as determined upstream in SPINE post-processor.
+     * tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the particle match ID.
+     */
+    template<class T>
+    double match_id(const T & p)
+    {
+      if(p.match_ids.size() > 0)
+	return p.match_ids[0];
+      else
+	return PLACEHOLDERVALUE;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, match_id, match_id);
+
+    /**
      * @brief Variable for the particle's primary classification.
      * @details This variable returns the primary classification of the particle.
      * The primary classification is determined upstream in the SPINE
@@ -208,6 +241,22 @@ namespace pvars
 
     /**
      * @brief Variable for the calorimetric kinetic energy of the particle.
+     * @details The calorimetic kinetic energy is calculated upstream in the
+     * SPINE reconstruction as the sum of energy for each spacepoint in the
+     * particle.
+     * @param p the particle to apply the variable on.
+     * @return the calorimetric kinetic energy of the particle.
+     */
+    template<class T>
+    double default_calo_ke(const T & p)
+    {
+        return p.calo_ke;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, default_calo_ke, default_calo_ke);
+
+    extern std::shared_ptr<VarFn<RParticleType>> calofn;
+    /**
+     * @brief Variable for the calorimetric kinetic energy of the particle.
      * @details The calorimetric kinetic energy is calculated upstream in the
      * SPINE reconstruction as the sum of the energy of each spacepoint in the
      * particle.
@@ -218,7 +267,10 @@ namespace pvars
     template<class T>
     double calo_ke(const T & p)
     {
-        return p.calo_ke;
+        if constexpr (std::is_same_v<T, caf::SRParticleTruthDLPProxy>)
+                       return p.calo_ke;
+        else
+          return (*calofn)(p);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, calo_ke, calo_ke);
 
@@ -611,7 +663,7 @@ namespace pvars
     template<class T>
     double p(const T & p)
     {
-        return p.p;
+        return p.p/1000.0;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, p, p);
 
@@ -660,6 +712,25 @@ namespace pvars
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, pz, pz);
     
+    /**
+     * @brief Variable for angle (cosine) between the particle and beam.
+     * @details This variable is calculated using particle momentum and beam direction.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the cosine of the angle between the particle and the beam.
+     */
+    template<class T>
+    double beam_costheta(const T & p)
+    {
+        // Particle momentum
+        TVector3 mom(px(p), py(p), pz(p));
+        mom = mom.Unit();
+
+        TVector3 beamdir(0, 0, 1);
+        return mom.Dot(beamdir);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, beam_costheta, beam_costheta);
+
     /**
      * @brief Variable for the transverse momentum of a particle.
      * @details This function calculates the transverse momentum of the
