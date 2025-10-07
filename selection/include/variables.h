@@ -14,6 +14,7 @@
 #define MUON_MASS 105.6583745
 #define PION_MASS 139.57039
 #define PROTON_MASS 938.2720813
+#define NUCLEON_MASS 938.9187473
 
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
 #include "sbnanaobj/StandardRecord/SRInteractionDLP.h"
@@ -834,5 +835,42 @@ namespace vars
         return utilities::magnitude(utilities::subtract(muon_start, vtx));
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, leading_muon_vertex_gap, leading_muon_vertex_gap);
+
+    /**
+     * @brief Variable for four-momentum transfer Q**2.
+     * @details Variable for four-momentum transfer from incoming
+     * neutrino to incident nucleon.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the four-momentum Q**2.
+     */
+    template<class T>
+    double Q2(const T & obj)
+    {
+	// Find the leading muon in the interaction
+	size_t mi = selectors::leading_muon(obj);
+	if(mi == kNoMatch) return PLACEHOLDERVALUE;
+	auto & m(obj.particles[mi]);
+	return 2*visible_energy(obj)*((pvars::energy(m)/1000.0) - pvars::p(m)*pvars::beam_costheta(m)) - std::pow(MUON_MASS/1000.0, 2);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, Q2, Q2);
+
+    /**
+     * @brief Variable for hadronic invariant mass.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the hadronic invariant mass W.
+     */
+    template<class T>
+    double W(const T & obj)
+    {
+        // Find the leading muon in the interaction
+        size_t mi = selectors::leading_muon(obj);
+        if(mi == kNoMatch) return PLACEHOLDERVALUE;
+        auto & m(obj.particles[mi]);
+        return std::sqrt( std::pow(NUCLEON_MASS/1000.0, 2) + 2*(NUCLEON_MASS/1000.0)*(visible_energy(obj) - (pvars::energy(m)/1000.0)) - Q2(obj) );
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, W, W);
+
 }
 #endif // VARIABLES_H
