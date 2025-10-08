@@ -230,7 +230,7 @@ branch = [
     {name = "vertex_z", type = "both"},
 
     # Muon observables
-    {name = "momentum", type = "both_particle", selector = "leading_muon"},
+    {name = "p", type = "both_particle", selector = "leading_muon"},
     {name = "beam_costheta", type = "both_particle", selector = "leading_muon"},
 
     # Neutral pion observables (interaction-level)
@@ -315,7 +315,7 @@ branch = [
     {name = "vertex_z", type = "both"},
 
     # Muon observables
-    {name = "momentum", type = "both_particle", selector = "leading_muon"},
+    {name = "p", type = "both_particle", selector = "leading_muon"},
     {name = "beam_costheta", type = "both_particle", selector = "leading_muon"},
 
     # Neutral pion observables (interaction-level)
@@ -390,7 +390,7 @@ branch = [
     {name = "vertex_z", type = "both"},
 
     # Muon observables
-    {name = "momentum", type = "both_particle", selector = "leading_muon"},
+    {name = "p", type = "both_particle", selector = "leading_muon"},
     {name = "beam_costheta", type = "both_particle", selector = "leading_muon"},
 
     # Neutral pion observables (interaction-level)
