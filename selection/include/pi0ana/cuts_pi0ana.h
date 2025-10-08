@@ -176,5 +176,13 @@ namespace cuts::pi0ana
 	return num_primary_pi0s == 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::True, single_pi0, single_pi0);
+
+    template<class T>
+    bool at_least_one_pi0(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params = {0.0,})
+    {
+        double num_primary_pi0s = utilities_pi0ana::true_primary_pi0_multiplicity(obj, params);
+	return num_primary_pi0s >= 1;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::True, at_least_one_pi0, at_least_one_pi0);
 }
 #endif // CUTS_PI0ANA_H
