@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.14)
-project(selection LANGUAGES CXX)
+project(cafana LANGUAGES CXX)
+
+# Central environment path resolution
+set(SBNANA_BASE "$ENV{MRB_INSTALL}/sbnana/$ENV{SBNANA_VERSION}")
+set(SBNANAOBJ_BASE "$ENV{MRB_INSTALL}/sbnanaobj/$ENV{SBNANAOBJ_VERSION}")
 
 # Set C++ Standard
 set(CMAKE_CXX_STANDARD 17)
@@ -12,6 +16,16 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG")
 # Find ROOT
 find_package(ROOT REQUIRED COMPONENTS Core RIO Hist Tree)
 include(${ROOT_USE_FILE})
+
+# TODO: Move environment path resolution to top-level CMake or shared config module
+set(SRPROXY_INC "$ENV{SRPROXY_INC}")
+set(OSCLIB_INC "$ENV{OSCLIB_INC}")
+set(OSCLIB_LIB "$ENV{OSCLIB_LIB}")
+set(EIGEN_INC "$ENV{EIGEN_INC}")
+set(SBNANA_INC "$ENV{MRB_INSTALL}/sbnana/$ENV{SBNANA_VERSION}/include")
+set(SBNANAOBJ_INC "$ENV{MRB_INSTALL}/sbnanaobj/$ENV{SBNANAOBJ_VERSION}/include")
+set(SBNANA_LIB "$ENV{MRB_INSTALL}/sbnana/$ENV{SBNANA_VERSION}/slf7.x86_64.e26.prof/lib")
+set(SBNANAOBJ_LIB "$ENV{MRB_INSTALL}/sbnanaobj/$ENV{SBNANAOBJ_VERSION}/slf7.x86_64.e26.prof/lib")
 
 # Library for the framework
 add_library(framework SHARED src/framework.cc)
@@ -73,9 +87,9 @@ target_link_libraries(common INTERFACE
 
 target_compile_features(common INTERFACE cxx_std_17)
 
-add_executable(medulla src/main.cc)
-target_link_libraries(medulla PRIVATE shared framework common)
-target_include_directories(medulla PRIVATE . include/ ${SBNANA_INC} ${SBNANAOBJ_INC} ${SRPROXY_INC})
+add_executable(main src/main.cc)
+target_link_libraries(main PRIVATE shared framework common)
+target_include_directories(main PRIVATE . include/ ${SBNANA_INC} ${SBNANAOBJ_INC} ${SRPROXY_INC})
 
 add_executable(validate src/validate.cc)
 target_link_libraries(validate PRIVATE test common sbnanaobj_StandardRecord)
