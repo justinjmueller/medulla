@@ -1,0 +1,96 @@
+[general]
+output = "icarus_bnb_energy_calib_cv_07_10_2025"
+primfn = "default_primary_classification"
+pidfn = "default_pid"
+calofn = "default_calo_ke"
+fsthresh = [
+    "@photon_threshold",
+    "@electron_threshold",
+    "@muon_threshold",
+    "@pion_threshold",
+    "@proton_threshold",
+]
+recopi0thresh = [
+    "@photon_threshold",
+    "@leading_photon_threshold",
+]
+
+[parameters]
+photon_threshold = 25.0
+electron_threshold = 0.0
+muon_threshold = 143.425
+pi0_threshold = 0.0
+pion_threshold = 25.0
+proton_threshold = 0.0
+leading_photon_threshold = 40.0
+pi0_mass_veto_low = 60.0
+pi0_mass_veto_high = 300.0
+flash_low_t = -0.5
+flash_high_t = 1.6
+bnb_fom2_cut = 0.98
+
+[[sample]]
+name = "cv"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input*.flat.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "cvext"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/input*.flat.root"
+ismc = true
+disable = true
+
+[[tree]]
+name = "muon"
+sim_only = true
+mode = "true"
+cut = [
+    {name = "in_time", type = "true_particle", parameters=[0, 1.6]},
+    {name = "is_pid", type = "true_particle", parameters=[2]},
+    {name = "is_primary", type = "true_particle"}
+]
+branch = [
+    {name = "ke", type = "both_particle"},
+    {name = "csda_ke", type = "both_particle"},
+    {name = "mcs_ke", type = "both_particle"},
+    {name = "calo_ke", type = "both_particle"},
+    {name = "primary_classification", type = "both_particle"},
+    {name = "pid", type = "both_particle"},
+    {name = "containment", type = "both_particle"}
+]
+
+[[tree]]
+name = "photon"
+sim_only = true
+mode = "true"
+cut = [
+    {name = "in_time", type = "true_particle", parameters=[0, 1.6]},
+    {name = "is_pid", type = "true_particle", parameters=[0]},
+    {name = "is_primary", type = "true_particle"}
+]
+branch = [
+       {name = "ke", type = "both_particle"},
+       {name = "calo_ke", type = "both_particle"},
+       {name = "primary_classification", type = "both_particle"},
+       {name = "pid", type = "both_particle"},
+       {name = "containment", type = "both_particle"}
+]
+
+[[tree]]
+name = "electron"
+sim_only = true
+mode = "true"
+cut = [
+    {name = "in_time", type = "true_particle", parameters=[0, 1.6]},
+    {name = "is_pid", type = "true_particle", parameters=[1]},
+    {name = "is_primary", type = "true_particle"},
+    #{name = "containment_cut", type = "true_particle"}
+]
+branch = [
+       {name = "ke", type = "both_particle"},
+       {name = "calo_ke", type = "both_particle"},
+       {name = "primary_classification", type = "both_particle"},
+       {name = "pid", type = "both_particle"},
+       {name = "containment", type = "both_particle"}
+]
