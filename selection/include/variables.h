@@ -872,5 +872,24 @@ namespace vars
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, W, W);
 
+    /**
+     * @brief Variable for hadronic invariant mass (with calosub visible energy).
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the hadronic invariant mass W.
+     */
+    template<class T>
+    double W_calosub(const T & obj)
+    {
+        // Find the leading muon in the interaction
+        size_t mi = selectors::leading_muon(obj);
+	if(mi == kNoMatch) return PLACEHOLDERVALUE;
+	auto & m(obj.particles[mi]);
+	return std::sqrt( std::pow(NUCLEON_MASS/1000.0, 2) + 2*(NUCLEON_MASS/1000.0)*(visible_energy_calosub(obj) - (pvars::energy(m)/1000.0)) - Q2(obj) );
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, W_calosub, W_calosub);
+
+
+
 }
 #endif // VARIABLES_H
