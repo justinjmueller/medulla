@@ -32,9 +32,13 @@ int main(int argc, char * argv[])
 
   /// Syst trees
   /// To-do: Automate this
-  TTree* multisigma_tree = (TTree*)input->Get("events/cvfull/multisigmaTree");
-  TTree* variation_tree = (TTree*)input->Get("events/cvfull/variationTree");
-  TTree* multisim_tree = (TTree*)input->Get("events/cvfull/multisimTree"); // TEST...delete if anything breaks
+  TTree* multisigma_tree = (TTree*)input->Get("events/cvfull/selected_nu_multisigmaTree");
+  TTree* variation_tree = (TTree*)input->Get("events/cvfull/selected_nu_variationTree");
+  TTree* multisim_tree = (TTree*)input->Get("events/cvfull/selected_nu_multisimTree"); // TEST...delete if anything breaks
+  
+  //TTree* multisigma_tree = (TTree*)input->Get("events/cvfull/signal_multisigmaTree");
+  //TTree* variation_tree = (TTree*)input->Get("events/cvfull/signal_variationTree");
+  //TTree* multisim_tree = (TTree*)input->Get("events/cvfull/signal_multisimTree");
 
   /////////////////////////////////////////////////////////////
   /// Output
@@ -62,13 +66,12 @@ int main(int argc, char * argv[])
       directory->WriteObject(pot, "POT");
       directory->WriteObject(livetime, "Livetime");
       TTree* out_tree = new TTree(table.get_string_field("name").c_str(), table.get_string_field("name").c_str());
-
       copy_no_syst(table, out_tree, in_tree);
+      
       if(table.get_bool_field("gundam_store_syst") == true)
         {
           copy_with_syst(config, table, out_tree, in_tree, multisigma_tree, "multisigma");
           copy_with_syst(config, table, out_tree, in_tree, variation_tree, "variation");
-	  
         }
       
       out_tree->Write();
@@ -87,6 +90,7 @@ int main(int argc, char * argv[])
 
 void copy_no_syst(cfg::ConfigurationTable table, TTree * out_tree, TTree * in_tree)
 {
+
   
   // Input tree
   int run, subrun, event;
@@ -96,7 +100,7 @@ void copy_no_syst(cfg::ConfigurationTable table, TTree * out_tree, TTree * in_tr
   in_tree->SetBranchAddress("Run", &run);
   in_tree->SetBranchAddress("Subrun", &subrun);
   in_tree->SetBranchAddress("Evt", &event);
-  
+
   // These are branches we wish to modify
   double _cut_type, _is_nu, _is_data, _category_topology_ccpi0_simple1, _category_topology_ccpi0_simple2, _category_topology_ccpi0_complete;
   in_tree->SetBranchAddress("reco_cut_type", &_cut_type);
@@ -105,6 +109,7 @@ void copy_no_syst(cfg::ConfigurationTable table, TTree * out_tree, TTree * in_tr
   in_tree->SetBranchAddress("true_category_topology_ccpi0_simple1", &_category_topology_ccpi0_simple1);
   in_tree->SetBranchAddress("true_category_topology_ccpi0_simple2", &_category_topology_ccpi0_simple2);
   in_tree->SetBranchAddress("true_category_topology_ccpi0_complete", &_category_topology_ccpi0_complete);
+
   
   // Output tree
   for (int i = 0; i < in_tree->GetNbranches()-3; i++)
@@ -155,6 +160,7 @@ void copy_no_syst(cfg::ConfigurationTable table, TTree * out_tree, TTree * in_tr
       
       out_tree->Fill();
     }
+
 }
 
 void copy_with_syst(cfg::ConfigurationTable config, cfg::ConfigurationTable table, TTree * out_tree, TTree * in_tree, TTree* syst_in_tree, std::string syst_type)
@@ -208,7 +214,7 @@ void copy_with_syst(cfg::ConfigurationTable config, cfg::ConfigurationTable tabl
           branch_addresses_nsigmas[branch_name.Data()] = vec1;
           syst_in_tree->SetBranchAddress(branch_name_nsigma, &(branch_addresses_nsigmas[branch_name.Data()]));
 
-	  std::cout << branch_name_nsigma << " " << branch_name << std::endl;
+	  //std::cout << branch_name_nsigma << " " << branch_name << std::endl;
 
           arrSyst[sysIdx] = new TClonesArray("TGraph", 1);
           out_tree->Branch(branch_name, &arrSyst[sysIdx], 32000, -1);

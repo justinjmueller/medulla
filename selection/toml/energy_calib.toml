@@ -1,5 +1,5 @@
 [general]
-output = "icarus_bnb_energy_calib_cv_07_10_2025"
+output = "icarus_bnb_energy_calib_cv"
 primfn = "default_primary_classification"
 pidfn = "default_pid"
 calofn = "default_calo_ke"
@@ -29,24 +29,33 @@ flash_low_t = -0.5
 flash_high_t = 1.6
 bnb_fom2_cut = 0.98
 
+# temporarily name cvfull when merging with cvext
 [[sample]]
-name = "cv"
+name = "cvfull"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input*.flat.root"
 ismc = true
 disable = false
 
+# temporarily name cvfull when merging with cv
 [[sample]]
-name = "cvext"
+name = "cvfull"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/input*.flat.root"
 ismc = true
 disable = true
+
+[[sample]]
+name = "cvfull"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/full/*.flat.root"
+ismc = true
+disable = true
+
 
 [[tree]]
 name = "muon"
 sim_only = true
 mode = "true"
 cut = [
-    {name = "in_time", type = "true_particle", parameters=[0, 1.6]},
+    {name = "in_time", type = "true_particle", parameters=[0.0, 1.6]},
     {name = "is_pid", type = "true_particle", parameters=[2]},
     {name = "is_primary", type = "true_particle"}
 ]
@@ -65,7 +74,7 @@ name = "photon"
 sim_only = true
 mode = "true"
 cut = [
-    {name = "in_time", type = "true_particle", parameters=[0, 1.6]},
+    {name = "in_time", type = "true_particle", parameters=[0.0, 1.6]},
     {name = "is_pid", type = "true_particle", parameters=[0]},
     {name = "is_primary", type = "true_particle"}
 ]
@@ -82,7 +91,7 @@ name = "electron"
 sim_only = true
 mode = "true"
 cut = [
-    {name = "in_time", type = "true_particle", parameters=[0, 1.6]},
+    {name = "in_time", type = "true_particle", parameters=[0.0, 1.6]},
     {name = "is_pid", type = "true_particle", parameters=[1]},
     {name = "is_primary", type = "true_particle"},
     #{name = "containment_cut", type = "true_particle"}
