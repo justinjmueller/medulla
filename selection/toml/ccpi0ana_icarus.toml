@@ -1,5 +1,5 @@
 [general]
-output = "icarus_bnb_ccpi0_cv_07_10_2025_test"
+output = "icarus_bnb_ccpi0"
 primfn = "default_primary_classification"
 pidfn = "default_pid"
 calofn = "default_calo_ke"
@@ -36,12 +36,14 @@ flash_low_t = -0.5
 flash_high_t = 1.6
 bnb_fom2_cut = 0.98
 
+# name cvfull if merging with cvext
 [[sample]]
 name = "cv"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input*.flat.root"
 ismc = true
-disable = false
+disable = true
 
+# name cvfull if merging with cv
 [[sample]]
 name = "cvext"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/input*.flat.root"
@@ -50,9 +52,10 @@ disable = true
 
 [[sample]]
 name = "cvfull"
-path = "/pnfs/icarus/persistent/users/mueller/production/simulation/full/*.flat.root"
+#path = "/pnfs/icarus/persistent/users/mueller/production/simulation/full/*.flat.root"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/[c-n]*/input*.flat.root"
 ismc = true
-disable = true
+disable = false
 
 [[sample]]
 name = "var00"
@@ -188,18 +191,13 @@ mode = "reco"
 cut = [
     {name = "fiducial_cut", type = "reco"},
     {name = "flash_cut", type = "reco",  parameters = ["@flash_low_t", "@flash_high_t"]},
-    #{name = "crtpmt_veto", type = "event", parameters = ["@flash_low_t", "@flash_high_t"]},
     {name = "single_muon", type = "reco", parameters = ["@muon_threshold"]},
     {name = "no_charged_pions", type = "reco", parameters = ["@pion_threshold"]},
     {name = "two_photons", type = "reco", parameters = ["@photon_threshold"]},
-    #{name = "at_least_two_photons", type = "reco", parameters = ["@photon_threshold"]},
-    #{name = "less_than_four_photons", type = "reco", parameters = ["@photon_threshold"]},
-    #{name = "leading_photon_ke_cut", type = "reco", parameters = ["@leading_photon_threshold"]},
-    {name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
-    #{name = "trigger_emulation_cut", type = "event", decrements_exposure = false },
+    #{name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
     {name = "data_quality_cut", type = "event", decrements_exposure = true },
-    {name = "beam_quality_cut", type = "spill", decrements_exposure = false }, # Should decrement exposure, but CAF files are bugged
-    {name = "bnb_fom2_cut", type = "event", decrements_exposure = false, parameters = [ "@bnb_fom2_cut" ]}, # Should decrement exposure, but CAF files are bugged
+    #{name = "beam_quality_cut", type = "spill", decrements_exposure = false }, # Should decrement exposure, but CAF files are bugged
+    #{name = "bnb_fom2_cut", type = "event", decrements_exposure = false, parameters = [ "@bnb_fom2_cut" ]}, # Should decrement exposure, but CAF files are bugged
     {name = "neutrino", type = "true"}
 ]
 branch = [
@@ -218,8 +216,10 @@ branch = [
     # Interaction observables
     {name = "flash_time", type = "reco"},
     {name = "visible_energy", type = "both"},
+    {name = "visible_energy_calosub", type = "both"},
     {name = "Q2", type = "both"},
     {name = "W", type = "both"},
+    {name = "W_calosub", type = "both"},
     {name = "dpT", type = "both"},
     {name = "dpL", type = "both"},
     {name = "pn", type = "both"},
@@ -228,9 +228,15 @@ branch = [
     {name = "vertex_x", type = "both"},
     {name = "vertex_y", type = "both"},
     {name = "vertex_z", type = "both"},
+    {name = "photon_multiplicity", type = "both", parameters = ["@photon_threshold"]},
+    {name = "electron_multiplicity", type = "both", parameters = ["@electron_threshold"]},
+    {name = "muon_multiplicity", type = "both", parameters = ["@muon_threshold"]},
+    {name = "pion_multiplicity", type = "both", parameters = ["@pion_threshold"]},
+    {name = "proton_multiplicity", type = "both", parameters = ["@proton_threshold"]},
 
     # Muon observables
     {name = "p", type = "both_particle", selector = "leading_muon"},
+    {name = "ke", type = "both_particle", selector = "leading_muon"},
     {name = "beam_costheta", type = "both_particle", selector = "leading_muon"},
 
     # Neutral pion observables (interaction-level)
@@ -259,6 +265,11 @@ branch = [
     {name = "start_y", type = "both_particle", selector = "pi0_subleading_shower"},
     {name = "start_z", type = "both_particle", selector = "pi0_subleading_shower"},
 
+    # Cut-by-cut analysis
+    {name = "fiducial_cut", type = "both"},
+    {name = "flash_cut", type = "reco",  parameters = ["@flash_low_t", "@flash_high_t"]},
+    
+
     # GUNDAM
     {name = "is_nu", type = "reco"},
     {name = "is_data", type = "reco"},
@@ -273,18 +284,13 @@ mode = "reco"
 cut = [
     {name = "fiducial_cut", type = "reco"},
     {name = "flash_cut", type = "reco",  parameters = ["@flash_low_t", "@flash_high_t"]},
-    #{name = "crtpmt_veto", type = "event", parameters = ["@flash_low_t", "@flash_high_t"]},
     {name = "single_muon", type = "reco", parameters = ["@muon_threshold"]},
     {name = "no_charged_pions", type = "reco", parameters = ["@pion_threshold"]},
     {name = "two_photons", type = "reco", parameters = ["@photon_threshold"]},
-    #{name = "at_least_two_photons", type = "reco", parameters = ["@photon_threshold"]},
-    #{name = "less_than_four_photons", type = "reco", parameters = ["@photon_threshold"]},
-    #{name = "leading_photon_ke_cut", type = "reco", parameters = ["@leading_photon_threshold"]},
-    {name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
-    #{name = "trigger_emulation_cut", type = "event", decrements_exposure = false },
+    #{name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
     {name = "data_quality_cut", type = "event", decrements_exposure = true },
-    {name = "beam_quality_cut", type = "spill", decrements_exposure = false }, # Should decrement exposure, but CAF files are bugged
-    {name = "bnb_fom2_cut", type = "event", decrements_exposure = false, parameters = [ "@bnb_fom2_cut" ]}, # Should decrement exposure, but CAF files are bugged
+    #{name = "beam_quality_cut", type = "spill", decrements_exposure = false }, # Should decrement exposure, but CAF files are bugged
+    #{name = "bnb_fom2_cut", type = "event", decrements_exposure = false, parameters = [ "@bnb_fom2_cut" ]}, # Should decrement exposure, but CAF files are bugged
     {name = "cosmic", type = "true"}
 ]
 branch = [
@@ -303,8 +309,10 @@ branch = [
     # Interaction observables
     {name = "flash_time", type = "reco"},
     {name = "visible_energy", type = "both"},
+    {name = "visible_energy_calosub", type = "both"},
     {name = "Q2", type = "both"},
     {name = "W", type = "both"},
+    {name = "W_calosub", type = "both"},
     {name = "dpT", type = "both"},
     {name = "dpL", type = "both"},
     {name = "pn", type = "both"},
@@ -313,9 +321,15 @@ branch = [
     {name = "vertex_x", type = "both"},
     {name = "vertex_y", type = "both"},
     {name = "vertex_z", type = "both"},
+    {name = "photon_multiplicity", type = "both", parameters = ["@photon_threshold"]},
+    {name = "electron_multiplicity", type = "both", parameters = ["@electron_threshold"]},
+    {name = "muon_multiplicity", type = "both", parameters = ["@muon_threshold"]},
+    {name = "pion_multiplicity", type = "both", parameters = ["@pion_threshold"]},
+    {name = "proton_multiplicity", type = "both", parameters = ["@proton_threshold"]},
 
     # Muon observables
     {name = "p", type = "both_particle", selector = "leading_muon"},
+    {name = "ke", type = "both_particle", selector = "leading_muon"},
     {name = "beam_costheta", type = "both_particle", selector = "leading_muon"},
 
     # Neutral pion observables (interaction-level)
@@ -378,8 +392,10 @@ branch = [
 
     # Interaction observables
     {name = "visible_energy", type = "both"},
+    {name = "visible_energy_calosub", type = "both"},
     {name = "Q2", type = "both"},
     {name = "W", type = "both"},
+    {name = "W_calosub", type = "both"},
     {name = "dpT", type = "both"},
     {name = "dpL", type = "both"},
     {name = "pn", type = "both"},
@@ -388,9 +404,15 @@ branch = [
     {name = "vertex_x", type = "both"},
     {name = "vertex_y", type = "both"},
     {name = "vertex_z", type = "both"},
+    {name = "photon_multiplicity", type = "both", parameters = ["@photon_threshold"]},
+    {name = "electron_multiplicity", type = "both", parameters = ["@electron_threshold"]},
+    {name = "muon_multiplicity", type = "both", parameters = ["@muon_threshold"]},
+    {name = "pion_multiplicity", type = "both", parameters = ["@pion_threshold"]},
+    {name = "proton_multiplicity", type = "both", parameters = ["@proton_threshold"]},
 
     # Muon observables
     {name = "p", type = "both_particle", selector = "leading_muon"},
+    {name = "ke", type = "both_particle", selector = "leading_muon"},
     {name = "beam_costheta", type = "both_particle", selector = "leading_muon"},
 
     # Neutral pion observables (interaction-level)
@@ -427,8 +449,5 @@ branch = [
     {name = "single_muon", type = "reco", parameters = ["@muon_threshold"]},
     {name = "no_charged_pions", type = "reco", parameters = ["@pion_threshold"]},
     {name = "two_photons", type = "reco", parameters = ["@photon_threshold"]},
-    #{name = "at_least_two_photons", type = "reco", parameters = ["@photon_threshold"]},
-    #{name = "less_than_four_photons", type = "reco", parameters = ["@photon_threshold"]},
-    #{name = "leading_photon_ke_cut", type = "reco", parameters = ["@leading_photon_threshold"]},
     {name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
 ]
