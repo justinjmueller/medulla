@@ -28,7 +28,7 @@ setup cmake v3_27_4
 
 # Clone the medulla repository:
 git clone https://github.com/justinjmueller/medulla.git medulla
-cd medulla && git checkout v1.0.1
+cd medulla && git checkout v1.0.2
 mkdir build && cd build
 
 # Configure and build medulla:
@@ -315,3 +315,55 @@ This tutorial has provided a comprehensive overview of the `medulla` selection f
 * Enhance the CCQE-like selection by adding additional cuts or branch variables.
 * Explore other final states by modifying the cuts and variables in the configuration file.
 * Look for detector effects in the muon kinematics
+
+# Running `medulla` in Batch (Grid) Mode
+`medulla` has built-in support for running in batch mode using HTCondor. This allows users to process large datasets efficiently by distributing the workload across multiple computing nodes. The batch processing functionality is encapsulated in the `medulla` batch scripts, which handle the project creation, job submission, and monitoring. The user is responsible for ensuring that they have prepared a stable selection configuration file (TOML) and that they have access to the necessary input data files with valid XRootD tokens. The batch scripts will take care of the rest.
+
+Systematic weights can be added to the job output by adding an additional option to the `tree` block in the selection configuration file:
+
+```toml
+[[tree]]
+name = "selected"
+sim_only = false
+add_systematics = true
+mode = "reco"
+cut = [
+    ...
+]
+branch = [
+    ...
+]
+```
+
+Trees with `add_systematics = true` will have additional trees created in the output file corresponding to the configured systematics. This configuration is provided by default with the `sys_template.toml` file in the `medulla/batch` directory, but the user can modify this with a flag when creating the project. Only samples marked as `ismc = true` will have systematics applied.
+
+Once the configuration file is ready, the user can create a batch project using the Python script `medulla/batch/medulla.py`. This script takes several command-line arguments to customize the batch job submission:
+
+```bash
+python3 medulla/batch/medulla.py -t <path_to_config>/example01_ccqe.toml -p <path_to_project> -b <files_per_batch> --create-project
+```
+
+Some notes on the command-line arguments:
+* `-t` or `--toml` - specifies the path to the selection configuration file (TOML).
+* `-p` or `--project` - specifies the path to the project directory where batch job files will be created. This should be a directory accessible by the batch system (e.g., `scratch`).
+* `-b` or `--batch-size` - specifies the number of input files to process per batch job. This allows the user to control the granularity of the workload distribution. It is not unreasonable to use a batch size of 1 for large files.
+* `--create-project` - a flag that indicates the project should be created. This will set up the necessary directory structure and job files.
+
+The total number of files and therefore the total number of jobs is calculated by expanding patterns in the `path` parameter of each `sample` block in the configuration file. Once the project is created, it is recommended that the user submit a single test job to ensure that everything is set up correctly:
+
+```bash
+python3 medulla/batch/medulla.py -p <path_to_project> -e <experiment> --test-job
+```
+This will form a candidate job submission and prompt the user to confirm that it looks correct. If everything looks good, the user can proceed with the test job submission. After the test job completes successfully, the user can submit the full set of jobs:
+
+```bash
+python3 medulla/batch/medulla.py -p <path_to_project> -e <experiment> --launch-jobs
+```
+
+or
+
+```bash
+python3 medulla/batch/medulla.py -p <path_to_project> -e <experiment> --launch-jobs N
+```
+
+where `N` is some integer number of jobs to launch (e.g., `10` to launch 10 jobs). If no number is provided, all jobs will be launched. Each time this script is run, it will check for completed output files and only submit jobs that have not yet completed. This does not check for running jobs, so the user should be careful not to submit duplicate jobs.

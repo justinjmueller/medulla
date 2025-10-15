@@ -20,20 +20,21 @@ fsthresh = [
 # SBND sample
 [[sample]]
 name = "simulation"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input000.flat.root"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input000-reweighted.flat.caf.root"
 ismc = true
-disable = false # Optional: default = false
+disable = true # Optional: default = false
 
 # ICARUS sample
 [[sample]]
 name = "simulation"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/input000.flat.root"
 ismc = true
-disable = true # Optional: default = false
+disable = false # Optional: default = false
 
 [[tree]]
 name = "selected"
 sim_only = false
+add_systematics = true
 mode = "reco"
 cut = [
     { name = "fiducial_cut",            type = "reco" },

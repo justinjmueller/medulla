@@ -174,6 +174,25 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     output_tree->Branch("Run", &run);
     output_tree->Branch("Subrun", &subrun);
     output_tree->Branch("Evt", &event);
+
+    /**
+     * @brief Create an output TTree for non-matched signal candidates.
+     * @details This differs from the output TTree above in that it is meant to
+     * capture signal candidates that do not have a matching neutrino in the
+     * input CAF files (e.g., cosmics or failed truth matching). This TTree is
+     * only created if the "output.save_nonmatched" field in the configuration
+     * file is set to true.
+     */
+    TTree * nonmatched_tree = nullptr;
+    if(config.get_bool_field("output.nonmatched", true))
+    {
+        nonmatched_tree = new TTree((table.get_string_field("name") + "_nonmatched").c_str(), (table.get_string_field("name") + "_nonmatched").c_str());
+        for(auto & br : brs)
+            nonmatched_tree->Branch(br.first.c_str(), &br.second);
+        nonmatched_tree->Branch("Run", &run);
+        nonmatched_tree->Branch("Subrun", &subrun);
+        nonmatched_tree->Branch("Evt", &event);
+    }
     
     /**
      * @brief Create the map of selected signal candidates.
@@ -274,7 +293,7 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     }
 
     sys::WeightReader reader(config.get_string_field("input.weights"));
-
+    std::vector<index_t> saved_indices;
     double nominal_count(0);
     while(reader.next())
     {
@@ -357,8 +376,28 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
                  */
                 for(auto & [key, value] : systrees)
                     value->Fill();
+
+                // Save the index of the matched signal candidate.
+                saved_indices.push_back(index);
             } // End of block for matched signal candidates.
         }
+    }
+
+    // Fill the non-matched TTree if it has been created.
+    if(nonmatched_tree)
+    {
+        for(auto & [key, value] : candidates)
+        {
+            if(std::find(saved_indices.begin(), saved_indices.end(), key) != saved_indices.end())
+                continue;
+            input_tree->GetEntry(value);
+            run = std::get<0>(key);
+            subrun = std::get<1>(key);
+            event = std::get<2>(key);
+            nonmatched_tree->Fill();
+        }
+        directory->WriteObject(nonmatched_tree, nonmatched_tree->GetName());
+        delete nonmatched_tree;
     }
 
     // Write the output TTree to the output file.
@@ -367,25 +406,29 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
         directory->WriteObject(value, (key+"Tree").c_str());
     
     // Write the systematic histograms to the output file.
-    TDirectory * histogram_directory = create_directory(output, config.get_string_field("output.histogram_destination"));
-    for(auto & [key, value] : results2d)
+    std::string destination = config.get_string_field("output.histogram_destination", "");
+    if(destination != "")
     {
-        std::string name = value->GetName();
-        histogram_directory->WriteObject(value, name.c_str());
-        for(int i(0); i < value->GetNbinsY(); ++i)
+        TDirectory * histogram_directory = create_directory(output, destination.c_str());
+        for(auto & [key, value] : results2d)
         {
-            double sum(0);
-            for(int j(0); j < value->GetNbinsX(); ++j)
-                sum += value->GetBinContent(j+1, i+1);
-            results1d[key]->Fill((sum - nominal_count) / nominal_count);
+            std::string name = value->GetName();
+            histogram_directory->WriteObject(value, name.c_str());
+            for(int i(0); i < value->GetNbinsY(); ++i)
+            {
+                double sum(0);
+                for(int j(0); j < value->GetNbinsX(); ++j)
+                    sum += value->GetBinContent(j+1, i+1);
+                results1d[key]->Fill((sum - nominal_count) / nominal_count);
+            }
+            delete value;
         }
-        delete value;
-    }
-    for(auto & [key, value] : results1d)
-    {
-        std::string name = value->GetName();
-        histogram_directory->WriteObject(value, name.c_str());
-        delete value;
+        for(auto & [key, value] : results1d)
+        {
+            std::string name = value->GetName();
+            histogram_directory->WriteObject(value, name.c_str());
+            delete value;
+        }
     }
 
     // Write detector systematic histograms to the output file.
