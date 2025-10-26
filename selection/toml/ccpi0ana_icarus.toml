@@ -2,13 +2,13 @@
 output = "icarus_bnb_ccpi0"
 primfn = "default_primary_classification"
 pidfn = "default_pid"
-#calofn = "default_calo_ke"
+calofn = "default_calo_ke"
 #calofn = "gain_corr_fudge_mc_calo_ke"
 #calofn = "gain_corr_fudge_cont_mc_calo_ke"
 #calofn = "gain_corr_fudge_cont_pi0adj_mc_calo_ke"
 #calofn = "gain_corr_fudge_cont_data_calo_ke"
 #calofn = "gain_corr_fudge_data_calo_ke"
-calofn = "pi0_adj_mc_calo_ke"
+#calofn = "pi0_adj_mc_calo_ke"
 #calofn = "pi0_adj_data_calo_ke"
 fsthresh = [
     "@photon_threshold",
@@ -195,7 +195,7 @@ cut = [
     {name = "single_muon", type = "reco", parameters = ["@muon_threshold"]},
     {name = "no_charged_pions", type = "reco", parameters = ["@pion_threshold"]},
     {name = "two_photons", type = "reco", parameters = ["@photon_threshold"]},
-    #{name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+    {name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
     {name = "data_quality_cut", type = "event", decrements_exposure = true },
     #{name = "beam_quality_cut", type = "spill", decrements_exposure = false }, # Should decrement exposure, but CAF files are bugged
     #{name = "bnb_fom2_cut", type = "event", decrements_exposure = false, parameters = [ "@bnb_fom2_cut" ]}, # Should decrement exposure, but CAF files are bugged
@@ -286,7 +286,7 @@ cut = [
     {name = "single_muon", type = "reco", parameters = ["@muon_threshold"]},
     {name = "no_charged_pions", type = "reco", parameters = ["@pion_threshold"]},
     {name = "two_photons", type = "reco", parameters = ["@photon_threshold"]},
-    #{name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+    {name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
     {name = "data_quality_cut", type = "event", decrements_exposure = true },
     #{name = "beam_quality_cut", type = "spill", decrements_exposure = false }, # Should decrement exposure, but CAF files are bugged
     #{name = "bnb_fom2_cut", type = "event", decrements_exposure = false, parameters = [ "@bnb_fom2_cut" ]}, # Should decrement exposure, but CAF files are bugged
@@ -453,5 +453,5 @@ branch = [
     {name = "single_muon", type = "reco", parameters = ["@muon_threshold"]},
     {name = "no_charged_pions", type = "reco", parameters = ["@pion_threshold"]},
     {name = "two_photons", type = "reco", parameters = ["@photon_threshold"]},
-    #{name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+    {name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
 ]
