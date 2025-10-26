@@ -146,6 +146,22 @@ namespace cuts
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut, fiducial_cut);
 
+    /**
+     * @brief Apply a cut on the interaction vertex to avoid mystery pi0 z-gap.
+     * @details Photons from pi0s are seen to vanish in the region defined by
+     * -20 < z < 80.  This cut eliminates this region so we can cleanly adjust our 
+     * fiducial number of targets calculation for all samples.
+     * @tparam T the type o interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the vertex is not in the z-gap.
+     */
+    template<class T>
+    bool avoid_mystery_zgap(const T & obj)
+    {
+        return !(obj.vertex[2] > -20 && obj.vertex[2] < 80);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, avoid_mystery_zgap, avoid_mystery_zgap);
+    
     template<class T>
     bool fiducial_cut_tmp(const T & obj)
     {
