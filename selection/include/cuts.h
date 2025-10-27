@@ -158,7 +158,7 @@ namespace cuts
     template<class T>
     bool avoid_mystery_zgap(const T & obj)
     {
-        return !(obj.vertex[2] > -20 && obj.vertex[2] < 80);
+        return !(obj.vertex[2] > -100 && obj.vertex[2] < 100);
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, avoid_mystery_zgap, avoid_mystery_zgap);
     

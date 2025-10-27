@@ -255,6 +255,56 @@ namespace pvars
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, default_calo_ke, default_calo_ke);
 
     /**
+     * @brief Variable for calorimetric kinetic energy of the particle.
+     * @details The calorimetric kinetic energy is calculated upstream in the
+     * SPINE reconstruction as the sum of energy for each spacepoint in the
+     * particle.  The method uses the incorrect TPC MC gain, but assumes the fudge
+     * factor for the correct TPC MC gain, hence the shower energy scale is not reckoned
+     * to truth.
+     * @param p the particle to apply the variable on.
+     * @return the calorimetric kinetic energy of the particle.
+     */
+    template<class T>
+    double wrong_mc_gain_correct_fudge_calo_ke(const T & p)
+    {
+        return (1/1.2359) * (1/0.77) * p.calo_ke;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, wrong_mc_gain_correct_fudge_calo_ke, wrong_mc_gain_correct_fudge_calo_ke);
+
+    /**
+     * @brief Variable for calorimetric kinetic energy of the particle.
+     * @details The calorimetric kinetic energy is calculated upstream in the
+     * SPINE reconstruction as the sum of energy for each spacepoint in the
+     * particle.  The method uses the correct TPC MC gain, and assumes the fudge
+     * factor for the correct TPC MC gain, hence the shower energy scale is reckoned
+     * to truth.
+     * @param p the particle to apply the variable on.
+     * @return the calorimetric kinetic energy of the particle.
+     */
+    template<class T>
+    double correct_mc_gain_correct_fudge_calo_ke(const T & p)
+    {
+        return (1/82.03) * 78.10 * (1/1.2359) * (1/0.77) * p.calo_ke;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, correct_mc_gain_correct_fudge_calo_ke, correct_mc_gain_correct_fudge_calo_ke);
+    
+    /**
+     * @brief Variable for calorimetric kinetic energy of the particle.
+     * @details The calorimetric kinetic energy is calculated upstream in the
+     * SPINE reconstruction as the sum of energy for each spacepoint in the
+     * particle.  The method uses the correct TPC data gain, and assumes the fudge
+     * factor for the correct TPC MC gain.
+     * @param p the particle to apply the variable on.
+     * @return the calorimetric kinetic energy of the particle.
+     */
+    template<class T>
+    double correct_data_gain_correct_fudge_calo_ke(const T & p)
+    {
+        return (1/1.2359) * (1/0.77) * p.calo_ke;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, correct_data_gain_correct_fudge_calo_ke, correct_data_gain_correct_fudge_calo_ke);
+    
+    /**
      * @brief Variable for the calorimetric kinetic energy of the particle.
      * @details The calorimetric kinetic energy is calculated upstream in the
      * SPINE reconstruction as the sum of the energy of each space point in the particle.
