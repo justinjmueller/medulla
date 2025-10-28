@@ -80,9 +80,18 @@ class Analysis:
         self._styles = {x['name'] : Style(**x) for x in self._config['style']}
 
         # Load the variable table
+        # TODO: Can all the `.keys()` calls be removed for config
+        # checks?
         if 'variables' not in self._config.keys():
             raise ConfigException(f"No variables defined in the TOML file. Please check for a valid variable configuration block (table='variables') in the TOML file ('{toml_path}').")
-        self._variables = {name: Variable(name, **self._config['variables'][name]) for name in self._config['variables']}
+        if isinstance(self._config['variables'], list):
+            # Support "list-style" variable definitions (cleaner, in
+            # my personal opinion)
+            self._variables = {x['name']: Variable(**x) for x in self._config['variables']}
+        else:
+            # Support "dict-style" variable definitions (legacy support
+            # and not as clean in my personal opinion)
+            self._variables = {name: Variable(name, **self._config['variables'][name]) for name in self._config['variables']}
 
         # Register variables with samples
         if 'systematic_recipe' in self._config.keys():
