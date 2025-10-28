@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from typing import Optional
 
 class Style:
     """
@@ -30,9 +31,19 @@ class Style:
         A dictionary containing the keyword arguments to be passed
         to the plotting function.
     """
-    def __init__(self, name, style_sheet, markers, default_figsize,
-                 title, mark_pot=True, mark_pot_horizontal=True,
-                 mark_preliminary=True, scilimits=None, plot_kwargs=None) -> None:
+    def __init__(
+        self,
+        name : str,
+        style_sheet : str,
+        markers : list,
+        default_figsize : tuple,
+        title : str,
+        mark_pot : bool = True,
+        mark_pot_horizontal : bool = True,
+        mark_preliminary : bool = True,
+        scilimits : Optional[tuple] = None,
+        plot_kwargs : Optional[dict] = None
+    ) -> None:
         """
         Initializes the Style object with the given kwargs.
 
@@ -52,6 +63,9 @@ class Style:
             A flag toggling the display of the total POT (exposure) at the
             top of the plot above the axis and below the title. The default
             is True.
+        mark_pot_horizontal : bool, optional
+            A flag toggling whether the POT label is displayed horizontally
+            (True) or vertically (False). The default is True.
         mark_preliminary : str, optional
             A string to be used a label to indicate that the plot is
             preliminary. If None, no label is added. The default is True.
@@ -75,7 +89,7 @@ class Style:
         self._mark_pot_horizontal = mark_pot_horizontal
         self._mark_preliminary = None if mark_preliminary == 'none' else mark_preliminary
         self._scilimits = scilimits
-        self._plot_kwargs = plot_kwargs
+        self._plot_kwargs = plot_kwargs # TODO: Check if `plot_kwargs` is actually used.
 
     def __enter__(self):
         """
