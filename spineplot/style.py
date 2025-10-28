@@ -21,6 +21,9 @@ class Style:
     _mark_pot : bool
         A flag toggling the display of the total POT (exposure) at the
         top of the plot above the axis and below the title.
+    _mark_pot_horizontal : bool
+        A flag toggling whether the POT label is displayed horizontally
+        (True) or vertically (False).
     _mark_preliminary : str
         A string to be used a label to indicate that the plot is
         preliminary. If None, no label is added.
