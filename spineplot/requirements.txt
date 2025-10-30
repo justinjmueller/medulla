@@ -1,8 +1,0 @@
-numpy
-scipy
-pandas
-matplotlib
-uproot
-toml
-uproot
-scikit-learn

@@ -1,0 +1,34 @@
+[project]
+name = "spineplot"
+version = "1.0.4"
+description = "Plotting utilities accompanying the medulla analysis framework."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+  { name = "Justin Mueller" }
+]
+
+dependencies = [
+  "numpy",
+  "matplotlib",
+  "pandas",
+  "scipy",
+  "toml",
+  "uproot",
+  "scikit-learn",
+  "ipykernel"
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "."}
+
+[tool.setuptools.packages.find]
+include = ["spineplot"]
+
+[tool.setuptools.package-data]
+"spineplot" = ["styles/*.mplstyle"]
