@@ -38,12 +38,12 @@ class Style:
         self,
         name : str,
         style_sheet : str,
-        markers : list,
         default_figsize : tuple,
         title : str,
         mark_pot : bool = True,
         mark_pot_horizontal : bool = True,
-        mark_preliminary : bool = True,
+        mark_preliminary : Optional[str] = None,
+        markers : Optional[list] = None,
         scilimits : Optional[tuple] = None,
         plot_kwargs : Optional[dict] = None
     ) -> None:
@@ -63,18 +63,20 @@ class Style:
         title : str
             The title to place at the top of the plot.
         mark_pot : bool, optional
-            A flag toggling the display of the total POT (exposure) at the
-            top of the plot above the axis and below the title. The default
-            is True.
+            A flag toggling the display of the total POT (exposure) at
+            the top of the plot above the axis and below the title. The
+            default is True.
         mark_pot_horizontal : bool, optional
-            A flag toggling whether the POT label is displayed horizontally
-            (True) or vertically (False). The default is True.
+            A flag toggling whether the POT label is displayed
+            horizontally (True) or vertically (False). The default is
+            True.
         mark_preliminary : str, optional
             A string to be used a label to indicate that the plot is
-            preliminary. If None, no label is added. The default is True.
+            preliminary. If None, no label is added. The default is
+            None.
         scilimits : tuple, optional
-            The scientific limits to use when formatting the axis labels.
-            The default is None.
+            The scientific limits to use when formatting the axis
+            labels. The default is None.
         plot_kwargs : dict, optional
             A dictionary containing the keyword arguments to be passed
             to the plotting function. The default is None.
@@ -85,12 +87,18 @@ class Style:
         """
         self._name = name
         self._style = style_sheet
-        self._markers = markers
         self._default_figsize = default_figsize
         self._title = None if title == 'none' else title
         self._mark_pot = mark_pot
         self._mark_pot_horizontal = mark_pot_horizontal
-        self._mark_preliminary = None if mark_preliminary == 'none' else mark_preliminary
+        
+        if markers is None:
+            # Choose a sensible default set of markers
+            self._markers = ['o', '^', 's', 'P', 'D']
+        else:
+            self._markers = markers
+
+        self._mark_preliminary = mark_preliminary
         self._scilimits = scilimits
         self._plot_kwargs = plot_kwargs # TODO: Check if `plot_kwargs` is actually used.
 
