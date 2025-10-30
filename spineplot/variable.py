@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from typing import Optional
 
 class Variable:
     """
@@ -34,9 +35,17 @@ class Variable:
         sample. This is intended to be checked before using the
         variable in the analysis.
     """
-    def __init__(self, name, key, range, nbins,
-                 binning_scheme='equal_width', xlabel=None,
-                 mask=None, custom_bins = None) -> None:
+    def __init__(
+        self,
+        name : str,
+        key : str,
+        range : tuple,
+        nbins : int,
+        binning_scheme : str = 'equal_width',
+        xlabel : Optional[str] = None,
+        mask : Optional[str] = None,
+        custom_bins : Optional[tuple] = None
+    ) -> None:
         """
         Initializes the Variable object with the given kwargs.
 
@@ -52,12 +61,14 @@ class Variable:
         nbins : int
             The number of bins for the variable.
         binning_scheme : str
-            The binning scheme for the variable. This can be either
-            'equal_width', 'custom_bins', or 'equal_population'. The 
-            default is 'equal_width,' which creates bins of equal width
-            irrespective of the number of entries in each bin.
-            Option 'custom_bins' requires entering bin edges tuple for 
-            parameter custom_bins.
+            The binning scheme for the variable; that is, how the bin
+            edges are determined. Several options are available:            
+            - 'equal_width': Creates a fixed number of bins with equal
+            width over the specified range.
+            - 'equal_population': Creates bins with an equal number of
+            entries (as close as possible) in each bin.
+            - 'custom_bins': Uses user-defined bin edges specified in
+            the custom_bins parameter.
         xlabel : str
             The x-axis label for the variable.
         mask : string, optional
@@ -65,6 +76,7 @@ class Variable:
         custom_bins : tuple
             The customized bin edges (required if binning_scheme is
             'custom_bins').
+        #TODO: consider refactoring the binning scheme handling.
 
         Returns
         -------
@@ -83,7 +95,12 @@ class Variable:
         self._bin_centers = {}
         self._bin_widths = {}
 
-    def check_data(self, categories, sample_name, sample):
+    def check_data(
+        self,
+        categories: dict,
+        sample_name: str,
+        sample: Sample
+    ) -> None:
         """
         Provides some functionality to check the data for the variable.
         Specifically, this function checks that each sample does indeed
