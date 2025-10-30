@@ -3,6 +3,7 @@ import toml
 import uproot
 from matplotlib import pyplot as plt
 
+# TODO: Make imports consistent (absolute vs relative)
 from sample import Sample
 from figure import SpineFigure, SimpleFigure
 from spectra1d import SpineSpectra1D
@@ -11,7 +12,7 @@ from efficiency import SpineEfficiency
 from confusion import ConfusionMatrix
 from roc import ROCCurve
 from ternary import Ternary
-from style import Style
+from spineplot.style import Style
 from variable import Variable
 
 class ConfigException(Exception):
@@ -74,10 +75,23 @@ class Analysis:
             raise ConfigException(f"No samples defined in the TOML file. Please check for a valid sample configuration block in the TOML file ('{toml_path}').")
         self._samples = {name: Sample(name, rf, self._config['analysis']['category_branch'], **self._config['samples'][name]) for name in self._config['samples']}
 
-        # Load the plot styles table
-        if 'style' not in self._config.keys():
-            raise ConfigException(f"No plot styles defined in the TOML file. Please check for a valid plot style configuration block (table='styles') in the TOML file ('{toml_path}').")
-        self._styles = {x['name'] : Style(**x) for x in self._config['style']}
+        # Provide a default style
+        self._styles = {
+            'default' : Style(
+                'default',
+                style_sheet='default',
+                default_figsize=(8,6),
+                title='',
+                mark_preliminary='Work-in-Progress',
+                plot_kwargs={'histtype': 'barstacked', 'stacked': True}
+            )
+        }
+
+        # Load the plot styles table (if it exists)
+        if 'style' in self._config.keys():
+            self._styles.update(
+                {x['name'] : Style(**x) for x in self._config['style']}
+            )
 
         # Load the variable table
         # TODO: Can all the `.keys()` calls be removed for config

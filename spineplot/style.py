@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from typing import Optional
+from importlib import resources
 
 class Style:
     """
@@ -86,7 +87,7 @@ class Style:
         None
         """
         self._name = name
-        self._style = style_sheet
+        self._style = self.get_style_path(style_sheet)
         self._default_figsize = default_figsize
         self._title = None if title == 'none' else title
         self._mark_pot = mark_pot
@@ -114,7 +115,12 @@ class Style:
         plt.style.use(self._style)
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(
+        self,
+        exc_type : type,
+        exc_val : Exception,
+        exc_tb : traceback
+    ) -> None:
         """
         Resets the style for the plot.
 
@@ -133,6 +139,28 @@ class Style:
         """
         plt.style.use('default')
 
+    def get_style_path(
+        self,
+        style_name: str
+    ) -> str:
+        """
+        Return the full path to a style file bundled with spineplot.
+
+        Parameters
+        ----------
+        style_name : str
+            The name of the style file (without the .mplstyle
+            extension).
+        """
+        # Ensure the style sheet has the proper extension
+        if not style_name.endswith('.mplstyle'):
+            style_name += '.mplstyle'
+        
+        # Grab the style sheet from the package resources
+        s = resources.files(__package__) / "styles" / style_name
+        with resources.as_file(s) as path:
+            return str(path)
+
     def get_style(self) -> str:
         """
         Returns the value of the style attribute.
@@ -144,7 +172,10 @@ class Style:
         """
         return self._style
 
-    def get_color(self, cdx) -> str:
+    def get_color(
+        self,
+        cdx : int
+    ) -> str:
         """
         Returns the color for the given cycle index. This needs to
         correctly loop over the colors in the color cycle in case
@@ -164,7 +195,10 @@ class Style:
         cdx = cdx % len(plt.rcParams['axes.prop_cycle'].by_key()['color'])
         return plt.rcParams['axes.prop_cycle'].by_key()['color'][cdx]
 
-    def get_marker(self, cdx) -> str:
+    def get_marker(
+        self,
+        cdx: int
+    ) -> str:
         """
         Returns the marker for the given cycle index. This needs to
         correctly loop over the markers in the marker cycle in case
