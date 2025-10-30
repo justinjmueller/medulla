@@ -72,8 +72,24 @@ class Analysis:
 
         # Initialize the samples
         if 'samples' not in self._config.keys():
-            raise ConfigException(f"No samples defined in the TOML file. Please check for a valid sample configuration block in the TOML file ('{toml_path}').")
-        self._samples = {name: Sample(name, rf, self._config['analysis']['category_branch'], **self._config['samples'][name]) for name in self._config['samples']}
+            raise ConfigException(
+                f"No samples defined in the TOML file. Please check"
+                f" for a valid sample configuration block in the TOML"
+                f" file ('{toml_path}')."
+            )
+        if isinstance(self._config['samples'], list):
+            # Support "list-style" sample definitions (cleaner, in my
+            # personal opinion)
+            self._samples = {x['name']: Sample(
+                x['name'],
+                rf,
+                self._config['analysis']['category_branch'],
+                **x
+            ) for x in self._config['samples']}
+        else:
+            # Support "dict-style" sample definitions (legacy support
+            # and not as clean in my personal opinion)
+            self._samples = {name: Sample(name, rf, self._config['analysis']['category_branch'], **self._config['samples'][name]) for name in self._config['samples']}
 
         # Provide a default style
         self._styles = {
