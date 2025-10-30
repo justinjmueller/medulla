@@ -52,8 +52,8 @@ legend.frameon: False
 lines.linewidth: 2
 
 ## COLORS
-#                                  Black     Blue      Orange   Greenish  Sky blue  Vermilion Purplish
-axes.prop_cycle: cycler('color', ['000000', '0072B2', 'E69F00', '009E73', '56B4E9', 'D55E00', 'CC79A7', ])
+#                                    Blue        Orange      Greenish    Sky blue    Vermilion   Purplish    Black
+axes.prop_cycle: cycler('color', ['0072B2', 'E69F00', '009E73', '56B4E9', 'D55E00', 'CC79A7', '000000',])
 
 # Cividis is Colo(u)r Vision Deficiency friendly
 image.cmap: cividis
