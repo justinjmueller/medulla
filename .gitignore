@@ -9,6 +9,7 @@
 *dev.*
 *.json
 .DS_Store
+*.egg-info/
 
 build/
 */CMakeFiles/*
