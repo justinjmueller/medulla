@@ -159,7 +159,6 @@ class Style:
         
         # Grab the style sheet from the package resources
         path = Path(resources.files(__package__)).parent.resolve()
-        print(path)
         s = path / "styles" / style_name
         with resources.as_file(s) as path:
             return str(path)
