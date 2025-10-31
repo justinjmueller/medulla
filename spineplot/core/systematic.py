@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import uproot
 
-from variable import Variable
+from .variable import Variable
 
 class Systematic:
     """

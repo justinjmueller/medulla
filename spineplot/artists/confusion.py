@@ -3,10 +3,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 
-from artists import SpineArtist
-from style import Style
-from variable import Variable
-from utilities import mark_pot, mark_preliminary
+from ..core.artists import SpineArtist
+from ..core.style import Style
+from ..core.variable import Variable
+from ..core.utilities import mark_pot, mark_preliminary
 
 class ConfusionMatrix(SpineArtist):
     """

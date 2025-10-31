@@ -4,16 +4,16 @@ import uproot
 from matplotlib import pyplot as plt
 
 # TODO: Make imports consistent (absolute vs relative)
-from sample import Sample
-from figure import SpineFigure, SimpleFigure
-from spectra1d import SpineSpectra1D
-from spectra2d import SpineSpectra2D
-from efficiency import SpineEfficiency
-from confusion import ConfusionMatrix
-from roc import ROCCurve
-from ternary import Ternary
-from spineplot.style import Style
-from variable import Variable
+from .core.sample import Sample
+from .core.figure import SpineFigure, SimpleFigure
+from .artists.spectra1d import SpineSpectra1D
+from .artists.spectra2d import SpineSpectra2D
+from .artists.efficiency import SpineEfficiency
+from .artists.confusion import ConfusionMatrix
+from .artists.roc import ROCCurve
+from .artists.ternary import Ternary
+from .core.style import Style
+from .core.variable import Variable
 
 class ConfigException(Exception):
     pass

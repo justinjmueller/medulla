@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from style import Style
+from .style import Style
 
 class SpineFigure:
     """

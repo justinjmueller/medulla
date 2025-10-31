@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
 
-from artists import SpineArtist
-from style import Style
-from variable import Variable
+from ..core.artists import SpineArtist
+from ..core.style import Style
+from ..core.variable import Variable
 
 class SpineSpectra(SpineArtist):
     """

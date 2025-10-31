@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from typing import Optional
 from importlib import resources
+from pathlib import Path
 
 class Style:
     """
@@ -157,7 +158,9 @@ class Style:
             style_name += '.mplstyle'
         
         # Grab the style sheet from the package resources
-        s = resources.files(__package__) / "styles" / style_name
+        path = Path(resources.files(__package__)).parent.resolve()
+        print(path)
+        s = path / "styles" / style_name
         with resources.as_file(s) as path:
             return str(path)
 

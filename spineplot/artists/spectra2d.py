@@ -3,10 +3,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 
-from spectra import SpineSpectra
-from style import Style
-from variable import Variable
-from utilities import mark_pot, mark_preliminary, draw_error_boxes
+from .spectra import SpineSpectra
+from ..core.style import Style
+from ..core.variable import Variable
+from ..core.utilities import mark_pot, mark_preliminary, draw_error_boxes
 
 class SpineSpectra2D(SpineSpectra):
     """

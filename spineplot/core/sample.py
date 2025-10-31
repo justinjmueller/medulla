@@ -3,7 +3,7 @@ import pandas as pd
 import re
 import uproot
 
-from systematic import Systematic
+from .systematic import Systematic
 
 class Sample:
     """
