@@ -6,7 +6,7 @@ from matplotlib.colors import LogNorm
 from .spectra import SpineSpectra
 from ..core.style import Style
 from ..core.variable import Variable
-from ..core.utilities import mark_pot, mark_preliminary, draw_error_boxes
+from ..core.utilities import *
 
 class SpineSpectra2D(SpineSpectra):
     """
@@ -59,66 +59,93 @@ class SpineSpectra2D(SpineSpectra):
         the category label for the spectrum and the histogram data for
         that category.
     """
-    def __init__(self, variables, categories, colors, category_types,
-                 title=None, xrange=None, xtitle=None, yrange=None,
-                 ytitle=None) -> None:
+    def __init__(
+        self,
+        categories : dict,
+        colors : dict,
+        category_types : dict,
+        *args,
+        xvariable : Variable,
+        yvariable : Variable,
+        title : Optional[str] = None,
+        xrange : Optional[tuple] = None,
+        xtitle : Optional[str] = None,
+        yrange : Optional[tuple] = None,
+        ytitle : Optional[str] = None,
+        **kwargs
+    ) -> None:
         """
         Initializes the SpineSpectra2D object.
 
         Parameters
         ----------
-        variables : list
-            The list of Variable objects for the spectrum.
         categories : dict
-            A dictionary of the categories for the spectrum. This serves
-            as a map between the category label in the input TTree and
-            the category label for the spectrum (and therefore what is
-            shown in a single legend entry).
+            A dictionary of the categories for the spectrum. This
+            serves as a map between the category label in the input
+            TTree and the category label for the spectrum (and
+            therefore what is shown in a single legend entry).
         colors : dict
-            A dictionary of the colors for the categories in the spectrum.
-            This serves as a map between the category label for the
-            spectrum (value in the `_categories` dictionary) and the color
-            to use for the histogram. The color can be any valid matplotlib
-            color string or a cycle indicator (e.g. 'C0', 'C1', etc.).
+            A dictionary of the colors for the categories in the
+            spectrum. This serves as a map between the category label
+            for the spectrum (value in the `_categories` dictionary)
+            and the color to use for the histogram. The color can be
+            any valid matplotlib color string or a cycle indicator
+            (e.g. 'C0', 'C1', etc.).
         category_types : dict
-            A dictionary of the types for the categories in the spectrum.
-            This serves as a map between the category label for the spectrum
-            (value in the `_categories` dictionary) and the type of plot to
-            use for the histogram. The type should be either 'histogram' or
-            'scatter' to correspond to a stacked histogram or scatter plot,
-            respectively.
+            A dictionary of the types for the categories in the
+            spectrum. This serves as a map between the category label
+            for the spectrum (value in the `_categories` dictionary)
+            and the type of plot to use for the histogram. The type
+            should be either 'histogram' or 'scatter' to correspond to
+            a stacked histogram or scatter plot, respectively.
+        xvariable : Variable
+            The Variable object for the x-axis of the spectrum.
+        yvariable : Variable
+            The Variable object for the y-axis of the spectrum.
         title : str, optional
             The title of the artist. This will be placed at the top of
             the axis assigned to the artist. The default is None.
         xrange : tuple, optional
-            The range of the x-axis for the spectrum. This is a tuple of
-            the minimum and maximum values for the x-axis. If None, the
-            range will be determined by Variable object assigned to the
-            x-axis (show_option='2d') or set to (-1,1)
+            The range of the x-axis for the spectrum. This is a tuple
+            of the minimum and maximum values for the x-axis. If None,
+            the range will be determined by Variable object assigned to
+            the x-axis (show_option='2d') or set to (-1,1)
             (show_option='projection'). The default is None.
         xtitle : str, optional
-            The label for the x-axis of the spectrum. If None, the label
-            will be determined by the Variable object assigned to the
-            x-axis (show_option='2d') or set to '(Y-X)/X'
+            The label for the x-axis of the spectrum. If None, the
+            label will be determined by the Variable object assigned to
+            the x-axis (show_option='2d') or set to '(Y-X)/X'
             (show_option='projection'). The default is None.
         yrange : tuple, optional
-            The range of the y-axis for the spectrum. This is a tuple of
-            the minimum and maximum values for the y-axis. If None, the
-            range will be determined by Variable object assigned to the
-            y-axis (show_option='2d') or set to None
+            The range of the y-axis for the spectrum. This is a tuple
+            of the minimum and maximum values for the y-axis. If None,
+            the range will be determined by Variable object assigned to
+            the y-axis (show_option='2d') or set to None
             (show_option='projection'). The default is None.
         ytitle : str, optional
-            The label for the y-axis of the spectrum. If None, the label
-            will be determined by the Variable object assigned to the
-            y-axis (show_option='2d') or set to 'Entries'
+            The label for the y-axis of the spectrum. If None, the
+            label will be determined by the Variable object assigned to
+            the y-axis (show_option='2d') or set to 'Entries'
             (show_option='projection'). The default is None.
+        **kwargs : dict
+            Additional keyword arguments to pass to the parent
+            SpineSpectra class. In practice, this is used to swallow
+            arguments that are not relevant for this class.
 
         Returns
         -------
         None.
         """
-        super().__init__(variables, categories, colors, title,
-                         xrange, xtitle, yrange, ytitle)
+        super().__init__(
+            [xvariable, yvariable],
+            categories,
+            colors,
+            title,
+            xrange,
+            xtitle,
+            yrange,
+            ytitle
+        )
         self._category_types = category_types
         self._plotdata_diagonal = None
         self._binedges_diagonal = None
@@ -141,6 +168,7 @@ class SpineSpectra2D(SpineSpectra):
         -------
         None.
         """
+        # TODO: Refactor to use bin edges from Variable class directly
         super().add_sample(sample, is_ordinate)
 
         if self._plotdata is None:

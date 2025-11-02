@@ -1,12 +1,13 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from typing import Optional
 
 from .spectra import SpineSpectra
 from ..core.style import Style
 from ..core.variable import Variable
 from ..core.systematic import Systematic
-from ..core.utilities import mark_pot, mark_preliminary, draw_error_boxes
+from ..core.utilities import *
 
 class SpineSpectra1D(SpineSpectra):
     """
@@ -33,7 +34,8 @@ class SpineSpectra1D(SpineSpectra):
         of the histogram by this factor. If None, the range will be
         determined by the range of the histogram.
     _ytitle : str
-        The label for the y-axis. If None, the label will be 'Candidates'.
+        The label for the y-axis. If None, the label will be
+        'Candidates'.
     _variable : Variable
         The Variable object for the spectrum.
     _categories : dict
@@ -48,20 +50,29 @@ class SpineSpectra1D(SpineSpectra):
         to use for the histogram. The color can be any valid matplotlib
         color string or a cycle indicator (e.g. 'C0', 'C1', etc.).
     _plotdata : dict
-        A dictionary of the data for the spectrum. This is a map between
-        the category label for the spectrum and the histogram data for
-        that category.
+        A dictionary of the data for the spectrum. This is a map
+        between the category label for the spectrum and the histogram
+        data for that category.
     """
-    def __init__(self, variable, categories, colors, category_types,
-                 title=None, xrange=None, xtitle=None,
-                 yrange=None, ytitle=None) -> None:
+    def __init__(
+        self,
+        categories : dict,
+        colors : dict,
+        category_types : dict,
+        *args,
+        variable : Variable,
+        title : Optional[str] = None,
+        xrange : Optional[tuple] = None,
+        xtitle : Optional[str] = None,
+        yrange : Optional[tuple|float] = None,
+        ytitle : Optional[str] = None,
+        **kwargs
+    ) -> None:
         """
         Initializes the SpineSpectra1D.
 
         Parameters
         ----------
-        variable : Variable
-            The Variable object for the spectrum.
         categories : dict
             A dictionary of the categories for the spectrum. This
             serves as a map between the category label in the input
@@ -81,6 +92,8 @@ class SpineSpectra1D(SpineSpectra):
             and the type of plot to use for the histogram. The type
             should be either 'histogram' or 'scatter' to correspond to
             a stacked histogram or scatter plot, respectively.
+        variable : Variable
+            The Variable object for the spectrum.
         title : str, optional
             The title of the spectrum. This will be placed at the top
             of the axis assigned to the artist. The default is None.
@@ -101,17 +114,33 @@ class SpineSpectra1D(SpineSpectra):
         ytitle : str, optional
             The label for the y-axis. If None, the label will be
             'Candidates'. The default is None.
+        **kwargs
+            Additional keyword arguments to pass to the SpineSpectra
+            constructor. In practice, this is used to swallow arguments
+            that are not relevant for this class.
 
         Returns
         -------
         None.
         """
-        super().__init__([variable,], categories, colors, title,
-                         xrange, xtitle, yrange, ytitle)
+        super().__init__(
+            [variable,],
+            categories,
+            colors,
+            title,
+            xrange,
+            xtitle,
+            yrange,
+            ytitle
+        )
         self._variable = self._variables[0]
         self._category_types = category_types
 
-    def add_sample(self, sample, is_ordinate) -> None:
+    def add_sample(
+        self,
+        sample : Sample,
+        is_ordinate : bool
+    ) -> None:
         """
         Adds a sample to the SpineSpectra1D object. The sample's data
         is extracted per category and stored for later plotting.
@@ -129,25 +158,48 @@ class SpineSpectra1D(SpineSpectra):
         -------
         None.
         """
+        # TODO: Refactor to use bin edges from Variable class directly
         super().add_sample(sample, is_ordinate)
 
+        # Initialize the plot data dictionary if it hasn't been already
+        # been initialized.
         if self._plotdata is None:
             self._plotdata = {}
             self._binedges = {}
             self._onebincount = {}
-        data, weights = sample.get_data([self._variable._key,], with_mask=self._variable.mask)
+
+        # Extract the data for the variable from the sample.
+        data, weights = sample.get_data(
+            [self._variable._key,],
+            with_mask=self._variable.mask
+        )
+
+        # Loop over the categories in the sample and extract the data
+        # for each category. This loop also accumulates (bins) the data
+        # for each category.
         for category, values in data.items():
             values = values[0]
             if category not in self._categories.keys():
                 continue
             if self._categories[category] not in self._plotdata:
-                self._plotdata[self._categories[category]] = np.zeros(self._variable._nbins)
+                self._plotdata[self._categories[category]] = np.zeros(
+                    self._variable._nbins
+                )
                 self._onebincount[self._categories[category]] = 0
-            xr = self._variable._range if self._xrange is None else self._xrange
+            
+            # If the user requests to overrid the x-axis range, use
+            # that range for binning.
+            xr = self._variable._range
+            if self._xrange is not None:
+                xr = self._xrange
+
             # Use either uniform bins or customized bins
-            h = np.histogram(values, 
-                bins=self._variable._nbins if self._variable._custom_bins is None else self._variable._custom_bins ,
-                range=xr, weights=weights[category])
+            h = np.histogram(
+                values,
+                bins=self._variable._nbins if self._variable._custom_bins is None else self._variable._custom_bins,
+                range=xr,
+                weights=weights[category]
+            )
             self._onebincount[self._categories[category]] += np.sum(weights[category])
             self._plotdata[self._categories[category]] += h[0]
             self._binedges[self._categories[category]] = h[1]

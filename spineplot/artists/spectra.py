@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
+from typing import Optional
 
 from ..core.artists import SpineArtist
 from ..core.style import Style
@@ -67,14 +68,23 @@ class SpineSpectra(SpineArtist):
         each sample. The key is the sample name and the value is the
         list of Systematic objects for that sample.
     """
-    def __init__(self, variables, categories, colors, title=None,
-                 xrange=None, xtitle=None, yrange=None, ytitle=None) -> None:
+    def __init__(
+        self,
+        variables : list[Variable],
+        categories : dict,
+        colors : dict,
+        title : Optional[str] = None,
+        xrange : Optional[tuple] = None,
+        xtitle : Optional[str] = None,
+        yrange : Optional[tuple|float] = None,
+        ytitle : Optional[str] = None
+    ) -> None:
         """
         Initializes the SpineSpectra object with the given kwargs.
 
         Parameters
         ----------
-        variables : list
+        variables : list[Variable]
             The list of Variable objects for the spectra.
         categories : dict
             A dictionary of the categories for the spectra. This serves
@@ -82,14 +92,34 @@ class SpineSpectra(SpineArtist):
             the category label for the aggregated data (and therefore
             what is shown in a single legend entry).
         colors : dict
-            A dictionary of the colors for the categories in the spectra.
-            This serves as a map between the category label for the
-            spectra (value in the `_categories` dictionary) and the color
-            to use for the histogram. The color can be any valid matplotlib
-            color string or a cycle indicator (e.g. 'C0', 'C1', etc.).
+            A dictionary of the colors for the categories in the
+            spectra. This serves as a map between the category label
+            for the spectra (value in the `_categories` dictionary) and
+            the color to use for the histogram. The color can be any
+            valid matplotlib color string or a cycle indicator (e.g. 
+            'C0', 'C1', etc.).
         title : str, optional
             The title of the spectra. This will be placed at the top of
             the axis assigned to the spectra. The default is None.
+        xrange : tuple, optional
+            The range of the x-axis for the spectra. This is a tuple of
+            the form (xmin, xmax). If None, the range will be defaulted
+            to the standard settings for the SpineSpectra. The default
+            is None.
+        xtitle : str, optional
+            The title of the x-axis for the spectra. If None, the title
+            will be set to the default title for the SpineSpectra. The
+            default is None.
+        yrange : tuple, or float, optional
+            If this is a tuple, it is the range of the y-axis for the
+            spectrum. If this is a float, it will scale the maximum
+            value of the histogram by this factor. If None, the range
+            will be determined by the range of the histogram. The
+            default is None.
+        ytitle : str, optional
+            The title of the y-axis for the spectra. If None, the title
+            will be set to the default title for the SpineSpectra. The
+            default is None.
 
         Returns
         -------
@@ -108,7 +138,11 @@ class SpineSpectra(SpineArtist):
         self._onebincount = None
         self._systematics = dict()
 
-    def add_sample(self, sample, is_ordinate) -> None:
+    def add_sample(
+        self,
+        sample,
+        is_ordinate
+    ) -> None:
         """
         Adds a sample to the SpineSpectra object. The most basic form
         of this method is to save the exposure information from the
@@ -128,7 +162,15 @@ class SpineSpectra(SpineArtist):
         super().add_sample(sample, is_ordinate)
         self._systematics[sample._name] = sample._systematics
 
-    def fit_with_function(self, ax, bin_centers, data, bin_edges, fit_type, range=(-1,1)) -> None:
+    def fit_with_function(
+        self,
+        ax : plt.Axes,
+        bin_centers : np.ndarray,
+        data : np.ndarray,
+        bin_edges : np.ndarray,
+        fit_type : Optional[str] = None,
+        range : tuple = (-1, 1)
+    ) -> None:
         """
         Fit the data with a given function and plot the fit on the axis.
 
@@ -136,12 +178,12 @@ class SpineSpectra(SpineArtist):
         ----------
         ax : matplotlib.axes.Axes
             The axis to plot the fit on.
-        bin_centers : list
-            The list of bin centers for the data.
-        data : list
-            The list of data values for the bins.
-        bin_edges : list
-            The list of bin edges for the data.
+        bin_centers : np.ndarray
+            The array of bin centers for the data.
+        data : np.ndarray
+            The array of data values for the bins.
+        bin_edges : np.ndarray
+            The array of bin edges for the data.
         fit_type : str
             The type of fit to perform on the data. The default is
             None, which will not perform any fit. The options are:
@@ -249,13 +291,20 @@ class SpineSpectra(SpineArtist):
             ax.plot(x, self.gaussian(x, *popt), 'r-', label=g_label)
 
     @staticmethod
-    def crystal_ball(x, alpha, n, mean, sigma, N):
+    def crystal_ball(
+        x : np.ndarray,
+        alpha : float,
+        n : float,
+        mean : float,
+        sigma : float,
+        N : float
+    ) -> np.ndarray:
         """
         Crystal Ball probability density function.
 
         Parameters:
         -----------
-        x : array-like
+        x : np.ndarray
             Input values where the function is evaluated.
         alpha : float
             Parameter defining the point where the Gaussian core transitions to the power-law tail.
@@ -307,13 +356,22 @@ class SpineSpectra(SpineArtist):
         return N * result
 
     @staticmethod
-    def crystal_ball_mxb(x, alpha, n, mean, sigma, N, m, b):
+    def crystal_ball_mxb(
+        x : np.ndarray,
+        alpha : float,
+        n : float,
+        mean : float,
+        sigma : float,
+        N : float,
+        m : float = 0,
+        b : float = 0
+    ) -> np.ndarray:
         """
         Crystal Ball probability density function.
 
         Parameters:
         -----------
-        x : array-like
+        x : np.ndarray
             Input values where the function is evaluated.
         alpha : float
             Parameter defining the point where the Gaussian core transitions to the power-law tail.
@@ -333,19 +391,24 @@ class SpineSpectra(SpineArtist):
 
         Returns:
         --------
-        array-like
+        np.ndarray
             Function values evaluated at x.
         """
         return SpineSpectra.crystal_ball(x, alpha, n, mean, sigma, N) + m*x + b
 
     @staticmethod
-    def gaussian(x, mean, sigma, N):
+    def gaussian(
+        x : np.ndarray,
+        mean : float,
+        sigma : float,
+        N : float
+    ) -> np.ndarray:
         """
         Gaussian probability density function.
 
         Parameters:
         -----------
-        x : array_like
+        x : np.ndarray
             Independent variable.
         mean : float
             Mean (peak location) of the Gaussian.
@@ -356,7 +419,7 @@ class SpineSpectra(SpineArtist):
 
         Returns:
         --------
-        array_like
+        np.ndarray
             Gaussian function evaluated at x.
         """
         prefactor = N / (sigma * np.sqrt(2 * np.pi))
