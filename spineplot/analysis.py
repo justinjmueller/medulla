@@ -52,6 +52,8 @@ class Analysis:
         -------
         None
         """
+        # TODO: Can all the `.keys()` calls be removed for config
+        # checks?
         self._toml_path = toml_path
         self._config = toml.load(self._toml_path)
         for table in self._config.get('this_includes', []):
@@ -60,7 +62,12 @@ class Analysis:
 
         # Load the output path
         if 'output' not in self._config.keys():
-            raise ConfigException(f"No output path defined in the TOML file. Please check for a valid output configuration block in the TOML file ('{toml_path}').")
+            raise ConfigException(
+                f"No output path defined in the TOML file. Please"
+                f" check for a valid output configuration block in the"
+                f" TOML file ('{toml_path}')."
+            )
+        # TODO: Switch to pathlib?
         self._output_path = self._config['output']['path']
 
         # Load the categories table
@@ -70,7 +77,62 @@ class Analysis:
         self._colors = {c : self._config['analysis']['category_colors'][ci] for ci, c in enumerate(self._config['analysis']['category_labels'])}
         self._category_types = {c : self._config['analysis']['category_types'][ci] for ci, c in enumerate(self._config['analysis']['category_labels'])}
 
-        # Initialize the samples
+        # Initialize the samples for the analysis. The configuration
+        # file must contain a valid sample configuration block, failing
+        # which an exception is raised.
+        self.initialize_samples(rf)
+
+        # Initialize the styles for the analysis. A default style is
+        # always provided, so no exception is raised if no style block
+        # is present in the configuration file.
+        self.initialize_styles()
+
+        # Initialize the variables for the analysis. The configuration
+        # file must contain a valid variable configuration block,
+        # failing which an exception is raised.
+        self.initialize_variables()
+
+        # Register variables with samples
+        if 'systematic_recipe' in self._config.keys():
+            recipes = self._config['systematic_recipe']
+        else:
+            recipes = list()
+        # TODO: Re-enable this functionality after refactoring the
+        # variable registration and systematic processing.
+        #for s in self._samples.values():
+            #for v in self._variables.values():
+            #    s.register_variable(v, self._categories)
+            #s.process_systematics(recipes)
+
+        # Initialize the figures and artists for the analysis. The
+        # configuration file must contain a valid figure configuration
+        # block, failing which an exception is raised.
+        self.initialize_figures_and_artists()
+
+    def initialize_samples(
+        self,
+        rf : uproot.reading.ReadOnlyDirectory
+    ) -> None:
+        """
+        Initializes the samples for the analysis using the provided
+        configuration file.
+
+        Parameters
+        ----------
+        rf : uproot.reading.ReadOnlyDirectory
+            The ROOT file containing the data.
+
+        Returns
+        -------
+        None.
+
+        Raises
+        ------
+        ConfigException
+            No sample configuration block is present in the TOML
+            configuration file.
+        """
+        # Check if the samples table exists
         if 'samples' not in self._config.keys():
             raise ConfigException(
                 f"No samples defined in the TOML file. Please check"
@@ -89,9 +151,29 @@ class Analysis:
         else:
             # Support "dict-style" sample definitions (legacy support
             # and not as clean in my personal opinion)
-            self._samples = {name: Sample(name, rf, self._config['analysis']['category_branch'], **self._config['samples'][name]) for name in self._config['samples']}
+            self._samples = {name: Sample(
+                name,
+                rf,
+                self._config['analysis']['category_branch'],
+                **self._config['samples'][name]
+            ) for name in self._config['samples']}
 
-        # Provide a default style
+    def initialize_styles(self) -> None:
+        """
+        Initializes the styles for the analysis using the provided
+        configuration file. Unlike the other initialization methods,
+        this one provides a default style if none are defined in the
+        configuration file and does not raise an exception.
+
+        Parameters
+        ----------
+        None.
+
+        Returns
+        -------
+        None.
+        """
+        # Provide a default style to simplify the user experience.
         self._styles = {
             'default' : Style(
                 'default',
@@ -109,80 +191,229 @@ class Analysis:
                 {x['name'] : Style(**x) for x in self._config['style']}
             )
 
-        # Load the variable table
-        # TODO: Can all the `.keys()` calls be removed for config
-        # checks?
+    def initialize_variables(self) -> None:
+        """
+        Initializes the variables for the analysis using the provided
+        configuration file.
+
+        Parameters
+        ----------
+        None.
+
+        Returns
+        -------
+        None.
+
+        Raises
+        ------
+        ConfigException
+            No variable configuration block is present in the TOML
+            configuration file.
+        """
+        # Check if the variables table exists. This is a required
+        # configuration block, so an exception is raised if it is not
+        # present.
         if 'variables' not in self._config.keys():
-            raise ConfigException(f"No variables defined in the TOML file. Please check for a valid variable configuration block (table='variables') in the TOML file ('{toml_path}').")
+            raise ConfigException(
+                f"No variables defined in the TOML file. Please check"
+                f" for a valid variable configuration block"
+                f" (table='variables') in the TOML file"
+                f" ('{toml_path}').")
+        
+        # Load the variables. Two styles of variable definitions
+        # are supported for user convenience.
         if isinstance(self._config['variables'], list):
             # Support "list-style" variable definitions (cleaner, in
             # my personal opinion)
-            self._variables = {x['name']: Variable(**x) for x in self._config['variables']}
+            self._variables = {x['name']: Variable(
+                **x
+            ) for x in self._config['variables']}
         else:
             # Support "dict-style" variable definitions (legacy support
             # and not as clean in my personal opinion)
-            self._variables = {name: Variable(name, **self._config['variables'][name]) for name in self._config['variables']}
+            self._variables = {name: Variable(
+                name,
+                **self._config['variables'][name]
+            ) for name in self._config['variables']}
 
-        # Register variables with samples
-        if 'systematic_recipe' in self._config.keys():
-            recipes = self._config['systematic_recipe']
-        else:
-            recipes = list()
-        for s in self._samples.values():
-            for v in self._variables.values():
-                s.register_variable(v, self._categories)
-            s.process_systematics(recipes)
+        # Now "finalize" the Variable by checking its validity (well-
+        # configured and present in all samples) and setting up its
+        # binning scheme. It's important to note that Variables failing
+        # the validity check do not raise an exception here; instead,
+        # the exception is raised when the Variable is used in an
+        # artist later on. Such exceptions would not actually protect
+        # the user.
+        for v in self._variables.values():
+            v.finalize(
+                list(self._samples.values()),
+                self._categories
+            )
 
+    def initialize_figures_and_artists(self) -> None:
+        """
+        Initializes the figures and artists for the analysis using the
+        provided configuration file.
+
+        Parameters
+        ----------
+        None.
+
+        Returns
+        -------
+        None.
+        
+        Raises
+        ------
+        ConfigException
+            No figure configuration block is present in the TOML
+            configuration file.
+        """
         # Load the artists table
         if 'figure' not in self._config.keys():
-            raise ConfigException(f"No figures defined in the TOML file. Please check for a valid figure configuration block (table='figure') in the TOML file ('{toml_path}').")
+            raise ConfigException(
+                f"No figures defined in the TOML file. Please check"
+                f" for a valid figure configuration block"
+                f" (table='figure') in the TOML file ('{toml_path}').")
         self._figures = dict()
         self._artists = list()
-        for fig in self._config['figure']:
-            if fig['type'] == 'SimpleFigure':
-                with self._styles[fig['style']] as style:
-                    self._figures[fig['name']] = SimpleFigure(fig.get('figsize', style.default_figsize), style, fig.get('title', style.default_title))
-                    for x in fig['artists']:
 
-                        # Check if the artist is restricted to certain
-                        # groups. This allows for some additional
-                        # amount of control over the plotting.
-                        restrict_categories = {}
-                        group_setting = x.get('groups', [])
-                        if group_setting:
-                            for g in group_setting:
-                                restrict_categories.update({k : v for k,v in self._categories.items() if v == g})
-                        else:
-                            restrict_categories = self._categories.copy()
-                    
-                        if x['type'] == 'SpineSpectra1D':
-                            # Check if the variable is present in all samples
-                            if not all(self._variables[x['variable']]._validity_check.values()):
-                                missing_samples = [k for k, v in self._variables[x['variable']]._validity_check.items() if not v]
-                                raise ConfigException(f"Variable '{x['variable']}' not found in all samples ({' '.join(missing_samples)}).")
-                            
-                            # Create the artist
-                            art = SpineSpectra1D(self._variables[x['variable']], restrict_categories,
-                                                 self._colors, self._category_types, x.get('title', None),
-                                                 x.get('xrange', None), x.get('xtitle', None),
-                                                 x.get('yrange', None), x.get('ytitle', None))
-                            draw_kwargs = x.get('draw_kwargs', {})
-                            draw_kwargs['draw_error'] = draw_kwargs.get('draw_error', None)
-                            self._figures[fig['name']].register_spine_artist(art, draw_kwargs=draw_kwargs)
-                            self._artists.append(art)
-                        elif x['type'] == 'SpineSpectra2D':
-                            # Check if the variables are present in all samples
-                            if not all(self._variables[x['xvariable']]._validity_check.values()) or not all(self._variables[x['yvariable']]._validity_check.values()):
-                                missing_samples = [k for k, v in self._variables[x['xvariable']]._validity_check.items() if not v] + [k for k, v in self._variables[x['yvariable']]._validity_check.items() if not v]
-                                raise ConfigException(f"Variable '{x['xvariable']}' or '{x['yvariable']}' not found in all samples ({' '.join(missing_samples)}).")
-                            
-                            # Create the artist
-                            art = SpineSpectra2D([self._variables[x['xvariable']], self._variables[x['yvariable']]],
-                                                  restrict_categories, self._colors, self._category_types,
-                                                  x.get('title', None), x.get('xrange', None), x.get('xtitle', None),
-                                                  x.get('yrange', None), x.get('ytitle', None))
-                            self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
-                            self._artists.append(art)
+        for figure in self._config['figure']:
+            # Provide a default style if none is specified
+            if 'style' not in figure.keys():
+                figure['style'] = 'default'
+            
+            # Create the figure with the specified style using a
+            # context manager to ensure proper style application
+            with self._styles[figure['style']] as style:
+                if figure['type'] == 'SimpleFigure':
+                    self._figures[figure['name']] = SimpleFigure(
+                        figure.get('figsize', style.default_figsize),
+                        style,
+                        figure.get('title', style.default_title)
+                    )
+                else:
+                    raise ConfigException(
+                        f"Figure type '{figure['type']}' does not"
+                        f" correspond to a valid figure type."
+                    )
+                
+                # Register the artists for the figure. Depending on the
+                # figure type, multiple artist types may be supported.
+                for artist in figure['artists']:
+                    self.register_artist_to_figure(
+                        artist,
+                        self._figures[figure['name']]
+                    )
+
+    def register_artist_to_figure(
+        self,
+        artcfg : dict,
+        figure : SpineFigure
+    ) -> None:
+        """
+        Registers an artist to the given figure using the provided
+        configuration. This method will raise an exception if the
+        artist type requested is not supported.
+        
+        Parameters
+        ----------
+        artcfg : dict
+            The artist configuration dictionary.
+        figure : SpineFigure
+            The figure to register the artist to.
+        
+        Returns
+        -------
+        None.
+
+        Raises
+        ------
+        ConfigException
+            Raised in a few cases:
+            - The variable(s) required for the artist are not present
+              in all samples.
+            - The artist type does not correspond to a valid artist
+              type.
+        """
+        # Do a quick check that the requested artist type is valid
+        valid_artists = [
+            'SpineSpectra1D',
+            'SpineSpectra2D',
+            'SpineEfficiency',
+            'ConfusionMatrix',
+            'ROCCurve',
+            'Ternary'
+        ]
+        if artcfg['type'] not in valid_artists:
+            raise ConfigException(
+                f"Artist type '{artcfg['type']}' does not correspond"
+                f" to a valid artist type."
+            )
+
+        # Check if the artist is restricted to certain groups. This
+        # allows for some additional amount of control over the
+        # plotting beyond what is provided by the category assignment
+        # configuration.
+        restrict = {}
+        group_setting = artcfg.get('groups', [])
+        if group_setting:
+            for g in group_setting:
+                restrict.update(
+                    {k : v for k,v in self._categories if v == g}
+                )
+        else:
+            restrict = self._categories.copy()
+
+        # TODO: Ensure draw_kwargs are handled consistently across
+        # all artist types and directly mapped to kwargs of the 'draw'
+        # method of each artist.
+
+        # Now, create the artist and register it to the figure. We do
+        # this in a series of if-else statements, thereby making it 
+        # easy to extend the functionality in the future.
+        if artcfg['type'] == 'SpineSpectra1D':
+            # Do a full check on the variable required for the artist,
+            # and take the opportunity to update the artist dictionary
+            # with the validated Variable object.
+            artcfg['variable'] = self.validate_variable(
+                'variable',
+                artcfg
+            )
+
+            # Create the artist
+            art = SpineSpectra1D(
+                restrict,
+                self._colors,
+                self._category_types,
+                **artcfg
+            )
+            draw_kwargs = artcfg.get('draw_kwargs', {})
+            draw_kwargs['draw_error'] = draw_kwargs.get('draw_error', None)
+            figure.register_spine_artist(art, draw_kwargs=draw_kwargs)
+            self._artists.append(art)
+        elif artcfg['type'] == 'SpineSpectra2D':
+            # Do a full check on the variables required for the artist,
+            # and take the opportunity to update the artist dictionary
+            # with the validated Variable objects.
+            artcfg['xvariable'] = self.validate_variable(
+                'xvariable',
+                artcfg
+            )
+            artcfg['yvariable'] = self.validate_variable(
+                'yvariable',
+                artcfg
+            )
+
+            # Create the artist
+            art = SpineSpectra2D(
+                restrict,
+                self._colors,
+                self._category_types,
+                **artcfg
+            )
+            figure.register_spine_artist(art, draw_kwargs=artcfg.get('draw_kwargs', {}))
+            self._artists.append(art)
+        """    
                         elif x['type'] == 'SpineEfficiency':
                             # Check if the variable is present in all samples
                             if not all(self._variables[x['variable']]._validity_check.values()):
@@ -238,8 +469,72 @@ class Analysis:
                             art = Ternary(self._variables[x['var0']], self._variables[x['var1']], self._variables[x['var2']],
                                           restrict_categories, x.get('title', None))
                             self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
-                            self._artists.append(art)
-                            
+                            self._artists.append(art)"""
+
+    def validate_variable(
+        self,
+        vkey : str,
+        artcfg: dict
+    ) -> Variable:
+        """
+        Validates that the variable required for the artist is present
+        in all samples.
+
+        Parameters
+        ----------
+        vkey : str
+            The key of the variable in the artist configuration.
+        artcfg : dict
+            The artist configuration dictionary.
+        
+        Returns
+        -------
+        var : Variable
+            The validated Variable object.
+
+        Raises
+        ------
+        ConfigException
+            Raised in a few cases:
+            - The variable required for the artist is not present in
+              the artist configuration.
+            - The variable required for the artist is not present in
+              the variable list.
+            - The variable required for the artist is not present in
+              all samples (not valid).
+        """
+        # Check if the variable key is present in the artist
+        # configuration block.
+        if vkey not in artcfg:
+            raise ConfigException(
+                f"Artist configuration for artist of type"
+                f" '{artcfg['type']}' is missing required field"
+                f" '{vkey}'."
+            )
+        
+        # Check if the variable is present in the variable list within
+        # the class.
+        if artcfg[vkey] not in self._variables:
+            raise ConfigException(
+                f"Variable '{artcfg[vkey]}' not found in"
+                f" variable list when attempting to create artist"
+                f" of type '{artcfg['type']}'. Please check the"
+                f" variable configuration block in the TOML file"
+                f" ('{self._toml_path}')."
+            )
+
+        # Now it is safe to retrieve the Variable object.
+        var = self._variables[artcfg[vkey]]
+
+        # Finally, run a validity check to ensure the variable is
+        # present in all samples.
+        if not all(var._valid.values()):
+            miss = [k for k, v in var._valid.items() if not v]
+            raise ConfigException(
+                f"Variable '{var._name}' not found in all samples:"
+                f" ({' '.join(miss)})."
+            )
+        return var
 
     def override_exposure(self, sample_name, exposure, exposure_type='pot') -> None:
         """
