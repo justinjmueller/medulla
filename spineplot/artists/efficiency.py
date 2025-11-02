@@ -2,6 +2,7 @@ import numpy as np
 from scipy.stats import binom
 import pandas as pd
 import matplotlib.pyplot as plt
+from typing import Optional
 
 from ..core.artists import SpineArtist
 from ..core.style import Style
@@ -11,11 +12,11 @@ from ..core.utilities import mark_pot, mark_preliminary
 class SpineEfficiency(SpineArtist):
     """
     A class designed to encapsulate the calculation of the efficiency
-    of the selection as a function of the specified variable. The method
-    employed is a Bayesian approach, where the true efficiency is assumed
-    to be a binomial random variable with a uniform prior. The posterior
-    distribution is then calculated using the binomial likelihood and the
-    prior. 
+    of the selection as a function of the specified variable. The
+    method employed is a Bayesian approach, where the true efficiency
+    is assumed to be a binomial random variable with a uniform prior.
+    The posterior distribution is then calculated using the binomial
+    likelihood and the prior.
 
     Attributes
     ----------
@@ -30,8 +31,6 @@ class SpineEfficiency(SpineArtist):
         Variable object.
     _variable : Variable
         The variable to calculate the efficiency with respect to.
-    _samples : list
-        A list of samples to use in the calculation of the efficiency.
     _categories : dict
         A dictionary mapping the category key to the category name.
     _cuts : dict
@@ -50,18 +49,28 @@ class SpineEfficiency(SpineArtist):
         A dictionary containing the number of successful events in each
         bin of the variable.
     """
-    def __init__(self, variable, categories, cuts, title,
-                 xrange=None, xtitle=None, show_option='table',
-                 npts=1e6):
+    def __init__(
+        self,
+        categories : dict,
+        cuts : dict,
+        *args,
+        variable : Variable,
+        title : Optional[str] = None,
+        xrange : Optional[tuple] = None,
+        xtitle : Optional[str] = None,
+        show_option : Optional[str] = 'table',
+        npts : Optional[int] = 1e6,
+        **kwargs
+    ):
         """
         Parameters
         ----------
-        variable : Variable
-            The variable to calculate the efficiency with respect to.
         categories : dict
             A dictionary mapping the category key to the category name.
         cuts : dict
             A dictionary mapping the cut key to the cut label.
+        variable : Variable
+            The variable to calculate the efficiency with respect to.
         title : str
             The title of the artist.
         xrange : tuple, optional
@@ -74,14 +83,11 @@ class SpineEfficiency(SpineArtist):
             The option to use when showing the artist. The default is
             'table.'
         npts : int, optional
-            The number of points to use when calculating the efficiency.
-            The default is 1e6.
+            The number of points to use when calculating the
+            efficiency. The default is 1e6.
         """
         super().__init__(title)
-        self._xrange = xrange
-        self._xtitle = xtitle
         self._variable = variable
-        self._samples = list()
         self._categories = categories
         self._cuts = cuts
         self._show_option = show_option
@@ -90,7 +96,17 @@ class SpineEfficiency(SpineArtist):
         self._totals = dict()
         self._successes = dict()
 
-    def draw(self, ax, show_option, percentage=True, show_seqeff=True,
+        # If overrides are given for the x-range or x-title, use those
+        # instead of the values from the Variable object.
+        self._xrange = self._variable._range
+        if xrange is not None:
+            self._xrange = xrange
+
+        self._xtitle = self._variable._xlabel
+        if xtitle is not None:
+            self._xtitle = xtitle
+
+    def draw(self, ax, percentage=True, show_seqeff=True,
              show_unseqeff=True, yrange=None, npts=1e6, style=None,
              logx=False, logy=False):
         """
@@ -100,11 +116,6 @@ class SpineEfficiency(SpineArtist):
         ----------
         ax : matplotlib.axes.Axes
             The axis to draw the artist on.
-        show_option : str, optional
-            The option to use when showing the artist. The default is
-            None. This is intended to be used in cases where the artist
-            can be shown in different ways (e.g. 2D vs projection of 2D
-            down to 1D).
         percentage : bool, optional
             A flag to indicate if the efficiency should be displayed
             as a percentage. The default is True.
@@ -117,8 +128,8 @@ class SpineEfficiency(SpineArtist):
         yrange : tuple, optional
             The range of the y-axis. The default is None.
         npts : int, optional
-            The number of points to use when calculating the efficiency.
-            The default is 1e6.
+            The number of points to use when calculating the
+            efficiency. The default is 1e6.
         style : Style, optional
             The style to use when drawing the artist. The default is
             None. This is intended to be used in cases where the artist
@@ -146,7 +157,7 @@ class SpineEfficiency(SpineArtist):
             if category not in groups:
                 groups.append(category)
 
-        if show_option == 'table':
+        if self._show_option == 'table':
             # Lambda formatter to round the values to two decimal
             # places, display as percentage (if toggled), and add super
             # and subscripts for the error values.
@@ -200,7 +211,9 @@ class SpineEfficiency(SpineArtist):
             table_data = [results.columns.to_list()] + results.values.tolist()
             table = ax.table(cellText=table_data, colLabels=None, loc='center', cellLoc='center', edges='T')
             table.scale(1, 2.75)
-            for i in range(2, len(table_data)):
+            for j in range(len(table_data[0])):
+                table[0, j].visible_edges = 'TB'
+            for i in range(1, len(table_data)):
                 if i == len(table_data) - 1:
                     for j in range(len(table_data[i])):
                         table[i, j].visible_edges = 'B'
@@ -230,7 +243,7 @@ class SpineEfficiency(SpineArtist):
             if style.mark_preliminary is not None:
                 mark_preliminary(ax, style.mark_preliminary, vadj=0.1)
 
-        elif show_option == 'differential':
+        elif self._show_option == 'differential':
             # Lambda formatter to round the values to two decimal
             # places, and display as percentage if toggled.
             if percentage:
@@ -281,9 +294,9 @@ class SpineEfficiency(SpineArtist):
                                     fmt=style.get_marker(ci), color=style.get_color(gi),
                                     label=f'{group} : {cutname}')
 
-            ax.set_xlabel(self._variable._xlabel if self._xtitle is None else self._xtitle)
+            ax.set_xlabel(self._xtitle)
             ax.set_ylabel('Efficiency [%]' if percentage else 'Efficiency')
-            ax.set_xlim(self._variable._range if self._xrange is None else self._xrange)
+            ax.set_xlim(self._xrange)
             if yrange is not None:
                 ax.set_ylim(yrange)
 
@@ -293,8 +306,8 @@ class SpineEfficiency(SpineArtist):
                 # is greater than zero. The lower edge needs to be at least
                 # 3 orders of magnitude less than the maximum value in the
                 # plot.
-                xr = self._variable._range if self._xrange is None else self._xrange
-                if xr == 0:    
+                xr = self._xrange
+                if xr[0] == 0:
                     xhigh_exporder = np.floor(np.log10(xr[1]))
                     xlow = xhigh_exporder - 3
                     ax.set_xlim(10**xlow, xr[1])
@@ -335,7 +348,6 @@ class SpineEfficiency(SpineArtist):
         None.
         """
         super().add_sample(sample, is_ordinate)
-        self._samples.append(sample)
 
         # Calculate the efficiency for the sample
         self.calculate(sample)
