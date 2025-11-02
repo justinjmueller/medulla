@@ -266,8 +266,14 @@ class Variable:
                     self._bin_edges[g][1:],
                     self._bin_edges[g][:-1]
                 ], axis=1)
-                self._bin_centers[g] = 0.5*np.sum(stack, axis=1)
-                self._bin_widths[g] = np.diff(stack, axis=1)
+                self._bin_centers[g] = 0.5*np.sum(
+                    stack,
+                    axis=1
+                )
+                self._bin_widths[g] = np.subtract(
+                    stack[:, 0],
+                    stack[:, 1]
+                )
     @property
     def mask(self):
         """
