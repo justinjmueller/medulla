@@ -293,9 +293,23 @@ class Sample:
         -------
         None.
         """
-        variable.check_data(categories, self._name, self)
         for syst in self._systematics.values():
             syst.register_variable(variable)
+
+    def evaluate_formula(self, formula) -> pd.Series:
+        """
+        Evaluates the given formula for the sample data.
+
+        Parameters
+        ----------
+        formula : str
+            The formula to evaluate.
+
+        Returns
+        -------
+        result : pd.Series
+        """
+        return self._data.eval(formula)
 
     def __str__(self) -> str:
         """
@@ -315,17 +329,18 @@ class Sample:
         res += f'\n{"Livetime:":<15}{self._exposure_livetime:.2e}'
         return res
 
-    def evaluate_formula(self, formula) -> pd.Series:
+    @property
+    def name(self) -> str:
         """
-        Evaluates the given formula for the sample data.
+        Getter method for the name attribute.
 
         Parameters
         ----------
-        formula : str
-            The formula to evaluate.
-
+        None.
+        
         Returns
         -------
-        result : pd.Series
+        str
+            The name of the sample.
         """
-        return self._data.eval(formula)
+        return self._name

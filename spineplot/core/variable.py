@@ -167,7 +167,7 @@ class Variable:
 
         Returns
         -------
-        string
+        str
             The mask formula for the variable.
         """
         return self._mask
