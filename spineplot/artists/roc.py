@@ -14,11 +14,11 @@ class ROCCurve(SpineArtist):
     given a set of variables that represent discriminant scores and a
     set of classes that represent the true class labels.
 
-    The ROC curve is a graphical representation of the trade-off between
-    the true positive rate and the false positive rate for every possible
-    cut-off value. The area under the curve (AUC) is a measure of the
-    performance of the model. The closer the AUC is to 1, the better the
-    model's discriminatory power.
+    The ROC curve is a graphical representation of the trade-off
+    between the true positive rate and the false positive rate for
+    every possible cut-off value. The area under the curve (AUC) is a
+    measure of the performance of the model. The closer the AUC is to
+    1, the better the model's discriminatory power.
 
     Attributes
     ----------
@@ -38,24 +38,33 @@ class ROCCurve(SpineArtist):
         the Variable objects that implement the discriminant score for
         the corresponding category.
     _background : list
-        A list of categories that must be included in the ROC curve to fully
-        populate the FPR calculation.
+        A list of categories that must be included in the ROC curve to
+        fully populate the FPR calculation.
     _all_variable_names : list
         A list of all the variable names used as discriminant scores in
         the full ROC curve set.
     _groups : list
         A list of the group names that comprise the set of ROC curves.
     _roc_data : dict
-        A dictionary of DataFrames that store the ROC curve data for each
-        group in the set of ROC curves. The keys are the group names and
-        the values are the DataFrames that store the score (discriminant)
-        and class (label) values for the ROC curve of the corresponding
-        group.
+        A dictionary of DataFrames that store the ROC curve data for
+        each group in the set of ROC curves. The keys are the group
+        names and the values are the DataFrames that store the score
+        (discriminant) and class (label) values for the ROC curve of
+        the corresponding group.
     _samples : list
         A list of Samples that will be used to draw the ROC curves.
     """
-    def __init__(self, categories, labels, pos_label, discriminant_scores,
-                 background=None, title=None):
+    def __init__(
+        self,
+        categories : dict,
+        *args,
+        labels : str,
+        pos_label : list,
+        discriminant_scores : dict,
+        background : Optional[list] = None,
+        title : Optional[str] = None,
+        **kwargs
+    ):
         """
         Parameters
         ----------
@@ -64,18 +73,22 @@ class ROCCurve(SpineArtist):
         labels : str
             The name of the field that represents the truth labels.
         pos_label : list
-            The list of labels that correspond to the positive class. The
-            correspondence is one-to-one with the number of groups.
+            The list of labels that correspond to the positive class.
+            The correspondence is one-to-one with the number of groups.
         discriminant_scores : dict
-            A dictionary of Variables that represent discriminant scores.
-            The keys are the group names and the values are the Variables
-            that represent the discriminant scores for the corresponding
-            group.
-        background : list
-            A list of categories that must be included in the ROC curve to fully
-            populate the FPR calculation.
-        title : str, optional
+            A dictionary of Variables that represent discriminant
+            scores. The keys are the group names and the values are the
+            Variables that represent the discriminant scores for the
+            corresponding group.
+        background : Optional[list]
+            A list of categories that must be included in the ROC curve
+            to fully populate the FPR calculation.
+        title : Optional[str]
             The title of the artist. The default is None.
+        **kwargs
+            Additional keyword arguments passed to the SpineArtist
+            constructor. In practice, this is used to swallow arguments
+            that are not relevant to this artist.
 
         Returns
         -------
@@ -87,9 +100,16 @@ class ROCCurve(SpineArtist):
         self._pos_label = pos_label
         self._discriminant_scores = discriminant_scores
         self._background = background
-        self._all_variable_names = [x._key for x in self._discriminant_scores.values()]
+
+        # Prepare internal data structures
+        self._all_variable_names = [
+            x._key for x in self._discriminant_scores.values()
+        ]
         self._groups = list(self._discriminant_scores.keys())
-        self._roc_data = {g : pd.DataFrame({'score': [], 'class': []}) for g in self._groups}
+        self._roc_data = {g : pd.DataFrame({
+            'score': [],
+            'class': []
+        }) for g in self._groups}
 
     def add_sample(self, sample, is_ordinate):
         """

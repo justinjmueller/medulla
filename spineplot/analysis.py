@@ -460,35 +460,31 @@ class Analysis:
                 draw_kwargs=artcfg.get('draw_kwargs', {})
             )
             self._artists.append(art)
+        
+        elif artcfg['type'] == 'ROCCurve':
+            # Do a full check on the variable required for the artist,
+            # and take the opportunity to update the artist dictionary
+            # with the validated Variable objects.
+            for disc in artcfg['discriminant_scores']:
+                artcfg[disc] = disc
+            artcfg['discriminant_scores'] = {
+                g : self.validate_variable(
+                    artcfg['discriminant_scores'][i],
+                    artcfg
+                ) for i, g in enumerate(restrict.keys())
+            }
+
+            # Create the artist
+            art = ROCCurve(
+                restrict,
+                **artcfg
+            )
+            figure.register_spine_artist(
+                art,
+                draw_kwargs=artcfg.get('draw_kwargs', {})
+            )
+            self._artists.append(art)
         """
-                        elif x['type'] == 'ConfusionMatrix':
-                            # Check if the true and predicted labels are present in all samples
-                            if not all([self._variables[x['true_labels']]._validity_check.values(),
-                                        self._variables[x['predicted_labels']]._validity_check.values()]):
-                                missing_samples = [k for k, v in self._variables[x['true_labels']]._validity_check.items() if not v] + \
-                                                  [k for k, v in self._variables[x['predicted_labels']]._validity_check.items() if not v]
-                                raise ConfigException(f"Variable '{x['true_labels']}' or '{x['predicted_labels']}' not found in all samples ({' '.join(missing_samples)}).")
-                            
-                            # Create the artist
-                            kwargs = {k : v for k, v in x.items() if k not in ['type', 'true_labels', 'predicted_labels', 'groups', 'draw_kwargs']}
-                            art = ConfusionMatrix(restrict_categories, self._variables[x['true_labels']],
-                                                  self._variables[x['predicted_labels']], **kwargs)
-                            self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
-                            self._artists.append(art)
-
-                        elif x['type'] == 'ROCCurve':
-                            # Check if the discriminant scores are present in all samples
-                            if not all([self._variables[disc]._validity_check.values() for disc in x['discriminant_scores']]):
-                                missing_samples = [k for k, v in self._variables[disc]._validity_check.items() if not v for disc in x['discriminant_scores']]
-                                raise ConfigException(f"Variable '{disc}' not found in all samples ({' '.join(missing_samples)}).")
-                            
-                            # Create the artist
-                            disc = {g : self._variables[x['discriminant_scores'][i]] for i, g in enumerate(x['groups'])}
-                            art = ROCCurve(restrict_categories, x['labels'], x['pos_label'], disc,
-                                           x.get('background', None), x.get('title', None))
-                            self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
-                            self._artists.append(art)
-
                         elif x['type'] == 'Ternary':
                             # Check if the variables are present in all samples
                             if not all([self._variables[x[v]]._validity_check.values() for v in ['var0', 'var1', 'var2']]):
