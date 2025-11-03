@@ -33,7 +33,17 @@ class ConfusionMatrix(SpineArtist):
     _ylabel : str
         The y-axis label for the confusion matrix.
     """
-    def __init__(self, categories, true_labels, predicted_labels, **kwargs):
+    def __init__(
+        self,
+        categories : dict,
+        *args,
+        true_labels : Variable,
+        predicted_labels : Variable,
+        xlabel : Optional[str] = 'Class Prediction',
+        ylabel : Optional[str] = 'Class Label',
+        title : Optional[str] = None,
+        **kwargs
+    ):
         """
         Parameters
         ----------
@@ -43,32 +53,35 @@ class ConfusionMatrix(SpineArtist):
             The Variable that contains the true class labels.
         predicted_labels : Variable
             The Variable that contains the predicted class labels.
-        kwargs : dict, optional
-            title : str, optional
-                The title of the confusion matrix. If not provided, a
-                default title will be used.
-            xlabel : str, optional
-                The x-axis label for the confusion matrix. If not
-                provided, a default label will be used.
-            ylabel : str, optional
-                The y-axis label for the confusion matrix. If not
-                provided, a default label will be used.
+        title : str, optional
+            The title of the confusion matrix. If not provided, a
+            default title will be used.
+        xlabel : str, optional
+            The x-axis label for the confusion matrix. If not
+            provided, a default label will be used.
+        ylabel : str, optional
+            The y-axis label for the confusion matrix. If not
+            provided, a default label will be used.
+        **kwargs : dict
+            Placeholder for additional keyword arguments. In practice,
+            this is used to swallow arguments that are not relevant for
+            this class.
         """
-        # Keyword arguments
-        title = kwargs.get('title', None)
-        self._xlabel = kwargs.get('xlabel', 'Class Prediction')
-        self._ylabel = kwargs.get('ylabel', 'Class Label')
-
         super().__init__(title=title)
         self._categories = categories
         self._true_labels = true_labels
         self._predicted_labels = predicted_labels
+        self._xlabel = xlabel
+        self._ylabel = ylabel
 
         # Modify categories to include a placeholder for NaN values
         self._categories[-1] = 'Null'
 
         # Initialize the confusion matrix with zeros.
-        self._confusion_matrix = np.zeros((len(categories), len(categories)), dtype=int)
+        self._confusion_matrix = np.zeros(
+            (len(categories), len(categories)),
+            dtype=int
+        )
 
     def add_sample(self, sample, is_ordinate):
         """
@@ -79,13 +92,17 @@ class ConfusionMatrix(SpineArtist):
         sample : Sample
             The sample containing the predicted and true class labels.
         is_ordinate : bool
-            Indicates whether the sample is an ordinate (true label) or not.
+            Indicates whether the sample is an ordinate (true label) or
+            not.
         """
         super().add_sample(sample, is_ordinate)
 
         # Update the confusion matrix with the sample's true and
         # predicted labels.
-        data, _ = sample.get_data([self._true_labels._key, self._predicted_labels._key])
+        data, _ = sample.get_data([
+            self._true_labels._key,
+            self._predicted_labels._key
+        ])
         for category, values in data.items():
             if category not in self._categories.keys():
                 continue
@@ -98,7 +115,11 @@ class ConfusionMatrix(SpineArtist):
 
             # Update the confusion matrix with the true and predicted
             # labels for the current sample.
-            self._confusion_matrix += confusion_matrix(true_labels, predicted_labels, labels=list(self._categories.keys()))
+            self._confusion_matrix += confusion_matrix(
+                true_labels,
+                predicted_labels,
+                labels=list(self._categories.keys())
+            )
 
 
     def draw(self, ax, style, **kwargs):
@@ -113,8 +134,8 @@ class ConfusionMatrix(SpineArtist):
             The style to use for drawing the confusion matrix.
         **kwargs : dict
             show_null_column : bool, optional
-                If True, the null column (for NaN values) will be shown in
-                the confusion matrix. The default is False.
+                If True, the null column (for NaN values) will be shown
+                in the confusion matrix. The default is False.
         """
         # Keyword arguments
         show_null_column = kwargs.get('show_null_column', False)

@@ -2,6 +2,9 @@ import numpy as np
 import pandas as pd
 from typing import Optional
 
+class ConfigException(Exception):
+    pass
+
 class Variable:
     """
     A class designed to encapsulate the configuration of a single
@@ -135,6 +138,7 @@ class Variable:
         # bins are actually provided, contain at least two edges, and
         # are in strictly increasing order.
         elif self._binning_scheme == 'custom_bins':
+            self._range = self._custom_bins[0], self._custom_bins[-1]
             if self._custom_bins is None:
                 raise ConfigException(
                     "Custom bins must be provided when using"

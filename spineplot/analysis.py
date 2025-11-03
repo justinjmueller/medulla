@@ -411,7 +411,10 @@ class Analysis:
                 self._category_types,
                 **artcfg
             )
-            figure.register_spine_artist(art, draw_kwargs=artcfg.get('draw_kwargs', {}))
+            figure.register_spine_artist(
+                art,
+                draw_kwargs=artcfg.get('draw_kwargs', {})
+            )
             self._artists.append(art)
 
         elif artcfg['type'] == 'SpineEfficiency':
@@ -428,9 +431,36 @@ class Analysis:
                 restrict,
                 **artcfg
             )
-            figure.register_spine_artist(art, draw_kwargs=artcfg.get('draw_kwargs', {}))
+            figure.register_spine_artist(
+                art,
+                draw_kwargs=artcfg.get('draw_kwargs', {})
+            )
             self._artists.append(art)
 
+        elif artcfg['type'] == 'ConfusionMatrix':
+            # Do a full check on the variables required for the artist,
+            # and take the opportunity to update the artist dictionary
+            # with the validated Variable objects.
+            artcfg['true_labels'] = self.validate_variable(
+                'true_labels',
+                artcfg
+            )
+            artcfg['predicted_labels'] = self.validate_variable(
+                'predicted_labels',
+                artcfg
+            )
+
+            # Create the artist
+            art = ConfusionMatrix(
+                restrict,
+                **artcfg
+            )
+            figure.register_spine_artist(
+                art,
+                draw_kwargs=artcfg.get('draw_kwargs', {})
+            )
+            self._artists.append(art)
+        """
                         elif x['type'] == 'ConfusionMatrix':
                             # Check if the true and predicted labels are present in all samples
                             if not all([self._variables[x['true_labels']]._validity_check.values(),
