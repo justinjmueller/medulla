@@ -359,7 +359,7 @@ class Analysis:
         if group_setting:
             for g in group_setting:
                 restrict.update(
-                    {k : v for k,v in self._categories if v == g}
+                    {k : v for k,v in self._categories.items() if v==g}
                 )
         else:
             restrict = self._categories.copy()
@@ -484,18 +484,40 @@ class Analysis:
                 draw_kwargs=artcfg.get('draw_kwargs', {})
             )
             self._artists.append(art)
-        """
-                        elif x['type'] == 'Ternary':
-                            # Check if the variables are present in all samples
-                            if not all([self._variables[x[v]]._validity_check.values() for v in ['var0', 'var1', 'var2']]):
-                                missing_samples = [k for k, v in self._variables[x[v]]._validity_check.items() for v in ['var0', 'var1', 'var2']]
-                                raise ConfigException(f"Variable '{v}' not found in all samples ({' '.join(missing_samples)}).")
 
-                            # Create the artist
-                            art = Ternary(self._variables[x['var0']], self._variables[x['var1']], self._variables[x['var2']],
-                                          restrict_categories, x.get('title', None))
-                            self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
-                            self._artists.append(art)"""
+        elif artcfg['type'] == 'Ternary':
+            # Do a full check on the variables required for the artist,
+            # and take the opportunity to update the artist dictionary
+            # with the validated Variable objects.
+            artcfg['var0'] = self.validate_variable(
+                'var0',
+                artcfg
+            )
+            artcfg['var1'] = self.validate_variable(
+                'var1',
+                artcfg
+            )
+            artcfg['var2'] = self.validate_variable(
+                'var2',
+                artcfg
+            )
+
+            # Create the artist
+            art = Ternary(
+                restrict,
+                **artcfg
+            )
+            figure.register_spine_artist(
+                art,
+                draw_kwargs=artcfg.get('draw_kwargs', {})
+            )
+            self._artists.append(art)
+        
+        else:
+            raise ConfigException(
+                f"Artist type '{artcfg['type']}' does not correspond"
+                f" to a valid artist type."
+            )
 
     def validate_variable(
         self,

@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
+from typing import Optional
 
 from ..core.artists import SpineArtist
 from ..core.style import Style

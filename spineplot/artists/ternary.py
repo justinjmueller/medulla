@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
+from typing import Optional
 
 from ..core.artists import SpineArtist
 from ..core.style import Style
@@ -43,20 +44,34 @@ class Ternary(SpineArtist):
         plot. This has shape (2, N), where N is the number of data
         points collected across the samples.
     """
-    def __init__(self, var0, var1, var2, categories, title=None):
+    def __init__(
+        self,
+        categories : dict,
+        *args,
+        var0 : Variable,
+        var1 : Variable,
+        var2 : Variable,
+        title : Optional[str] = None,
+        **kwargs
+    ):
         """
         Parameters
         ----------
+        categories : dict
+            A dictionary mapping the category key to the group name.
         var0 : Variable
             The variable that represents the score for the first class.
         var1 : Variable
-            The variable that represents the score for the second class.
+            The variable that represents the score for the second
+            class.
         var2 : Variable
             The variable that represents the score for the third class.
-        categories : dict
-            A dictionary mapping the category key to the group name.
         title : str
             The title of the artist. The default is None.
+        **kwargs
+            Additional keyword arguments passed to the SpineArtist
+            constructor. In practice, this is used to swallow arguments
+            that are not relevant to this artist.
 
         Returns
         -------
