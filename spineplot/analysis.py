@@ -584,7 +584,12 @@ class Analysis:
             )
         return var
 
-    def override_exposure(self, sample_name, exposure, exposure_type='pot') -> None:
+    def override_exposure(
+        self,
+        sample_name : str,
+        exposure : float,
+        exposure_type : Optional[str] = 'pot'
+    ) -> None:
         """
         Overrides the exposure for the given sample. This is useful for
         setting the exposure for samples for which the exposure is not
@@ -598,7 +603,7 @@ class Analysis:
             The name of the sample to override.
         exposure : float
             The exposure to set for the sample.
-        exposure_type : str
+        exposure_type : Optional[str]
             The type of exposure to set. This can be either 'pot' or
             'livetime'. The default is 'pot'.
         
@@ -606,17 +611,31 @@ class Analysis:
         -------
         None.
         """
+        # Check if the sample exists
         if sample_name not in self._samples.keys():
-            raise ConfigException(f"Sample '{sample_name}' not found in sample list when attempting to override exposure. Please check the sample configuration block in the TOML file ('{self._toml_path}').")
-        self._samples[sample_name].override_exposure(exposure, exposure_type)
+            raise ConfigException(
+                f"Sample '{sample_name}' not found in sample list"
+                f" when attempting to override exposure. Please check"
+                f" the sample configuration block in the TOML file"
+                f" ('{self._toml_path}')."
+            )
+        
+        # Override the exposure for the sample
+        self._samples[sample_name].override_exposure(
+            exposure,
+            exposure_type
+        )
 
-    def run(self, close_figs=True) -> None:
+    def run(
+        self,
+        close_figs : Optional[bool] = True
+    ) -> None:
         """
         Runs the analysis on the samples.
 
         Parameters
         ----------
-        close_figs : bool
+        close_figs : Optional[bool]
             Whether to close the figures after saving them. The default
             is True. This is a useful toggle between two use cases:
             interactive mode (False) and batch mode (True).
@@ -625,12 +644,21 @@ class Analysis:
         -------
         None.
         """
-        if self._config['analysis']['ordinate_sample'] not in self._samples.keys():
-            raise ConfigException(f"Ordinate sample '{self._config['analysis']['ordinate_sample']}' not found in sample list. Please check the sample configuration block (table='samples') in the TOML file ('{self._toml_path}').")
-        ordinate = self._samples[self._config['analysis']['ordinate_sample']]
+        # Check if the ordinate sample exists
+        ordinate_sample = self._config['analysis']['ordinate_sample']
+        if ordinate_sample not in self._samples.keys():
+            raise ConfigException(
+                f"Ordinate sample '{ordinate_sample}' not found in"
+                f" sample list. Please check the sample configuration"
+                f" block (table='samples') in the TOML file"
+                f" ('{self._toml_path}').")
+
+        # Set the weights for all samples based on the ordinate sample
+        ordinate = self._samples[ordinate_sample]
         for s in self._samples.values():
             s.set_weight(target=ordinate)
 
+        # Add all samples to all artists
         for artist in self._artists:
             for sample in self._samples.values():
                 artist.add_sample(sample, sample==ordinate)
@@ -638,16 +666,23 @@ class Analysis:
         # Check if the output path exists. If not, create it.
         if not os.path.exists(self._output_path):
             os.makedirs(self._output_path)
+
+        # Create all figures and save them to the output path
         for figname, figure in self._figures.items():
             figure.create()
+            # TODO: Allow for different output formats
             figure.figure.savefig(f"{self._output_path}/{figname}.png")
             if close_figs:
                 figure.close()
 
-    def run_interactively(self, figure) -> SpineFigure:
+    def run_interactively(
+        self,
+        figure : str
+    ) -> SpineFigure:
         """
         Runs the analysis on the samples and creates the figure. This
-        method is useful for interactive plotting in a Jupyter notebook.
+        method is useful for interactive plotting in a Jupyter
+        notebook.
 
         Parameters
         ----------
@@ -659,21 +694,44 @@ class Analysis:
         SpineFigure
             The figure object.
         """
-        if self._config['analysis']['ordinate_sample'] not in self._samples.keys():
-            raise ConfigException(f"Ordinate sample '{self._config['analysis']['ordinate_sample']}' not found in sample list. Please check the sample configuration block (table='samples') in the TOML file ('{self._toml_path}').")
-        ordinate = self._samples[self._config['analysis']['ordinate_sample']]
+        # Check if the ordinate sample exists
+        ordinate_sample = self._config['analysis']['ordinate_sample']
+        if ordinate_sample not in self._samples.keys():
+            raise ConfigException(
+                f"Ordinate sample '{ordinate_sample}' not found in"
+                f" sample list. Please check the sample configuration"
+                f" block (table='samples') in the TOML file"
+                f" ('{self._toml_path}').")
+        
+        # Set the weights for all samples based on the ordinate sample
+        ordinate = self._samples[ordinate_sample]
         for s in self._samples.values():
             s.set_weight(target=ordinate)
 
+        # Add all samples to all artists
         for artist in self._artists:
             for sample in self._samples.values():
                 artist.add_sample(sample, sample==ordinate)
 
+        # Check if the output path exists. If not, create it.
+        if not os.path.exists(self._output_path):
+            os.makedirs(self._output_path)
+
+        # Create the figure and return it
+        if figure not in self._figures.keys():
+            raise ConfigException(
+                f"Figure '{figure}' not found in figure list. Please"
+                f" check the figure configuration block"
+                f" (table='figure') in the TOML file "
+                f" ('{self._toml_path}').")
         self._figures[figure].create()
         return self._figures[figure].figure
 
     @staticmethod
-    def handle_include(config, table):
+    def handle_include(
+        config : dict,
+        table : dict
+    ) -> None:
         """
         Handles the inclusion of other configuration files in the main
         configuration file. The include directive may also contain some
@@ -699,7 +757,9 @@ class Analysis:
             if 'choose' in table.keys():
                 for key, value in table['choose'].items():
                     if key in config.keys():
-                        config[key].update({k: c[key][k] for k in value})
+                        config[key].update(
+                            {k: c[key][k] for k in value}
+                        )
                     else:
                         config[key] = {v: c[key][v] for v in value}
             else:
