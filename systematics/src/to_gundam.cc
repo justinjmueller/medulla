@@ -32,13 +32,13 @@ int main(int argc, char * argv[])
 
   /// Syst trees
   /// To-do: Automate this
-  //TTree* multisigma_tree = (TTree*)input->Get("events/cvfull/selected_nu_multisigmaTree");
-  //TTree* variation_tree = (TTree*)input->Get("events/cvfull/selected_nu_variationTree");
-  //TTree* multisim_tree = (TTree*)input->Get("events/cvfull/selected_nu_multisimTree"); // TEST...delete if anything breaks
+  TTree* multisigma_tree = (TTree*)input->Get("events/cvfull/selected_nu_multisigmaTree");
+  TTree* variation_tree = (TTree*)input->Get("events/cvfull/selected_nu_variationTree");
+  TTree* multisim_tree = (TTree*)input->Get("events/cvfull/selected_nu_multisimTree"); // TEST...delete if anything breaks
   
-  TTree* multisigma_tree = (TTree*)input->Get("events/cvfull/signal_multisigmaTree");
-  TTree* variation_tree = (TTree*)input->Get("events/cvfull/signal_variationTree");
-  TTree* multisim_tree = (TTree*)input->Get("events/cvfull/signal_multisimTree");
+  //TTree* multisigma_tree = (TTree*)input->Get("events/cvfull/signal_multisigmaTree");
+  //TTree* variation_tree = (TTree*)input->Get("events/cvfull/signal_variationTree");
+  //TTree* multisim_tree = (TTree*)input->Get("events/cvfull/signal_multisimTree");
 
   /////////////////////////////////////////////////////////////
   /// Output

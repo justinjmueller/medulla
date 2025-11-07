@@ -39,6 +39,30 @@
  */
 namespace vars::pi0ana
 {
+  
+    /**
+     * @brief Variable for the (primary) neutral pion multiplicity of the
+     * interactionl.
+     * @details This function calculates the multiplicity of primary
+     * neutral pions in the interaction by counting the number of primary particles
+     * that are identified as neutral pions and have a kinetic energy above a
+     * threshold. The threshold is set by the `params` vector, which defaults
+     * to 0.0 MeV.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for a neutral pion to count towards the
+     * multiplicity. Defaults to 0.0 MeV.
+     * @return the multiplicity of primary neutral pions in the interaction.
+     */
+    template<class T>
+    double pi0_multiplicity(const T & obj, std::vector<double> params={0.0,})
+    {
+        size_t count(0);
+	double num_primary_pi0s_thresh = utilities_pi0ana::true_primary_pi0_multiplicity(obj, {params[0]});
+	return num_primary_pi0s_thresh;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, pi0_multiplicity, pi0_multiplicity);
 
     /**
      *
