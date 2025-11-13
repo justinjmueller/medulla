@@ -2,7 +2,22 @@
 output = "icarus_bnb_energy_calib_cv"
 primfn = "default_primary_classification"
 pidfn = "default_pid"
-calofn = "default_calo_ke"
+
+################################
+### Process CV and non-gain vars
+################################
+calofn = "wrong_mc_gain_correct_fudge_calo_ke"
+
+################################
+### Process data
+################################
+#calofn = "correct_data_gain_correct_fudge_calo_ke"
+
+################################
+### Process shower calo var
+################################
+#calofn = "correct_mc_gain_correct_fudge_calo_ke"
+
 fsthresh = [
     "@photon_threshold",
     "@electron_threshold",
@@ -29,26 +44,12 @@ flash_low_t = -0.5
 flash_high_t = 1.6
 bnb_fom2_cut = 0.98
 
-# temporarily name cvfull when merging with cvext
 [[sample]]
 name = "cvfull"
-path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input*.flat.root"
+#path = "/pnfs/icarus/persistent/users/mueller/production/simulation/full/*.flat.root"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/[c-n]*/input*.flat.root"
 ismc = true
 disable = false
-
-# temporarily name cvfull when merging with cv
-[[sample]]
-name = "cvfull"
-path = "/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/input*.flat.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "cvfull"
-path = "/pnfs/icarus/persistent/users/mueller/production/simulation/full/*.flat.root"
-ismc = true
-disable = true
-
 
 [[tree]]
 name = "muon"
