@@ -93,6 +93,19 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::True, cosmic, cosmic);
 
     /**
+     * @brief Apply a cut to select muon neutrino interactions.
+     * @details This function applies a cut to selected muon
+     * neutrino interactions, making use of the `pdg_code`
+     * attribute for identification.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the interaction is a muon neutrino interaction.
+     */
+    template<class T>
+    bool isnumu(const T & obj){return obj.pdg_code == 14;}
+    REGISTER_CUT_SCOPE(RegistrationScope::True, isnumu, isnumu);
+
+    /**
      * @brief Apply a cut to select charged current interactions.
      * @details This function applies a cut to select charged current
      * interactions. This cut makes use of the `current_type` attribute in the
