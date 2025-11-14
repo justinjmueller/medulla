@@ -2,7 +2,27 @@
 output = "icarus_bnb_ccpi0_onbeam"
 primfn = "default_primary_classification"
 pidfn = "default_pid"
-calofn = "default_calo_ke"
+
+###########
+### Nominal
+###########
+#calofn = "default_calo_ke"
+
+################################
+### Process CV and non-gain vars
+################################
+#calofn = "wrong_mc_gain_correct_fudge_calo_ke"
+
+################################
+### Process data
+################################
+calofn = "correct_data_gain_correct_fudge_calo_ke"
+
+################################
+### Process shower calo var
+################################
+#calofn = "correct_mc_gain_correct_fudge_calo_ke"
+
 #calofn = "gain_corr_fudge_mc_calo_ke"
 #calofn = "gain_corr_fudge_cont_mc_calo_ke"
 #calofn = "gain_corr_fudge_cont_pi0adj_mc_calo_ke"
@@ -10,6 +30,7 @@ calofn = "default_calo_ke"
 #calofn = "gain_corr_fudge_data_calo_ke"
 #calofn = "pi0_adj_mc_calo_ke"
 #calofn = "pi0_adj_data_calo_ke"
+
 fsthresh = [
     "@photon_threshold",
     "@electron_threshold",
@@ -371,6 +392,7 @@ sim_only = true
 mode = "true"
 cut = [
     {name = "neutrino", type = "true"},
+    {name = "isnumu", type = "true"},
     {name = "fiducial_cut", type = "true"},
     {name = "avoid_mystery_zgap", type = "true"},
     {name = "iscc", type = "true"},

@@ -39,6 +39,30 @@
  */
 namespace vars::pi0ana
 {
+  
+    /**
+     * @brief Variable for the (primary) neutral pion multiplicity of the
+     * interactionl.
+     * @details This function calculates the multiplicity of primary
+     * neutral pions in the interaction by counting the number of primary particles
+     * that are identified as neutral pions and have a kinetic energy above a
+     * threshold. The threshold is set by the `params` vector, which defaults
+     * to 0.0 MeV.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for a neutral pion to count towards the
+     * multiplicity. Defaults to 0.0 MeV.
+     * @return the multiplicity of primary neutral pions in the interaction.
+     */
+    template<class T>
+    double pi0_multiplicity(const T & obj, std::vector<double> params={0.0,})
+    {
+        size_t count(0);
+	double num_primary_pi0s_thresh = utilities_pi0ana::true_primary_pi0_multiplicity(obj, {params[0]});
+	return num_primary_pi0s_thresh;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, pi0_multiplicity, pi0_multiplicity);
 
     /**
      *
@@ -170,11 +194,11 @@ namespace vars::pi0ana
 	if(cuts::neutrino(obj))
 	{
 	    // 1mu 0pi 1pi0 (in-phase, fiducial)
-	    if(num_primary_muons_thresh == 1 && num_primary_pions_thresh == 0 && num_primary_pi0s_thresh == 1 && cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 0;
+	    if(obj.pdg_code == 14 && num_primary_muons_thresh == 1 && num_primary_pions_thresh == 0 && num_primary_pi0s_thresh == 1 && cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 0;
 	    // 1mu 0pi (2+ pi0)
-	    else if(num_primary_muons_thresh == 1 && num_primary_pions_thresh == 0 && num_primary_pi0s_thresh >= 2 && cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 1;
+	    else if(obj.pdg_code == 14 && num_primary_muons_thresh == 1 && num_primary_pions_thresh == 0 && num_primary_pi0s_thresh >= 2 && cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 1;
 	    // 1mu Npi Xpi0
-	    else if(num_primary_muons_thresh == 1 && num_primary_pions_thresh >= 1 && cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 2;
+	    else if(obj.pdg_code == 14 && num_primary_muons_thresh == 1 && num_primary_pions_thresh >= 1 && cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 2;
 	    // 0mu Npi0
 	    else if(num_primary_muons_thresh == 0 && num_primary_pi0s_thresh >= 1 && !cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 3;
 	    // Other nu
@@ -221,19 +245,19 @@ namespace vars::pi0ana
 	if(cuts::neutrino(obj))
 	{
 	  // 1mu 0pi 1pi0 (in-phase, fiducial)
-	  if(num_primary_muons_thresh == 1 && num_primary_pions_thresh == 0 && num_primary_pi0s_thresh == 1 && cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 0;
+	  if(obj.pdg_code == 14 && num_primary_muons_thresh == 1 && num_primary_pions_thresh == 0 && num_primary_pi0s_thresh == 1 && cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 0;
 	  // 1mu 0pi 1pi0 (OOPS, fiducial)
-	  else if( (num_primary_muons == 1 && num_primary_pions == 0 && num_primary_pi0s == 1 && cuts::iscc(obj) && cuts::fiducial_cut(obj)) && (num_primary_muons_thresh != 1 || num_primary_pions_thresh != 0 || num_primary_pi0s_thresh != 1) ) cat = 1;
+	  else if(obj.pdg_code == 14 && (num_primary_muons == 1 && num_primary_pions == 0 && num_primary_pi0s == 1 && cuts::iscc(obj) && cuts::fiducial_cut(obj)) && (num_primary_muons_thresh != 1 || num_primary_pions_thresh != 0 || num_primary_pi0s_thresh != 1) ) cat = 1;
 	  // 1mu 0pi 1pi0 (OOFV)
-	  else if(num_primary_muons_thresh == 1 && num_primary_pions_thresh == 0 && num_primary_pi0s_thresh == 1 && cuts::iscc(obj) && !cuts::fiducial_cut(obj)) cat = 2;
+	  else if(obj.pdg_code == 14 && num_primary_muons_thresh == 1 && num_primary_pions_thresh == 0 && num_primary_pi0s_thresh == 1 && cuts::iscc(obj) && !cuts::fiducial_cut(obj)) cat = 2;
 	  // 1mu 0pi (2+ pi0)
-	  else if(num_primary_muons_thresh == 1 && num_primary_pions_thresh == 0 && num_primary_pi0s_thresh >= 2 && cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 3;
+	  else if(obj.pdg_code == 14 && num_primary_muons_thresh == 1 && num_primary_pions_thresh == 0 && num_primary_pi0s_thresh >= 2 && cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 3;
 	  // 1mu 0pi 0pi0 Npi0_nonprim
-	  else if(num_primary_muons_thresh == 1 && num_primary_pions_thresh == 0 && num_primary_pi0s_thresh == 0 && num_nonprimary_pi0s >= 1 && cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 4;
+	  else if(obj.pdg_code == 14 && num_primary_muons_thresh == 1 && num_primary_pions_thresh == 0 && num_primary_pi0s_thresh == 0 && num_nonprimary_pi0s >= 1 && cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 4;
 	  // 1mu 0pi 0pi0 0pi0_nonprim
-	  else if(num_primary_muons_thresh == 1 && num_primary_pions_thresh == 0 && num_primary_pi0s_thresh == 0 && num_nonprimary_pi0s == 0 && cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 5;
+	  else if(obj.pdg_code == 14 && num_primary_muons_thresh == 1 && num_primary_pions_thresh == 0 && num_primary_pi0s_thresh == 0 && num_nonprimary_pi0s == 0 && cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 5;
 	  // 1mu Npi Xpi0
-	  else if(num_primary_muons_thresh == 1 && num_primary_pions_thresh >= 1 && cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 6;
+	  else if(obj.pdg_code == 14 && num_primary_muons_thresh == 1 && num_primary_pions_thresh >= 1 && cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 6;
 	  // 0mu Npi0
 	  else if(num_primary_muons_thresh == 0 && num_primary_pi0s_thresh >= 1 && !cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 7;
 	  // Other nu
