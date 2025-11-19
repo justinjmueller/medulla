@@ -723,6 +723,35 @@ namespace vars
     REGISTER_VAR_SCOPE(RegistrationScope::Both, electron_multiplicity, electron_multiplicity);
 
     /**
+     * @brief Variable for the non-primary shower multiplicity of the
+     * interaction.
+     * @details This function calculates the multiplicity of non-primary
+     * showers in the interaction by counting the number of primary particles
+     * that are identified as photons and have a kinetic energy above a
+     * threshold. The threshold is set by the `params` vector, which defaults
+     * to 25 MeV. The function returns the number of primary photons in the
+     * interaction.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for a shower to count towards the
+     * multiplicity. Defaults to 25 MeV.
+     * @return the multiplicity of non-primary showers in the interaction.
+     */
+    template<class T>
+    double nonprimary_shower_multiplicity(const T & obj, std::vector<double> params={25.0,})
+    {
+        size_t count(0);
+        for(const auto & p : obj.particles)
+        {
+            if(pvars::pid(p) <= 1 && !pvars::primary_classification(p) && pvars::ke(p) >= params[0])
+                ++count;
+        }
+        return count;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, nonprimary_shower_multiplicity, nonprimary_shower_multiplicity);
+
+    /**
      * @brief Variable for the (primary) muon multiplicity of the
      * interaction.
      * @details This function calculates the multiplicity of primary muons in
