@@ -102,8 +102,8 @@ namespace utilities_pi0ana
 	    pi0_ke = std::sqrt(std::pow(PI0_MASS, 2) + std::pow(pi0_momentum.Mag(), 2)) - PI0_MASS;
 	    
 	    // TEST: RELAX SIGNAL DEFINITION
-	    if (pi0_ke < params[0]) bad_pi0_ids.push_back(_pi0.first);
-            //if(num_pi0_daughters < 2 || pi0_ke < params[0]) bad_pi0_ids.push_back(_pi0.first);
+	    //if (pi0_ke < params[0]) bad_pi0_ids.push_back(_pi0.first);
+            if(num_pi0_daughters < 2 || pi0_ke < params[0]) bad_pi0_ids.push_back(_pi0.first);
 	}
 	for(size_t i=0; i<bad_pi0_ids.size(); i++)
 	{
