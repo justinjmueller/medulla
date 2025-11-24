@@ -338,6 +338,42 @@ namespace pvars
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, pi0_adj_data_calo_ke, pi0_adj_data_calo_ke);
 
+    /**
+     * @brief Variable for the calorimetric kinetic energy of the particle.
+     * @details The calorimetric kinetic energy is calculated upstream in the
+     * SPINE reconstruction as teh sum of energy of each space point in the particle.
+     * This variable assumes a TPC gain factor of 82.03 e/adc and shower correction
+     * factor of 1/0.82.
+     * @tparam T the type of particle (true or reco).
+     * @param the calorimetric kinetic energy of the particle.
+     */
+    template<class T>
+    double thesis_prepi0adj_mc_calo_ke(const T & p)
+    {
+        // Divide out old correction factor (1.2359)
+        // Multiply new correction factor (1/0.82)
+        return (1/1.2359) * (1/0.82) * p.calo_ke;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, thesis_prepi0adj_mc_calo_ke, thesis_prepi0adj_mc_calo_ke);
+
+    /**
+     * @brief Variable for the calorimetric kinetic energy of the particle.
+     * @details The calorimetric kinetic energy is calculated upstream in the
+     * SPINE reconstruction as teh sum of energy of each space point in the particle.
+     * This variable assumes a TPC gain factor of 82.03 e/adc and shower correction
+     * factor of 1/0.82.
+     * @tparam T the type of particle (true or reco).
+     * @param the calorimetric kinetic energy of the particle.
+     */
+    template<class T>
+    double thesis_prepi0adj_data_calo_ke(const T & p)
+    {
+        // Divide out old correction factor (1.2359)
+        // Multiply new correction factor (1/0.82)
+        return (1/1.2359) * (1/0.82) * p.calo_ke;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, thesis_prepi0adj_data_calo_ke, thesis_prepi0adj_data_calo_ke);
+
     extern std::shared_ptr<VarFn<RParticleType>> calofn;
     /**
      * @brief Variable for the calorimetric kinetic energy of the particle.

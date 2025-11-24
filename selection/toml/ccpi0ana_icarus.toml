@@ -1,5 +1,5 @@
 [general]
-output = "icarus_bnb_ccpi0_onbeam"
+output = "icarus_bnb_ccpi0"
 primfn = "default_primary_classification"
 pidfn = "default_pid"
 
@@ -9,19 +9,14 @@ pidfn = "default_pid"
 #calofn = "default_calo_ke"
 
 ################################
-### Process CV and non-gain vars
+### Process CV and vars
 ################################
-#calofn = "wrong_mc_gain_correct_fudge_calo_ke"
+#calofn = "thesis_prepi0adj_mc_calo_ke"
 
 ################################
 ### Process data
 ################################
-calofn = "correct_data_gain_correct_fudge_calo_ke"
-
-################################
-### Process shower calo var
-################################
-#calofn = "correct_mc_gain_correct_fudge_calo_ke"
+calofn = "thesis_prepi0adj_data_calo_ke"
 
 #calofn = "gain_corr_fudge_mc_calo_ke"
 #calofn = "gain_corr_fudge_cont_mc_calo_ke"
@@ -216,7 +211,7 @@ cut = [
     {name = "single_muon", type = "reco", parameters = ["@muon_threshold"]},
     {name = "no_charged_pions", type = "reco", parameters = ["@pion_threshold"]},
     {name = "two_photons", type = "reco", parameters = ["@photon_threshold"]},
-    {name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+    #{name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
     {name = "data_quality_cut", type = "event", decrements_exposure = true },
     {name = "beam_quality_cut", type = "spill", decrements_exposure = false }, # Should decrement exposure, but CAF files are bugged
     {name = "bnb_fom2_cut", type = "event", decrements_exposure = false, parameters = [ "@bnb_fom2_cut" ]}, # Should decrement exposure, but CAF files are bugged
@@ -230,6 +225,7 @@ branch = [
     {name = "baseline", type = "mctruth"},
     {name = "cc", type = "mctruth"},
     {name = "neutrino_energy", type = "mctruth"},
+    {name = "interaction_mode", type = "mctruth"},
     {name = "interaction_type", type = "mctruth"},
     {name = "category_topology_ccpi0_simple1", type = "true", parameters = ["@photon_threshold", "@electron_threshold", "@muon_threshold", "@pi0_threshold", "@pion_threshold", "@proton_threshold"]},
     {name = "category_topology_ccpi0_simple2", type = "true", parameters = ["@photon_threshold", "@electron_threshold", "@muon_threshold", "@pi0_threshold", "@pion_threshold", "@proton_threshold"]},
@@ -307,7 +303,7 @@ cut = [
     {name = "single_muon", type = "reco", parameters = ["@muon_threshold"]},
     {name = "no_charged_pions", type = "reco", parameters = ["@pion_threshold"]},
     {name = "two_photons", type = "reco", parameters = ["@photon_threshold"]},
-    {name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+    #{name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
     {name = "data_quality_cut", type = "event", decrements_exposure = true },
     {name = "beam_quality_cut", type = "spill", decrements_exposure = false }, # Should decrement exposure, but CAF files are bugged
     {name = "bnb_fom2_cut", type = "event", decrements_exposure = false, parameters = [ "@bnb_fom2_cut" ]}, # Should decrement exposure, but CAF files are bugged
@@ -321,6 +317,7 @@ branch = [
     {name = "baseline", type = "mctruth"},
     {name = "cc", type = "mctruth"},
     {name = "neutrino_energy", type = "mctruth"},
+    {name = "interaction_mode", type = "mctruth"},
     {name = "interaction_type", type = "mctruth"},
     {name = "category_topology_ccpi0_simple1", type = "true", parameters = ["@photon_threshold", "@electron_threshold", "@muon_threshold", "@pi0_threshold", "@pion_threshold", "@proton_threshold"]},
     {name = "category_topology_ccpi0_simple2", type = "true", parameters = ["@photon_threshold", "@electron_threshold", "@muon_threshold", "@pi0_threshold", "@pion_threshold", "@proton_threshold"]},
