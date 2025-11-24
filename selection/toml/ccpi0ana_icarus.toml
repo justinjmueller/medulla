@@ -9,19 +9,14 @@ pidfn = "default_pid"
 #calofn = "default_calo_ke"
 
 ################################
-### Process CV and non-gain vars
+### Process CV and vars
 ################################
-calofn = "wrong_mc_gain_correct_fudge_calo_ke"
+calofn = "thesis_prepi0adj_mc_calo_ke"
 
 ################################
 ### Process data
 ################################
-#calofn = "correct_data_gain_correct_fudge_calo_ke"
-
-################################
-### Process shower calo var
-################################
-#calofn = "correct_mc_gain_correct_fudge_calo_ke"
+#calofn = "thesis_prepi0adj_data_calo_ke"
 
 #calofn = "gain_corr_fudge_mc_calo_ke"
 #calofn = "gain_corr_fudge_cont_mc_calo_ke"
@@ -230,6 +225,7 @@ branch = [
     {name = "baseline", type = "mctruth"},
     {name = "cc", type = "mctruth"},
     {name = "neutrino_energy", type = "mctruth"},
+    {name = "interaction_mode", type = "mctruth"},
     {name = "interaction_type", type = "mctruth"},
     {name = "category_topology_ccpi0_simple1", type = "true", parameters = ["@photon_threshold", "@electron_threshold", "@muon_threshold", "@pi0_threshold", "@pion_threshold", "@proton_threshold"]},
     {name = "category_topology_ccpi0_simple2", type = "true", parameters = ["@photon_threshold", "@electron_threshold", "@muon_threshold", "@pi0_threshold", "@pion_threshold", "@proton_threshold"]},
@@ -321,6 +317,7 @@ branch = [
     {name = "baseline", type = "mctruth"},
     {name = "cc", type = "mctruth"},
     {name = "neutrino_energy", type = "mctruth"},
+    {name = "interaction_mode", type = "mctruth"},
     {name = "interaction_type", type = "mctruth"},
     {name = "category_topology_ccpi0_simple1", type = "true", parameters = ["@photon_threshold", "@electron_threshold", "@muon_threshold", "@pi0_threshold", "@pion_threshold", "@proton_threshold"]},
     {name = "category_topology_ccpi0_simple2", type = "true", parameters = ["@photon_threshold", "@electron_threshold", "@muon_threshold", "@pi0_threshold", "@pion_threshold", "@proton_threshold"]},
