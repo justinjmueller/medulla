@@ -11,12 +11,14 @@ pidfn = "default_pid"
 ################################
 ### Process CV and vars
 ################################
-calofn = "thesis_prepi0adj_mc_calo_ke"
+#calofn = "thesis_prepi0adj_mc_calo_ke"
+calofn = "thesis_postpi0adj_mc_calo_ke"
 
 ################################
 ### Process data
 ################################
 #calofn = "thesis_prepi0adj_data_calo_ke"
+#calofn = "thesis_postpi0adj_data_calo_ke"
 
 #calofn = "gain_corr_fudge_mc_calo_ke"
 #calofn = "gain_corr_fudge_cont_mc_calo_ke"
@@ -410,6 +412,7 @@ branch = [
     {name = "category_topology_ccpi0_simple1", type = "true", parameters = ["@photon_threshold", "@electron_threshold", "@muon_threshold", "@pi0_threshold", "@pion_threshold", "@proton_threshold"]},
     {name = "category_topology_ccpi0_simple2", type = "true", parameters = ["@photon_threshold", "@electron_threshold", "@muon_threshold", "@pi0_threshold", "@pion_threshold", "@proton_threshold"]},
     {name = "category_topology_ccpi0_complete", type = "true", parameters = ["@photon_threshold", "@electron_threshold", "@muon_threshold", "@pi0_threshold", "@pion_threshold", "@proton_threshold"]},
+    {name = "npi0s", type = "mctruth"},
 
     # Interaction observables
     {name = "visible_energy", type = "both"},

@@ -111,5 +111,17 @@ namespace mctruth
     template<typename T>
         double interaction_type(const T & obj) { return obj.genie_inttype; }
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, interaction_type, interaction_type);
+
+    /**
+     * @brief Variable for the number of true neutral pions in the interaction.
+     * @details To-do
+     * @tparam T the type of object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the number of true neutral pions in the interaction.
+     */
+    template<typename T>
+        double npi0s(const T & obj) { return obj.npizero; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, npi0s, npi0s);
+    
 } // namespace mctruth
 #endif
