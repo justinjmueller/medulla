@@ -114,14 +114,26 @@ namespace mctruth
 
     /**
      * @brief Variable for the number of true neutral pions in the interaction.
-     * @details To-do
+     * @details Variable for the number of true primary G4 neutral pions.
      * @tparam T the type of object to apply the variable on.
      * @param obj the SRTrueInteraction to apply the variable on.
      * @return the number of true neutral pions in the interaction.
      */
     template<typename T>
-        double npi0s(const T & obj) { return obj.npizero; }
-    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, npi0s, npi0s);
+      double npi0s_g4(const T & obj)
+      {
+	  int num_pi0s(0);
+
+	  // Loop over primary particles
+	  for(const auto & p : obj.prim)
+	  {
+	      // Check pi0 pdg_code
+	      if(p.pdg == 111)
+		num_pi0s++;
+	  }
+	  return num_pi0s;
+      }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, npi0s_g4, npi0s_g4);
     
 } // namespace mctruth
 #endif
