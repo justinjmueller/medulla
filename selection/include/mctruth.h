@@ -39,6 +39,31 @@ namespace mctruth
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, neutrino_energy, neutrino_energy);
 
     /**
+     * @brief Variable for momentum transfer squared.
+     * @details This variable is intended to provide the true
+     * square of the momentum transfered from the neutrino to 
+     * the nucleus.
+     * @tparam T the type of object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the true momentum transfer squared.
+     */
+    template<typename T>
+        double neutrino_Q2(const T & obj) { return obj.Q2; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, neutrino_Q2, neutrino_Q2);
+
+    /**
+     * @brief Variable for hadronic invariant mass.
+     * @details This variable is intended to provide the true
+     * hadronic invariant mass of the neutrino interaction.
+     * @tparam T the type of object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the true hadronic invariant mass.
+     */
+    template<typename T>
+        double neutrino_W(const T & obj) { return obj.w; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, neutrino_W, neutrino_W);
+
+    /**
      * @brief Variable for the true neutrino baseline.
      * @details This variable is intended to provide the true baseline of the
      * parent neutrino that produced the interaction.
@@ -134,6 +159,7 @@ namespace mctruth
 	  return num_pi0s;
       }
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, npi0s_g4, npi0s_g4);
+
     
 } // namespace mctruth
 #endif
