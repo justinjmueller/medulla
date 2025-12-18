@@ -138,14 +138,14 @@ namespace mctruth
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, interaction_type, interaction_type);
 
     /**
-     * @brief Variable for the number of true neutral pions in the interaction.
-     * @details Variable for the number of true primary G4 neutral pions.
+     * @brief Variable for the number of true final state neutral pions in the interaction.
+     * @details Variable for the number of true primary neutral pions in each SRTrueInteraction.
      * @tparam T the type of object to apply the variable on.
      * @param obj the SRTrueInteraction to apply the variable on.
-     * @return the number of true neutral pions in the interaction.
+     * @return the number of true final state neutral pions in the interaction.
      */
     template<typename T>
-      double npi0s_g4(const T & obj)
+      double npi0s_srtruth(const T & obj)
       {
 	  int num_pi0s(0);
 
@@ -158,8 +158,42 @@ namespace mctruth
 	  }
 	  return num_pi0s;
       }
-    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, npi0s_g4, npi0s_g4);
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, npi0s_srtruth, npi0s_srtruth);
 
     
+   /**
+     * @brief Variable for the momentum of the true neutral pion.
+     * @details Variable for the momentum magnitude of the neutral pion in true 1pi0 interactions.
+     * @tparam T the type of object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the momentum of the true neutral pion.
+     */
+    template<typename T>
+      double pi0_p(const T & obj)
+      {
+	  int num_pi0s = npi0s_srtruth(obj);
+	  
+	  TVector3 mom(0,0,0);
+	  double mom_mag(-5);
+	  if(num_pi0s == 1)
+	  {
+	      for(const auto & p : obj.prim)
+	      {
+		  if(p.pdg == 111)
+		  {
+		      mom.SetX(p.genp.x);
+		      mom.SetY(p.genp.y);
+		      mom.SetZ(p.genp.z);
+
+		      mom_mag = mom.Mag();
+		  }
+	      }
+	  }
+	    
+	  return mom_mag;
+      }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, pi0_p, pi0_p);
+    
+
 } // namespace mctruth
 #endif
