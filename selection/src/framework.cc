@@ -813,12 +813,18 @@ std::vector<NamedSpillMultiVar> construct_exposure_vars(const std::vector<cfg::C
     };
 
     // Compose the exposure variables
-    auto livetime_var = [](const EventType & e) -> double {
+    auto livetime_var = [spill_cut](const EventType & e) -> double {
         // Return the livetime for the event.
         if(e.hdr.ismc)
             return (e.hdr.first_in_subrun) ? (double)e.hdr.ngenevt : 0.0;
         else
-            return e.hdr.bnbinfo.size() + e.hdr.numiinfo.size() + e.hdr.noffbeambnb + e.hdr.noffbeamnumi;
+        {
+            // If BNB, spill cuts are supported.
+            double tot(0);
+            for(const auto & bnb : e.hdr.bnbinfo)
+                tot += (spill_cut(bnb) ? 1.0 : 0.0);
+            return tot + e.hdr.numiinfo.size() + e.hdr.noffbeambnb + e.hdr.noffbeamnumi;
+        }
     };
     exposure_vars.push_back(std::make_pair("livetime", spill_multivar_helper(cut, livetime_var)));
 
