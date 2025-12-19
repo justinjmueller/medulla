@@ -14,6 +14,7 @@
 #ifndef SPILL_CUTS_H
 #define SPILL_CUTS_H
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
+#include "sbnana/SBNAna/Vars/getBNBFoM.h"
 
 #include "framework.h"
 
@@ -73,5 +74,44 @@ namespace scut
         );
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Spill, beam_quality_cut, beam_quality_cut);
+
+    /**
+     * @brief Apply a cut on the beam FoM value of the spill.
+     * @details This cut checks if the beam FoM value of the spill is above a
+     * certain threshold, which can be configured by the user. This is a
+     * wrapper around the tagged version implemented by the getBNBFoM 
+     * function in `sbnana`. It is intended to be a handle on the overalap of
+     * the beam with the target.
+     * @tparam T the spill container type
+     * @param sr the StandardRecord to apply the cut on.
+     * @param params a vector of parameters for the cut, which can be used to
+     * specify the threshold for the FoM value.
+     * @return true if the FoM value is above the threshold, false otherwise.
+     */
+    template<typename T>
+    bool bnb_fom_cut(const T & spill, std::vector<double> params={})
+    {
+        if(params.empty())
+        {
+            throw std::invalid_argument("bnb_fom_cut requires at least one parameter for the threshold (recommended 0.98).");
+        }
+        double threshold = params[0];
+        return (getBNBFoM(
+            spill.spill_time_sec,
+            spill.TOR860,
+            spill.TOR875,
+            spill.HP875,
+            spill.HPTG1,
+            spill.HPTG2,
+            spill.VP873,
+            spill.VP875,
+            spill.M875HS,
+            spill.M875VS,
+            spill.M876HS,
+            spill.M876VS
+        ) >= threshold);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Spill, bnb_fom_cut, bnb_fom_cut);
+
 } // namespace scut
 #endif // SPILL_CUTS_H
