@@ -182,7 +182,7 @@ namespace mctruth
 	  for(const auto & p : obj.prim)
 	  {
 	      // Check muon pdg_code 
-	    if(abs(p.pdg) == 13)
+	    if(p.pdg == 13)
 	    {
 		// Check KE threshold
 		double ke(-5);
@@ -242,7 +242,7 @@ namespace mctruth
           {
 	      for(const auto & p : obj.prim)
               {
-		  if(abs(p.pdg) == 13)
+		  if(p.pdg == 13)
                   {
 		      mom.SetX(p.genp.x);
 		      mom.SetY(p.genp.y);
