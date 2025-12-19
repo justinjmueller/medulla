@@ -182,14 +182,14 @@ namespace mctruth
 	  for(const auto & p : obj.prim)
 	  {
 	      // Check muon pdg_code 
-	      if(p.pdg == -13)
-	      {
+	    if(abs(p.pdg) == 13)
+	    {
 		// Check KE threshold
 		double ke(-5);
 		ke = 1000. * (p.genE - (MUON_MASS/1000.)); // MeV
-		if(ke > params[0])
+		if(ke >= params[0])
 		  num_muons++;
-	      }
+	    }
           }
 	  return num_muons;
       }
@@ -216,7 +216,7 @@ namespace mctruth
                   // Check KE threshold
                   double ke(-5);
 		  ke = 1000. * (p.genE - (PION_MASS/1000.)); // MeV
-		  if(ke > params[0])
+		  if(ke >= params[0])
 		    num_pions++;
               }
           }
