@@ -24,7 +24,7 @@ source /cvmfs/sbnd.opensciencegrid.org/products/sbnd/setup_sbnd.sh
 source /cvmfs/icarus.opensciencegrid.org/products/icarus/setup_icarus.sh
 
 # Set up the required dependencies:
-setup sbnana v10_01_02_01 -q e26:prof
+setup sbnana v10_01_04 -q e26:prof
 setup cmake v3_27_4
 
 # Clone the medulla repository:
