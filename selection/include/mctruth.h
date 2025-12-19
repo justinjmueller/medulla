@@ -129,7 +129,7 @@ namespace mctruth
      * @details This variable is intended to provide the interaction type of the
      * interaction. This is based on the GENIE interaction type enumeration 
      * defined in the LArSoft MCNeutrino class.
-     * @param T the type of the object to apply the variable on.
+     * @tparam T the type of the object to apply the variable on.
      * @param obj the SRTrueInteraction to apply the variable on.
      * @return the interaction type.
      */
@@ -145,7 +145,7 @@ namespace mctruth
      * @return the number of true final state neutral pions in the interaction.
      */
     template<typename T>
-      double npi0s_srtruth(const T & obj)
+      double npi0s_srtruth(const T & obj, std::vector<double> params={0.0,})
       {
 	  int num_pi0s(0);
 
@@ -154,13 +154,107 @@ namespace mctruth
 	  {
 	      // Check pi0 pdg_code
 	      if(p.pdg == 111)
-		num_pi0s++;
+	      {
+		// Check KE threshold
+		double ke(-5);
+                ke = 1000. * (p.genE - (PI0_MASS/1000.)); // MeV
+		if(ke >= params[0])
+		  num_pi0s++;
+	      }
 	  }
 	  return num_pi0s;
       }
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, npi0s_srtruth, npi0s_srtruth);
 
+    /**
+     * @brief Variable for the number of true final muons in the interaction.
+     * @details Variable for the number of true primary muons in each SRTrueInteraction.
+     * @tparam T the type of object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the number of true final state muons.
+     */
+    template<typename T>
+      double nmuons_srtruth(const T & obj, std::vector<double> params={0.0,})
+      {
+	  int num_muons(0);
+
+	  // Loop over primary particles
+	  for(const auto & p : obj.prim)
+	  {
+	      // Check muon pdg_code 
+	      if(p.pdg == -13)
+	      {
+		// Check KE threshold
+		double ke(-5);
+		ke = 1000. * (p.genE - (MUON_MASS/1000.)); // MeV
+		if(ke > params[0])
+		  num_muons++;
+	      }
+          }
+	  return num_muons;
+      }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, nmuons_srtruth, nmuons_srtruth);
     
+    /**
+     * @brief Variable for the number of true final pions in the interaction.
+     * @details Variable for the number of true primary pions in each SRTrueInteraction.
+     * @tparam T the type of object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the number of true final state pions.
+     */
+    template<typename T>
+      double npions_srtruth(const T & obj, std::vector<double> params={0.0,})
+      {
+	  int num_pions(0);
+
+	  // Loop over primary particles 
+	  for(const auto & p : obj.prim)
+          {
+	      // Check pion pdg_code
+	      if(abs(p.pdg) == 211)
+              {
+                  // Check KE threshold
+                  double ke(-5);
+		  ke = 1000. * (p.genE - (PION_MASS/1000.)); // MeV
+		  if(ke > params[0])
+		    num_pions++;
+              }
+          }
+	  return num_pions;
+      }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, npions_srtruth, npions_srtruth);
+
+    /**
+     * @brief Variable for the momentum of the true muon.
+     * @details Variable for the momentum magnitude of the muon in true 1mu interactions.
+     * @tparam T the type of object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the momentum of the true muon.
+     */
+    template<typename T>
+      double muon_p(const T & obj)
+      {
+	  int num_muons = nmuons_srtruth(obj);
+
+	  TVector3 mom(0,0,0);
+	  double mom_mag(-5);
+	  if(num_muons == 1)
+          {
+	      for(const auto & p : obj.prim)
+              {
+		  if(p.pdg == -13)
+                  {
+		      mom.SetX(p.genp.x);
+		      mom.SetY(p.genp.y);
+		      mom.SetZ(p.genp.z);
+		      mom_mag = mom.Mag();
+                  }
+              }
+          }
+	  return mom_mag;
+      }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, muon_p, muon_p);
+
    /**
      * @brief Variable for the momentum of the true neutral pion.
      * @details Variable for the momentum magnitude of the neutral pion in true 1pi0 interactions.
@@ -189,7 +283,6 @@ namespace mctruth
 		  }
 	      }
 	  }
-	    
 	  return mom_mag;
       }
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, pi0_p, pi0_p);
