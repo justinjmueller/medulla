@@ -371,12 +371,12 @@ namespace vars::pi0ana
      * @return the momentum of the neutral pion in GeV.
      */
     template<class T>
-    double pi0_momentum(const T & obj)
+    double pi0_p(const T & obj)
     {
         pi0 s = utilities_pi0ana::pi0_info(obj);
 	return s.momentum;
     }
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_momentum, pi0_momentum);
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_p, pi0_p);
     
     /**
      * @brief Variable for neutral pion angle to neutrino beam.

@@ -157,7 +157,7 @@ namespace vars
     double energy_qel(const T & obj)
     {
         size_t ei = selectors::leading_electron(obj);
-        size_t mi = selectors::leading_muon(obj);
+        size_t mi = selectors::muon(obj);
         size_t li = kNoMatch;
 
         if(ei != kNoMatch && mi != kNoMatch)
@@ -201,7 +201,7 @@ namespace vars
     double energy_qep(const T & obj)
     {
         size_t ei = selectors::leading_electron(obj);
-        size_t mi = selectors::leading_muon(obj);
+        size_t mi = selectors::muon(obj);
         size_t pi = selectors::leading_proton(obj);
         size_t li = kNoMatch;
 
@@ -653,7 +653,7 @@ namespace vars
     template<class T>
     double opening_angle(const T & obj)
     {
-        size_t mi = selectors::leading_muon(obj);
+        size_t mi = selectors::muon(obj);
         size_t pi = selectors::leading_proton(obj);
         if(mi == kNoMatch || pi == kNoMatch)
             return kNoMatchValue; // No leading muon or proton found.
@@ -824,7 +824,7 @@ namespace vars
     double leading_muon_vertex_gap(const T & obj)
     {
         // Find the leading muon in the interaction.
-        size_t mi = selectors::leading_muon(obj);
+        size_t mi = selectors::muon(obj);
         if(mi == kNoMatch) return PLACEHOLDERVALUE;
         auto & m(obj.particles[mi]);
         
@@ -848,7 +848,7 @@ namespace vars
     double Q2(const T & obj)
     {
 	// Find the leading muon in the interaction
-	size_t mi = selectors::leading_muon(obj);
+	size_t mi = selectors::muon(obj);
 	if(mi == kNoMatch) return PLACEHOLDERVALUE;
 	auto & m(obj.particles[mi]);
 	return 2*visible_energy(obj)*((pvars::energy(m)/1000.0) - pvars::p(m)*pvars::beam_costheta(m)) - std::pow(MUON_MASS/1000.0, 2);
@@ -865,7 +865,7 @@ namespace vars
     double W(const T & obj)
     {
         // Find the leading muon in the interaction
-        size_t mi = selectors::leading_muon(obj);
+        size_t mi = selectors::muon(obj);
         if(mi == kNoMatch) return PLACEHOLDERVALUE;
         auto & m(obj.particles[mi]);
         return std::sqrt( std::pow(NUCLEON_MASS/1000.0, 2) + 2*(NUCLEON_MASS/1000.0)*(visible_energy(obj) - (pvars::energy(m)/1000.0)) - Q2(obj) );
@@ -882,7 +882,7 @@ namespace vars
     double W_calosub(const T & obj)
     {
         // Find the leading muon in the interaction
-        size_t mi = selectors::leading_muon(obj);
+        size_t mi = selectors::muon(obj);
 	if(mi == kNoMatch) return PLACEHOLDERVALUE;
 	auto & m(obj.particles[mi]);
 	return std::sqrt( std::pow(NUCLEON_MASS/1000.0, 2) + 2*(NUCLEON_MASS/1000.0)*(visible_energy_calosub(obj) - (pvars::energy(m)/1000.0)) - Q2(obj) );

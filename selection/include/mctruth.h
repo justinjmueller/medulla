@@ -138,6 +138,35 @@ namespace mctruth
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, interaction_type, interaction_type);
 
     /**
+     * @brief Variable for the number of true final muons in the interaction.
+     * @details Variable for the number of true primary muons in each SRTrueInteraction.
+     * @tparam T the type of object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the number of true final state muons.
+     */
+    template<typename T>
+      double nmuons_srtruth(const T & obj, std::vector<double> params={0.0,})
+      {
+	int num_muons(0);
+
+	// Loop over primary particles                                                                                                                                                                   
+	for(const auto & p : obj.prim)
+          {
+	    // Check muon pdg_code                                                                                                                                                                       
+            if(p.pdg == 13)
+	      {
+                // Check KE threshold                                                                                                                                                                      
+                double ke(-5);
+                ke = 1000. * (p.genE - (MUON_MASS/1000.)); // MeV                                                                                                                                          
+                if(ke >= params[0])
+                  num_muons++;
+	      }
+          }
+	return num_muons;
+      }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, nmuons_srtruth, nmuons_srtruth);
+
+    /**
      * @brief Variable for the number of true final state neutral pions in the interaction.
      * @details Variable for the number of true primary neutral pions in each SRTrueInteraction.
      * @tparam T the type of object to apply the variable on.
@@ -166,35 +195,6 @@ namespace mctruth
       }
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, npi0s_srtruth, npi0s_srtruth);
 
-    /**
-     * @brief Variable for the number of true final muons in the interaction.
-     * @details Variable for the number of true primary muons in each SRTrueInteraction.
-     * @tparam T the type of object to apply the variable on.
-     * @param obj the SRTrueInteraction to apply the variable on.
-     * @return the number of true final state muons.
-     */
-    template<typename T>
-      double nmuons_srtruth(const T & obj, std::vector<double> params={0.0,})
-      {
-	  int num_muons(0);
-
-	  // Loop over primary particles
-	  for(const auto & p : obj.prim)
-	  {
-	      // Check muon pdg_code 
-	    if(p.pdg == 13)
-	    {
-		// Check KE threshold
-		double ke(-5);
-		ke = 1000. * (p.genE - (MUON_MASS/1000.)); // MeV
-		if(ke >= params[0])
-		  num_muons++;
-	    }
-          }
-	  return num_muons;
-      }
-    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, nmuons_srtruth, nmuons_srtruth);
-    
     /**
      * @brief Variable for the number of true final pions in the interaction.
      * @details Variable for the number of true primary pions in each SRTrueInteraction.
@@ -291,6 +291,42 @@ namespace mctruth
 	  return mom_mag;
       }
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, pi0_p, pi0_p);
+
+    /**
+     * @brief Variable for the angle the true muon makes with the beam.
+     * @details Variable for the cosine of the true muon angle with
+     * respect to the neutrino beam.
+     * @tparam T the type of object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the cosine of the angle between the true muon and the beam.
+     */
+    template<typename T>
+      double muon_beam_costheta(const T & obj, std::vector<double> params={0.0,})
+      {
+        int num_muons = nmuons_srtruth(obj, params);
+
+        TVector3 mom(0,0,0);
+        if(num_muons == 1)
+	  {
+            for(const auto & p : obj.prim)
+	      {
+                double ke(-5);
+                ke = 1000. * (p.genE - (MUON_MASS/1000.)); // MeV                                                                                                                                          
+                if(p.pdg == 13 && ke >= params[0])
+		  {
+                    mom.SetX(p.genp.x);
+                    mom.SetY(p.genp.y);
+                    mom.SetZ(p.genp.z);
+		  }
+	      }
+	  }
+
+        TVector3 nu_dir(obj.momentum.x, obj.momentum.y, obj.momentum.z);
+        double costheta = mom.Unit().Dot(nu_dir.Unit());
+        return costheta;
+
+      }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, muon_beam_costheta, muon_beam_costheta);
     
     /**
      * @brief Variable for the angle the true neutral pion makes with the beam.
@@ -301,7 +337,7 @@ namespace mctruth
      * @return the cosine of the angle between the true neutral pion and the beam.
      */
     template<typename T>
-      double pi0_nu_costheta(const T & obj, std::vector<double> params={0.0,})
+      double pi0_beam_costheta(const T & obj, std::vector<double> params={0.0,})
       {
 	  int num_pi0s = npi0s_srtruth(obj, params);
 	
@@ -326,43 +362,7 @@ namespace mctruth
 	  return costheta;
 	
       }
-    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, pi0_nu_costheta, pi0_nu_costheta);
-
-    /**
-     * @brief Variable for the angle the true muon makes with the beam.
-     * @details Variable for the cosine of the true muon angle with
-     * respect to the neutrino beam.
-     * @tparam T the type of object to apply the variable on.
-     * @param obj the SRTrueInteraction to apply the variable on.
-     * @return the cosine of the angle between the true muon and the beam.
-     */
-    template<typename T>
-      double muon_nu_costheta(const T & obj, std::vector<double> params={0.0,})
-      {
-	int num_muons = nmuons_srtruth(obj, params);
-
-	TVector3 mom(0,0,0);
-	if(num_muons == 1)
-        {
-	    for(const auto & p : obj.prim)
-	    {
-	        double ke(-5);
-		ke = 1000. * (p.genE - (MUON_MASS/1000.)); // MeV 
-		if(p.pdg == 13 && ke >= params[0])
-                {
-		    mom.SetX(p.genp.x);
-		    mom.SetY(p.genp.y);
-		    mom.SetZ(p.genp.z);
-		}
-	    }
-	}
-
-	TVector3 nu_dir(obj.momentum.x, obj.momentum.y, obj.momentum.z);
-	double costheta = mom.Unit().Dot(nu_dir.Unit());
-	return costheta;
-
-      }
-    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, muon_nu_costheta, muon_nu_costheta);
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, pi0_beam_costheta, pi0_beam_costheta);
 
     /**
      * @brief Variable for true fiducial status of neutrino.
