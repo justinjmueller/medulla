@@ -195,11 +195,11 @@ namespace selectors
      * @return the index of the leading muon (highest KE).
      */
     template<class T>
-    size_t leading_muon(const T & obj)
+    size_t muon(const T & obj)
     {
         return leading_particle_index(obj, pvars::kMuon);
     }
-    REGISTER_SELECTOR(leading_muon, leading_muon);
+    REGISTER_SELECTOR(muon, muon);
 
     /**
      * @brief Finds the index corresponding to the leading pion.
