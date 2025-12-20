@@ -303,28 +303,30 @@ namespace mctruth
     template<typename T>
       double muon_beam_costheta(const T & obj, std::vector<double> params={0.0,})
       {
+	
+	TVector3 nu_dir(obj.momentum.x, obj.momentum.y, obj.momentum.z);
+	double costheta(-5);
+	
         int num_muons = nmuons_srtruth(obj, params);
-
         TVector3 mom(0,0,0);
         if(num_muons == 1)
 	  {
             for(const auto & p : obj.prim)
 	      {
                 double ke(-5);
-                ke = 1000. * (p.genE - (MUON_MASS/1000.)); // MeV                                                                                                                                          
+                ke = 1000. * (p.genE - (MUON_MASS/1000.)); // MeV
                 if(p.pdg == 13 && ke >= params[0])
 		  {
                     mom.SetX(p.genp.x);
                     mom.SetY(p.genp.y);
                     mom.SetZ(p.genp.z);
+
+		    costheta = mom.Unit().Dot(nu_dir.Unit());
+
 		  }
 	      }
 	  }
-
-        TVector3 nu_dir(obj.momentum.x, obj.momentum.y, obj.momentum.z);
-        double costheta = mom.Unit().Dot(nu_dir.Unit());
         return costheta;
-
       }
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, muon_beam_costheta, muon_beam_costheta);
     
@@ -339,8 +341,11 @@ namespace mctruth
     template<typename T>
       double pi0_beam_costheta(const T & obj, std::vector<double> params={0.0,})
       {
-	  int num_pi0s = npi0s_srtruth(obj, params);
 	
+	  TVector3 nu_dir(obj.momentum.x, obj.momentum.y, obj.momentum.z);
+	  double costheta(-5);
+
+	  int num_pi0s = npi0s_srtruth(obj, params);
 	  TVector3 mom(0,0,0);
 	  if(num_pi0s == 1)
 	  {
@@ -353,14 +358,12 @@ namespace mctruth
 		      mom.SetX(p.genp.x);
 		      mom.SetY(p.genp.y);
 		      mom.SetZ(p.genp.z);
+
+		      costheta = mom.Unit().Dot(nu_dir.Unit());
                   }
               }
 	  }
-	  
-	  TVector3 nu_dir(obj.momentum.x, obj.momentum.y, obj.momentum.z);
-	  double costheta = mom.Unit().Dot(nu_dir.Unit());
 	  return costheta;
-	
       }
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, pi0_beam_costheta, pi0_beam_costheta);
 
