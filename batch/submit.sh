@@ -63,6 +63,7 @@ ups active
 # Build medulla
 git clone https://github.com/justinjmueller/medulla.git
 cd medulla
+# git checkout feature/lkashur_pi0_sbnana_v10_01_02_01
 git checkout develop
 mkdir build && cd build
 export CC=$(which gcc)
@@ -115,6 +116,7 @@ ls -lrth data/
 #######################################################################
 
 # Run medulla (selection)
+# ./selection/main job_config.toml
 ./selection/medulla job_config.toml
 ls -lrth
 

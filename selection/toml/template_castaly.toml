@@ -1,0 +1,136 @@
+[[category]]
+cuts = [
+{name = "single_pi0"}
+]
+
+[general]
+output = "sbnd_bnb_cv"
+primfn = "default_primary_classification"
+pidfn = "default_pid"
+calofn = "default_calo_ke"
+fsthresh = [
+    "@photon_threshold",
+    "@electron_threshold",
+    "@muon_threshold",
+    "@pion_threshold",
+    "@proton_threshold",
+]
+recopi0thresh = [
+    "@photon_threshold",
+    "@leading_photon_threshold",
+]
+
+[parameters]
+photon_threshold = 20.0
+electron_threshold = 0.0
+muon_threshold = 143.425
+pi0_threshold = 0.0
+pion_threshold = 25.0
+proton_threshold = 0.0
+leading_photon_threshold = 40.0
+pi0_mass_veto_low = 0.0
+pi0_mass_veto_high = 400.0
+flash_low_t = -0.5
+flash_high_t = 1.6
+bnb_fom2_cut = 0.98
+
+[[sample]]
+name = "cv"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input*-reweighted.flat.caf.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "cv"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input0*-reweighted.flat.caf.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "cv"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input1*-reweighted.flat.caf.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "cv"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input2*-reweighted.flat.caf.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "cv"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input3*-reweighted.flat.caf.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "cv"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input4*-reweighted.flat.caf.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "cv"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input5*-reweighted.flat.caf.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "cv"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input6*-reweighted.flat.caf.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "cv"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input7*-reweighted.flat.caf.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "offbeam"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/offbeamlight/*.flat.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "onbeam"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/devsample/*.flat.root"
+ismc = true
+disable = true
+
+[[tree]]
+name = "selected_nu"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "fiducial_cut", type = "reco"},
+    {name = "valid_flashmatch", type = "reco"},
+    {name = "no_muons", type = "reco", parameters = ["@muon_threshold"]},
+    {name = "no_charged_pions", type = "reco", parameters = ["@pion_threshold"]},
+    {name = "single_electron", type = "reco", parameters = ["@electron_threshold"]},
+    {name = "neutrino", type = "true"}
+]
+branch = [
+
+    # True interaction info
+    {name = "neutrino_id", type = "true"},
+    {name = "pdg", type = "mctruth"},
+    {name = "baseline", type = "mctruth"},
+    {name = "cc", type = "mctruth"},
+    {name = "neutrino_energy", type = "mctruth"},
+    {name = "interaction_type", type = "mctruth"},
+
+    # Interaction observables
+    {name = "flash_time", type = "reco"},
+    {name = "visible_energy", type = "both"},
+    {name = "dpT", type = "both"},
+    {name = "dpL", type = "both"},
+    {name = "pn", type = "both"},
+    {name = "dphiT", type = "both"},
+    {name = "dalphaT", type = "both"},
+    {name = "vertex_x", type = "both"},
+    {name = "vertex_y", type = "both"},
+    {name = "vertex_z", type = "both"},
+]

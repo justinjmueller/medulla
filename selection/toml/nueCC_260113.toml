@@ -1,0 +1,253 @@
+[general]
+output = "nue_cc_260113"
+primfn = "default_primary_classification"
+pidfn = "default_pid"
+calofn = "default_calo_ke"
+#fsthresh = [
+#    "@photon_threshold",
+#    "@electron_threshold",
+#    "@muon_threshold",
+#    "@pion_threshold",
+#    "@proton_threshold",
+#]
+#recopi0thresh = [
+#    "@photon_threshold",
+#    "@leading_photon_threshold",
+#]
+
+############################################################
+
+[parameters]
+photon_threshold = 25.0
+electron_threshold = 75.0
+shower_threshold = 200.0    # new for testing dedx plot
+muon_threshold = 50.0
+pion_threshold = 25.0
+proton_threshold = 50.0
+#pi0_threshold = 0.0
+
+leading_photon_threshold = 40.0
+#pi0_mass_veto_low = 0.0
+#pi0_mass_veto_high = 400.0
+flash_low_t = -0.5
+flash_high_t = 1.6
+bnb_fom2_cut = 0.98
+
+############################################################
+
+[[category]] # 0 : Neutrino, Nue CC in FV (signal)
+cuts = [
+    { name = "neutrino" },
+    { name = "iscc"    },
+    { name = "fiducial_cut"},
+    #{ name = "nonelectron_containment_cut"},
+    { name = "single_electron", parameters = [ "@electron_threshold"   ]},
+]
+
+[[category]] # 1 : Neutrino, Nue CC not in FV
+cuts = [
+    { name = "neutrino" },
+    { name = "iscc"    },
+    { name = "!fiducial_cut"},
+    { name = "single_electron", parameters = [ "@electron_threshold"   ]},
+]
+
+
+
+#[[category]] # 2 : Neutrino, Numu CC pi0
+#cuts = [
+#    { name = "neutrino" },
+#    { name = "iscc" },
+#    { name = "single_muon", parameters = [ "@muon_threshold" ] },
+#    {name = "single_pi0", type = "true", parameters = [ "@pi0_threshold"    ]}
+#]
+
+
+
+#[[category]] # 3 : Neutrino, Nu NC pi0
+#cuts = [
+#    { name = "neutrino" },
+#    { name = "!iscc"    },
+#    { name = "single_pi0", type = "true", parameters = [ "@pi0_threshold"   ]}
+#]
+
+
+[[category]] # 4 : Neutrino, Other CC Numu
+cuts = [
+    { name = "neutrino" },
+    { name = "iscc"    },
+    { name = "single_muon", parameters = [ "@muon_threshold"   ]},
+]
+
+[[category]] # 5 : Neutrino, Other nu NC
+cuts = [
+    { name = "neutrino" },
+    { name = "!iscc"    },
+]
+
+[[category]] # 6 : Cosmic
+cuts = [
+    { name = "!neutrino" },
+]
+[[category]] # 7 : Neutrino, Other
+cuts = [
+    { name = "neutrino" },
+]
+
+############################################################
+
+[[sample]]
+name = "cv"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input*-reweighted.flat.caf.root"
+ismc = true
+disable = false
+
+[[sample]]
+name = "cv"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input0*-reweighted.flat.caf.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "cv"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input1*-reweighted.flat.caf.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "cv"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input2*-reweighted.flat.caf.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "cv"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input3*-reweighted.flat.caf.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "cv"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input4*-reweighted.flat.caf.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "cv"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input5*-reweighted.flat.caf.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "cv"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input6*-reweighted.flat.caf.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "cv"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input7*-reweighted.flat.caf.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "offbeam"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/offbeamlight/*.flat.root"
+ismc = true
+disable = true
+
+[[sample]]
+name = "onbeam"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/devsample/*.flat.root"
+ismc = true
+disable = true
+
+############################################################
+
+
+[[tree]]
+name = "selected"
+sim_only = false
+add_systematics = false      # new for testing dedx plot
+mode = "reco"
+cut = [
+    #{ name = "flash_cut", type = "reco", parameters = [0,1.6]}, 
+    { name = "valid_flashmatch", type = "reco"},
+    { name = "!no_showers", type = "reco", parameters = [ "@shower_threshold" ] },  # new for testing dedx plot
+    #{ name = "no_muons",      type = "reco", parameters = [ "@muon_threshold"     ] },
+    #{ name = "fiducial_cut",     type = "reco" }, 
+    #{ name = "single_electron",     type = "reco", parameters = [ "@electron_threshold" ] },
+]
+branch = [
+    {name = "neutrino_id",            type = "true"},
+    {name = "cc",                    type = "mctruth"},
+    {name = "pdg",                   type = "mctruth"}, #Needed for NuMI Flux calculation
+    {name = "parent_pdg",            type = "mctruth"}, #Needed for NuMI Flux calculation
+    {name = "interaction_type",      type = "mctruth"},
+    {name = "neutrino_energy",       type = "mctruth"}, #Needed for NuMI Flux calculation
+    {name = "category",              type = "true"},
+    {name = "visible_energy",        type = "both"},
+    {name = "fiducial",              type = "reco"},
+    {name = "containment",           type = "reco"},
+    {name = "flash_time",            type = "reco"},
+    {name = "photon_multiplicity",   type = "both", parameters = [ "@photon_threshold"   ]},
+    {name = "electron_multiplicity", type = "both", parameters = [ "@electron_threshold" ]},
+    {name = "muon_multiplicity",     type = "both", parameters = [ "@muon_threshold"     ]},
+    {name = "pion_multiplicity",     type = "both", parameters = [ "@pion_threshold"     ]},
+    {name = "proton_multiplicity",   type = "both", parameters = [ "@proton_threshold"   ]},
+    {name = "ke",                    type = "both_particle", selector = "leading_electron"   },
+    {name = "start_dedx",            type = "reco_particle", selector = "leading_electron"   },
+    {name = "start_straightness",    type = "reco_particle", selector = "leading_electron"   },
+    {name = "axial_spread",          type = "reco_particle", selector = "leading_electron"   },
+    {name = "directional_spread",    type = "reco_particle", selector = "leading_electron"   },
+    {name = "vertex_distance",       type = "reco_particle", selector = "leading_electron"   },
+    {name = "photon_softmax",        type = "reco_particle", selector = "leading_electron"   },
+    {name = "electron_softmax",      type = "reco_particle", selector = "leading_electron"   },
+    {name = "muon_softmax",          type = "reco_particle", selector = "leading_proton" },
+    {name = "pion_softmax",          type = "reco_particle", selector = "leading_proton" },
+    {name = "proton_softmax",        type = "reco_particle", selector = "leading_proton" },
+    {name = "primary_softmax",       type = "reco_particle", selector = "leading_electron" }
+]
+
+############################################################
+
+
+[[tree]] #This tree is needed if you want to calculate the efficiency
+name = "signal"
+sim_only = true
+mode = "true"
+cut = [
+    { name = "fiducial_cut",     type = "true" },
+    { name = "no_muons",      type = "true", parameters = [ "@muon_threshold"     ] },
+    { name = "single_electron",     type = "true", parameters = [ "@electron_threshold" ] }
+]
+
+
+branch = [
+    {name = "neutrino_id",            type = "true"},
+    {name = "cc",                    type = "mctruth"},
+    {name = "pdg",                   type = "mctruth"}, #Needed for NuMI Flux calculation
+    {name = "parent_pdg",            type = "mctruth"}, #Needed for NuMI Flux calculation
+    {name = "interaction_type",      type = "mctruth"},
+    {name = "neutrino_energy",       type = "mctruth"}, #Needed for NuMI Flux calculation
+    {name = "category",              type = "true"},
+    {name = "visible_energy",        type = "both"},
+    {name = "fiducial",              type = "reco"},
+    {name = "containment",           type = "reco"},
+    {name = "flash_time",            type = "reco"},
+    {name = "photon_multiplicity",   type = "both", parameters = [ "@photon_threshold"   ]},
+    {name = "electron_multiplicity", type = "both", parameters = [ "@electron_threshold" ]},
+    {name = "muon_multiplicity",     type = "both", parameters = [ "@muon_threshold"     ]},
+    {name = "pion_multiplicity",     type = "both", parameters = [ "@pion_threshold"     ]},
+    {name = "proton_multiplicity",   type = "both", parameters = [ "@proton_threshold"   ]},
+    {name = "ke",                    type = "both_particle", selector = "leading_electron"   },
+    {name = "start_dedx",            type = "reco_particle", selector = "leading_electron"   },
+    {name = "shower_start_dedx",     type = "reco_particle", selector = "leading_shower"},      # new for testing dedx plot
+    {name = "start_straightness",    type = "reco_particle", selector = "leading_electron"   },
+    {name = "axial_spread",          type = "reco_particle", selector = "leading_electron"   },
+    {name = "directional_spread",    type = "reco_particle", selector = "leading_electron"   },
+    {name = "vertex_distance",       type = "reco_particle", selector = "leading_electron"   },
+    {name = "muon_softmax",          type = "reco_particle", selector = "leading_proton" },
+    {name = "pion_softmax",          type = "reco_particle", selector = "leading_proton" },
+    {name = "proton_softmax",        type = "reco_particle", selector = "leading_proton" },
+]

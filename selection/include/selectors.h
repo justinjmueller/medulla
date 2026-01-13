@@ -187,6 +187,35 @@ namespace selectors
     REGISTER_SELECTOR(leading_electron, leading_electron);
 
     /**
+    * @brief Finds the index corresponding to the leading shower.
+    * @details The leading shower is defined as the shower (photon or electron)
+    * with the highest kinetic energy.
+    * @tparam T the type of interaction (true or reco).
+    * @param obj the interaction to operate on.
+    * @return the index of the leading shower (highest KE).
+    */
+    template<class T>
+    size_t leading_shower(const T & obj)
+    {
+        double leading_ke(0);
+        size_t index(kNoMatch);
+        for(size_t i(0); i < obj.particles.size(); ++i)
+        {
+            const auto & p = obj.particles[i];
+            double energy(pvars::ke(p));
+            // Check for photon (pid=0) or electron (pid=1)
+            if((pvars::pid(p) == 0 || pvars::pid(p) == 1) && energy > leading_ke)
+            {
+                leading_ke = energy;
+                index = i;
+            }
+        }
+        return index;
+    }
+    REGISTER_SELECTOR(leading_shower, leading_shower);
+
+
+    /**
      * @brief Finds the index corresponding to the leading muon.
      * @details The leading muon is defined as the muon with the highest
      * kinetic energy.

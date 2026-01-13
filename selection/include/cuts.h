@@ -491,6 +491,37 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::Both, no_protons, no_protons);
 
     /**
+    * @brief Binding for zero particle shower multiplicity cut.
+    * @details This function applies a cut to select interactions with no
+    * showers (photons or electrons) above a specified energy threshold.
+    * @param obj the interaction to select on.
+    * @param params the parameters for the cut. In this case, this sets the
+    * kinetic energy threshold for a shower to count towards the
+    * multiplicity. Defaults to 200 MeV.
+    * @return true if the interaction has no showers above threshold.
+    */
+    template<class T>
+    bool no_showers(const T & obj, std::vector<double> params={200.0,})
+    {
+        size_t count(0);
+        for(const auto & p : obj.particles)
+        {
+            // Count photons (pid=0) and electrons (pid=1)
+            if((pvars::pid(p) == 0 || pvars::pid(p) == 1) && 
+            pvars::primary_classification(p) && 
+            pvars::ke(p) >= params[0])
+            {
+                ++count;
+            }
+            if(count > 0)
+                break; // Found at least one, can stop
+        }
+        return count == 0;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, no_showers, no_showers);
+
+
+    /**
      * @brief Cut to select interactions with more than one proton.
      * @details This function applies a cut to select interactions with
      * more than one proton (N > 1). This is complementary to the single_proton
