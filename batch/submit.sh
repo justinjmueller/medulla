@@ -64,7 +64,7 @@ ups active
 git clone https://github.com/justinjmueller/medulla.git
 cd medulla
 # git checkout feature/lkashur_pi0_sbnana_v10_01_02_01
-git checkout develop
+git checkout feature/cfan_nueCC_test_dedx_2601
 mkdir build && cd build
 export CC=$(which gcc)
 export CXX=$(which g++)
@@ -118,8 +118,8 @@ ls -lrth data/
 #######################################################################
 
 # Run medulla (selection)
-# ./selection/main job_config.toml
-./selection/medulla job_config.toml
+./selection/main job_config.toml
+# ./selection/medulla job_config.toml
 ls -lrth
 
 # Copy output file to the output directory
