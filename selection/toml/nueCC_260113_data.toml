@@ -97,72 +97,12 @@ cuts = [
 ############################################################
 
 [[sample]]
-name = "cv"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input*-reweighted.flat.caf.root"
-ismc = true
-disable = false
-
-[[sample]]
-name = "cv"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input0*-reweighted.flat.caf.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "cv"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input1*-reweighted.flat.caf.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "cv"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input2*-reweighted.flat.caf.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "cv"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input3*-reweighted.flat.caf.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "cv"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input4*-reweighted.flat.caf.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "cv"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input5*-reweighted.flat.caf.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "cv"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input6*-reweighted.flat.caf.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "cv"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input7*-reweighted.flat.caf.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "offbeam"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/offbeamlight/*.flat.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "onbeam"
+name = "data"
 path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/devsample/*.flat.root"
-ismc = true
-disable = true
+ismc = false
 
 ############################################################
+
 
 
 [[tree]]
