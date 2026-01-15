@@ -98,6 +98,11 @@ cuts = [
 
 [[sample]]
 name = "data"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/offbeamlight/*.flat.root"
+ismc = false
+
+[[sample]]
+name = "data"
 path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/devsample/*.flat.root"
 ismc = false
 
