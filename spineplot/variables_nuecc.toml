@@ -1,0 +1,54 @@
+[variables]
+
+[variables.reco_visible_energy]
+key = 'reco_visible_energy'
+range = [0.0, 3.0]
+nbins = 15
+binning_scheme = 'equal_width'
+xlabel = 'Reconstructed Visible Energy [GeV/c$^{2}$]'
+
+[variables.reco_leading_electron_ke]
+key = 'reco_leading_electron_ke'
+range = [0, 3000]
+nbins = 15
+binning_scheme = 'equal_width'
+xlabel = 'Reco Electron Kinetic Energy [MeV]'
+
+[variables.true_leading_electron_ke]
+key = 'true_leading_electron_ke'
+range = [0.0, 3000.0]
+nbins = 30
+binning_scheme = 'equal_width'
+xlabel = 'True Electron Kinetic Energy [MeV]'
+
+
+[variables.reco_leading_electron_electron_softmax]
+key = 'reco_leading_electron_electron_softmax'
+range = [0.0, 1.0]
+nbins = 20
+binning_scheme = 'equal_width'
+xlabel = 'Reco Electron Softmax Score'
+
+[variables.reco_leading_electron_photon_softmax]
+key = 'reco_leading_electron_photon_softmax'
+range = [0.0, 1.0]
+nbins = 20
+binning_scheme = 'equal_width'
+xlabel = 'Reco Photon Softmax Score'
+
+[variables.reco_leading_electron_primary_softmax]
+key = 'reco_leading_electron_primary_softmax'
+range = [0.0, 1.0]
+nbins = 20
+binning_scheme = 'equal_width'
+xlabel = 'Reco Primary Softmax Score'
+
+[variables.reco_leading_electron_start_dedx]
+key = 'reco_leading_electron_start_dedx'
+range = [0.0, 10.0]
+nbins = 20
+binning_scheme = 'equal_width'
+xlabel = 'Reco Start dE/dx [MeV/cm]'
+
+
+
