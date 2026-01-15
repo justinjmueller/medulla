@@ -5,7 +5,7 @@
 font.sans-serif:  Helvetica, Helvetica Neue, Nimbus Sans, Liberation Sans, Arial
 
 ## FIGURE
-figure.titlesize: 36
+figure.titlesize: 25
 figure.constrained_layout.use: True
 figure.facecolor: white
 
