@@ -368,7 +368,7 @@ namespace pvars
     template<class T>
     double thesis_postpi0adj_mc_calo_ke(const T & p)
     {
-        return (1/ (131.68/134.9768)) * thesis_prepi0adj_mc_calo_ke(p);
+        return (1/ (131.7/134.9768)) * thesis_prepi0adj_mc_calo_ke(p);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, thesis_postpi0adj_mc_calo_ke, thesis_postpi0adj_mc_calo_ke);
     
@@ -402,7 +402,7 @@ namespace pvars
     template<class T>
     double thesis_postpi0adj_data_calo_ke(const T & p)
     {
-        return (1/ (130.79/134.9768)) * thesis_prepi0adj_data_calo_ke(p);
+        return (1/ (130.7/134.9768)) * thesis_prepi0adj_data_calo_ke(p);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, thesis_postpi0adj_data_calo_ke, thesis_postpi0adj_data_calo_ke);
 
