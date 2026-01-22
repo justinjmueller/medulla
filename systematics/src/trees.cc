@@ -144,7 +144,6 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     TTree * input_tree = (TTree *) input->Get(table.get_string_field("origin").c_str());
     std::map<std::string, double> brs;
     double nu_id;
-    double nu_energy;
     Int_t run, subrun, event;
     for(int i(0); i < input_tree->GetNbranches()-3; ++i)
     {
@@ -153,7 +152,6 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
         input_tree->SetBranchAddress(brname.c_str(), &brs[brname]);
     }
     input_tree->SetBranchAddress("true_neutrino_id", &nu_id);
-    input_tree->SetBranchAddress("true_neutrino_energy", &nu_energy);
     input_tree->SetBranchAddress("Run", &run);
     input_tree->SetBranchAddress("Subrun", &subrun);
     input_tree->SetBranchAddress("Evt", &event);
@@ -268,6 +266,7 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
      * sequential order.
      */
     std::vector<std::string> table_types = table.get_string_vector("table_types");
+    std::string _true_neutrino_energy = "true_neutrino_energy";
     for(const std::string & s : table_types)
     {
         std::string tname = table.get_string_field("name") + '_' + s;
@@ -278,7 +277,7 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
         systrees[tname]->Branch("Run", &run);
         systrees[tname]->Branch("Subrun", &subrun);
         systrees[tname]->Branch("Evt", &event);
-	systrees[tname]->Branch("true_neutrino_energy", &nu_energy);
+	systrees[tname]->Branch("true_neutrino_energy", &brs[_true_neutrino_energy]);
         systrees[tname]->SetDirectory(directory);
         systrees[tname]->SetAutoFlush(1000);
     }
