@@ -144,6 +144,7 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     TTree * input_tree = (TTree *) input->Get(table.get_string_field("origin").c_str());
     std::map<std::string, double> brs;
     double nu_id;
+    double nu_energy;
     Int_t run, subrun, event;
     for(int i(0); i < input_tree->GetNbranches()-3; ++i)
     {
@@ -152,6 +153,7 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
         input_tree->SetBranchAddress(brname.c_str(), &brs[brname]);
     }
     input_tree->SetBranchAddress("true_neutrino_id", &nu_id);
+    input_tree->SetBranchAddress("true_neutrino_energy", &nu_energy);
     input_tree->SetBranchAddress("Run", &run);
     input_tree->SetBranchAddress("Subrun", &subrun);
     input_tree->SetBranchAddress("Evt", &event);
@@ -276,6 +278,7 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
         systrees[tname]->Branch("Run", &run);
         systrees[tname]->Branch("Subrun", &subrun);
         systrees[tname]->Branch("Evt", &event);
+	systrees[tname]->Branch("true_neutrino_energy", &nu_energy);
         systrees[tname]->SetDirectory(directory);
         systrees[tname]->SetAutoFlush(1000);
     }
@@ -351,6 +354,7 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
                                 results2d[syskey] = new TH2D((sv.name + "_" + key + "_2d").c_str(), (sv.name + "_" + key + "_2d").c_str(), sv.nbins, sv.min, sv.max, reader.get_nuniv(idn), 0, reader.get_nuniv(idn));
                                 results2d[syskey]->SetDirectory(nullptr);
                             }
+			    
                             for(size_t u(0); u < reader.get_nuniv(idn); ++u)
                             {
                                 value->get_weights()->push_back(reader.get_weight(idn, u));
