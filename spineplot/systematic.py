@@ -132,21 +132,26 @@ class Systematic:
         if self._handle is not None:
             # Read the weights from the TTree
             weights_array = np.stack(self._handle.array(library='np'))[mask, :]
-            
-            if weights_array.shape[1] == 7:
+            if weights_array.shape[1] in (6, 7):# Shape of GENIE multisigma is (N,6), detector sys is (N,7)  
+                if weights_array.shape[1] == 6: 
+                    sigma_levels_raw = np.array([-1, 1, -2, 2, -3, 3], dtype=float) #correspoding to definition in CAF and sys toml
+                    order = np.argsort(sigma_levels_raw)                 #-> [-3,-2,-1, 1, 2, 3]
+                    sigma_levels = sigma_levels_raw[order]              # sorted xp
+                    W = np.asarray(weights_array, dtype=float)[:, order]
+                else:      
                 # Set the "sigma" levels corresponding to each weight in the
                 # array. 
-                sigma_levels = np.linspace(-3, 3, 7)
-
+                    sigma_levels = np.linspace(-3, 3, 7) # for dectector systematic order is [-3,-2,-1,0,1,2,3]
+                    W = np.asarray(weights_array, dtype=float)
                 # A set of `nuniv` random values is drawn from a normal
                 # distribution with mean 0 and standard deviation 1. The
                 # weights retrieved above are then interpolated at these
                 # values to generate the universe weights.
-                random_sigmas = np.random.normal(0, 1, (weights_array.shape[0], nuniv))
+                random_sigmas = np.random.normal(0, 1, (W.shape[0], nuniv))
                 self._universe_weights = np.apply_along_axis(
                     lambda w: np.interp(random_sigmas[0], sigma_levels, w),
                     axis=1,
-                    arr=weights_array
+                    arr=W
                 )
             else:
                 self._universe_weights = weights_array
