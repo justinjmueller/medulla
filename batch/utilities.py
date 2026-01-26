@@ -300,9 +300,25 @@ def check_project_status(
     conn = sqlite3.connect('./project.db')
     curs = conn.cursor()
 
+    # # Get the list of job outputs in the output directory.
+    # output_files = glob(str(project_dir / 'output' / 'output_jobid*.root'))
+    # completed_jobs = [int(Path(f).stem.split('jobid')[-1]) for f in output_files]
+    # ins = [('completed', jid) for jid in completed_jobs]
+    # command(curs, "UPDATE jobs SET status = ? WHERE jobid = ?", ins)
+    # conn.commit()
+    # conn.close()
+
     # Get the list of job outputs in the output directory.
     output_files = glob(str(project_dir / 'output' / 'output_jobid*.root'))
-    completed_jobs = [int(Path(f).stem.split('jobid')[-1]) for f in output_files]
+
+    completed_jobs = []
+    for f in output_files:
+        fpath = Path(f)
+        # Require file size >= 1 KB
+        if fpath.stat().st_size >= 1024:
+            jid = int(fpath.stem.split('jobid')[-1])
+            completed_jobs.append(jid)
+
     ins = [('completed', jid) for jid in completed_jobs]
     command(curs, "UPDATE jobs SET status = ? WHERE jobid = ?", ins)
     conn.commit()
