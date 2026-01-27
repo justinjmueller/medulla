@@ -35,6 +35,7 @@ markers = ['o', '^', 's', 'P', 'D']
 default_figsize = [6.4,4.8]
 title = ''
 mark_pot = true
+<<<<<<< Updated upstream
 <<<<<<< HEAD
 <<<<<<< HEAD
 #mark_preliminary = '$\bf{SBND}$ Work-in-Progress'
@@ -46,6 +47,10 @@ mark_preliminary = '$\bf{SBND}$ Work-in-Progress'
 #mark_preliminary = '$\bf{SBND}$ Work-in-Progress'
 mark_preliminary = '$\bf{SBND}$ Internal'
 >>>>>>> c392562 (add shower config)
+=======
+#mark_preliminary = '$\bf{SBND}$ Work-in-Progress'
+mark_preliminary = '$\bf{SBND}$ Internal'
+>>>>>>> Stashed changes
 plot_kwargs = {'histtype' = 'barstacked', 'stacked' = true}
 
 [[style]]
@@ -55,6 +60,7 @@ markers = ['o', '^', 's', 'P', 'D']
 default_figsize = [7.4,5.8]
 title = '$\bf{SBND}$ $\nu_e$ CC Inclusive'
 mark_pot = true
+<<<<<<< Updated upstream
 <<<<<<< HEAD
 <<<<<<< HEAD
 #mark_preliminary = '$\bf{SBND}$ Work-in-Progress'
@@ -66,6 +72,10 @@ mark_preliminary = '$\bf{SBND}$ Work-in-Progress'
 #mark_preliminary = '$\bf{SBND}$ Work-in-Progress'
 mark_preliminary = '$\bf{SBND}$ Internal'
 >>>>>>> c392562 (add shower config)
+=======
+#mark_preliminary = '$\bf{SBND}$ Work-in-Progress'
+mark_preliminary = '$\bf{SBND}$ Internal'
+>>>>>>> Stashed changes
 plot_kwargs = {'histtype' = 'barstacked', 'stacked' = true}
 
 [[style]]
