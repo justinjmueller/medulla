@@ -36,11 +36,16 @@ default_figsize = [6.4,4.8]
 title = ''
 mark_pot = true
 <<<<<<< HEAD
+<<<<<<< HEAD
 #mark_preliminary = '$\bf{SBND}$ Work-in-Progress'
 mark_preliminary = '$\bf{SBND}$ Internal'
 =======
 mark_preliminary = '$\bf{SBND}$ Work-in-Progress'
 >>>>>>> 9a8b3e2 (updated spineplot for testing dE/dx plot 260115)
+=======
+#mark_preliminary = '$\bf{SBND}$ Work-in-Progress'
+mark_preliminary = '$\bf{SBND}$ Internal'
+>>>>>>> c392562 (add shower config)
 plot_kwargs = {'histtype' = 'barstacked', 'stacked' = true}
 
 [[style]]
@@ -51,11 +56,16 @@ default_figsize = [7.4,5.8]
 title = '$\bf{SBND}$ $\nu_e$ CC Inclusive'
 mark_pot = true
 <<<<<<< HEAD
+<<<<<<< HEAD
 #mark_preliminary = '$\bf{SBND}$ Work-in-Progress'
 mark_preliminary = '$\bf{SBND}$ Internal'
 =======
 mark_preliminary = '$\bf{SBND}$ Work-in-Progress'
 >>>>>>> 9a8b3e2 (updated spineplot for testing dE/dx plot 260115)
+=======
+#mark_preliminary = '$\bf{SBND}$ Work-in-Progress'
+mark_preliminary = '$\bf{SBND}$ Internal'
+>>>>>>> c392562 (add shower config)
 plot_kwargs = {'histtype' = 'barstacked', 'stacked' = true}
 
 [[style]]
