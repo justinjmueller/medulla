@@ -30,7 +30,7 @@ plot_kwargs = {'histtype' = 'barstacked', 'stacked' = true}
 
 [[style]]
 name = 'basic_sbnd'
-style_sheet = "/sdf/home/c/castalyf/medulla/medulla/spineplot/styles/muon2024.mplstyle"
+style_sheet = "/sdf/home/c/castalyf/medulla/spineplot/styles/muon2024.mplstyle"
 markers = ['o', '^', 's', 'P', 'D']
 default_figsize = [6.4,4.8]
 title = ''
