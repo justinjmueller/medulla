@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
 project(spine_anaplot_tools LANGUAGES C CXX)
 
+project(spine_anaplot_tools LANGUAGES C CXX)
+
 # Get the absolute paths
 set(MEDULLA_SOURCE_DIR ${CMAKE_SOURCE_DIR})
 set(MEDULLA_BUILD_DIR ${CMAKE_BINARY_DIR})

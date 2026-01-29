@@ -775,5 +775,93 @@ namespace cuts
     }
 
     REGISTER_CUT_SCOPE(RegistrationScope::Reco, michel_attached_muon, michel_attached_muon);    
+
+    /**
+    * @brief Apply a cut on particle multiplicity with configurable species and count.
+    * @details This function applies a cut based on the multiplicity of a specific
+    * particle species. The particle species and desired multiplicity are specified
+    * via the parameters vector. This allows for flexible multiplicity cuts without
+    * needing to define separate functions for each combination.
+    * @tparam T the type of interaction (true or reco).
+    * @param obj the interaction to select on.
+    * @param params the parameters for the cut:
+    *   - params[0]: desired multiplicity (converted to size_t)
+    *   - params[1]: particle species index (0=photon, 1=electron, 2=muon, 3=pion, 4=proton)
+    *   - params[2]: kinetic energy threshold in MeV (optional, defaults to 0.0)
+    * @return true if the interaction has exactly the specified multiplicity of the
+    * specified particle species above the energy threshold.
+    */
+    template<class T>
+    bool has_particle_multiplicity(const T & obj, std::vector<double> params={1.0, 2.0, 0.0})
+    {
+        if(params.size() < 2)
+        {
+            throw std::runtime_error("has_particle_multiplicity requires at least 2 parameters: [multiplicity, particle_species, (optional) ke_threshold]");
+        }
+        
+        size_t desired_mult = static_cast<size_t>(params[0]);
+        size_t particle_species = static_cast<size_t>(params[1]);
+        double ke_threshold = (params.size() >= 3) ? params[2] : 0.0;
+        
+        std::vector<double> threshold_params = {ke_threshold};
+        size_t actual_mult = particle_multiplicity(obj, desired_mult, particle_species, threshold_params);
+        
+        return actual_mult >= desired_mult;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, has_particle_multiplicity, has_particle_multiplicity);
+
+    template<class T>
+    bool track_length(const T & obj, std::vector<double> params={25.0})
+    {
+        float maxLen = -1;
+        size_t longest_track_idx = -1;
+        for (int i=0; i < obj.particles.size(); i++) {
+            const auto & p = obj.particles[i];
+            if (pvars::semantic_type(p) != 1) continue;
+            if (pvars::length(p) > maxLen) {
+                maxLen = pvars::length(p);
+                longest_track_idx = i;
+            }
+        }
+    
+        if(longest_track_idx == kNoMatch) return true;
+        
+        return pvars::length(obj.particles[longest_track_idx]) < params[0];
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, track_length, track_length);
+
+    template<class T>
+    bool particle_dedx(const T & obj, std::vector<double> params={0.0,})
+    {   
+        size_t i = selectors::leading_electron(obj);
+        if (i == kNoMatch) return false;
+        const auto & p = obj.particles[i];
+        bool pass = (double)p.start_dedx < params[0] && (double)p.start_dedx >= 0;
+        return pass;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, particle_dedx, particle_dedx);
+
+    /*
+    * @brief Apply a cut on the vertex distance of the leading electron.
+    * @details This function applies a cut on the vertex distance of the leading electron in the interaction. 
+    * The vertex distance is the distance from the reconstructed vertex to the start point of the leading electron track. 
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * maximum allowed vertex distance in cm. Defaults to 0 cm.
+     * @return true if the leading electron has a vertex distance less than the specified threshold.
+     * @note This cut is only applicable to reconstructed interactions, as true interactions do not have a vertex distance variable.
+     * @note The leading electron is identified using the selectors::leading_electron function, which selects the highest energy electron in the interaction.
+    */
+
+    template<class T>
+    bool vertex_distance_cut(const T & obj, std::vector<double> params={0.0,})
+    {   
+        size_t i = selectors::leading_electron(obj);
+        if (i == kNoMatch) return false;
+        const auto & p = obj.particles[i];
+        return p.vertex_distance >= 0 ? p.vertex_distance < params[0] : false;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, vertex_distance_cut, vertex_distance_cut);
+
 }
 #endif
