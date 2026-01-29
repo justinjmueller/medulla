@@ -323,7 +323,7 @@ def launch_jobsub(
     project_dir : str,
     exp : str = 'sbnd',
     njobs : int = -1,
-    branch : str = 'develop,
+    branch : str = 'develop'
 ):
     """
     Launch jobs using jobsub for the given project directory. If njobs
