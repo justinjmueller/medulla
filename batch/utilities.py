@@ -471,3 +471,29 @@ def launch_jobsub(
         job_id = match.group(1) if match else 'unknown'
         print(f"{_CAMPAIGN} Submitted {njobs} job(s). Job ID: {job_id}")
     return True
+
+def check_git_branch(
+    branch : str,
+    repo_url : str = 'https://github.com/justinjmueller/medulla',
+):
+    """
+    Check out the specified branch in the given Git repository
+    directory.
+
+    Parameters
+    ----------
+    branch : str
+        Branch to check for existence.
+    repo_url : str
+        URL to the Git repository.
+
+    Returns
+    -------
+    bool
+    """
+    result = subprocess.run(
+        ["git", "ls-remote", "--exit-code", "--heads", repo_url, branch],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    return result.returncode == 0
