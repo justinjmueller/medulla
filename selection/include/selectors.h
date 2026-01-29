@@ -188,9 +188,9 @@ namespace selectors
 
     /**
     * @brief Finds the index corresponding to the leading shower.
-    * @details The leading shower is defined as the particle with semantic type 0
-    * (shower) and the highest kinetic energy. This excludes Michel electrons,
-    * delta electrons, and track-like particles.
+    * @details The leading shower is defined as the primary particle with semantic 
+    * type 0 (shower) and the highest kinetic energy. This excludes Michel electrons,
+    * delta electrons, track-like particles, and secondary showers.
     * @tparam T the type of interaction (true or reco).
     * @param obj the interaction to operate on.
     * @return the index of the leading shower (highest KE).
@@ -204,8 +204,8 @@ namespace selectors
         {
             const auto & p = obj.particles[i];
             double energy(pvars::ke(p));
-            // Check for semantic type 0 (shower)
-            if(pvars::semantic_type(p) == 0 && energy > leading_ke)
+            // Check for semantic type 0 (shower) AND primary classification
+            if(pvars::semantic_type(p) == 0 && pvars::primary_classification(p) && energy > leading_ke)
             {
                 leading_ke = energy;
                 index = i;
