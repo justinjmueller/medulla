@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from argparse import ArgumentParser
 from pathlib import Path
-from utilities import create_new_project, check_project_status, launch_jobsub
+from utilities import create_new_project, check_project_status, launch_jobsub, check_git_branch
 
 def main(
     project_dir : str,
@@ -12,6 +12,7 @@ def main(
     tml : str = None,
     batch_size : int = None,
     systematic : str = None,
+    branch : str = 'develop',
 ):
     """
     Main function to run the medulla script.
@@ -36,6 +37,8 @@ def main(
     systematic : str
         Path to the systematic template file to use. If None, use the
         default template file in the batch directory.
+    branch : str
+        Branch to use for the medulla repository (defaults to develop).
 
     Returns
     -------
@@ -66,13 +69,13 @@ def main(
     if test_job:
         if not project_exists:
             raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
-        launch_jobsub(project_dir, experiment, njobs=1)
+        launch_jobsub(project_dir, experiment, njobs=1, branch=branch)
 
     # If the user requested to launch jobs, do so.
     if launch_jobs is not None:
         if not project_exists:
             raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
-        launch_jobsub(project_dir, experiment, njobs=launch_jobs)
+        launch_jobsub(project_dir, experiment, njobs=launch_jobs, branch=branch)
 
 if __name__ == '__main__':
     p = ArgumentParser(description='Run medulla.')
@@ -129,6 +132,11 @@ if __name__ == '__main__':
              'then all pending jobs will be launched.'
     )
 
+    p.add_argument(
+        '--branch', '-B', type=str, default='develop',
+        help='Branch to use for the medulla repository (defaults to develop).'
+    )
+
     args = p.parse_args()
 
     # Requirement: the experiment must be sbnd or icarus.
@@ -147,6 +155,11 @@ if __name__ == '__main__':
     if args.test_job and args.launch_jobs is not None:
         p.error('--test-job and --launch-jobs are mutually exclusive.')
 
+    if args.branch != 'develop':
+        print(f"[INFO] -- Using branch '{args.branch}' for medulla repository.")
+        if not check_git_branch(args.branch):
+            p.error(f"Branch '{args.branch}' does not exist in the medulla repository.")
+
     # Run the main function.
     main(
         project_dir=args.project_dir,
@@ -157,4 +170,5 @@ if __name__ == '__main__':
         tml=args.toml,
         batch_size=args.batch_size,
         systematic=args.systematic,
+        branch=args.branch,
     )

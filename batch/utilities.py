@@ -323,6 +323,7 @@ def launch_jobsub(
     project_dir : str,
     exp : str = 'sbnd',
     njobs : int = -1,
+    branch : str = 'develop,
 ):
     """
     Launch jobs using jobsub for the given project directory. If njobs
@@ -336,6 +337,8 @@ def launch_jobsub(
         Experiment name (default: sbnd).
     njobs : int
         Number of jobs to launch. If None, launch all pending jobs.
+    branch : str
+        Branch to use for the medulla repository (defaults to develop).
 
     Returns
     -------
@@ -385,6 +388,7 @@ def launch_jobsub(
         f'file://{Path(__file__).resolve().parent / "submit.sh"}',
         '--',
         f'--project={project_dir.resolve()}',
+        f'--branch={branch}',
     ]
     print(f"[INFO] -- Launching {njobs} jobs with command: {' '.join(cmd)}")
 
@@ -412,3 +416,29 @@ def launch_jobsub(
     last_lines = '\n'.join(stdout.split('\n')[-4:])
     print(last_lines)
     print(f"[INFO] -- Launched {njobs} jobs.")
+
+def check_git_branch(
+    branch : str,
+    repo_url : str = 'https://github.com/justinjmueller/medulla',
+):
+    """
+    Check out the specified branch in the given Git repository
+    directory.
+
+    Parameters
+    ----------
+    branch : str
+        Branch to check for existence.
+    repo_url : str
+        URL to the Git repository.
+
+    Returns
+    -------
+    bool
+    """
+    result = subprocess.run(
+        ["git", "ls-remote", "--exit-code", "--heads", repo_url, branch],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    return result.returncode == 0
