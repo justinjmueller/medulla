@@ -36,8 +36,8 @@ class Sample:
     _presel_mask : pd.Series
         A mask to apply to the sample data for pre-selection.
     """
-    def __init__(self, name, rf, category_branch, key, exposure_type,
-                 trees, systematics=None, override_exposure=None, precompute=None,
+    def __init__(self, name, rf, category_branch, key, exposure_type, trees,
+                 fillna=None, systematics=None, override_exposure=None, precompute=None,
                  presel=None, override_category=None, print_sys=False) -> None:
         """
         Initializes the Sample object with the given name and key.
@@ -111,9 +111,28 @@ class Sample:
 
         # Check category branch for NaNs
         if np.isnan(self._data[self._category_branch]).any():
-            occurrences = len(self._data[self._data[self._category_branch].isna()])
-            print(f'Found NaN category in Sample `{self._name}` with {occurrences} occurrence(s). Masking NaNs...')
-            self._data = self._data[~self._data[self._category_branch].isna()]
+            nanmask = self._data[self._category_branch].isna()
+            
+            # Fill NaNs if requested. If we explicitly fill NaNs, we
+            # print a warning, but we do not remove the entries from
+            # the sample.
+            if fillna is not None:
+                print(
+                    f'Filling NaN category in Sample `{self._name}`'
+                    f' with `{fillna}`. You asked for this behavior!'
+                )
+                self._data.loc[nanmask, self._category_branch] = fillna
+            
+            # Otherwise, remove entries with NaN category.
+            else:
+                occurrences = len(self._data[nanmask])
+                print(
+                    f'Found NaN category in Sample `{self._name}` with'
+                    f' {occurrences} occurrence(s). Masking NaNs...\n'
+                    f' [!!!] Please note that this automatic behavior'
+                    f' may lead to issues with systematics!'
+                )
+                self._data = self._data[~nanmask]
 
         # Initialize the systematics dictionary for the sample. Note:
         # the sample will always have a statistical uncertainty.
