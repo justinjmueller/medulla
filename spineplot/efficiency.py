@@ -383,14 +383,12 @@ class SpineEfficiency(SpineArtist):
         """
         pos = pos0*pos1
         if len(pos.shape) == 1:
-            print("np.sum", np.sum(pos), np.sum(pos0), np.sum(pos1))
             pos /= np.sum(pos)
         else:
             pos /= np.sum(pos, axis=-1)[:, np.newaxis]
         
         index = np.argmax(pos)
         
-        print("pos0", pos0[index], "pos1", pos1[index], "posterior", pos[index])
         return pos
 
     def calculate(self, sample, significance=0.6827):
