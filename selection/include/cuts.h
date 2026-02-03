@@ -701,7 +701,7 @@ namespace cuts
     bool track_length(const T & obj, std::vector<double> params={25.0})
     {
         float maxLen = -1;
-        size_t longest_track_idx = -1;
+        size_t longest_track_idx = kNoMatch;
         for (int i=0; i < obj.particles.size(); i++) {
             const auto & p = obj.particles[i];
             if (pvars::semantic_type(p) != 1) continue;
