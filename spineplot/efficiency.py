@@ -464,9 +464,6 @@ class SpineEfficiency(SpineArtist):
                 # Sequential cuts (unbinned)
                 total = len(values[0])
                 success = np.sum(np.all(values[1:ci+2], axis=0))
-                print(f'Category: {category}, Cut: {cut}, Total: {total}, Success: {success}')
-                print("efficiencys", efficiencies)
-                print("pmf", max(binom.pmf(success, total, efficiencies)))
                 self._posteriors[self._categories[category]][f'unbinned_seq_{cut}'] = SpineEfficiency.multiply_posteriors(self._posteriors[self._categories[category]][f'unbinned_seq_{cut}'], binom.pmf(success, total, efficiencies))
                 # Track selected counts per group/category for purity calculation
                 group_name = self._categories[category]
