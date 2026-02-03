@@ -689,6 +689,14 @@ namespace cuts
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, has_particle_multiplicity, has_particle_multiplicity);
 
+    /**
+     * @brief Cut to select longest track length below a threshold.
+     * @details This function applies a cut to select interactions with a
+     * longest track length below a specified threshold.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the interaction's longest track length is below the threshold.
+    */
     template<class T>
     bool track_length(const T & obj, std::vector<double> params={25.0})
     {
@@ -709,6 +717,14 @@ namespace cuts
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, track_length, track_length);
 
+    /**
+     * @brief Cut to select interactions with leading electron dE/dx below a threshold.
+     * @details This function applies a cut to select interactions with a
+     * leading electron dE/dx below a specified threshold.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the interaction has a leading electron with dE/dx below the threshold.
+    */
     template<class T>
     bool particle_dedx(const T & obj, std::vector<double> params={0.0,})
     {   
@@ -720,6 +736,14 @@ namespace cuts
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Reco, particle_dedx, particle_dedx);
 
+    /**
+     * @brief Cut to select interactions with a leading electron vertex distance below a threshold.
+     * @details This function applies a cut to select interactions with a
+     * leading electron vertex distance below a specified threshold.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the interaction has a leading electron with vertex distance below the threshold.
+    */
     template<class T>
     bool vertex_distance_cut(const T & obj, std::vector<double> params={0.0,})
     {   
@@ -729,6 +753,26 @@ namespace cuts
         return p.vertex_distance >= 0 ? p.vertex_distance < params[0] : false;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Reco, vertex_distance_cut, vertex_distance_cut);
+
+    /**
+     * @brief Cut to select interactions with a specific neutrino PDG code.
+     * @details This function applies a cut to select interactions with a
+     * specific neutrino PDG code.
+     * @tparam T the type of interaction (true).
+     * @param obj the interaction to select on.
+     * @return true if the interaction has a neutrino matching the given PDG code.
+    */
+    template<class T>
+    bool neutrino_pdg(const T & obj, std::vector<double> params={12.0})
+    {
+        for (const auto & pdg : params)
+        {
+            if (obj.pdg_code == pdg)
+                return true;
+        }
+        return false;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::True, neutrino_pdg, neutrino_pdg);
 
 }
 #endif
