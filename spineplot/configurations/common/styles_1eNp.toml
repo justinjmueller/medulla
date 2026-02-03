@@ -30,7 +30,7 @@ plot_kwargs = {'histtype' = 'barstacked', 'stacked' = true}
 
 [[style]]
 name = 'basic_sbnd'
-style_sheet = "/sdf/data/neutrino/castalyf/medulla/spineplot/styles/muon2024.mplstyle"
+style_sheet = "/sdf/home/c/castalyf/medulla/spineplot/styles/muon2024.mplstyle"
 markers = ['o', '^', 's', 'P', 'D']
 default_figsize = [6.4,4.8]
 title = ''
@@ -40,7 +40,7 @@ plot_kwargs = {'histtype' = 'barstacked', 'stacked' = true}
 
 [[style]]
 name = 'selected_sbnd'
-style_sheet = "/sdf/data/neutrino/castalyf/medulla/spineplot/styles/muon2024.mplstyle"
+style_sheet = "/sdf/home/c/castalyf/medulla/spineplot/styles/muon2024.mplstyle"
 markers = ['o', '^', 's', 'P', 'D']
 default_figsize = [7.4,5.8]
 title = '$\bf{SBND}$ $\nu_e$ $1eNp0\pi$'
@@ -50,7 +50,7 @@ plot_kwargs = {'histtype' = 'barstacked', 'stacked' = true}
 
 [[style]]
 name = 'signal_sbnd'
-style_sheet = "/sdf/data/neutrino/castalyf/medulla/spineplot/styles/muon2024.mplstyle"
+style_sheet = "/sdf/home/c/castalyf/medulla/spineplot/styles/muon2024.mplstyle"
 markers = ['o', '^', 's', 'P', 'D']
 default_figsize = [6.4,4.8]
 title = '$\bf{SBND}$ $1\mu Np$ CC0$\pi$'
