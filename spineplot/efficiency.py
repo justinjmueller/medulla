@@ -478,9 +478,6 @@ class SpineEfficiency(SpineArtist):
                 if category not in self._selected_counts[group_name]:
                     self._selected_counts[group_name][category] = {f'seq_{c}': 0 for c in self._cuts.keys()}
                 self._selected_counts[group_name][category][f'seq_{cut}'] += int(success)
-
-                
-    
                 # Non-sequential cuts (unbinned)
                 success = np.sum(values[ci+1].to_numpy(bool))
                 self._posteriors[self._categories[category]][f'unbinned_unseq_{cut}'] = SpineEfficiency.multiply_posteriors(self._posteriors[self._categories[category]][f'unbinned_unseq_{cut}'], binom.pmf(success, total, efficiencies))
