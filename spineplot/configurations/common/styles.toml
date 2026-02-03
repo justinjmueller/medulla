@@ -1,6 +1,6 @@
 [[style]]
 name = 'basic_icarus'
-style_sheet = "styles/muon2024.mplstyle"
+style_sheet = "$MEDULLA_SOURCE_DIR/spineplot/styles/muon2024.mplstyle"
 markers = ['o', '^', 's', 'P', 'D']
 default_figsize = [6.4,4.8]
 title = ''
