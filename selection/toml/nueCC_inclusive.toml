@@ -89,8 +89,6 @@ branch = [
     { name = "electron_multiplicity", type = "both", parameters = [ 0 ] },
     { name = "vertex_distance",       type = "reco_particle", selector = "leading_electron" },
     { name = "vertex_distance_cut",   type = "reco", parameters = [ 3.25 ] },
-
-
 ]
 
 [[tree]]
