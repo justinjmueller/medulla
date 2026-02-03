@@ -191,7 +191,6 @@ class SpineEfficiency(SpineArtist):
                 if show_purity:
                     entry[purity_key] = [formatter(x,y,z) for x,y,z in zip(
                         purity_seq(pur_cv), purity_seq(pur_msigma), purity_seq(pur_psigma))]
-        
                 results = pd.concat([results, pd.DataFrame(entry)])
                 group_endpoint[group] = len(results)
 
