@@ -597,7 +597,6 @@ class SpineEfficiency(SpineArtist):
 
         return final_posteriors, cv, msigma, psigma
 
-    
     def calculate_purity(self, group, significance=0.6827):
         """
         Calculate purity for a given group.
