@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from os import environ
 
 class Style:
     """
@@ -67,7 +68,7 @@ class Style:
         None
         """
         self._name = name
-        self._style = style_sheet
+        self._style = f'{environ.get("MEDULLA_PLOT_DIR", "")}/{style_sheet}'
         self._markers = markers
         self._default_figsize = default_figsize
         self._title = None if title == 'none' else title

@@ -5,6 +5,7 @@ import toml
 from glob import glob
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 # SQL schema for the configuration table for storing job configurations
 SCHEMA_CONFIGURATION = """
@@ -318,12 +319,14 @@ def check_project_status(
     subprocess.run(['mv', './project.db', project_dir / 'project.db'], check=True)
 
     print(f"[INFO] -- Found {len(completed_jobs)} completed jobs.")
-
 def launch_jobsub(
     project_dir : str,
     exp : str = 'sbnd',
     njobs : int = -1,
-    branch : str = 'develop'
+    branch : str = 'develop',
+    memory : int = 1800,
+    disk : Optional[int] = None,
+    lifetime : str = '1h',
 ):
     """
     Launch jobs using jobsub for the given project directory. If njobs
@@ -339,6 +342,12 @@ def launch_jobsub(
         Number of jobs to launch. If None, launch all pending jobs.
     branch : str
         Branch to use for the medulla repository (defaults to develop).
+    memory : int | None
+        Amount of memory to request for each job in MB. If None, use default.
+    disk : int | None
+        Amount of disk to request for each job in GB. If None, use default.
+    lifetime : str | None
+        Expected lifetime of each job (e.g., '1h', '30m'). If None, use default.
 
     Returns
     -------
@@ -379,9 +388,8 @@ def launch_jobsub(
         'jobsub_submit',
         '-G', exp,
         '-N', str(njobs),
-        '--memory=1800MB',
-        f'--disk={"10GB" if exp == "sbnd" else "25GB"}',
-        '--expected-lifetime=1h',
+        f'--memory={memory}MB',
+        f'--expected-lifetime={lifetime}',
         '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE',
         "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
         '--singularity-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest',
@@ -390,6 +398,14 @@ def launch_jobsub(
         f'--project={project_dir.resolve()}',
         f'--branch={branch}',
     ]
+
+    if disk is not None:
+        cmd.append(f'--disk={disk}GB')
+    elif exp == 'sbnd':
+        cmd.append(f'--disk=10GB')
+    else:
+        cmd.append(f'--disk=25GB')
+
     print(f"[INFO] -- Launching {njobs} jobs with command: {' '.join(cmd)}")
 
     # Query the user to confirm that they want to launch the jobs.

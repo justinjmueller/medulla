@@ -16,7 +16,7 @@
 
 #include "utilities.h"
 #include "framework.h"
-#include "include/selectors.h"
+#include "selectors.h"
 
 /**
  * @namespace cuts
