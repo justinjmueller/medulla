@@ -368,6 +368,9 @@ def launch_jobsub(
     lifetime : str = '1h',
     confirm : bool = True,
     tag : str = 'develop',
+    memory : int = 1800,
+    disk : Optional[int] = None,
+    lifetime : str = '1h',
 ):
     """
     Launch jobs using jobsub for the given project directory. If njobs
@@ -395,6 +398,12 @@ def launch_jobsub(
         campaign launch confirms once for all projects).
     tag : str
         Git ref passed to submit.sh as --tag (default: develop).
+    memory : int | None
+        Amount of memory to request for each job in MB. If None, use default.
+    disk : int | None
+        Amount of disk to request for each job in GB. If None, use default.
+    lifetime : str | None
+        Expected lifetime of each job (e.g., '1h', '30m'). If None, use default.
 
     Returns
     -------
