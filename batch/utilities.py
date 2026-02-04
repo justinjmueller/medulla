@@ -359,7 +359,6 @@ def check_project_status(
     subprocess.run(['mv', './project.db', project_dir / 'project.db'], check=True)
 
     print(f"[INFO] -- Found {len(completed_jobs)} completed jobs.")
-
 def launch_jobsub(
     project_dir : str,
     exp : str = 'sbnd',

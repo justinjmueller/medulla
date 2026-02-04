@@ -162,6 +162,21 @@ if __name__ == '__main__':
         help="Expected lifetime of each job (e.g., '1h', '30m') (default: '1h')."
     )
 
+    p.add_argument(
+        '--memory', '-m', type=int, default=1800,
+        help='Amount of memory to request for each job in MB (default: 1800).'
+    )
+
+    p.add_argument(
+        '--disk', '-d', type=int, default=None,
+        help='Amount of disk to request for each job in GB (default: None).'
+    )
+
+    p.add_argument(
+        '--lifetime', '-f', type=str, default='1h',
+        help="Expected lifetime of each job (e.g., '1h', '30m') (default: '1h')."
+    )
+
     args = p.parse_args()
 
     # Requirement: the experiment must be sbnd or icarus.
