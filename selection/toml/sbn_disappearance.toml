@@ -1,5 +1,5 @@
 [general]
-output = "sbn_disappearance_lite_sbnd"
+output = "sbn_disappearance"
 primfn = "default_primary_classification"
 pidfn = "default_pid"
 fsthresh = [
@@ -13,42 +13,48 @@ fsthresh = [
 [parameters]
 photon_threshold = 25.0
 electron_threshold = 25.0
-muon_threshold = 143.425
+muon_threshold = 25.0
 pion_threshold = 25.0
 proton_threshold = 50.0
 
 [[sample]]
 name = "sbnd"
-path = "/pnfs/sbnd/scratch/users/mueller/mc5e18_bugfix_v2/flat/*.flat.root"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/*-reweighted.flat.caf.root"
 ismc = true
 disable = false
 
 [[sample]]
-name = "sbnd_offbeam"
-path = "/pnfs/sbnd/scratch/users/mueller/firstMC2025B/data_MCP2025B_02_InTimeCosmics_offbeamlight_v10_06_00_02/*.flat.root"
+name = "sbnd"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/*-reweighted.flat.caf.root"
 ismc = true
-disable = false
+disable = true
+
+[[sample]]
+name = "sbnd_offbeam"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/offbeamlight/*.flat.root"
+ismc = true
+disable = true
 
 [[sample]]
 name = "icarus"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/*.flat.root"
 ismc = true
-disable = false
+disable = true
 
 [[sample]]
 name = "icarus"
 path = "/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/*.flat.root"
 ismc = true
-disable = false
+disable = true
 
 [[sample]]
 name = "icarus_offbeam"
 path = "/pnfs/icarus/persistent/users/mueller/production/data/offbeam/*.flat.root"
 ismc = true
-disable = false
+disable = true
 
 [[tree]]
-name = "selected1mu1p"
+name = "selected"
 sim_only = false
 add_exposure = true
 mode = "reco"
@@ -58,7 +64,7 @@ cut = [
     { name = "no_electrons",          type = "reco",  parameters = [ "@electron_threshold" ] },
     { name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold"     ] },
     { name = "no_charged_pions",      type = "reco",  parameters = [ "@pion_threshold"     ] },
-    { name = "single_proton",         type = "reco",  parameters = [ "@proton_threshold"   ] },
+    { name = "!no_protons",           type = "reco",  parameters = [ "@proton_threshold"   ] },
 ]
 branch = [
     # Interaction-level branches
@@ -84,28 +90,45 @@ branch = [
     { name = "proton_multiplicity",   type = "both",  parameters = [ "@proton_threshold"   ] },
 
     # Leading MUON interaction-level
-    { name = "start_x",               type = "both_particle", selector = "leading_muon"   },
-    { name = "start_y",               type = "both_particle", selector = "leading_muon"   },
-    { name = "start_z",               type = "both_particle", selector = "leading_muon"   },
-    { name = "end_x",                 type = "both_particle", selector = "leading_muon"   },
-    { name = "end_y",                 type = "both_particle", selector = "leading_muon"   },
-    { name = "end_z",                 type = "both_particle", selector = "leading_muon"   },
-    { name = "start_dir_x",           type = "both_particle", selector = "leading_muon"   },
-    { name = "start_dir_y",           type = "both_particle", selector = "leading_muon"   },
-    { name = "start_dir_z",           type = "both_particle", selector = "leading_muon"   },
-    { name = "ke",                    type = "both_particle", selector = "leading_muon"   },
-    { name = "p",                     type = "both_particle", selector = "leading_muon"   },
-    { name = "length",                type = "reco_particle", selector = "leading_muon"   },
-    { name = "polar_angle",           type = "both_particle", selector = "leading_muon"   },
-    { name = "azimuthal_angle",       type = "both_particle", selector = "leading_muon"   },
-    { name = "primary_softmax",       type = "reco_particle", selector = "leading_muon"   },
-    { name = "muon_softmax",          type = "reco_particle", selector = "leading_muon"   },
-    { name = "pion_softmax",          type = "reco_particle", selector = "leading_muon"   },
-    { name = "proton_softmax",        type = "reco_particle", selector = "leading_muon"   },
+    { name = "start_x",               type = "both_particle", selector = "leading_muon" },
+    { name = "start_y",               type = "both_particle", selector = "leading_muon" },
+    { name = "start_z",               type = "both_particle", selector = "leading_muon" },
+    { name = "end_x",                 type = "both_particle", selector = "leading_muon" },
+    { name = "end_y",                 type = "both_particle", selector = "leading_muon" },
+    { name = "end_z",                 type = "both_particle", selector = "leading_muon" },
+    { name = "start_dir_x",           type = "both_particle", selector = "leading_muon" },
+    { name = "start_dir_y",           type = "both_particle", selector = "leading_muon" },
+    { name = "start_dir_z",           type = "both_particle", selector = "leading_muon" },
+    { name = "ke",                    type = "both_particle", selector = "leading_muon" },
+    { name = "p",                     type = "both_particle", selector = "leading_muon" },
+    { name = "length",                type = "reco_particle", selector = "leading_muon" },
+    { name = "polar_angle",           type = "both_particle", selector = "leading_muon" },
+    { name = "azimuthal_angle",       type = "both_particle", selector = "leading_muon" },
+    { name = "primary_softmax",       type = "reco_particle", selector = "leading_muon" },
+    { name = "muon_softmax",          type = "reco_particle", selector = "leading_muon" },
+    { name = "pion_softmax",          type = "reco_particle", selector = "leading_muon" },
+    { name = "proton_softmax",        type = "reco_particle", selector = "leading_muon" },
+
+    # Leading PROTON interaction-level
+    { name = "end_x",             type = "both_particle", selector = "leading_proton" },
+    { name = "end_y",             type = "both_particle", selector = "leading_proton" },
+    { name = "end_z",             type = "both_particle", selector = "leading_proton" },
+    { name = "ke",                type = "both_particle", selector = "leading_proton" },
+    { name = "length",            type = "both_particle", selector = "leading_proton" },
+    { name = "dpT",               type = "both_particle", selector = "leading_proton" },
+    { name = "polar_angle",       type = "both_particle", selector = "leading_proton" },
+    { name = "azimuthal_angle",   type = "both_particle", selector = "leading_proton" },
+    { name = "primary_softmax",   type = "reco_particle", selector = "leading_proton" },
+    { name = "secondary_softmax", type = "reco_particle", selector = "leading_proton" },
+    { name = "muon_softmax",      type = "reco_particle", selector = "leading_proton" },
+    { name = "pion_softmax",      type = "reco_particle", selector = "leading_proton" },
+    { name = "proton_softmax",    type = "reco_particle", selector = "leading_proton" },
+    { name = "mip_softmax",       type = "reco_particle", selector = "leading_proton" },
+    { name = "hadron_softmax",    type = "reco_particle", selector = "leading_proton" }
 ]
 
 [[tree]]
-name = "signal1mu1p"
+name = "signal"
 sim_only = true
 mode = "true"
 cut = [
@@ -114,7 +137,7 @@ cut = [
     { name = "no_electrons",          type = "true",  parameters = [ "@electron_threshold" ] },
     { name = "single_muon",           type = "true",  parameters = [ "@muon_threshold"     ] },
     { name = "no_charged_pions",      type = "true",  parameters = [ "@pion_threshold"     ] },
-    { name = "single_proton",         type = "true",  parameters = [ "@proton_threshold"   ] },
+    { name = "!no_protons",           type = "true",  parameters = [ "@proton_threshold"   ] },
 ]
 branch = [
     # Interaction-level branches
@@ -140,24 +163,41 @@ branch = [
     { name = "proton_multiplicity",   type = "both",  parameters = [ "@proton_threshold"   ] },
 
     # Leading MUON interaction-level
-    { name = "start_x",               type = "both_particle", selector = "leading_muon"   },
-    { name = "start_y",               type = "both_particle", selector = "leading_muon"   },
-    { name = "start_z",               type = "both_particle", selector = "leading_muon"   },
-    { name = "end_x",                 type = "both_particle", selector = "leading_muon"   },
-    { name = "end_y",                 type = "both_particle", selector = "leading_muon"   },
-    { name = "end_z",                 type = "both_particle", selector = "leading_muon"   },
-    { name = "start_dir_x",           type = "both_particle", selector = "leading_muon"   },
-    { name = "start_dir_y",           type = "both_particle", selector = "leading_muon"   },
-    { name = "start_dir_z",           type = "both_particle", selector = "leading_muon"   },
-    { name = "ke",                    type = "both_particle", selector = "leading_muon"   },
-    { name = "p",                     type = "both_particle", selector = "leading_muon"   },
-    { name = "length",                type = "reco_particle", selector = "leading_muon"   },
-    { name = "polar_angle",           type = "both_particle", selector = "leading_muon"   },
-    { name = "azimuthal_angle",       type = "both_particle", selector = "leading_muon"   },
-    { name = "primary_softmax",       type = "reco_particle", selector = "leading_muon"   },
-    { name = "muon_softmax",          type = "reco_particle", selector = "leading_muon"   },
-    { name = "pion_softmax",          type = "reco_particle", selector = "leading_muon"   },
-    { name = "proton_softmax",        type = "reco_particle", selector = "leading_muon"   },
+    { name = "start_x",               type = "both_particle", selector = "leading_muon" },
+    { name = "start_y",               type = "both_particle", selector = "leading_muon" },
+    { name = "start_z",               type = "both_particle", selector = "leading_muon" },
+    { name = "end_x",                 type = "both_particle", selector = "leading_muon" },
+    { name = "end_y",                 type = "both_particle", selector = "leading_muon" },
+    { name = "end_z",                 type = "both_particle", selector = "leading_muon" },
+    { name = "start_dir_x",           type = "both_particle", selector = "leading_muon" },
+    { name = "start_dir_y",           type = "both_particle", selector = "leading_muon" },
+    { name = "start_dir_z",           type = "both_particle", selector = "leading_muon" },
+    { name = "ke",                    type = "both_particle", selector = "leading_muon" },
+    { name = "p",                     type = "both_particle", selector = "leading_muon" },
+    { name = "length",                type = "reco_particle", selector = "leading_muon" },
+    { name = "polar_angle",           type = "both_particle", selector = "leading_muon" },
+    { name = "azimuthal_angle",       type = "both_particle", selector = "leading_muon" },
+    { name = "primary_softmax",       type = "reco_particle", selector = "leading_muon" },
+    { name = "muon_softmax",          type = "reco_particle", selector = "leading_muon" },
+    { name = "pion_softmax",          type = "reco_particle", selector = "leading_muon" },
+    { name = "proton_softmax",        type = "reco_particle", selector = "leading_muon" },
+
+    # Leading PROTON particle-level
+    { name = "end_x",             type = "both_particle", selector = "leading_proton" },
+    { name = "end_y",             type = "both_particle", selector = "leading_proton" },
+    { name = "end_z",             type = "both_particle", selector = "leading_proton" },
+    { name = "ke",                type = "both_particle", selector = "leading_proton" },
+    { name = "length",            type = "both_particle", selector = "leading_proton" },
+    { name = "dpT",               type = "both_particle", selector = "leading_proton" },
+    { name = "polar_angle",       type = "both_particle", selector = "leading_proton" },
+    { name = "azimuthal_angle",   type = "both_particle", selector = "leading_proton" },
+    { name = "primary_softmax",   type = "reco_particle", selector = "leading_proton" },
+    { name = "secondary_softmax", type = "reco_particle", selector = "leading_proton" },
+    { name = "muon_softmax",      type = "reco_particle", selector = "leading_proton" },
+    { name = "pion_softmax",      type = "reco_particle", selector = "leading_proton" },
+    { name = "proton_softmax",    type = "reco_particle", selector = "leading_proton" },
+    { name = "mip_softmax",       type = "reco_particle", selector = "leading_proton" },
+    { name = "hadron_softmax",    type = "reco_particle", selector = "leading_proton" },
 
     # Cuts (for efficiency studies)
     { name = "fiducial_cut",          type = "reco"    },
@@ -166,245 +206,6 @@ branch = [
     { name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold"     ] },
     { name = "no_charged_pions",      type = "reco",  parameters = [ "@pion_threshold"     ] },
     { name = "single_proton",         type = "reco",  parameters = [ "@proton_threshold"   ] },
-]
-
-[[tree]]
-name = "selected1muNp"
-sim_only = false
-add_exposure = true
-mode = "reco"
-cut = [
-    { name = "fiducial_cut",          type = "reco" },
-    { name = "no_photons",            type = "reco",  parameters = [ "@photon_threshold"   ] },
-    { name = "no_electrons",          type = "reco",  parameters = [ "@electron_threshold" ] },
-    { name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold"     ] },
-    { name = "no_charged_pions",      type = "reco",  parameters = [ "@pion_threshold"     ] },
-    { name = "multiproton",           type = "reco",  parameters = [ "@proton_threshold"   ] },
-]
-branch = [
-    # Interaction-level branches
-    { name = "neutrino_id",           type = "true"    },
-    { name = "neutrino_energy",       type = "mctruth" },
-    { name = "baseline",              type = "mctruth" },
-    { name = "cc",                    type = "mctruth" },
-    { name = "pdg",                   type = "mctruth" },
-    { name = "category",              type = "true"    },
-    { name = "visible_energy",        type = "both"    },
-    { name = "dpT",                   type = "both"    },
-    { name = "dalphaT",               type = "both"    },
-    { name = "dphiT",                 type = "both"    },
-    { name = "dpL",                   type = "both"    },
-    { name = "pn",                    type = "both"    },
-    { name = "vertex_x",              type = "both"    },
-    { name = "vertex_y",              type = "both"    },
-    { name = "vertex_z",              type = "both"    },
-    { name = "photon_multiplicity",   type = "both",  parameters = [ "@photon_threshold"   ] },
-    { name = "electron_multiplicity", type = "both",  parameters = [ "@electron_threshold" ] },
-    { name = "pion_multiplicity",     type = "both",  parameters = [ "@pion_threshold"     ] },
-    { name = "muon_multiplicity",     type = "both",  parameters = [ "@muon_threshold"     ] },
-    { name = "proton_multiplicity",   type = "both",  parameters = [ "@proton_threshold"   ] },
-
-    # Leading MUON interaction-level
-    { name = "start_x",               type = "both_particle", selector = "leading_muon"   },
-    { name = "start_y",               type = "both_particle", selector = "leading_muon"   },
-    { name = "start_z",               type = "both_particle", selector = "leading_muon"   },
-    { name = "end_x",                 type = "both_particle", selector = "leading_muon"   },
-    { name = "end_y",                 type = "both_particle", selector = "leading_muon"   },
-    { name = "end_z",                 type = "both_particle", selector = "leading_muon"   },
-    { name = "start_dir_x",           type = "both_particle", selector = "leading_muon"   },
-    { name = "start_dir_y",           type = "both_particle", selector = "leading_muon"   },
-    { name = "start_dir_z",           type = "both_particle", selector = "leading_muon"   },
-    { name = "ke",                    type = "both_particle", selector = "leading_muon"   },
-    { name = "p",                     type = "both_particle", selector = "leading_muon"   },
-    { name = "length",                type = "reco_particle", selector = "leading_muon"   },
-    { name = "polar_angle",           type = "both_particle", selector = "leading_muon"   },
-    { name = "azimuthal_angle",       type = "both_particle", selector = "leading_muon"   },
-    { name = "primary_softmax",       type = "reco_particle", selector = "leading_muon"   },
-    { name = "muon_softmax",          type = "reco_particle", selector = "leading_muon"   },
-    { name = "pion_softmax",          type = "reco_particle", selector = "leading_muon"   },
-    { name = "proton_softmax",        type = "reco_particle", selector = "leading_muon"   },
-]
-
-[[tree]]
-name = "signal1muNp"
-sim_only = true
-mode = "true"
-cut = [
-    { name = "fiducial_cut",          type = "true" },
-    { name = "no_photons",            type = "true",  parameters = [ "@photon_threshold"   ] },
-    { name = "no_electrons",          type = "true",  parameters = [ "@electron_threshold" ] },
-    { name = "single_muon",           type = "true",  parameters = [ "@muon_threshold"     ] },
-    { name = "no_charged_pions",      type = "true",  parameters = [ "@pion_threshold"     ] },
-    { name = "multiproton",           type = "true",  parameters = [ "@proton_threshold"   ] },
-]
-branch = [
-    # Interaction-level branches
-    { name = "neutrino_id",           type = "true"    },
-    { name = "neutrino_energy",       type = "mctruth" },
-    { name = "baseline",              type = "mctruth" },
-    { name = "cc",                    type = "mctruth" },
-    { name = "pdg",                   type = "mctruth" },
-    { name = "category",              type = "true"    },
-    { name = "visible_energy",        type = "both"    },
-    { name = "dpT",                   type = "both"    },
-    { name = "dalphaT",               type = "both"    },
-    { name = "dphiT",                 type = "both"    },
-    { name = "dpL",                   type = "both"    },
-    { name = "pn",                    type = "both"    },
-    { name = "vertex_x",              type = "both"    },
-    { name = "vertex_y",              type = "both"    },
-    { name = "vertex_z",              type = "both"    },
-    { name = "photon_multiplicity",   type = "both",  parameters = [ "@photon_threshold"   ] },
-    { name = "electron_multiplicity", type = "both",  parameters = [ "@electron_threshold" ] },
-    { name = "pion_multiplicity",     type = "both",  parameters = [ "@pion_threshold"     ] },
-    { name = "muon_multiplicity",     type = "both",  parameters = [ "@muon_threshold"     ] },
-    { name = "proton_multiplicity",   type = "both",  parameters = [ "@proton_threshold"   ] },
-
-    # Leading MUON interaction-level
-    { name = "start_x",               type = "both_particle", selector = "leading_muon"   },
-    { name = "start_y",               type = "both_particle", selector = "leading_muon"   },
-    { name = "start_z",               type = "both_particle", selector = "leading_muon"   },
-    { name = "end_x",                 type = "both_particle", selector = "leading_muon"   },
-    { name = "end_y",                 type = "both_particle", selector = "leading_muon"   },
-    { name = "end_z",                 type = "both_particle", selector = "leading_muon"   },
-    { name = "start_dir_x",           type = "both_particle", selector = "leading_muon"   },
-    { name = "start_dir_y",           type = "both_particle", selector = "leading_muon"   },
-    { name = "start_dir_z",           type = "both_particle", selector = "leading_muon"   },
-    { name = "ke",                    type = "both_particle", selector = "leading_muon"   },
-    { name = "p",                     type = "both_particle", selector = "leading_muon"   },
-    { name = "length",                type = "reco_particle", selector = "leading_muon"   },
-    { name = "polar_angle",           type = "both_particle", selector = "leading_muon"   },
-    { name = "azimuthal_angle",       type = "both_particle", selector = "leading_muon"   },
-    { name = "primary_softmax",       type = "reco_particle", selector = "leading_muon"   },
-    { name = "muon_softmax",          type = "reco_particle", selector = "leading_muon"   },
-    { name = "pion_softmax",          type = "reco_particle", selector = "leading_muon"   },
-    { name = "proton_softmax",        type = "reco_particle", selector = "leading_muon"   },
-
-    # Cuts (for efficiency studies)
-    { name = "fiducial_cut",          type = "reco"    },
-    { name = "no_photons",            type = "reco",  parameters = [ "@photon_threshold"   ] },
-    { name = "no_electrons",          type = "reco",  parameters = [ "@electron_threshold" ] },
-    { name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold"     ] },
-    { name = "no_charged_pions",      type = "reco",  parameters = [ "@pion_threshold"     ] },
-    { name = "multiproton",           type = "reco",  parameters = [ "@proton_threshold"   ] },
-]
-
-[[tree]]
-name = "selected1muXpi"
-sim_only = false
-add_exposure = true
-mode = "reco"
-cut = [
-    { name = "fiducial_cut",          type = "reco" },
-    { name = "no_photons",            type = "reco",  parameters = [ "@photon_threshold"   ] },
-    { name = "no_electrons",          type = "reco",  parameters = [ "@electron_threshold" ] },
-    { name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold"     ] },
-    { name = "!no_charged_pions",     type = "reco",  parameters = [ "@pion_threshold"     ] },
-]
-branch = [
-    # Interaction-level branches
-    { name = "neutrino_id",           type = "true"    },
-    { name = "neutrino_energy",       type = "mctruth" },
-    { name = "baseline",              type = "mctruth" },
-    { name = "cc",                    type = "mctruth" },
-    { name = "pdg",                   type = "mctruth" },
-    { name = "category",              type = "true"    },
-    { name = "visible_energy",        type = "both"    },
-    { name = "dpT",                   type = "both"    },
-    { name = "dalphaT",               type = "both"    },
-    { name = "dphiT",                 type = "both"    },
-    { name = "dpL",                   type = "both"    },
-    { name = "pn",                    type = "both"    },
-    { name = "vertex_x",              type = "both"    },
-    { name = "vertex_y",              type = "both"    },
-    { name = "vertex_z",              type = "both"    },
-    { name = "photon_multiplicity",   type = "both",  parameters = [ "@photon_threshold"   ] },
-    { name = "electron_multiplicity", type = "both",  parameters = [ "@electron_threshold" ] },
-    { name = "pion_multiplicity",     type = "both",  parameters = [ "@pion_threshold"     ] },
-    { name = "muon_multiplicity",     type = "both",  parameters = [ "@muon_threshold"     ] },
-    { name = "proton_multiplicity",   type = "both",  parameters = [ "@proton_threshold"   ] },
-
-    # Leading MUON interaction-level
-    { name = "start_x",               type = "both_particle", selector = "leading_muon"   },
-    { name = "start_y",               type = "both_particle", selector = "leading_muon"   },
-    { name = "start_z",               type = "both_particle", selector = "leading_muon"   },
-    { name = "end_x",                 type = "both_particle", selector = "leading_muon"   },
-    { name = "end_y",                 type = "both_particle", selector = "leading_muon"   },
-    { name = "end_z",                 type = "both_particle", selector = "leading_muon"   },
-    { name = "start_dir_x",           type = "both_particle", selector = "leading_muon"   },
-    { name = "start_dir_y",           type = "both_particle", selector = "leading_muon"   },
-    { name = "start_dir_z",           type = "both_particle", selector = "leading_muon"   },
-    { name = "ke",                    type = "both_particle", selector = "leading_muon"   },
-    { name = "p",                     type = "both_particle", selector = "leading_muon"   },
-    { name = "length",                type = "reco_particle", selector = "leading_muon"   },
-    { name = "polar_angle",           type = "both_particle", selector = "leading_muon"   },
-    { name = "azimuthal_angle",       type = "both_particle", selector = "leading_muon"   },
-    { name = "primary_softmax",       type = "reco_particle", selector = "leading_muon"   },
-    { name = "muon_softmax",          type = "reco_particle", selector = "leading_muon"   },
-    { name = "pion_softmax",          type = "reco_particle", selector = "leading_muon"   },
-    { name = "proton_softmax",        type = "reco_particle", selector = "leading_muon"   },
-]
-
-[[tree]]
-name = "signal1muXpi"
-sim_only = true
-mode = "true"
-cut = [
-    { name = "fiducial_cut",          type = "true" },
-    { name = "no_photons",            type = "true",  parameters = [ "@photon_threshold"   ] },
-    { name = "no_electrons",          type = "true",  parameters = [ "@electron_threshold" ] },
-    { name = "single_muon",           type = "true",  parameters = [ "@muon_threshold"     ] },
-    { name = "!no_charged_pions",     type = "true",  parameters = [ "@pion_threshold"     ] },
-]
-branch = [
-    # Interaction-level branches
-    { name = "neutrino_id",           type = "true"    },
-    { name = "neutrino_energy",       type = "mctruth" },
-    { name = "baseline",              type = "mctruth" },
-    { name = "cc",                    type = "mctruth" },
-    { name = "pdg",                   type = "mctruth" },
-    { name = "category",              type = "true"    },
-    { name = "visible_energy",        type = "both"    },
-    { name = "dpT",                   type = "both"    },
-    { name = "dalphaT",               type = "both"    },
-    { name = "dphiT",                 type = "both"    },
-    { name = "dpL",                   type = "both"    },
-    { name = "pn",                    type = "both"    },
-    { name = "vertex_x",              type = "both"    },
-    { name = "vertex_y",              type = "both"    },
-    { name = "vertex_z",              type = "both"    },
-    { name = "photon_multiplicity",   type = "both",  parameters = [ "@photon_threshold"   ] },
-    { name = "electron_multiplicity", type = "both",  parameters = [ "@electron_threshold" ] },
-    { name = "pion_multiplicity",     type = "both",  parameters = [ "@pion_threshold"     ] },
-    { name = "muon_multiplicity",     type = "both",  parameters = [ "@muon_threshold"     ] },
-    { name = "proton_multiplicity",   type = "both",  parameters = [ "@proton_threshold"   ] },
-
-    # Leading MUON interaction-level
-    { name = "start_x",               type = "both_particle", selector = "leading_muon"   },
-    { name = "start_y",               type = "both_particle", selector = "leading_muon"   },
-    { name = "start_z",               type = "both_particle", selector = "leading_muon"   },
-    { name = "end_x",                 type = "both_particle", selector = "leading_muon"   },
-    { name = "end_y",                 type = "both_particle", selector = "leading_muon"   },
-    { name = "end_z",                 type = "both_particle", selector = "leading_muon"   },
-    { name = "start_dir_x",           type = "both_particle", selector = "leading_muon"   },
-    { name = "start_dir_y",           type = "both_particle", selector = "leading_muon"   },
-    { name = "start_dir_z",           type = "both_particle", selector = "leading_muon"   },
-    { name = "ke",                    type = "both_particle", selector = "leading_muon"   },
-    { name = "p",                     type = "both_particle", selector = "leading_muon"   },
-    { name = "length",                type = "reco_particle", selector = "leading_muon"   },
-    { name = "polar_angle",           type = "both_particle", selector = "leading_muon"   },
-    { name = "azimuthal_angle",       type = "both_particle", selector = "leading_muon"   },
-    { name = "primary_softmax",       type = "reco_particle", selector = "leading_muon"   },
-    { name = "muon_softmax",          type = "reco_particle", selector = "leading_muon"   },
-    { name = "pion_softmax",          type = "reco_particle", selector = "leading_muon"   },
-    { name = "proton_softmax",        type = "reco_particle", selector = "leading_muon"   },
-
-    # Cuts (for efficiency studies)
-    { name = "fiducial_cut",          type = "reco"    },
-    { name = "no_photons",            type = "reco",  parameters = [ "@photon_threshold"   ] },
-    { name = "no_electrons",          type = "reco",  parameters = [ "@electron_threshold" ] },
-    { name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold"     ] },
-    { name = "no_charged_pions",      type = "reco",  parameters = [ "@pion_threshold"     ] },
 ]
 
 [[category]] # 0 : Fiducial, contained, single muon, single proton
