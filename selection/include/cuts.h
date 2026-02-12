@@ -163,7 +163,7 @@ namespace cuts
     template<class T>
     bool fiducial_cut(const T & obj)
     {
-        return obj.is_fiducial;
+        return obj.is_fiducial && !(obj.vertex[0] > 210.215 && obj.vertex[1] > 60 && (obj.vertex[2] > 290 && obj.vertex[2] < 390));
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut, fiducial_cut);
 
@@ -430,32 +430,6 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::Both, no_photons, no_photons);
 
     /**
-     * @brief Zero non-primary shower multiplicity cut.
-     * @details This function creates a non-primary particle multiplicity cut for
-     * showers.
-     * @param obj the interaction to select on.
-     * @param params the parameters for the cut. In this case, this sets the
-     * kinetic energy threshold for a shower to count towards the
-     * multiplicity. Defaults to 25 MeV.
-     * @return true if the interaction has no non-primary showers.
-     */
-    template<class T>
-    bool no_nonprimary_showers(const T & obj, std::vector<double> params={25.0,})
-    {
-        size_t count(0);
-        for(const auto & p : obj.particles)
-        {
-            if(pvars::pid(p) <= 1 && !pvars::primary_classification(p) && pvars::ke(p) >= params[0])
-                ++count;
-            if(count > 0)
-                break; // No need to count further.
-        }
-        return count == 0;
-    }
-
-    REGISTER_CUT_SCOPE(RegistrationScope::Both, no_nonprimary_showers, no_nonprimary_showers);
-
-    /**
      * @brief Binding for zero particle electron multiplicity cut (negation of
      * nonzero_particle_multiplicity).
      * @details This function binds the nonzero particle multiplicity cut for
@@ -552,22 +526,6 @@ namespace cuts
         return particle_multiplicity(obj, 1, 4, params) > 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, multiproton, multiproton);
-
-    /**
-     * @brief Cut to select interactions with at least one proton.
-     * @details This function applies a cut to select interactions with
-     * more than one proton (N > 0). This is complementary to the single_proton
-     * and multiproton cuts.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to select on.
-     * @return true if the interaction has at least one proton.
-     */
-    template<class T>
-    bool atleastone_proton(const T & obj, std::vector<double> params={50.0,})
-    {
-        return particle_multiplicity(obj, 1, 4, params) > 0;
-    }
-    REGISTER_CUT_SCOPE(RegistrationScope::Both, atleastone_proton, atleast_proton);
 
     /**
      * @brief Cut to select interactions with a single Michel electron.
