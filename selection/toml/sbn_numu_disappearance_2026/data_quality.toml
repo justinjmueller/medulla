@@ -1,5 +1,5 @@
 [general]
-output = "/exp/sbnd/data/users/sc5303/dqm/sbn_spine_osc2026/DQ_output.root"
+output = "data_quality"
 
 [[sample]]
 name = "offbeamlight"
