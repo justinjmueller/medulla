@@ -51,6 +51,10 @@ fi
 # Initial Setup
 #######################################################################
 
+# IFDH options
+export IFDH_CP_MAXRETRIES=0
+export IFDH_WEB_TIMEOUT=100
+
 # Setup CVMFS area
 source /cvmfs/icarus.opensciencegrid.org/products/icarus/setup_icarus.sh
 
@@ -75,7 +79,7 @@ make -j4
 #######################################################################
 
 # Copy the project database
-ifdh cp --cp_maxretries=0 --web_timeout=100 $PROJECT/project.db project.db
+ifdh cp $PROJECT/project.db project.db
 
 # Extract this job's configuration file. First, we get the job ID for this
 # process by checking against the list of not-yet-completed jobs in the project
@@ -84,7 +88,7 @@ JOBID=$(sqlite3 -noheader project.db "SELECT jobid FROM jobs WHERE status != 'co
 sqlite3 -noheader -cmd ".mode list" project.db "SELECT cfg FROM configuration WHERE jobid=${JOBID};" > job_config.toml
 
 # Copy the systematics TOML file
-ifdh cp --cp_maxretries=0 --web_timeout=100 $PROJECT/systematics.toml systematics.toml
+ifdh cp $PROJECT/systematics.toml systematics.toml
 
 # Copy the input data file(s)
 mkdir data
@@ -97,7 +101,7 @@ echo "Found $(echo "$full_paths" | wc -l) input files to copy."
 mkdir -p data
 for p in $full_paths; do
     echo "Copying input file: $p"
-    ifdh cp --cp_maxretries=0 --web_timeout=100 "$p" data/
+    ifdh cp "$p" data/
 done
 ls -lrth data/
 
@@ -122,7 +126,7 @@ ls -lrth
 
 # Copy output file to the output directory
 printf -v RAWNAME "output_jobid%04d.root" "$JOBID"
-ifdh cp --cp_maxretries=0 --web_timeout=100 output.root $PROJECT/output/$RAWNAME
+ifdh cp -f output.root $PROJECT/output/$RAWNAME
 
 # Run medulla (systematics)
 ./systematics/run_systematics systematics.toml
@@ -130,4 +134,4 @@ ls -lrth
 
 # Copy output file to the output directory
 printf -v SYSTNAME "output_systematics_jobid%04d.root" "$JOBID"
-ifdh cp --cp_maxretries=0 --web_timeout=100 output_sys.root $PROJECT/output/$SYSTNAME
+ifdh cp -f output_sys.root $PROJECT/output/$SYSTNAME
