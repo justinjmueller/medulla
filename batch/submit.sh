@@ -126,7 +126,7 @@ ls -lrth
 
 # Copy output file to the output directory
 printf -v RAWNAME "output_jobid%04d.root" "$JOBID"
-ifdh cp -f output.root $PROJECT/output/$RAWNAME
+ifdh cp output.root $PROJECT/output/$RAWNAME
 
 # Run medulla (systematics)
 ./systematics/run_systematics systematics.toml
@@ -134,4 +134,4 @@ ls -lrth
 
 # Copy output file to the output directory
 printf -v SYSTNAME "output_systematics_jobid%04d.root" "$JOBID"
-ifdh cp -f output_sys.root $PROJECT/output/$SYSTNAME
+ifdh cp output_sys.root $PROJECT/output/$SYSTNAME
