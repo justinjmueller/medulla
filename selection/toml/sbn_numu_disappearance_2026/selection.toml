@@ -1,5 +1,5 @@
 [general]
-output = "sbn_disappearance"
+output = "sbn_numu_disappearance_2026"
 primfn = "default_primary_classification"
 pidfn = "default_pid"
 fsthresh = [
@@ -21,7 +21,7 @@ proton_threshold = 50.0
 name = "sbnd"
 path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/*-reweighted.flat.caf.root"
 ismc = true
-disable = false
+disable = true
 
 [[sample]]
 name = "sbnd"
@@ -56,7 +56,7 @@ disable = true
 [[tree]]
 name = "selected"
 sim_only = false
-add_exposure = true
+add_systematics = true
 mode = "reco"
 cut = [
     { name = "fiducial_cut",          type = "reco" },
@@ -217,7 +217,7 @@ cuts = [
     { name = "no_electrons",     parameters = [ "@electron_threshold" ] },
     { name = "no_charged_pions", parameters = [ "@pion_threshold"     ] },
     { name = "single_muon",      parameters = [ "@muon_threshold"     ] },
-    { name = "single_proton",    parameters = [ "@proton_threshold"   ] },
+    { name = "single_proton",    parameters = [ "@proton_threshold"   ] }
 ]
 
 [[category]] # 1 : Fiducial, non-contained, single muon, single proton
@@ -229,7 +229,7 @@ cuts = [
     { name = "no_electrons",      parameters = [ "@electron_threshold" ] },
     { name = "no_charged_pions",  parameters = [ "@pion_threshold"     ] },
     { name = "single_muon",       parameters = [ "@muon_threshold"     ] },
-    { name = "single_proton",     parameters = [ "@proton_threshold"   ] },
+    { name = "single_proton",     parameters = [ "@proton_threshold"   ] }
 ]
 
 [[category]] # 2 : Fiducial, contained, single muon, N > 1 protons
@@ -241,7 +241,7 @@ cuts = [
     { name = "no_electrons",      parameters = [ "@electron_threshold" ] },
     { name = "no_charged_pions",  parameters = [ "@pion_threshold"     ] },
     { name = "single_muon",       parameters = [ "@muon_threshold"     ] },
-    { name = "multiproton",       parameters = [ "@proton_threshold"   ] },
+    { name = "multiproton",       parameters = [ "@proton_threshold"   ] }
 ]
 
 [[category]] # 3 : Fiducial, non-contained, single muon, N > 1 protons
@@ -253,7 +253,7 @@ cuts = [
     { name = "no_electrons",      parameters = [ "@electron_threshold" ] },
     { name = "no_charged_pions",  parameters = [ "@pion_threshold"     ] },
     { name = "single_muon",       parameters = [ "@muon_threshold"     ] },
-    { name = "multiproton",       parameters = [ "@proton_threshold"   ] },
+    { name = "multiproton",       parameters = [ "@proton_threshold"   ] }
 ]
 
 [[category]] # 4 : Fiducial, contained, single muon, any protons, X > 0 protons
@@ -264,7 +264,7 @@ cuts = [
     { name = "no_photons",        parameters = [ "@photon_threshold"   ] },
     { name = "no_electrons",      parameters = [ "@electron_threshold" ] },
     { name = "!no_charged_pions", parameters = [ "@pion_threshold"     ] },
-    { name = "single_muon",       parameters = [ "@muon_threshold"     ] },
+    { name = "single_muon",       parameters = [ "@muon_threshold"     ] }
 ]
 
 [[category]] # 5 : Fiducial, non-contained, single muon, any protons, X > 0 protons
@@ -275,30 +275,30 @@ cuts = [
     { name = "no_photons",        parameters = [ "@photon_threshold"   ] },
     { name = "no_electrons",      parameters = [ "@electron_threshold" ] },
     { name = "!no_charged_pions", parameters = [ "@pion_threshold"     ] },
-    { name = "single_muon",       parameters = [ "@muon_threshold"     ] },
+    { name = "single_muon",       parameters = [ "@muon_threshold"     ] }
 ]
 
 [[category]] # 6 : Fiducial, CC, non-signal
 cuts = [
-    { name = "neutrino"         },
-    { name = "fiducial_cut"     },
-    { name = "iscc"             }
+    { name = "neutrino"     },
+    { name = "fiducial_cut" },
+    { name = "iscc"         }
 ]
 
 [[category]] # 7 : Non-fiducial, CC, non-signal
 cuts = [
-    { name = "neutrino"         },
-    { name = "!fiducial_cut"    },
-    { name = "iscc"             }
+    { name = "neutrino"      },
+    { name = "!fiducial_cut" },
+    { name = "iscc"          }
 ]
 
 [[category]] # 8 : NC
 cuts = [
-    { name = "neutrino"         },
-    { name = "!iscc"            }
+    { name = "neutrino" },
+    { name = "!iscc"    }
 ]
 
 [[category]] # 9 : Cosmic
 cuts = [
-    { name = "!neutrino"        },
+    { name = "!neutrino" }
 ]
