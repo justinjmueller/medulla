@@ -314,6 +314,23 @@ def check_project_status(
     conn.commit()
     conn.close()
 
+    stub_jobs = [
+        int(Path(f).stem.split("jobid")[-1])
+        for f in output_files
+        if Path(f).stat().st_size < 1024
+    ]
+    if stub_jobs:
+        resp = input(
+            f"[INFO] -- Found {len(stub_jobs)} stub output file(s) <"
+            f" 1024 bytes.\nDelete these stub outputs? [Y/N] "
+        )
+        if resp.strip().lower() != 'y':
+            print(
+                "[INFO] -- Keeping stub output files. Please check"
+                " these files manually to determine if they are valid"
+                " outputs or if the jobs need to be resubmitted."
+            )
+
     # Replace the project database copy with the updated version.
     subprocess.run(['mv', './project.db', project_dir / 'project.db'], check=True)
 
