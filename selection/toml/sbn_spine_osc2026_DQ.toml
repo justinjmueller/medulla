@@ -1,0 +1,19 @@
+[general]
+output = "/exp/sbnd/data/users/sc5303/dqm/sbn_spine_osc2026/DQ_output.root"
+
+[[sample]]
+name = "offbeamlight"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/offbeamlight/input*.flat.root"
+ismc = false
+disable = false
+
+[[tree]] # No cut nreco for DQ
+name = "noCut_nreco"
+sim_only = false
+mode = "event"
+cut = [
+    { name = "no_cut", type = "event" },
+]
+branch = [
+    { name = "nreco", type = "event" },
+]
