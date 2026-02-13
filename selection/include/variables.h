@@ -140,6 +140,31 @@ namespace vars
     REGISTER_VAR_SCOPE(RegistrationScope::Both, visible_energy, visible_energy);
 
     /**
+     * @brief Variable for total visible energy from the hadrons in interaction.
+     * @details This function calculates the total visible energy of the hadrons
+     * in an interaction by summing the energy of all protons that are identified
+     * as counting towards the final state of the interaction.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj interaction to apply the variable on.
+     * @return the total hardronic visible energy of the interaction.
+     */
+    template<class T>
+    double hadronic_visible_energy(const T & obj)
+    {
+        double energy(0);
+        for(const auto & p : obj.particles)
+        {
+            if(pcuts::final_state_signal(p))
+            {
+                if(pvars::pid(p) == pvars::kProton) energy += pvars::energy(p) - pvars::mass(p) - PROTON_BINDING_ENERGY;
+                if(pvars::pid(p) == pvars::kPion)   energy += pvars::energy(p);
+            }
+        }
+        return energy/1000.0;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, hadronic_visible_energy, hadronic_visible_energy);
+
+    /**
      * @brief Variable for energy reconstruction assuming CCQE kinematics using
      * the lepton.
      * @details This function calculates the neutrino energy assuming CCQE
@@ -721,6 +746,35 @@ namespace vars
         return count;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, electron_multiplicity, electron_multiplicity);
+
+    /**
+     * @brief Variable for the non-primary shower multiplicity of the
+     * interaction.
+     * @details This function calculates the multiplicity of non-primary
+     * showers in the interaction by counting the number of non-primary particles
+     * that are identified as photons or electrons and have a kinetic energy above a
+     * threshold. The threshold is set by the `params` vector, which defaults
+     * to 25 MeV. The function returns the number of non-primary showers in the
+     * interaction.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for a shower to count towards the
+     * multiplicity. Defaults to 25 MeV.
+     * @return the multiplicity of non-primary showers in the interaction.
+     */
+    template<class T>
+    double nonprimary_shower_multiplicity(const T & obj, std::vector<double> params={25.0,})
+    {
+        size_t count(0);
+        for(const auto & p : obj.particles)
+        {
+            if(pvars::pid(p) <= 1 && !pvars::primary_classification(p) && pvars::ke(p) >= params[0])
+                ++count;
+        }
+        return count;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, nonprimary_shower_multiplicity, nonprimary_shower_multiplicity);
 
     /**
      * @brief Variable for the (primary) muon multiplicity of the
