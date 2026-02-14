@@ -330,6 +330,12 @@ def check_project_status(
                 " these files manually to determine if they are valid"
                 " outputs or if the jobs need to be resubmitted."
             )
+        else:
+            for jid in stub_jobs:
+                stub_file = project_dir / 'output' / f'output_jobid{jid:04d}.root'
+                if stub_file.exists():
+                    stub_file.unlink()
+            print(f"[INFO] -- Deleted {len(stub_jobs)} stub output file(s).")
 
     # Replace the project database copy with the updated version.
     subprocess.run(['mv', './project.db', project_dir / 'project.db'], check=True)
