@@ -16,6 +16,7 @@ electron_threshold = 50.0
 muon_threshold = 25.0
 pion_threshold = 25.0
 proton_threshold = 40.0
+nonprimary_shower_threshold = 10.0
 
 [[sample]]
 name = "sbnd"
@@ -85,12 +86,12 @@ branch = [
     { name = "vertex_x",                       type = "both"    },
     { name = "vertex_y",                       type = "both"    },
     { name = "vertex_z",                       type = "both"    },
-    { name = "photon_multiplicity",            type = "both",  parameters = [ "@photon_threshold"   ] },
-    { name = "electron_multiplicity",          type = "both",  parameters = [ "@electron_threshold" ] },
-    { name = "pion_multiplicity",              type = "both",  parameters = [ "@pion_threshold"     ] },
-    { name = "muon_multiplicity",              type = "both",  parameters = [ "@muon_threshold"     ] },
-    { name = "proton_multiplicity",            type = "both",  parameters = [ "@proton_threshold"   ] },
-    { name = "nonprimary_shower_multiplicity", type = "reco",  parameters = [ 10.0,                 ] },
+    { name = "photon_multiplicity",            type = "both",  parameters = [ "@photon_threshold"            ] },
+    { name = "electron_multiplicity",          type = "both",  parameters = [ "@electron_threshold"          ] },
+    { name = "pion_multiplicity",              type = "both",  parameters = [ "@pion_threshold"              ] },
+    { name = "muon_multiplicity",              type = "both",  parameters = [ "@muon_threshold"              ] },
+    { name = "proton_multiplicity",            type = "both",  parameters = [ "@proton_threshold"            ] },
+    { name = "nonprimary_shower_multiplicity", type = "reco",  parameters = [ "@nonprimary_shower_threshold" ] },
 
     # Leading ELECTRON interaction-level
     { name = "start_x",                        type = "both_particle", selector = "leading_electron" },
