@@ -135,7 +135,7 @@ branch = [
     { name = "hadronic_visible_energy",        type = "both" },
 ]
 
-[[tree]] #This tree is needed if you want to calculate the efficiency
+[[tree]]
 name = "signal"
 sim_only = true
 mode = "true"
