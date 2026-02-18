@@ -206,13 +206,16 @@ class SpineSpectra1D(SpineSpectra):
         if self._plotdata is not None:
             labels, data = zip(*self._plotdata.items())
             colors = [self._colors[label] for label in labels]
+            print(f"Debug info: there are {len(labels)} labels", labels)
+            print("Debug colors:", self._colors)
             bincenters = [self._binedges[l][:-1] + np.diff(self._binedges[l]) / 2 for l in labels]
             binwidths = [np.diff(self._binedges[l]) for l in labels]
             xr = self._variable._range if self._xrange is None else self._xrange
 
             histogram_mask = [li for li, label in enumerate(labels) if self._category_types[label] == 'histogram']
             scatter_mask = [li for li, label in enumerate(labels) if self._category_types[label] == 'scatter']
-
+            print(f"DEBUG: histogram_mask={histogram_mask}, scatter_mask={scatter_mask}")  # ADD THIS
+            
             denominator = np.sum([self._onebincount[labels[i]] for i in histogram_mask])
             counts = [x for x in self._onebincount.values()]
 
@@ -234,10 +237,18 @@ class SpineSpectra1D(SpineSpectra):
                 reduce = lambda x : [x[i] for i in histogram_mask]
             
             scale = 1.0 if not normalize else 1.0 / np.sum(reduce(data))
+
+            print(f"Debug info: there are {len(colors)} colors", colors)
+
+            hist_bincenters = reduce(bincenters)
+            hist_data = [scale*x for x in reduce(data)]
+            hist_labels = reduce(labels)
+            hist_colors = reduce(colors)
+
             # Use either uniform bins or customized bins
-            ax.hist(reduce(bincenters), weights=[scale*x for x in reduce(data)], 
+            ax.hist(hist_bincenters, weights=hist_data, 
                     bins=self._variable._nbins if self._variable._custom_bins is None else self._variable._custom_bins,
-                    range=xr, label=reduce(labels), color=reduce(colors), **style.plot_kwargs)
+                    range=xr, label=hist_labels, color=hist_colors, **style.plot_kwargs)
             if draw_error:
                 systs = [s[draw_error] for s in self._systematics.values() if draw_error in s]
                 cov = np.sum(s.get_covariance(self._variable._key) for s in systs)

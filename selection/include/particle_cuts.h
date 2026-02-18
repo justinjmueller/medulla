@@ -162,5 +162,19 @@ namespace pcuts
         return pvars::semantic_type(p) == static_cast<int>(params[0]);
     }
     REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, is_semantic_type, is_semantic_type);
+
+    template<class T>
+    bool cut_axial_spread(const T & p, std::vector<double> params={0.02,})
+    {
+        return std::isinf(p.axial_spread) ? PLACEHOLDERVALUE : p.axial_spread > params[0];
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::RecoParticle, cut_axial_spread, cut_axial_spread);
+
+    template<class T>
+    bool cut_directional_spread(const T & p, std::vector<double> params={0.25,})
+    {
+        return std::isinf(p.directional_spread) ? PLACEHOLDERVALUE : p.directional_spread < params[0];
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::RecoParticle, cut_directional_spread, cut_directional_spread);
 }
 #endif // PARTICLE_CUTS_H

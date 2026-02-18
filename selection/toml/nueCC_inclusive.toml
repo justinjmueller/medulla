@@ -6,6 +6,8 @@ pion_threshold = 25.0
 proton_threshold = 50.0
 trackLength_threshold = 190.0
 electron_dedx = 3.625
+flash_low_t = 0.0
+flash_high_t = 9.6
 
 [general]
 output = "output_nueCCInclusive"
@@ -24,15 +26,15 @@ fsthresh = [
 name = "NuMIFull"
 path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/*.root"
 ismc = true
-disable = true # Optional: default = false
+disable = false # Optional: default = false
 
 # ICARUS debug single file
 [[sample]]
 name = "debugMC"
 #path = "/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/input000.flat.root"
-path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_00.root"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
 ismc = true
-disable = false # Optional: default = false
+disable = true # Optional: default = false
 
 [[tree]]
 name = "all"
@@ -40,29 +42,111 @@ sim_only = false
 mode = "reco"
 cut = []
 branch = [
-    { name = "fiducial_cut",          type = "reco"    },
-    { name = "valid_flashmatch",      type = "reco"    },
-    { name = "neutrino_id",           type = "true"    },
-    { name = "neutrino_energy",       type = "mctruth" },
-    { name = "baseline",              type = "mctruth" },
-    { name = "cc",                    type = "mctruth" },
-    { name = "pdg",                   type = "mctruth" },
-    { name = "category",              type = "true"    },
-    { name = "visible_energy",        type = "both"    },
-    { name = "track_length",          type = "both", parameters = [ "@trackLength_threshold" ] },
-    { name = "containment_cut",       type = "reco" },
+    { name = "fiducial_cut",            type = "reco"    },
+    { name = "flash_cut",               type = "reco", parameters = [ "@flash_low_t", "@flash_high_t" ] },
+    { name = "valid_flashmatch",        type = "reco"    },
+    { name = "containment_cut",         type = "reco" },    
+    { name = "vertex_distance_cut",     type = "reco", parameters = [ 3.25 ] },
+    { name = "track_length",            type = "both", parameters = [ "@trackLength_threshold" ] },
     { name = "containment_cut",         type = "reco_particle", selector = "leading_electron"},
-    { name = "particle_dedx",         type = "reco", parameters = [ "@electron_dedx" ] },
-    { name = "start_dedx",            type = "reco_particle", selector = "leading_electron" },
-    { name = "electron_multiplicity", type = "both", parameters = [ 0 ] },
-    { name = "vertex_distance",       type = "reco_particle", selector = "leading_electron" },
-    { name = "vertex_distance_cut",   type = "reco", parameters = [ 3.25 ] },
+    { name = "particle_dedx",           type = "reco", parameters = [ "@electron_dedx" ] },
+
+    { name = "visible_energy",            type = "reco"},
     { name = "has_particle_multiplicity", type = "reco", parameters = [1, 1] },
-    { name = "no_cut",                  type = "reco" },
-    { name = "ke",                      type = "reco_particle", selector = "leading_electron" },
+    { name = "no_cut",                    type = "reco" },
+    { name = "electron_multiplicity",     type = "reco", parameters = [ 0 ] },
+    { name = "photon_multiplicity",      type = "reco", parameters = [ 0 ] },
+    { name = "muon_multiplicity",        type = "reco", parameters = [ 0 ] },
+    { name = "pion_multiplicity",        type = "reco", parameters = [ 0 ] },
+    { name = "proton_multiplicity",      type = "reco", parameters = [ 0 ] },
+    { name = "no_muons",                 type = "reco", parameters = [ 25.0 ] },
+    { name = "no_charged_pions",         type = "reco", parameters = [ 25.0 ] },
+    { name = "no_protons",               type = "reco", parameters = [ 25.0 ] },
+
+    { name = "baseline",                 type = "mctruth" },
+    { name = "cc",                       type = "mctruth" },
+    { name = "pdg",                      type = "mctruth" },
+    { name = "neutrino_energy",          type = "mctruth" },
+    
+    { name = "neutrino_id",               type = "true"    },
+    { name = "category",                  type = "true"    },
+    { name = "electron_multiplicity",     type = "true", parameters = [ 0 ] },
+    { name = "visible_energy",            type = "true"},
+    { name = "photon_multiplicity",      type = "true", parameters = [ 0 ] },
+    { name = "muon_multiplicity",        type = "true", parameters = [ 0 ] },
+    { name = "pion_multiplicity",        type = "true", parameters = [ 0 ] },
+    { name = "proton_multiplicity",      type = "true", parameters = [ 0 ] },
+
+    { name = "vertex_distance",          type = "reco_particle", selector = "leading_electron" },
+    { name = "ke",                       type = "reco_particle", selector = "leading_electron" },
     { name = "calo_ke",                  type = "reco_particle", selector = "leading_electron" },
-    { name = "mcs_ke",                  type = "reco_particle", selector = "leading_electron" },
+    { name = "mcs_ke",                   type = "reco_particle", selector = "leading_electron" },
     { name = "csda_ke",                  type = "reco_particle", selector = "leading_electron" },
+    { name = "energy",                   type = "reco_particle", selector = "leading_electron" },
+    { name = "start_dedx",               type = "reco_particle", selector = "leading_electron" },
+    { name = "axial_spread",             type = "reco_particle", selector = "leading_electron" },
+    { name = "directional_spread",       type = "reco_particle", selector = "leading_electron" },
+
+    { name = "start_x",                  type = "reco_particle", selector = "leading_electron" },
+    { name = "start_y",                  type = "reco_particle", selector = "leading_electron" },
+    { name = "start_z",                  type = "reco_particle", selector = "leading_electron" },
+    { name = "end_x",                    type = "reco_particle", selector = "leading_electron" },
+    { name = "end_y",                    type = "reco_particle", selector = "leading_electron" },
+    { name = "end_z",                    type = "reco_particle", selector = "leading_electron" },
+    
+    { name = "start_dir_x",              type = "reco_particle", selector = "leading_electron" },
+    { name = "start_dir_y",              type = "reco_particle", selector = "leading_electron" },
+    { name = "start_dir_z",              type = "reco_particle", selector = "leading_electron" },
+    { name = "end_dir_x",                type = "reco_particle", selector = "leading_electron" },
+    { name = "end_dir_y",                type = "reco_particle", selector = "leading_electron" },
+    { name = "end_dir_z",                type = "reco_particle", selector = "leading_electron" },
+    { name = "start_dir_x",              type = "true_particle", selector = "leading_electron" },
+    
+    { name = "polar_angle",              type = "reco_particle", selector = "leading_electron" },
+    { name = "azimuthal_angle",          type = "reco_particle", selector = "leading_electron" },
+
+    { name = "photon_softmax",         type = "reco_particle", selector = "leading_electron" },
+    { name = "electron_softmax",       type = "reco_particle", selector = "leading_electron" },
+    { name = "muon_softmax",           type = "reco_particle", selector = "leading_electron" },
+    { name = "pion_softmax",           type = "reco_particle", selector = "leading_electron" },
+    { name = "proton_softmax",         type = "reco_particle", selector = "leading_electron" },
+    { name = "mip_softmax",            type = "reco_particle", selector = "leading_electron" },
+    { name = "primary_softmax",        type = "reco_particle", selector = "leading_electron" },
+    { name = "secondary_softmax",      type = "reco_particle", selector = "leading_electron" },
+
+    { name = "photon_softmax",         type = "reco_particle", selector = "leading_photon"},
+    { name = "primary_softmax",        type = "reco_particle", selector = "leading_photon"},
+
+    { name = "muon_softmax",           type = "reco_particle", selector = "leading_muon"},
+    { name = "primary_softmax",        type = "reco_particle", selector = "leading_muon"},
+
+    { name = "pion_softmax",           type = "reco_particle", selector = "leading_pion"},
+    { name = "primary_softmax",        type = "reco_particle", selector = "leading_pion"},
+
+    { name = "proton_softmax",         type = "reco_particle", selector = "leading_proton"},
+    { name = "primary_softmax",        type = "reco_particle", selector = "leading_proton"},
+
+    { name = "length",                 type = "reco_particle", selector = "leading_electron" },
+
+    { name = "start_x",                  type = "true_particle", selector = "leading_electron" },
+    { name = "start_y",                  type = "true_particle", selector = "leading_electron" },
+    { name = "start_z",                  type = "true_particle", selector = "leading_electron" },
+    { name = "end_x",                    type = "true_particle", selector = "leading_electron" },
+    { name = "end_y",                    type = "true_particle", selector = "leading_electron" },
+    { name = "end_z",                    type = "true_particle", selector = "leading_electron" },
+    { name = "start_dir_y",              type = "true_particle", selector = "leading_electron" },
+    { name = "start_dir_z",              type = "true_particle", selector = "leading_electron" },
+    { name = "end_dir_x",                type = "true_particle", selector = "leading_electron" },
+    { name = "end_dir_y",                type = "true_particle", selector = "leading_electron" },
+    { name = "end_dir_z",                type = "true_particle", selector = "leading_electron" },
+    { name = "polar_angle",              type = "true_particle", selector = "leading_electron" },
+    { name = "azimuthal_angle",          type = "true_particle", selector = "leading_electron" },
+    { name = "energy",                   type = "true_particle", selector = "leading_electron" },
+    { name = "ke",                       type = "true_particle", selector = "leading_electron" },
+    { name = "calo_ke",                  type = "true_particle", selector = "leading_electron" },
+    { name = "mcs_ke",                   type = "true_particle", selector = "leading_electron" },
+    { name = "csda_ke",                  type = "true_particle", selector = "leading_electron" },
+    { name = "length",                   type = "true_particle", selector = "leading_electron" },
 ]
 
 [[tree]]
@@ -72,38 +156,110 @@ mode = "reco"
 cut = [
     { name = "no_cut",                  type = "reco" },
     { name = "fiducial_cut",            type = "reco" },
-    { name = "valid_flashmatch",        type = "reco" },
+    #{ name = "flash_cut",               type = "reco", parameters = [ "@flash_low_t", "@flash_high_t" ] },
+    { name = "valid_flashmatch",        type = "reco"    },
     { name = "containment_cut",         type = "reco" },
     { name = "track_length",            type = "reco",  parameters = [ "@trackLength_threshold" ] },
     { name = "has_particle_multiplicity", type = "reco", parameters = [1, 1] },
-    { name = "containment_cut",         type = "reco_particle", selector = "leading_electron"},
-    { name = "particle_dedx",           type = "reco", parameters = [ "@electron_dedx" ] },
-    { name = "vertex_distance_cut",   type = "reco", parameters = [ 3.25 ] },
+    # { name = "containment_cut",         type = "reco_particle", selector = "leading_electron"},
+    # { name = "particle_dedx",           type = "reco", parameters = [ "@electron_dedx" ] },
+    # { name = "vertex_distance_cut",   type = "reco", parameters = [ 3.25 ] },
 ]
 branch = [
-    { name = "fiducial_cut",          type = "reco"    },
-    { name = "valid_flashmatch",      type = "reco"    },
-    { name = "neutrino_id",           type = "true"    },
-    { name = "neutrino_energy",       type = "mctruth" },
-    { name = "baseline",              type = "mctruth" },
-    { name = "cc",                    type = "mctruth" },
-    { name = "pdg",                   type = "mctruth" },
-    { name = "category",              type = "true"    },
-    { name = "visible_energy",        type = "both"    },
-    { name = "track_length",          type = "both", parameters = [ "@trackLength_threshold" ] },
-    { name = "containment_cut",       type = "reco" },
+    { name = "fiducial_cut",            type = "reco"    },
+    { name = "flash_cut",               type = "reco", parameters = [ "@flash_low_t", "@flash_high_t" ] },
+    { name = "valid_flashmatch",        type = "reco"    },
+    { name = "containment_cut",         type = "reco" },    
+    { name = "vertex_distance_cut",     type = "reco", parameters = [ 3.25 ] },
+    { name = "track_length",            type = "both", parameters = [ "@trackLength_threshold" ] },
     { name = "containment_cut",         type = "reco_particle", selector = "leading_electron"},
-    { name = "particle_dedx",         type = "reco", parameters = [ "@electron_dedx" ] },
-    { name = "start_dedx",            type = "reco_particle", selector = "leading_electron" },
-    { name = "electron_multiplicity", type = "both", parameters = [ 0 ] },
-    { name = "vertex_distance",       type = "reco_particle", selector = "leading_electron" },
-    { name = "vertex_distance_cut",   type = "reco", parameters = [ 3.25 ] },
+    { name = "particle_dedx",           type = "reco", parameters = [ "@electron_dedx" ] },
+
+    { name = "visible_energy",            type = "reco"},
     { name = "has_particle_multiplicity", type = "reco", parameters = [1, 1] },
-    { name = "no_cut",                  type = "reco" },
-    { name = "ke",                      type = "reco_particle", selector = "leading_electron" },
+    { name = "no_cut",                    type = "reco" },
+    { name = "electron_multiplicity",     type = "reco", parameters = [ 0 ] },
+    { name = "photon_multiplicity",      type = "reco", parameters = [ 0 ] },
+    { name = "muon_multiplicity",        type = "reco", parameters = [ 0 ] },
+    { name = "pion_multiplicity",        type = "reco", parameters = [ 0 ] },
+    { name = "proton_multiplicity",      type = "reco", parameters = [ 0 ] },
+    { name = "no_muons",                 type = "reco", parameters = [ 25.0 ] },
+    { name = "no_charged_pions",         type = "reco", parameters = [ 25.0 ] },
+    { name = "no_protons",               type = "reco", parameters = [ 25.0 ] },
+
+    { name = "baseline",                 type = "mctruth" },
+    { name = "cc",                       type = "mctruth" },
+    { name = "pdg",                      type = "mctruth" },
+    { name = "neutrino_energy",          type = "mctruth" },
+    
+    { name = "neutrino_id",               type = "true"    },
+    { name = "category",                  type = "true"    },
+    { name = "electron_multiplicity",     type = "true", parameters = [ 0 ] },
+    { name = "visible_energy",            type = "true"},
+    { name = "photon_multiplicity",      type = "true", parameters = [ 0 ] },
+    { name = "muon_multiplicity",        type = "true", parameters = [ 0 ] },
+    { name = "pion_multiplicity",        type = "true", parameters = [ 0 ] },
+    { name = "proton_multiplicity",      type = "true", parameters = [ 0 ] },
+    { name = "pdg",        type = "mctruth"},
+
+    { name = "vertex_distance",          type = "reco_particle", selector = "leading_electron" },
+    { name = "ke",                       type = "reco_particle", selector = "leading_electron" },
     { name = "calo_ke",                  type = "reco_particle", selector = "leading_electron" },
-    { name = "mcs_ke",                  type = "reco_particle", selector = "leading_electron" },
+    { name = "mcs_ke",                   type = "reco_particle", selector = "leading_electron" },
     { name = "csda_ke",                  type = "reco_particle", selector = "leading_electron" },
+    { name = "energy",                   type = "reco_particle", selector = "leading_electron" },
+    { name = "start_dedx",               type = "reco_particle", selector = "leading_electron" },
+    { name = "axial_spread",             type = "reco_particle", selector = "leading_electron" },
+    { name = "directional_spread",       type = "reco_particle", selector = "leading_electron" },
+
+    { name = "start_x",                  type = "reco_particle", selector = "leading_electron" },
+    { name = "start_y",                  type = "reco_particle", selector = "leading_electron" },
+    { name = "start_z",                  type = "reco_particle", selector = "leading_electron" },
+    { name = "end_x",                    type = "reco_particle", selector = "leading_electron" },
+    { name = "end_y",                    type = "reco_particle", selector = "leading_electron" },
+    { name = "end_z",                    type = "reco_particle", selector = "leading_electron" },
+    
+    { name = "start_dir_x",              type = "reco_particle", selector = "leading_electron" },
+    { name = "start_dir_y",              type = "reco_particle", selector = "leading_electron" },
+    { name = "start_dir_z",              type = "reco_particle", selector = "leading_electron" },
+    { name = "end_dir_x",                type = "reco_particle", selector = "leading_electron" },
+    { name = "end_dir_y",                type = "reco_particle", selector = "leading_electron" },
+    { name = "end_dir_z",                type = "reco_particle", selector = "leading_electron" },
+    { name = "start_dir_x",              type = "true_particle", selector = "leading_electron" },
+    
+    { name = "polar_angle",              type = "reco_particle", selector = "leading_electron" },
+    { name = "azimuthal_angle",          type = "reco_particle", selector = "leading_electron" },
+
+    { name = "photon_softmax",         type = "reco_particle", selector = "leading_electron" },
+    { name = "electron_softmax",       type = "reco_particle", selector = "leading_electron" },
+    { name = "muon_softmax",           type = "reco_particle", selector = "leading_electron" },
+    { name = "pion_softmax",           type = "reco_particle", selector = "leading_electron" },
+    { name = "proton_softmax",         type = "reco_particle", selector = "leading_electron" },
+    { name = "mip_softmax",            type = "reco_particle", selector = "leading_electron" },
+    { name = "primary_softmax",        type = "reco_particle", selector = "leading_electron" },
+    { name = "secondary_softmax",      type = "reco_particle", selector = "leading_electron" },
+
+    { name = "length",                 type = "reco_particle", selector = "leading_electron" },
+
+    { name = "start_x",                  type = "true_particle", selector = "leading_electron" },
+    { name = "start_y",                  type = "true_particle", selector = "leading_electron" },
+    { name = "start_z",                  type = "true_particle", selector = "leading_electron" },
+    { name = "end_x",                    type = "true_particle", selector = "leading_electron" },
+    { name = "end_y",                    type = "true_particle", selector = "leading_electron" },
+    { name = "end_z",                    type = "true_particle", selector = "leading_electron" },
+    { name = "start_dir_y",              type = "true_particle", selector = "leading_electron" },
+    { name = "start_dir_z",              type = "true_particle", selector = "leading_electron" },
+    { name = "end_dir_x",                type = "true_particle", selector = "leading_electron" },
+    { name = "end_dir_y",                type = "true_particle", selector = "leading_electron" },
+    { name = "end_dir_z",                type = "true_particle", selector = "leading_electron" },
+    { name = "polar_angle",              type = "true_particle", selector = "leading_electron" },
+    { name = "azimuthal_angle",          type = "true_particle", selector = "leading_electron" },
+    { name = "energy",                   type = "true_particle", selector = "leading_electron" },
+    { name = "ke",                       type = "true_particle", selector = "leading_electron" },
+    { name = "calo_ke",                  type = "true_particle", selector = "leading_electron" },
+    { name = "mcs_ke",                   type = "true_particle", selector = "leading_electron" },
+    { name = "csda_ke",                  type = "true_particle", selector = "leading_electron" },
+    { name = "length",                   type = "true_particle", selector = "leading_electron" },
 ]
 
 [[tree]]
@@ -116,9 +272,11 @@ branch = [
     { name = "nreco",         type = "event"    },
     { name = "nnu",           type = "event"    },
     { name = "nintime",       type = "event", parameters = [ -0.5, 9.6 ] },
+    { name = "nnu_mu",        type = "event"    },
+    { name = "nnu_e",         type = "event"    },
 ]
 
-[[category]] # 0 : Fiducial, electron neutrino CC signal
+[[category]] # 0 : Fiducial, contained, electron neutrino CC signal
 cuts = [
     { name = "neutrino"        },
     { name = "fiducial_cut"    },
@@ -126,7 +284,7 @@ cuts = [
     { name = "neutrino_pdg",        parameters = [ 12.0, -12.0 ] },
 ]
 
-[[category]] # 1 : Fiducial, other neutrino CC signal
+[[category]] # 1 : Fiducial, contained, other neutrino CC signal
 cuts = [
     { name = "neutrino"        },
     { name = "fiducial_cut"    },
@@ -134,10 +292,10 @@ cuts = [
     { name = "!neutrino_pdg",        parameters = [ 12.0, -12.0 ] },
 ]
 
-[[category]] # 2 : Non-fiducial,  neutrino 
+[[category]] # 2 : Non-fiducial/contained,  neutrino 
 cuts = [
     { name = "neutrino"        },
-    { name = "!fiducial_cut"    },
+    { name = "iscc"            },
 ]
 
 [[category]] # 3 : neutral current
@@ -150,52 +308,3 @@ cuts = [
 cuts = [
     { name = "!neutrino"        },
 ]
-
-# [[category]] # 2 : Fiducial, non-contained, single muon, single proton
-# cuts = [
-#     { name = "neutrino"         },
-#     { name = "fiducial_cut"     },
-#     { name = "!containment_cut" },
-#     { name = "no_photons",        parameters = [ "@photon_threshold"   ] },
-#     { name = "no_electrons",      parameters = [ "@electron_threshold" ] },
-#     { name = "no_charged_pions",  parameters = [ "@pion_threshold"     ] },
-#     { name = "single_muon",       parameters = [ "@muon_threshold"     ] },
-#     { name = "single_proton",     parameters = [ "@proton_threshold"   ] },
-# ]
-
-# [[category]] # 3 : Non-fiducial, non-contained, single muon, single proton
-# cuts = [
-#     { name = "neutrino"         },
-#     { name = "!fiducial_cut"    },
-#     { name = "!containment_cut" },
-#     { name = "no_photons",        parameters = [ "@photon_threshold"   ] },
-#     { name = "no_electrons",      parameters = [ "@electron_threshold" ] },
-#     { name = "no_charged_pions",  parameters = [ "@pion_threshold"     ] },
-#     { name = "single_muon",       parameters = [ "@muon_threshold"     ] },
-#     { name = "single_proton",     parameters = [ "@proton_threshold"   ] },
-# ]
-
-# [[category]] # 4 : Fiducial, CC, non-signal
-# cuts = [
-#     { name = "neutrino"         },
-#     { name = "fiducial_cut"     },
-#     { name = "iscc"             }
-# ]
-
-# [[category]] # 5 : Non-fiducial, CC, non-signal
-# cuts = [
-#     { name = "neutrino"         },
-#     { name = "!fiducial_cut"    },
-#     { name = "iscc"             },
-# ]
-
-# [[category]] # 6 : NC
-# cuts = [
-#     { name = "neutrino"         },
-#     { name = "!iscc"            },
-# ]
-
-# [[category]] # 7 : Cosmic
-# cuts = [
-#     { name = "!neutrino"        },
-# ]
