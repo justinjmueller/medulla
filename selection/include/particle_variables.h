@@ -896,7 +896,7 @@ namespace pvars
      * @return the photon softmax score of the particle.
      */
     template<class T>
-    double photon_softmax(const caf::SRParticleDLPProxy & p)
+    double photon_softmax(const T & p)
     {
         return p.pid_scores[pvars::kPhoton];
     }
@@ -912,7 +912,7 @@ namespace pvars
      * @return the electron softmax score of the particle.
      */
     template<class T>
-    double electron_softmax(const caf::SRParticleDLPProxy & p)
+    double electron_softmax(const T & p)
     {
         return p.pid_scores[pvars::kElectron];
     }
@@ -928,7 +928,7 @@ namespace pvars
      * @return the muon softmax score of the particle.
      */
     template<class T>
-    double muon_softmax(const caf::SRParticleDLPProxy & p)
+    double muon_softmax(const T & p)
     {
         return p.pid_scores[pvars::kMuon];
     }
@@ -944,7 +944,7 @@ namespace pvars
      * @return the pion softmax score of the particle.
      */
     template<class T>
-    double pion_softmax(const caf::SRParticleDLPProxy & p)
+    double pion_softmax(const T & p)
     {
         return p.pid_scores[pvars::kPion];
     }
@@ -960,7 +960,7 @@ namespace pvars
      * @return the proton softmax score of the particle.
      */
     template<class T>
-    double proton_softmax(const caf::SRParticleDLPProxy & p)
+    double proton_softmax(const T & p)
     {
         return p.pid_scores[pvars::kProton];
     }
@@ -976,7 +976,7 @@ namespace pvars
      * @return the "MIP" softmax score of the particle.
      */
     template<class T>
-    double mip_softmax(const caf::SRParticleDLPProxy & p)
+    double mip_softmax(const T & p)
     {
         return p.pid_scores[pvars::kMuon] + p.pid_scores[pvars::kPion];
     }
@@ -992,7 +992,7 @@ namespace pvars
      * @return the "hadron" softmax score of the particle.
      */
     template<class T>
-    double hadron_softmax(const caf::SRParticleDLPProxy & p)
+    double hadron_softmax(const T & p)
     {
         return p.pid_scores[pvars::kPion] + p.pid_scores[pvars::kProton];
     }
@@ -1009,7 +1009,7 @@ namespace pvars
      * @return the primary softmax score of the particle.
      */
     template<class T>
-    double primary_softmax(const caf::SRParticleDLPProxy & p)
+    double primary_softmax(const T & p)
     {
         return p.primary_scores[1];
     }
@@ -1026,7 +1026,7 @@ namespace pvars
      * @return the secondary softmax score of the particle.
      */
     template<class T>
-    double secondary_softmax(const caf::SRParticleDLPProxy & p)
+    double secondary_softmax(const T & p)
     {
         return p.primary_scores[0];
     }

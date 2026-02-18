@@ -834,5 +834,15 @@ namespace vars
         return utilities::magnitude(utilities::subtract(muon_start, vtx));
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, leading_muon_vertex_gap, leading_muon_vertex_gap);
+
+    template<class T>
+    double vertex_distance(const T & obj, std::vector<double> params={0.0,})
+    {   
+        size_t i = selectors::leading_electron(obj);
+        if (i == kNoMatch) return false;
+        const auto & p = obj.particles[i];
+        return p.vertex_distance >= 0 ? (double)p.vertex_distance : PLACEHOLDERVALUE;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Reco, vertex_distance, vertex_distance);
 }
 #endif // VARIABLES_H

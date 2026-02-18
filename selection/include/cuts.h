@@ -523,7 +523,7 @@ namespace cuts
     template<class T>
     bool multiproton(const T & obj, std::vector<double> params={50.0,})
     {
-        return particle_multiplicity(obj, 1, 4, params) > 1;
+        return particle_multiplicity(obj, 1, 4, params) >= 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, multiproton, multiproton);
 
@@ -668,6 +668,37 @@ namespace cuts
         return false;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::True, neutrino_pdg, neutrino_pdg);
+
+    template<class T>
+    bool good_proton(const T & obj, std::vector<double> params={50.0, 0.5, 0.5})
+    {
+        for (const auto & p : obj.particles)
+        {
+            if (pvars::pid(p) == 4 && 
+                pvars::ke(p) >= params[0] && 
+                pvars::proton_softmax(p) >= params[1] &&
+                pvars::muon_softmax(p) < params[2]
+            )
+                return true;
+        }
+        return false;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, good_proton, good_proton);
+
+    template<class T>
+    bool good_electron(const T & obj, std::vector<double> params={25.0, 0.5})
+    {
+        for (const auto & p : obj.particles)
+        {
+            if (pvars::pid(p) == 1 && 
+                pvars::ke(p) >= params[0] && 
+                pvars::electron_softmax(p) >= params[1]
+            )
+                return true;
+        }
+        return false;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, good_electron, good_electron);
 
 }
 #endif

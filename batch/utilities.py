@@ -383,12 +383,17 @@ def launch_jobsub(
         njobs = len(pending_jobs)
         print(f"[INFO] -- No job count specified. Preparing all {njobs} pending jobs.")
 
+    disk_size = '10GB' if exp == 'sbnd' else '25GB'
+    if disk is not None:
+        disk_size = f'{disk}GB'
+
     # Form the jobsub command to launch the jobs.
     cmd = [
         'jobsub_submit',
         '-G', exp,
         '-N', str(njobs),
         f'--memory={memory}MB',
+        f'--disk={disk_size}',
         f'--expected-lifetime={lifetime}',
         '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE',
         "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
@@ -398,13 +403,6 @@ def launch_jobsub(
         f'--project={project_dir.resolve()}',
         f'--branch={branch}',
     ]
-
-    if disk is not None:
-        cmd.append(f'--disk={disk}GB')
-    elif exp == 'sbnd':
-        cmd.append(f'--disk=10GB')
-    else:
-        cmd.append(f'--disk=25GB')
 
     print(f"[INFO] -- Launching {njobs} jobs with command: {' '.join(cmd)}")
 
