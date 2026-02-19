@@ -194,7 +194,7 @@ class Systematic:
             # the events for each set of universe weights.
             self._covariances = dict()
             for name, variable in self._variables.items():
-                data = sample._data[name].to_numpy()
+                data = sample.load_column(name)
                 bin_edges = list(variable._bin_edges.values())[0]
                 bin_indices = np.digitize(data, bin_edges) - 1
                 valid_indices = (bin_indices >= 0) & (bin_indices < len(bin_edges) - 1)
@@ -225,7 +225,7 @@ class Systematic:
         else:
             self._covariances = dict()
             for name, variable in self._variables.items():
-                data = sample._data[name].to_numpy()
+                data = sample.load_column(name)
                 bin_edges = list(variable._bin_edges.values())[0]
                 bin_indices = np.digitize(data, bin_edges) - 1
                 valid_indices = (bin_indices >= 0) & (bin_indices < len(bin_edges) - 1)

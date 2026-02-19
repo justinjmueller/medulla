@@ -8,7 +8,9 @@ from systematic import Systematic
 class Sample:
     """
     A class designed to encapsulate the data for a single sample and
-    all associated functionality and metadata.
+    all associated functionality and metadata. Data is loaded in
+    batches using uproot.iterate to reduce peak memory usage; the
+    full dataset is never held in memory as a single DataFrame.
 
     Attributes
     ----------
@@ -26,15 +28,30 @@ class Sample:
     _category_branch : str
         The name of the branch in the TTree containing the category
         labels.
-    _data : pd.DataFrame
-        The data comprising the sample.
+    _columns : set
+        The set of column names available in the sample (including
+        any precomputed columns).
+    _trees : list
+        The list of TTree names in the ROOT file to load for the sample.
+    _precompute : dict
+        A dictionary of new branches to compute from existing branches.
+    _presel : str
+        A pre-selection expression to apply to the sample data.
+    _override_category : int
+        The category value to override the category branch with.
+    _fillna : int or float
+        The value used to fill NaN entries in the category branch.
+    _weight : float
+        The exposure-scaling weight for the sample. Set by set_weight().
     _systematics : dict
         A dictionary of Systematic objects for the Sample.
     _print_sys : bool
         A boolean flag that toggles the printing of integrated
         systematic uncertainties for the sample.
-    _presel_mask : pd.Series
-        A mask to apply to the sample data for pre-selection.
+    _presel_mask : np.ndarray
+        A boolean array aligned with all events in the file (before
+        presel) indicating which events pass the pre-selection. Stored
+        for systematic weight alignment.
     """
     def __init__(self, name, rf, category_branch, key, exposure_type, trees,
                  fillna=None, systematics=None, override_exposure=None, precompute=None,
@@ -89,50 +106,60 @@ class Sample:
         self._exposure_livetime = self._file_handle['Livetime'].to_numpy()[0][0]
         self._category_branch = category_branch
         self._print_sys = print_sys
+        self._trees = trees
+        self._precompute = precompute
+        self._presel = presel
+        self._override_category = override_category
+        self._fillna = fillna
+        self._weight = 1.0
 
         if override_exposure is not None:
             self.override_exposure(override_exposure, exposure_type)
 
-        self._data = pd.concat([self._file_handle[tree].arrays(library='pd') for tree in trees])
-        if self._category_branch not in self._data.columns:
-            raise ValueError(f'Category branch `{self._category_branch}` not found in sample `{self._name}`.')
-        if override_category is not None:
-            self._data[self._category_branch] = override_category
-        
+        # Collect column names from tree keys without loading all data.
+        self._columns = set()
+        for tree in trees:
+            self._columns.update(self._file_handle[tree].keys())
         if precompute is not None:
-            for k, v in precompute.items():
-                self._data[k] = self._data.eval(v)
-        
-        if presel is not None:
-            self._presel_mask = self._data.eval(presel)
-            self._data = self._data[self._presel_mask]
-        else:
-            self._presel_mask = np.ones(len(self._data), dtype=bool)
+            self._columns.update(precompute.keys())
 
-        # Check category branch for NaNs
-        if np.isnan(self._data[self._category_branch]).any():
-            nanmask = self._data[self._category_branch].isna()
-            
-            # Fill NaNs if requested. If we explicitly fill NaNs, we
-            # print a warning, but we do not remove the entries from
-            # the sample.
+        if self._category_branch not in self._columns:
+            raise ValueError(f'Category branch `{self._category_branch}` not found in sample `{self._name}`.')
+
+        # Compute and store the presel mask by iterating in batches.
+        # The mask is aligned with all events in the file (before
+        # presel) and is needed for systematic weight alignment.
+        presel_masks = []
+        nan_count = 0
+        for chunk in self._iter_raw_batches():
+            if presel is not None:
+                mask = chunk.eval(presel).to_numpy(dtype=bool)
+            else:
+                mask = np.ones(len(chunk), dtype=bool)
+            presel_masks.append(mask)
+
+            # Count NaN categories in the pre-selection subset.
+            presel_chunk = chunk[mask]
+            nan_count += int(presel_chunk[self._category_branch].isna().sum())
+
+        self._presel_mask = (
+            np.concatenate(presel_masks) if presel_masks else np.array([], dtype=bool)
+        )
+
+        # Warn about NaN categories found after presel.
+        if nan_count > 0:
             if fillna is not None:
                 print(
                     f'Filling NaN category in Sample `{self._name}`'
                     f' with `{fillna}`. You asked for this behavior!'
                 )
-                self._data.loc[nanmask, self._category_branch] = fillna
-            
-            # Otherwise, remove entries with NaN category.
             else:
-                occurrences = len(self._data[nanmask])
                 print(
                     f'Found NaN category in Sample `{self._name}` with'
-                    f' {occurrences} occurrence(s). Masking NaNs...\n'
+                    f' {nan_count} occurrence(s). Masking NaNs...\n'
                     f' [!!!] Please note that this automatic behavior'
                     f' may lead to issues with systematics!'
                 )
-                self._data = self._data[~nanmask]
 
         # Initialize the systematics dictionary for the sample. Note:
         # the sample will always have a statistical uncertainty.
@@ -150,6 +177,144 @@ class Sample:
         # sample, because it is not dependent on some external source
         # of weights.
         self._systematics.update({f'{self._name}_statistical': Systematic('statistical', None)})
+
+    def _iter_raw_batches(self, step_size='100 MB'):
+        """
+        Internal generator that yields raw DataFrame chunks from all
+        configured trees, applying precompute expressions and the
+        category override to each chunk.
+
+        Parameters
+        ----------
+        step_size : str or int, optional
+            The size of each batch passed to uproot.iterate.  Accepts
+            the same values as uproot's step_size parameter (e.g.
+            '100 MB', 10000). The default is '100 MB'.
+
+        Yields
+        ------
+        chunk : pd.DataFrame
+            A batch of events with precompute columns added.
+        """
+        for tree in self._trees:
+            for chunk in self._file_handle[tree].iterate(
+                library='pd', step_size=step_size
+            ):
+                if self._precompute is not None:
+                    for k, v in self._precompute.items():
+                        chunk[k] = chunk.eval(v)
+                if self._override_category is not None:
+                    chunk[self._category_branch] = self._override_category
+                yield chunk
+
+    def iterate_batches(self, variables, with_mask=None, step_size='100 MB'):
+        """
+        Iterate over the sample data in batches, yielding one
+        (data_dict, weights_dict) pair per batch and per category.
+        The presel, NaN-category handling, and any additional mask are
+        applied to each chunk before yielding.
+
+        This is the primary method for memory-efficient data access.
+        Artists should prefer this method over get_data() when they
+        accumulate results incrementally (e.g. histograms).
+
+        Parameters
+        ----------
+        variables : list[str]
+            The column names to include in the yielded data.
+        with_mask : str, optional
+            A pandas eval expression used as an additional row filter.
+            The default is None.
+        step_size : str or int, optional
+            The size of each batch. The default is '100 MB'.
+
+        Yields
+        ------
+        data : dict
+            Maps int category label -> list of pd.Series (one per
+            variable in *variables*).
+        weights : dict
+            Maps int category label -> pd.Series of per-event weights.
+        """
+        for chunk in self._iter_raw_batches(step_size=step_size):
+            # Apply presel filter.
+            if self._presel is not None:
+                presel_mask = chunk.eval(self._presel).to_numpy(dtype=bool)
+                chunk = chunk[presel_mask]
+
+            if len(chunk) == 0:
+                continue
+
+            # Handle NaN categories per batch.
+            nan_mask = chunk[self._category_branch].isna()
+            if nan_mask.any():
+                if self._fillna is not None:
+                    chunk = chunk.copy()
+                    chunk.loc[nan_mask, self._category_branch] = self._fillna
+                else:
+                    chunk = chunk[~nan_mask]
+                if len(chunk) == 0:
+                    continue
+
+            # Apply optional additional mask.
+            if with_mask is not None:
+                extra_mask = chunk.eval(with_mask).to_numpy(dtype=bool)
+            else:
+                extra_mask = np.ones(len(chunk), dtype=bool)
+
+            data = {}
+            weights = {}
+            for category in np.unique(chunk[self._category_branch]):
+                if np.isnan(category):
+                    continue
+                cat_mask = (chunk[self._category_branch] == category) & extra_mask
+                cat_data = chunk[cat_mask]
+                data[int(category)] = [cat_data[v] for v in variables]
+                weights[int(category)] = pd.Series(
+                    np.full(len(cat_data), self._weight),
+                    index=cat_data.index,
+                )
+
+            yield data, weights
+
+    def load_column(self, column):
+        """
+        Load a single column from the sample, applying presel and NaN
+        category handling, and return it as a numpy array.  This
+        method is intended for use by Systematic.process() which
+        requires per-event values aligned with the presel-filtered
+        dataset.
+
+        Parameters
+        ----------
+        column : str
+            The name of the column to load.
+
+        Returns
+        -------
+        np.ndarray
+            The column values after applying presel and NaN filtering,
+            in the same order as events are stored in the file.
+        """
+        chunks = []
+        for chunk in self._iter_raw_batches():
+            if self._presel is not None:
+                mask = chunk.eval(self._presel).to_numpy(dtype=bool)
+                chunk = chunk[mask]
+            if len(chunk) == 0:
+                continue
+            nan_mask = chunk[self._category_branch].isna()
+            if nan_mask.any():
+                if self._fillna is not None:
+                    chunk = chunk.copy()
+                    chunk.loc[nan_mask, self._category_branch] = self._fillna
+                else:
+                    chunk = chunk[~nan_mask]
+            if len(chunk) > 0:
+                chunks.append(chunk[[column]])
+        if chunks:
+            return pd.concat(chunks)[column].to_numpy()
+        return np.array([])
 
     def override_exposure(self, exposure, exposure_type='pot') -> None:
         """
@@ -192,22 +357,26 @@ class Sample:
         None.
         """
         if target is None:
-            self._data['weight'] = 1
+            self._weight = 1.0
         elif self._exposure_type == 'pot':
-            scale = target._exposure_pot / self._exposure_pot
+            self._weight = target._exposure_pot / self._exposure_pot
         else:
-            scale = target._exposure_livetime / self._exposure_livetime
+            self._weight = target._exposure_livetime / self._exposure_livetime
 
-        print(f"Setting weight for {self._name} to {scale:.2e}")
-        self._data['weight'] = scale
+        print(f"Setting weight for {self._name} to {self._weight:.2e}")
         for syst in self._systematics.values():
-            syst.set_weight(scale)        
+            syst.set_weight(self._weight)
 
     def get_data(self, variables, with_mask=None) -> dict:
         """
         Returns the data for the given variable(s) in the sample. The
-        data is returned as a dictionary with the category as the key
-        and the data for the requested variable as the value.
+        data is accumulated from all batches and returned as a
+        dictionary with the category as the key and the data for the
+        requested variable as the value.
+
+        Note: for memory-critical code paths (e.g. large spectra) it
+        is preferable to use iterate_batches() directly to avoid
+        accumulating the full dataset in memory.
 
         Parameters
         ----------
@@ -221,7 +390,8 @@ class Sample:
         data : dict
             The data for the requested variable in the sample. The data
             is stored as a dictionary with the category as the key and
-            the data (a pandas Series) as the value.
+            the data (a list of pandas Series, one per variable) as the
+            value.
         weights : dict
             The weights for the requested variable in the sample. The
             weights are stored as a dictionary with the category as the
@@ -229,22 +399,14 @@ class Sample:
         """
         data = {}
         weights = {}
-        if with_mask is not None:
-            mask = self._data.eval(with_mask).to_numpy(dtype=bool)
-        else:
-            mask = np.ones(len(self._data), dtype=bool)
-        for category in np.unique(self._data[self._category_branch]):
-            if np.isnan(category):
-                occurrences = len(self._data[self._data[self._category_branch].isna()])
-                print(f'Found NaN category in {self._name} ({occurrences} occurrences). Masking NaNs...')
-                continue
-            data[int(category)] = list()
-            for v in variables:
-                data[int(category)].append(self._data[((self._data[self._category_branch] == category) & mask)][v])  
-            if 'weight' in self._data.columns:  
-                weights[int(category)] = self._data[((self._data[self._category_branch] == category) & mask)]['weight']
-            else:
-                weights[int(category)] = None
+        for batch_data, batch_weights in self.iterate_batches(variables, with_mask):
+            for category, values in batch_data.items():
+                if category not in data:
+                    data[category] = [pd.Series(dtype=float) for _ in variables]
+                    weights[category] = pd.Series(dtype=float)
+                for i, v in enumerate(values):
+                    data[category][i] = pd.concat([data[category][i], v])
+                weights[category] = pd.concat([weights[category], batch_weights[category]])
         return data, weights
 
     def process_systematics(self, recipes) -> None:
@@ -336,7 +498,8 @@ class Sample:
 
     def evaluate_formula(self, formula) -> pd.Series:
         """
-        Evaluates the given formula for the sample data.
+        Evaluates the given formula across all batches of the sample
+        data (post presel) and returns the concatenated result.
 
         Parameters
         ----------
@@ -347,4 +510,11 @@ class Sample:
         -------
         result : pd.Series
         """
-        return self._data.eval(formula)
+        chunks = []
+        for chunk in self._iter_raw_batches():
+            if self._presel is not None:
+                mask = chunk.eval(self._presel).to_numpy(dtype=bool)
+                chunk = chunk[mask]
+            if len(chunk) > 0:
+                chunks.append(chunk.eval(formula))
+        return pd.concat(chunks) if chunks else pd.Series(dtype=float)

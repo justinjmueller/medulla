@@ -85,20 +85,20 @@ class ConfusionMatrix(SpineArtist):
 
         # Update the confusion matrix with the sample's true and
         # predicted labels.
-        data, _ = sample.get_data([self._true_labels._key, self._predicted_labels._key])
-        for category, values in data.items():
-            if category not in self._categories.keys():
-                continue
-            true_labels = values[0]
-            predicted_labels = values[1]
+        for batch_data, _ in sample.iterate_batches([self._true_labels._key, self._predicted_labels._key]):
+            for category, values in batch_data.items():
+                if category not in self._categories.keys():
+                    continue
+                true_labels = values[0]
+                predicted_labels = values[1]
 
-            # The predicted label may contain NaN values, which should
-            # be replaced with a placeholder for the confusion matrix.
-            predicted_labels = np.nan_to_num(predicted_labels, nan=-1)
+                # The predicted label may contain NaN values, which should
+                # be replaced with a placeholder for the confusion matrix.
+                predicted_labels = np.nan_to_num(predicted_labels, nan=-1)
 
-            # Update the confusion matrix with the true and predicted
-            # labels for the current sample.
-            self._confusion_matrix += confusion_matrix(true_labels, predicted_labels, labels=list(self._categories.keys()))
+                # Update the confusion matrix with the true and predicted
+                # labels for the current sample.
+                self._confusion_matrix += confusion_matrix(true_labels, predicted_labels, labels=list(self._categories.keys()))
 
 
     def draw(self, ax, style, **kwargs):

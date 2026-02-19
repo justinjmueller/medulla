@@ -404,74 +404,74 @@ class SpineEfficiency(SpineArtist):
         efficiencies = np.linspace(0.0, 1, self._npts)
 
         # Get the data for the binning variable and the configured
-        # cuts. The data is returned as a dictionary with the key
-        # being the category and the value consisting of the variable
-        # and the cuts.
-        data, _ = sample.get_data([self._variable._key, *self._cuts.keys()], with_mask=self._variable.mask)
-        for category, values in data.items():
-            if category not in self._categories:
-                continue
-            if category not in self._posteriors:
-                self._posteriors[category] = {f'seq_{c}' : np.ones(efficiencies.shape) for c in self._cuts.keys()}
-                self._posteriors[category].update({f'unseq_{c}' : np.ones(efficiencies.shape) for c in self._cuts.keys()})
-                
-
-            # If the group does not already have an entry in the
-            # posteriors dictionary, create one.
-            if self._categories[category] not in self._posteriors:
-                self._posteriors[self._categories[category]] = {f'unbinned_seq_{c}' : np.ones(efficiencies.shape) for c in self._cuts.keys()}
-                self._posteriors[self._categories[category]].update({f'unbinned_unseq_{c}' : np.ones(efficiencies.shape) for c in self._cuts.keys()})
-
-                self._totals[self._categories[category]] = np.zeros(self._variable._nbins)
-
-                # If the show option is set to 'differential', create
-                # the necessary dictionaries to store the binned
-                # efficiencies.
-                if self._show_option == 'differential':
+        # cuts in batches to avoid loading the full dataset at once.
+        for batch_data, _ in sample.iterate_batches(
+            [self._variable._key, *self._cuts.keys()], with_mask=self._variable.mask
+        ):
+            for category, values in batch_data.items():
+                if category not in self._categories:
+                    continue
+                if category not in self._posteriors:
+                    self._posteriors[category] = {f'seq_{c}' : np.ones(efficiencies.shape) for c in self._cuts.keys()}
+                    self._posteriors[category].update({f'unseq_{c}' : np.ones(efficiencies.shape) for c in self._cuts.keys()})
                     
-                    self._posteriors[self._categories[category]].update({f'binned_seq_{c}' : np.ones((self._variable._nbins, efficiencies.shape[0])) for c in self._cuts.keys()})
-                    self._posteriors[self._categories[category]].update({f'binned_unseq_{c}' : np.ones((self._variable._nbins, efficiencies.shape[0])) for c in self._cuts.keys()})
-                    
-                    self._successes[self._categories[category]] = {f'binned_seq_{c}' : np.zeros(self._variable._nbins) for c in self._cuts.keys()}
-                    self._successes[self._categories[category]].update({f'binned_unseq_{c}' : np.zeros(self._variable._nbins) for c in self._cuts.keys()})
-            
-            # The calculation of efficiency as a function of some the
-            # variable of interest requires the binning of the variable
-            # into a number of bins.
-            bin_edges = self._variable._bin_edges[self._categories[category]]
-            nbins = len(bin_edges) - 1
 
-            # Calculate the success and total for each bin
-            indices = np.digitize(values[0], bin_edges, right=False)
-            self._totals[self._categories[category]] += np.bincount(indices, minlength=len(bin_edges)+1)[1:-1]
-            for ci, (cut, cutname) in enumerate(self._cuts.items()):
-                # Sequential cuts (unbinned)
-                total = len(values[0])
-                success = np.sum(np.all(values[1:ci+2], axis=0))
-                self._posteriors[self._categories[category]][f'unbinned_seq_{cut}'] = SpineEfficiency.multiply_posteriors(self._posteriors[self._categories[category]][f'unbinned_seq_{cut}'], binom.pmf(success, total, efficiencies))
+                # If the group does not already have an entry in the
+                # posteriors dictionary, create one.
+                if self._categories[category] not in self._posteriors:
+                    self._posteriors[self._categories[category]] = {f'unbinned_seq_{c}' : np.ones(efficiencies.shape) for c in self._cuts.keys()}
+                    self._posteriors[self._categories[category]].update({f'unbinned_unseq_{c}' : np.ones(efficiencies.shape) for c in self._cuts.keys()})
+
+                    self._totals[self._categories[category]] = np.zeros(self._variable._nbins)
+
+                    # If the show option is set to 'differential', create
+                    # the necessary dictionaries to store the binned
+                    # efficiencies.
+                    if self._show_option == 'differential':
+                        
+                        self._posteriors[self._categories[category]].update({f'binned_seq_{c}' : np.ones((self._variable._nbins, efficiencies.shape[0])) for c in self._cuts.keys()})
+                        self._posteriors[self._categories[category]].update({f'binned_unseq_{c}' : np.ones((self._variable._nbins, efficiencies.shape[0])) for c in self._cuts.keys()})
+                        
+                        self._successes[self._categories[category]] = {f'binned_seq_{c}' : np.zeros(self._variable._nbins) for c in self._cuts.keys()}
+                        self._successes[self._categories[category]].update({f'binned_unseq_{c}' : np.zeros(self._variable._nbins) for c in self._cuts.keys()})
                 
-                # Non-sequential cuts (unbinned)
-                success = np.sum(values[ci+1].to_numpy(bool))
-                self._posteriors[self._categories[category]][f'unbinned_unseq_{cut}'] = SpineEfficiency.multiply_posteriors(self._posteriors[self._categories[category]][f'unbinned_unseq_{cut}'], binom.pmf(success, total, efficiencies))
+                # The calculation of efficiency as a function of some the
+                # variable of interest requires the binning of the variable
+                # into a number of bins.
+                bin_edges = self._variable._bin_edges[self._categories[category]]
+                nbins = len(bin_edges) - 1
 
-                # If the show option is set to 'differential', calculate
-                # the binned efficiencies.
-                if self._show_option == 'differential':
-                    # Sequential cuts (binned)
-                    indices = np.digitize(values[0][np.all(values[1:ci+2], axis=0)], bin_edges, right=False)
-                    success = np.bincount(indices, minlength=len(bin_edges)+1)[1:-1]
-                    self._successes[self._categories[category]][f'binned_seq_{cut}'] += success
-                    binomialpmf = [binom.pmf(self._successes[self._categories[category]][f'binned_seq_{cut}'][i],
-                                             self._totals[self._categories[category]][i], efficiencies) for i in range(nbins)]
-                    self._posteriors[self._categories[category]][f'binned_seq_{cut}'] = np.array(binomialpmf)
+                # Calculate the success and total for each bin
+                indices = np.digitize(values[0], bin_edges, right=False)
+                self._totals[self._categories[category]] += np.bincount(indices, minlength=len(bin_edges)+1)[1:-1]
+                for ci, (cut, cutname) in enumerate(self._cuts.items()):
+                    # Sequential cuts (unbinned)
+                    total = len(values[0])
+                    success = np.sum(np.all(values[1:ci+2], axis=0))
+                    self._posteriors[self._categories[category]][f'unbinned_seq_{cut}'] = SpineEfficiency.multiply_posteriors(self._posteriors[self._categories[category]][f'unbinned_seq_{cut}'], binom.pmf(success, total, efficiencies))
+                    
+                    # Non-sequential cuts (unbinned)
+                    success = np.sum(values[ci+1].to_numpy(bool))
+                    self._posteriors[self._categories[category]][f'unbinned_unseq_{cut}'] = SpineEfficiency.multiply_posteriors(self._posteriors[self._categories[category]][f'unbinned_unseq_{cut}'], binom.pmf(success, total, efficiencies))
 
-                    # Non-sequential cuts (binned)
-                    indices = np.digitize(values[0][values[ci+1] == 1], bin_edges, right=False)
-                    success = np.bincount(indices, minlength=len(bin_edges)+1)[1:-1]
-                    self._successes[self._categories[category]][f'binned_unseq_{cut}'] += success
-                    binomialpmf = [binom.pmf(self._successes[self._categories[category]][f'binned_unseq_{cut}'][i],
-                                             self._totals[self._categories[category]][i], efficiencies) for i in range(nbins)]
-                    self._posteriors[self._categories[category]][f'binned_unseq_{cut}'] = np.array(binomialpmf)
+                    # If the show option is set to 'differential', calculate
+                    # the binned efficiencies.
+                    if self._show_option == 'differential':
+                        # Sequential cuts (binned)
+                        indices = np.digitize(values[0][np.all(values[1:ci+2], axis=0)], bin_edges, right=False)
+                        success = np.bincount(indices, minlength=len(bin_edges)+1)[1:-1]
+                        self._successes[self._categories[category]][f'binned_seq_{cut}'] += success
+                        binomialpmf = [binom.pmf(self._successes[self._categories[category]][f'binned_seq_{cut}'][i],
+                                                 self._totals[self._categories[category]][i], efficiencies) for i in range(nbins)]
+                        self._posteriors[self._categories[category]][f'binned_seq_{cut}'] = np.array(binomialpmf)
+
+                        # Non-sequential cuts (binned)
+                        indices = np.digitize(values[0][values[ci+1] == 1], bin_edges, right=False)
+                        success = np.bincount(indices, minlength=len(bin_edges)+1)[1:-1]
+                        self._successes[self._categories[category]][f'binned_unseq_{cut}'] += success
+                        binomialpmf = [binom.pmf(self._successes[self._categories[category]][f'binned_unseq_{cut}'][i],
+                                                 self._totals[self._categories[category]][i], efficiencies) for i in range(nbins)]
+                        self._posteriors[self._categories[category]][f'binned_unseq_{cut}'] = np.array(binomialpmf)
 
     def reduce(self, group, significance=0.6827):
         """

@@ -135,22 +135,22 @@ class SpineSpectra1D(SpineSpectra):
             self._plotdata = {}
             self._binedges = {}
             self._onebincount = {}
-        data, weights = sample.get_data([self._variable._key,], with_mask=self._variable.mask)
-        for category, values in data.items():
-            values = values[0]
-            if category not in self._categories.keys():
-                continue
-            if self._categories[category] not in self._plotdata:
-                self._plotdata[self._categories[category]] = np.zeros(self._variable._nbins)
-                self._onebincount[self._categories[category]] = 0
-            xr = self._variable._range if self._xrange is None else self._xrange
-            # Use either uniform bins or customized bins
-            h = np.histogram(values, 
-                bins=self._variable._nbins if self._variable._custom_bins is None else self._variable._custom_bins ,
-                range=xr, weights=weights[category])
-            self._onebincount[self._categories[category]] += np.sum(weights[category])
-            self._plotdata[self._categories[category]] += h[0]
-            self._binedges[self._categories[category]] = h[1]
+        for batch_data, batch_weights in sample.iterate_batches([self._variable._key,], with_mask=self._variable.mask):
+            for category, values in batch_data.items():
+                values = values[0]
+                if category not in self._categories.keys():
+                    continue
+                if self._categories[category] not in self._plotdata:
+                    self._plotdata[self._categories[category]] = np.zeros(self._variable._nbins)
+                    self._onebincount[self._categories[category]] = 0
+                xr = self._variable._range if self._xrange is None else self._xrange
+                # Use either uniform bins or customized bins
+                h = np.histogram(values, 
+                    bins=self._variable._nbins if self._variable._custom_bins is None else self._variable._custom_bins ,
+                    range=xr, weights=batch_weights[category])
+                self._onebincount[self._categories[category]] += np.sum(batch_weights[category])
+                self._plotdata[self._categories[category]] += h[0]
+                self._binedges[self._categories[category]] = h[1]
 
     def draw(self, ax, style, show_component_number=False,
              show_component_percentage=False, invert_stack_order=False,

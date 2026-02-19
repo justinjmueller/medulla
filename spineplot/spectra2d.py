@@ -161,32 +161,34 @@ class SpineSpectra2D(SpineSpectra):
         else:
             joint_mask = None
 
-        data, weights = sample.get_data([self._variables[0]._key, self._variables[1]._key], joint_mask)        
-        for category, values in data.items():
-            if category not in self._categories.keys():
-                continue
-            if self._categories[category] not in self._plotdata:
-                self._plotdata[self._categories[category]] = np.zeros((self._variables[0]._nbins, self._variables[1]._nbins))
-            xr = self._variables[0]._range if self._xrange is None else self._xrange
-            yr = self._variables[1]._range if self._yrange is None else self._yrange
-            # Use either uniform bins or customized bins
-            h = np.histogram2d(values[0], values[1], 
-                bins=[self._variables[0]._nbins if self._variables[0]._custom_bins is None else self._variables[0]._custom_bins,
-                self._variables[1]._nbins if self._variables[1]._custom_bins is None else self._variables[1]._custom_bins], 
-                range=(xr, yr), weights=weights[category])
-            self._plotdata[self._categories[category]] += h[0]
-            self._binedges[self._categories[category]] = h[1]
+        for batch_data, batch_weights in sample.iterate_batches(
+            [self._variables[0]._key, self._variables[1]._key], joint_mask
+        ):
+            for category, values in batch_data.items():
+                if category not in self._categories.keys():
+                    continue
+                if self._categories[category] not in self._plotdata:
+                    self._plotdata[self._categories[category]] = np.zeros((self._variables[0]._nbins, self._variables[1]._nbins))
+                xr = self._variables[0]._range if self._xrange is None else self._xrange
+                yr = self._variables[1]._range if self._yrange is None else self._yrange
+                # Use either uniform bins or customized bins
+                h = np.histogram2d(values[0], values[1], 
+                    bins=[self._variables[0]._nbins if self._variables[0]._custom_bins is None else self._variables[0]._custom_bins,
+                    self._variables[1]._nbins if self._variables[1]._custom_bins is None else self._variables[1]._custom_bins], 
+                    range=(xr, yr), weights=batch_weights[category])
+                self._plotdata[self._categories[category]] += h[0]
+                self._binedges[self._categories[category]] = h[1]
 
-            if self._categories[category] not in self._plotdata_diagonal:
-                self._plotdata_diagonal[self._categories[category]] = np.zeros(self._variables[0]._nbins)
-            diag = np.divide(values[1] - values[0], values[0])
-            xr = (-1, 1) if self._xrange is None else self._xrange
-            # Use either uniform bins or customized bins
-            h = np.histogram(diag, 
-                bins=self._variables[0]._nbins if self._variables[0]._custom_bins is None else self._variables[0]._custom_bins, 
-                range=xr, weights=weights[category])
-            self._plotdata_diagonal[self._categories[category]] += h[0]
-            self._binedges_diagonal[self._categories[category]] = h[1]
+                if self._categories[category] not in self._plotdata_diagonal:
+                    self._plotdata_diagonal[self._categories[category]] = np.zeros(self._variables[0]._nbins)
+                diag = np.divide(values[1] - values[0], values[0])
+                xr = (-1, 1) if self._xrange is None else self._xrange
+                # Use either uniform bins or customized bins
+                h = np.histogram(diag, 
+                    bins=self._variables[0]._nbins if self._variables[0]._custom_bins is None else self._variables[0]._custom_bins, 
+                    range=xr, weights=batch_weights[category])
+                self._plotdata_diagonal[self._categories[category]] += h[0]
+                self._binedges_diagonal[self._categories[category]] = h[1]
 
     def draw(self, ax, style, show_option='2d', draw_identity=True,
              draw_colorbar=True, invert_stack_order=False,

@@ -113,7 +113,7 @@ class Variable:
         -------
         None.
         """
-        self._validity_check[sample_name] = (self._key in sample._data.keys())
+        self._validity_check[sample_name] = (self._key in sample._columns)
 
         if all(self._validity_check.values()):
             groups = {v: [] for v in categories.values()}
