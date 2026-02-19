@@ -14,6 +14,7 @@
 #define MCTRUTH_H
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
 #include "sbnanaobj/StandardRecord/SRTrueInteraction.h"
+#include "sbnanaobj/StandardRecord/SRVector3D.h"
 
 #include "framework.h"
 
@@ -111,5 +112,26 @@ namespace mctruth
     template<typename T>
         double interaction_type(const T & obj) { return obj.genie_inttype; }
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, interaction_type, interaction_type);
+
+    /**
+     * @brief Variable for the true off-axis angle of the neutrino.
+     * @details This variable is intended to provide the true off-axis angle of
+     * the parent neutrino that produced the interaction. The off-axis angle is
+     * calculated as the angle between the neutrino momentum vector and the
+     * beam axis (defined as the z-axis in both SBND and ICARUS).
+     * @tparam T the type of the object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the true off-axis angle of the neutrino in degrees.
+     */
+    template<typename T>
+    double off_axis_angle(const T & obj)
+    {
+        SRVector3D neutrino_momentum = obj.momentum;
+        return 180./3.141592653589793 * std::acos(
+            neutrino_momentum.Z() / neutrino_momentum.Mag()
+        );
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, off_axis_angle, off_axis_angle);
+
 } // namespace mctruth
 #endif
