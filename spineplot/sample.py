@@ -397,16 +397,24 @@ class Sample:
             weights are stored as a dictionary with the category as the
             key and the weights (a pandas Series) as the value.
         """
-        data = {}
-        weights = {}
+        # Collect lists of per-batch Series, then concat once per category
+        # to avoid the quadratic cost of repeated pd.concat calls.
+        data_lists = {}
+        weight_lists = {}
         for batch_data, batch_weights in self.iterate_batches(variables, with_mask):
             for category, values in batch_data.items():
-                if category not in data:
-                    data[category] = [pd.Series(dtype=float) for _ in variables]
-                    weights[category] = pd.Series(dtype=float)
+                if category not in data_lists:
+                    data_lists[category] = [[] for _ in variables]
+                    weight_lists[category] = []
                 for i, v in enumerate(values):
-                    data[category][i] = pd.concat([data[category][i], v])
-                weights[category] = pd.concat([weights[category], batch_weights[category]])
+                    data_lists[category][i].append(v)
+                weight_lists[category].append(batch_weights[category])
+
+        data = {}
+        weights = {}
+        for category in data_lists:
+            data[category] = [pd.concat(chunks) for chunks in data_lists[category]]
+            weights[category] = pd.concat(weight_lists[category])
         return data, weights
 
     def process_systematics(self, recipes) -> None:
