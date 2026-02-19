@@ -386,6 +386,52 @@ namespace vars
     REGISTER_VAR_SCOPE(RegistrationScope::Both, vertex_z, vertex_z);
 
     /**
+     * @brief Variable for the PRISM off-axis angle of the interaction for a
+     * location consistent with SBND detector location.
+     * @details The PRISM off-axis angle is the angle made by the neutrino
+     * direction vector and the vector aligned with the BNB axis (z-axis).
+     * Because we have no handle on the production vertex, we assume the
+     * direction is the one formed by the unit vector pointing from the BNB
+     * target to the interaction vertex.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the PRISM off-axis angle of the interaction.
+     */
+    template<class T>
+    double off_axis_angle_sbnd(const T & obj)
+    {
+        return 180./3.141592653589793 * std::atan(std::sqrt(
+            std::pow(vertex_x(obj) + 74, 2) +
+            std::pow(vertex_y(obj), 2)
+        ) / 11000);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, off_axis_angle_sbnd, off_axis_angle_sbnd);
+
+    /**
+     * @brief Variable for the PRISM off-axis angle of the interaction for a
+     * location consistent with ICARUS detector location.
+     * @details The PRISM off-axis angle is the angle made by the neutrino
+     * direction vector and the vector aligned with the BNB axis (z-axis).
+     * Because we have no handle on the production vertex, we assume the
+     * direction is the one formed by the unit vector pointing from the BNB
+     * target to the interaction vertex. 59105 cm is the distance from the BNB
+     * target (600m) minus the offset of the ICARUS origin along the beam axis
+     * (8.95m).
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the PRISM off-axis angle of the interaction.
+     */
+    template<class T>
+    double off_axis_angle_icarus(const T & obj)
+    {
+        return 180./3.141592653589793 * std::atan(std::sqrt(
+            std::pow(vertex_x(obj), 2) +
+            std::pow(vertex_y(obj), 2)
+        ) / (vertex_z(obj) + 59105));
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, off_axis_angle_icarus, off_axis_angle_icarus);
+
+    /**
      * @brief Variable for the transverse momentum of the interaction counting
      * only particles identified as contributing to the final state.
      * @details This function calculates the transverse momentum of the
