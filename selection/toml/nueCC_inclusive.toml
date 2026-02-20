@@ -1,13 +1,17 @@
 [parameters]
 photon_threshold = 25.0
 electron_threshold = 0.0
-muon_threshold = 143.425
+muon_threshold = 25.0
 pion_threshold = 25.0
 proton_threshold = 50.0
 trackLength_threshold = 190.0
 electron_dedx = 3.625
 flash_low_t = 0.0
 flash_high_t = 9.6
+vertex_threshold = 3.25
+electron_softmax = 0.72
+primary_softmax = 0.97
+electron_id = 1.0
 
 [general]
 output = "output_nueCCInclusive"
@@ -19,6 +23,12 @@ fsthresh = [
     "@muon_threshold",
     "@pion_threshold",
     "@proton_threshold",
+    "@vertex_threshold",
+    "@electron_softmax",
+    "@primary_softmax",
+    "@flash_low_t",
+    "@flash_high_t",
+    "@electron_id"
 ]
 
 # ICARUS MC NuMI Neutrino + Cosmics CV
@@ -46,7 +56,7 @@ branch = [
     { name = "flash_cut",               type = "reco", parameters = [ "@flash_low_t", "@flash_high_t" ] },
     { name = "valid_flashmatch",        type = "reco"    },
     { name = "containment_cut",         type = "reco" },    
-    { name = "vertex_distance_cut",     type = "reco", parameters = [ 3.25 ] },
+    { name = "vertex_distance_cut",     type = "reco", parameters = [ "@vertex_threshold" ] },
     { name = "track_length",            type = "both", parameters = [ "@trackLength_threshold" ] },
     { name = "containment_cut",         type = "reco_particle", selector = "leading_electron"},
     { name = "particle_dedx",           type = "reco", parameters = [ "@electron_dedx" ] },
@@ -59,9 +69,9 @@ branch = [
     { name = "muon_multiplicity",        type = "reco", parameters = [ 0 ] },
     { name = "pion_multiplicity",        type = "reco", parameters = [ 0 ] },
     { name = "proton_multiplicity",      type = "reco", parameters = [ 0 ] },
-    { name = "no_muons",                 type = "reco", parameters = [ 25.0 ] },
-    { name = "no_charged_pions",         type = "reco", parameters = [ 25.0 ] },
-    { name = "no_protons",               type = "reco", parameters = [ 25.0 ] },
+    { name = "no_muons",                 type = "reco", parameters = [ "@muon_threshold" ] },
+    { name = "no_charged_pions",         type = "reco", parameters = [ "@pion_threshold" ] },
+    { name = "no_protons",               type = "reco", parameters = [ "@photon_threshold" ] },
 
     { name = "baseline",                 type = "mctruth" },
     { name = "cc",                       type = "mctruth" },
@@ -113,6 +123,8 @@ branch = [
     { name = "mip_softmax",            type = "reco_particle", selector = "leading_electron" },
     { name = "primary_softmax",        type = "reco_particle", selector = "leading_electron" },
     { name = "secondary_softmax",      type = "reco_particle", selector = "leading_electron" },
+    { name = "electron_softmax_cut",   type = "reco_particle", selector = "leading_electron", parameters = [ "@electron_softmax", "@electron_id" ] },
+    { name = "primary_softmax_cut",    type = "reco_particle", selector = "leading_electron", parameters = [ "@primary_softmax", "@electron_id" ] },
 
     { name = "photon_softmax",         type = "reco_particle", selector = "leading_photon"},
     { name = "primary_softmax",        type = "reco_particle", selector = "leading_photon"},
@@ -154,23 +166,22 @@ name = "selected"
 sim_only = false
 mode = "reco"
 cut = [
-    { name = "no_cut",                  type = "reco" },
-    { name = "fiducial_cut",            type = "reco" },
-    #{ name = "flash_cut",               type = "reco", parameters = [ "@flash_low_t", "@flash_high_t" ] },
-    { name = "valid_flashmatch",        type = "reco"    },
-    { name = "containment_cut",         type = "reco" },
-    { name = "track_length",            type = "reco",  parameters = [ "@trackLength_threshold" ] },
+    { name = "no_cut",                    type = "reco" },
+    { name = "fiducial_cut",              type = "reco" },
+    { name = "flash_cut",                 type = "reco", parameters = [ "@flash_low_t", "@flash_high_t" ] },
+    { name = "containment_cut",           type = "reco" },
+    { name = "vertex_distance_cut",       type = "reco", parameters = [ "@vertex_threshold" ] },
     { name = "has_particle_multiplicity", type = "reco", parameters = [1, 1] },
-    # { name = "containment_cut",         type = "reco_particle", selector = "leading_electron"},
-    # { name = "particle_dedx",           type = "reco", parameters = [ "@electron_dedx" ] },
-    # { name = "vertex_distance_cut",   type = "reco", parameters = [ 3.25 ] },
+    { name = "no_muons",                  type = "reco", parameters = [ "@muon_threshold" ] },
+    { name = "electron_softmax_cut",      type = "reco_particle", selector = "leading_electron", parameters = [ "@electron_softmax", "@electron_id" ] },
+    { name = "primary_softmax_cut",       type = "reco_particle", selector = "leading_electron", parameters = [ "@primary_softmax", "@electron_id" ] },
 ]
 branch = [
     { name = "fiducial_cut",            type = "reco"    },
     { name = "flash_cut",               type = "reco", parameters = [ "@flash_low_t", "@flash_high_t" ] },
     { name = "valid_flashmatch",        type = "reco"    },
     { name = "containment_cut",         type = "reco" },    
-    { name = "vertex_distance_cut",     type = "reco", parameters = [ 3.25 ] },
+    { name = "vertex_distance_cut",     type = "reco", parameters = [ "@vertex_threshold" ] },
     { name = "track_length",            type = "both", parameters = [ "@trackLength_threshold" ] },
     { name = "containment_cut",         type = "reco_particle", selector = "leading_electron"},
     { name = "particle_dedx",           type = "reco", parameters = [ "@electron_dedx" ] },
@@ -183,9 +194,9 @@ branch = [
     { name = "muon_multiplicity",        type = "reco", parameters = [ 0 ] },
     { name = "pion_multiplicity",        type = "reco", parameters = [ 0 ] },
     { name = "proton_multiplicity",      type = "reco", parameters = [ 0 ] },
-    { name = "no_muons",                 type = "reco", parameters = [ 25.0 ] },
-    { name = "no_charged_pions",         type = "reco", parameters = [ 25.0 ] },
-    { name = "no_protons",               type = "reco", parameters = [ 25.0 ] },
+    { name = "no_muons",                 type = "reco", parameters = [ "@muon_threshold" ] },
+    { name = "no_charged_pions",         type = "reco", parameters = [ "@pion_threshold" ] },
+    { name = "no_protons",               type = "reco", parameters = [ "@photon_threshold" ] },
 
     { name = "baseline",                 type = "mctruth" },
     { name = "cc",                       type = "mctruth" },
@@ -200,7 +211,6 @@ branch = [
     { name = "muon_multiplicity",        type = "true", parameters = [ 0 ] },
     { name = "pion_multiplicity",        type = "true", parameters = [ 0 ] },
     { name = "proton_multiplicity",      type = "true", parameters = [ 0 ] },
-    { name = "pdg",        type = "mctruth"},
 
     { name = "vertex_distance",          type = "reco_particle", selector = "leading_electron" },
     { name = "ke",                       type = "reco_particle", selector = "leading_electron" },
@@ -238,6 +248,20 @@ branch = [
     { name = "mip_softmax",            type = "reco_particle", selector = "leading_electron" },
     { name = "primary_softmax",        type = "reco_particle", selector = "leading_electron" },
     { name = "secondary_softmax",      type = "reco_particle", selector = "leading_electron" },
+    { name = "electron_softmax_cut",   type = "reco_particle", selector = "leading_electron", parameters = [ "@electron_softmax", "@electron_id" ] },
+    { name = "primary_softmax_cut",    type = "reco_particle", selector = "leading_electron", parameters = [ "@primary_softmax", "@electron_id" ] },
+
+    { name = "photon_softmax",         type = "reco_particle", selector = "leading_photon"},
+    { name = "primary_softmax",        type = "reco_particle", selector = "leading_photon"},
+
+    { name = "muon_softmax",           type = "reco_particle", selector = "leading_muon"},
+    { name = "primary_softmax",        type = "reco_particle", selector = "leading_muon"},
+
+    { name = "pion_softmax",           type = "reco_particle", selector = "leading_pion"},
+    { name = "primary_softmax",        type = "reco_particle", selector = "leading_pion"},
+
+    { name = "proton_softmax",         type = "reco_particle", selector = "leading_proton"},
+    { name = "primary_softmax",        type = "reco_particle", selector = "leading_proton"},
 
     { name = "length",                 type = "reco_particle", selector = "leading_electron" },
 
@@ -271,40 +295,89 @@ branch = [
     { name = "ntrue",         type = "event"    },
     { name = "nreco",         type = "event"    },
     { name = "nnu",           type = "event"    },
-    { name = "nintime",       type = "event", parameters = [ -0.5, 9.6 ] },
+    { name = "nintime",       type = "event", parameters = [ "@flash_low_t", "@flash_high_t" ] },
     { name = "nnu_mu",        type = "event"    },
     { name = "nnu_e",         type = "event"    },
 ]
 
-[[category]] # 0 : Fiducial, contained, electron neutrino CC signal
+[[category]] # 0 : Signal, fiducial electron neutrino CC events, w/ electron
 cuts = [
     { name = "neutrino"        },
     { name = "fiducial_cut"    },
     { name = "iscc"            },
-    { name = "neutrino_pdg",        parameters = [ 12.0, -12.0 ] },
+    { name = "flash_cut",                 parameters = [ "@flash_low_t", "@flash_high_t" ] },
+    { name = "neutrino_pdg",              parameters = [ 12.0, -12.0 ] },
+    { name = "has_particle_multiplicity", parameters = [ 1, 1 ] },
+    { name = "no_muons",                  parameters = [ "@muon_threshold" ] },
+    { name = "containment_cut" },
 ]
 
-[[category]] # 1 : Fiducial, contained, other neutrino CC signal
+[[category]] # 1 : electron neutrino CC events, w/ electron, but non-fiducial or non-contained
+cuts = [
+    { name = "neutrino"        },
+    { name = "iscc"            },
+    { name = "flash_cut",             parameters = [ "@flash_low_t", "@flash_high_t" ] },
+    { name = "neutrino_pdg",          parameters = [ 12.0, -12.0 ] },
+    { name = "has_particle_multiplicity", parameters = [ 1, 1 ] },
+]
+
+[[category]] # 2 : Muon neutrino CC events, fiducial and contained
 cuts = [
     { name = "neutrino"        },
     { name = "fiducial_cut"    },
     { name = "iscc"            },
-    { name = "!neutrino_pdg",        parameters = [ 12.0, -12.0 ] },
+    { name = "flash_cut",             parameters = [ "@flash_low_t", "@flash_high_t" ] },
+    { name = "neutrino_pdg",          parameters = [ 14.0, -14.0 ] },
+    { name = "containment_cut" },
 ]
 
-[[category]] # 2 : Non-fiducial/contained,  neutrino 
+[[category]] # 3 : Out of fiducial volume and uncontained neutrino events
 cuts = [
     { name = "neutrino"        },
-    { name = "iscc"            },
+    { name = "iscc"}
 ]
 
-[[category]] # 3 : neutral current
+[[category]] # 4 : Neutral current events, fiducial and contained
 cuts = [
     { name = "neutrino"        },
     { name = "!iscc"            },
 ]
 
-[[category]] # 4 : Cosmic
+[[category]] # 5 : Cosmic events
 cuts = [
     { name = "!neutrino"        },
 ]
+
+
+# [[category]] # 0 : Fiducial, contained, electron neutrino CC signal (Used for comparing efficiency to Pandora)
+# cuts = [
+#     { name = "neutrino"        },
+#     { name = "fiducial_cut"    },
+#     { name = "iscc"            },
+#     { name = "neutrino_pdg",        parameters = [ 12.0, -12.0 ] },
+# ]
+
+# [[category]] # 1 : Fiducial, contained, other neutrino CC signal
+# cuts = [
+#     { name = "neutrino"        },
+#     { name = "fiducial_cut"    },
+#     { name = "iscc"            },
+#     { name = "!neutrino_pdg",        parameters = [ 12.0, -12.0 ] },
+# ]
+
+# [[category]] # 2 : Non-fiducial/contained,  neutrino 
+# cuts = [
+#     { name = "neutrino"        },
+#     { name = "iscc"            },
+# ]
+
+# [[category]] # 3 : neutral current
+# cuts = [
+#     { name = "neutrino"        },
+#     { name = "!iscc"            },
+# ]
+
+# [[category]] # 4 : Cosmic
+# cuts = [
+#     { name = "!neutrino"        },
+# ]
