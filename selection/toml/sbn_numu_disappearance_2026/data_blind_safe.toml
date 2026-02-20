@@ -32,7 +32,6 @@ disable = true
 [[tree]]
 name = "selected"
 sim_only = false
-add_systematics = true
 mode = "reco"
 cut = [
     { name = "fiducial_cut",          type = "reco" },
