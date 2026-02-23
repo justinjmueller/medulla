@@ -1,4 +1,5 @@
 import numpy as np
+iource $INSTALL_DIR/
 import pandas as pd
 import re
 import uproot
@@ -38,7 +39,7 @@ class Sample:
     """
     def __init__(self, name, rf, category_branch, key, exposure_type,
                  trees, systematics=None, override_exposure=None, precompute=None,
-                 presel=None, override_category=None, print_sys=False) -> None:
+                 presel=None, override_category=None, print_sys=False, branches=None) -> None:
         """
         Initializes the Sample object with the given name and key.
 
@@ -93,7 +94,7 @@ class Sample:
         if override_exposure is not None:
             self.override_exposure(override_exposure, exposure_type)
 
-        self._data = pd.concat([self._file_handle[tree].arrays(library='pd') for tree in trees])
+        self._data = pd.concat([self._file_handle[tree].arrays(library='pd', expressions=branches) for tree in trees])
         if self._category_branch not in self._data.columns:
             raise ValueError(f'Category branch `{self._category_branch}` not found in sample `{self._name}`.')
         if override_category is not None:

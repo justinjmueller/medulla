@@ -844,5 +844,40 @@ namespace vars
         return p.vertex_distance >= 0 ? (double)p.vertex_distance : PLACEHOLDERVALUE;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Reco, vertex_distance, vertex_distance);
+
+
+    template<class T>
+    double reco_interaction_type(const T & obj)
+    {
+        int nEle(0);
+        int nMu(0);
+        int nPi(0);
+        int nProton(0);
+        for (size_t i = 0; i < obj.particles.size(); ++i)
+        {
+            if(pvars::pid(obj.particles[i]) == pvars::kElectron && pvars::primary_classification(obj.particles[i]))
+                nEle++;
+            else if(pvars::pid(obj.particles[i]) == pvars::kMuon && pvars::primary_classification(obj.particles[i]))
+                nMu++;
+            else if(pvars::pid(obj.particles[i]) == pvars::kPion && pvars::primary_classification(obj.particles[i]))
+                nPi++;
+            else if(pvars::pid(obj.particles[i]) == pvars::kProton && pvars::primary_classification(obj.particles[i]))
+                nProton++;
+        }
+
+        if(nEle > 0 && nMu == 0 && nPi == 0 && nProton == 1)
+            return 1; // CC QE-like
+        else if(nEle > 0 && nMu == 0 && nPi == 0 && nProton == 2)
+            return 2; // CC MEC-like
+        else if(nEle > 0 && nMu == 0 && nPi == 0 && nProton > 2)
+            return 3; // CC DIS-like
+        else if(nEle > 0 && nMu == 0 && nPi == 1)
+            return 4; // RES-like
+        else if(nEle > 0 && nMu == 0)
+            return 5; // Other nuE
+        else
+            return 0; // Other interaction type
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Reco, reco_interaction_type, reco_interaction_type);
 }
 #endif // VARIABLES_H

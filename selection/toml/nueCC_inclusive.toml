@@ -41,8 +41,8 @@ disable = false # Optional: default = false
 # ICARUS debug single file
 [[sample]]
 name = "debugMC"
-#path = "/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/input000.flat.root"
-path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
+path = "/exp/icarus/app/users/micarrig/nuESpine/skim_spine_NuMI_nuE.root"
+#path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
 ismc = true
 disable = true # Optional: default = false
 
@@ -72,12 +72,15 @@ branch = [
     { name = "no_muons",                 type = "reco", parameters = [ "@muon_threshold" ] },
     { name = "no_charged_pions",         type = "reco", parameters = [ "@pion_threshold" ] },
     { name = "no_protons",               type = "reco", parameters = [ "@photon_threshold" ] },
+    { name  = "reco_interaction_type",   type = "reco" },
 
     { name = "baseline",                 type = "mctruth" },
     { name = "cc",                       type = "mctruth" },
     { name = "pdg",                      type = "mctruth" },
     { name = "neutrino_energy",          type = "mctruth" },
-    
+    { name = "interaction_type",         type = "mctruth" },
+    { name = "interaction_mode",         type = "mctruth" },
+
     { name = "neutrino_id",               type = "true"    },
     { name = "category",                  type = "true"    },
     { name = "electron_multiplicity",     type = "true", parameters = [ 0 ] },
@@ -86,6 +89,9 @@ branch = [
     { name = "muon_multiplicity",        type = "true", parameters = [ 0 ] },
     { name = "pion_multiplicity",        type = "true", parameters = [ 0 ] },
     { name = "proton_multiplicity",      type = "true", parameters = [ 0 ] },
+    { name = "flash_cut",                type = "true", parameters = [ "@flash_low_t", "@flash_high_t" ] },
+    { name = "containment_cut",          type = "true" },
+    { name = "valid_flashmatch",         type = "true" },
 
     { name = "vertex_distance",          type = "reco_particle", selector = "leading_electron" },
     { name = "ke",                       type = "reco_particle", selector = "leading_electron" },
@@ -197,11 +203,14 @@ branch = [
     { name = "no_muons",                 type = "reco", parameters = [ "@muon_threshold" ] },
     { name = "no_charged_pions",         type = "reco", parameters = [ "@pion_threshold" ] },
     { name = "no_protons",               type = "reco", parameters = [ "@photon_threshold" ] },
+    { name  = "reco_interaction_type",   type = "reco" },
 
     { name = "baseline",                 type = "mctruth" },
     { name = "cc",                       type = "mctruth" },
     { name = "pdg",                      type = "mctruth" },
     { name = "neutrino_energy",          type = "mctruth" },
+    { name = "interaction_type",         type = "mctruth" },
+    { name = "interaction_mode",         type = "mctruth" },
     
     { name = "neutrino_id",               type = "true"    },
     { name = "category",                  type = "true"    },
@@ -211,6 +220,9 @@ branch = [
     { name = "muon_multiplicity",        type = "true", parameters = [ 0 ] },
     { name = "pion_multiplicity",        type = "true", parameters = [ 0 ] },
     { name = "proton_multiplicity",      type = "true", parameters = [ 0 ] },
+    { name = "flash_cut",                type = "true", parameters = [ "@flash_low_t", "@flash_high_t" ] },
+    { name = "containment_cut",          type = "true" },
+    { name = "valid_flashmatch",         type = "true" },
 
     { name = "vertex_distance",          type = "reco_particle", selector = "leading_electron" },
     { name = "ke",                       type = "reco_particle", selector = "leading_electron" },
@@ -305,7 +317,6 @@ cuts = [
     { name = "neutrino"        },
     { name = "fiducial_cut"    },
     { name = "iscc"            },
-    { name = "flash_cut",                 parameters = [ "@flash_low_t", "@flash_high_t" ] },
     { name = "neutrino_pdg",              parameters = [ 12.0, -12.0 ] },
     { name = "has_particle_multiplicity", parameters = [ 1, 1 ] },
     { name = "no_muons",                  parameters = [ "@muon_threshold" ] },
@@ -316,7 +327,6 @@ cuts = [
 cuts = [
     { name = "neutrino"        },
     { name = "iscc"            },
-    { name = "flash_cut",             parameters = [ "@flash_low_t", "@flash_high_t" ] },
     { name = "neutrino_pdg",          parameters = [ 12.0, -12.0 ] },
     { name = "has_particle_multiplicity", parameters = [ 1, 1 ] },
 ]
@@ -326,7 +336,6 @@ cuts = [
     { name = "neutrino"        },
     { name = "fiducial_cut"    },
     { name = "iscc"            },
-    { name = "flash_cut",             parameters = [ "@flash_low_t", "@flash_high_t" ] },
     { name = "neutrino_pdg",          parameters = [ 14.0, -14.0 ] },
     { name = "containment_cut" },
 ]
