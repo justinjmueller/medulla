@@ -711,8 +711,8 @@ namespace cuts
      * @param params the parameters for the cut. In this case, this sets the
      * distance between the Michel and muon, the Michel's min # of depositions, 
      * and the muon KE threshold.
-     * @return true if the interaction has a Michel electron attached to the
-     * "end" of the selected muon track.
+     * @return true if the interaction has a Michel electron attached 
+     to the "end" of the selected muon track.
     */
     template<class T>
     bool michel_attached_muon(const T & obj, std::vector<double> params={})
