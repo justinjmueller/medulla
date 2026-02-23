@@ -551,5 +551,59 @@ namespace cuts
         return count == 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, single_michel, single_michel);
+    
+    /**
+     * @brief Cut to select interactions with a Michel electron attached to 
+     * the end of a muon track.
+     * @details This function applies a cut to select interactions with a
+     * single Michel electron that has a start point within some distance 
+     * threshold from the endpoints of a muon track. Checks both endpoint
+     * and startpoint, in case of track flipping.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * distance between the Michel and muon, the Michel's min # of depositions, 
+     * and the muon KE threshold.
+     * @return true if the interaction has a Michel electron attached 
+     to the "end" of the selected muon track.
+    */
+    template<class T>
+    bool michel_attached_muon(const T & obj, std::vector<double> params={})
+    {
+        bool is_michel = false;
+        bool is_attached = false;
+
+        for (const auto & p : obj.particles)
+        {
+            if (pvars::semantic_type(p) != 2 && p.size > params[0]) continue;  // Not target Michel
+
+            is_michel = true;
+
+            for (const auto & p2 : obj.particles)
+            {
+                if (pvars::pid(p2) != 2 && pvars::primary_classification(p2) && pvars::ke(p2) >= params[1]) continue;  // Not target muon
+
+                float dx = p.start_point[0] - p2.end_point[0];
+                float dy = p.start_point[1] - p2.end_point[1];
+                float dz = p.start_point[2] - p2.end_point[2];
+                float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+                float dx_flip = p.start_point[0] - p2.start_point[0];
+                float dy_flip = p.start_point[1] - p2.start_point[1];
+                float dz_flip = p.start_point[2] - p2.start_point[2];
+                float dist_flip = std::sqrt(dx_flip * dx_flip + dy_flip * dy_flip + dz_flip * dz_flip);
+
+                if (dist < params[2] || dist_flip < params[2]) {
+                    is_attached = true;
+                    break;  // Found a close muon, stop checking others particles
+                }
+            }
+        if (is_attached) break;
+        }
+
+        return is_michel && is_attached;
+    }
+
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, michel_attached_muon, michel_attached_muon);    
 }
 #endif
