@@ -944,5 +944,67 @@ namespace cuts
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Reco, good_electron, good_electron);
 
+    bool checkSoftmax(double softmax_value, double threshold, double direction)
+    {
+        if (direction == -1.0)
+        {
+            return softmax_value < threshold;
+        }
+        else if (direction == 1.0)
+        {
+            return softmax_value > threshold;
+        }
+        else if (direction == 0.0)
+        {
+            return softmax_value == threshold;
+        }
+        else
+        {
+            throw std::invalid_argument("checkSoftmax requires the direction parameter to be -1.0, 0.0, or 1.0 to specify the direction of the cut.");
+        }
+    }
+
+    template<class T>
+    bool electron_softmax_cut(const T & obj, std::vector<double> params={0.5, 1.0})
+    {
+        if(params.size() != 2)
+            throw std::invalid_argument("electron_softmax_cut requires exactly two parameters: the softmax threshold and the direction of the cut.");
+
+        size_t i = selectors::leading_electron(obj);
+        if (i == kNoMatch) return false;
+        const auto & p = obj.particles[i];
+
+        double softmax_threshold = params[0];
+        double direction = params[1];
+
+        if (std::isnan(pvars::electron_softmax(p)))
+        {
+            return false; // or true, depending on how you want to handle NaN values
+        }
+        return (pvars::electron_softmax(p) > softmax_threshold); //checkSoftmax(pvars::electron_softmax(p), softmax_threshold, direction);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, electron_softmax_cut, electron_softmax_cut);
+
+    template<class T>
+    bool primary_softmax_cut(const T & obj, std::vector<double> params={0.5, 1.0})
+    {
+        if(params.size() != 2)
+            throw std::invalid_argument("primary_softmax_cut requires exactly two parameters: the softmax threshold and the direction of the cut.");
+
+        size_t i = selectors::leading_electron(obj);
+        if (i == kNoMatch) return false;
+        const auto & p = obj.particles[i];
+    
+        double softmax_threshold = params[0];
+        double direction = params[1];
+        
+        if (std::isnan(pvars::primary_softmax(p)))
+        {
+            return false; // or true, depending on how you want to handle NaN values
+        }
+        return checkSoftmax(pvars::primary_softmax(p), softmax_threshold, direction);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, primary_softmax_cut, primary_softmax_cut);
+
 }
 #endif

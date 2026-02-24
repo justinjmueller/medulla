@@ -1,5 +1,4 @@
 import numpy as np
-iource $INSTALL_DIR/
 import pandas as pd
 import re
 import uproot
