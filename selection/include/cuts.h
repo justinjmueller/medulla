@@ -147,6 +147,28 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::True, is_interaction_type, is_interaction_type);
 
     /**
+     * @brief Checks if the primary lepton is mu+ or e+
+     * @details This function checks if the primary lepton comes from an
+     * anti-neutrino. This is necessary because the current files do not
+     * have mctruth neutrino info, only particle truth info.
+     * @param obj the interaction to select on.
+     * @return true if the interaction has a primary lepton from an
+     * anti-neutrino.
+     */
+    template<class T>
+    bool primary_lepton_from_antineutrino(const T & obj, std::vector<double> params={13.0,})
+    {
+        for(const auto & p : obj.particles){
+            if((p.pdg_code == -13.0 || p.pdg_code == -11.0) && pvars::primary_classification(p)){
+                return true;
+                break;
+            }
+        }
+        return false;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::True, primary_lepton_from_antineutrino, primary_lepton_from_antineutrino);
+
+    /**
      * @brief Apply a fiducial volume cut; the interaction vertex must be
      * reconstructed within the fiducial volume.
      * @details The fiducial volume cut is applied on the reconstructed

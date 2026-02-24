@@ -99,11 +99,10 @@ branch = [
 
     # Cuts for applying MICHEL/NO PROTON selection
     {name = "single_michel",         type = "both",  parameters = [ "@michel_threshold"                        ] },
-    {name = "michel_attached_muon",  type = "reco",  parameters = [ "@michel_threshold", "@muon_threshold", 10] },
+    {name = "michel_attached_muon",  type = "reco",  parameters = [ "@michel_threshold", "@muon_threshold", 10 ] },
     {name = "proton_multiplicity",   type = "both",  parameters = [ "@proton_threshold"                        ] },
 
     # Leading MUON interaction-level
-    {name = "pdg",                   type = "true_particle", selector = "leading_muon"   },
     {name = "ke",                    type = "both_particle", selector = "leading_muon"   },
     {name = "polar_angle",           type = "both_particle", selector = "leading_muon"   },
     {name = "start_x",               type = "both_particle", selector = "leading_muon"   },
