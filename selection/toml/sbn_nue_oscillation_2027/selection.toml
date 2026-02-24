@@ -178,7 +178,11 @@ branch = [
     { name = "pion_multiplicity",              type = "both",  parameters = [ "@pion_threshold"              ] },
     { name = "muon_multiplicity",              type = "both",  parameters = [ "@muon_threshold"              ] },
     { name = "proton_multiplicity",            type = "both",  parameters = [ "@proton_threshold"            ] },
+<<<<<<< HEAD
     { name = "nonprimary_shower_multiplicity", type = "both",  parameters = [ "@nonprimary_shower_threshold" ] },
+=======
+    { name = "nonprimary_shower_multiplicity", type = "reco",  parameters = [ "@nonprimary_shower_threshold" ] },
+>>>>>>> a43518e (add single_michel cut to toml, add size req for michel cut)
     { name = "single_michel",                  type = "both",  parameters = [ "@michel_threshold"            ] },
 
     # Leading ELECTRON interaction-level
