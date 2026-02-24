@@ -157,12 +157,13 @@ namespace cuts
      * anti-neutrino.
      */
     template<class T>
-    bool primary_lepton_from_antineutrino(const T & obj)
+    bool primary_lepton_from_antineutrino(const T & obj, std::vector<double> params={13.0,})
     {
-        for(const auto & p : obj.particles)
-        {
-            if((p.pdg_code == -13.0 || p.pdg_code == -11.0) && pvars::primary_classification(p))
+        for(const auto & p : obj.particles){
+            if((p.pdg_code == -13.0 || p.pdg_code == -11.0) && pvars::primary_classification(p)){
                 return true;
+                break;
+            }
         }
         return false;
     }
