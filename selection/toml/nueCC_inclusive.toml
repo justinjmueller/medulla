@@ -12,6 +12,7 @@ vertex_threshold = 3.25
 electron_softmax = 0.72
 primary_softmax = 0.97
 electron_id = 1.0
+greater_than = 1.0
 
 [general]
 output = "output_nueCCInclusive"
@@ -28,7 +29,7 @@ fsthresh = [
     "@primary_softmax",
     "@flash_low_t",
     "@flash_high_t",
-    "@electron_id"
+    "@greater_than",
 ]
 
 # ICARUS MC NuMI Neutrino + Cosmics CV
@@ -36,7 +37,7 @@ fsthresh = [
 name = "NuMIFull"
 path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/*.root"
 ismc = true
-disable = false # Optional: default = false
+disable = true # Optional: default = false
 
 # ICARUS debug single file
 [[sample]]
@@ -44,7 +45,7 @@ name = "debugMC"
 path = "/exp/icarus/app/users/micarrig/nuESpine/skim_spine_NuMI_nuE.root"
 #path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
 ismc = true
-disable = true # Optional: default = false
+disable = false # Optional: default = false
 
 [[tree]]
 name = "all"
@@ -129,8 +130,8 @@ branch = [
     { name = "mip_softmax",            type = "reco_particle", selector = "leading_electron" },
     { name = "primary_softmax",        type = "reco_particle", selector = "leading_electron" },
     { name = "secondary_softmax",      type = "reco_particle", selector = "leading_electron" },
-    { name = "electron_softmax_cut",   type = "reco_particle", selector = "leading_electron", parameters = [ "@electron_softmax", "@electron_id" ] },
-    { name = "primary_softmax_cut",    type = "reco_particle", selector = "leading_electron", parameters = [ "@primary_softmax", "@electron_id" ] },
+    { name = "electron_softmax_cut",   type = "reco", parameters = [ "@electron_softmax", "@greater_than" ] },
+    { name = "primary_softmax_cut",    type = "reco", parameters = [ "@primary_softmax", "@greater_than" ] },
 
     { name = "photon_softmax",         type = "reco_particle", selector = "leading_photon"},
     { name = "primary_softmax",        type = "reco_particle", selector = "leading_photon"},
@@ -179,8 +180,8 @@ cut = [
     { name = "vertex_distance_cut",       type = "reco", parameters = [ "@vertex_threshold" ] },
     { name = "has_particle_multiplicity", type = "reco", parameters = [1, 1] },
     { name = "no_muons",                  type = "reco", parameters = [ "@muon_threshold" ] },
-    { name = "electron_softmax_cut",      type = "reco_particle", selector = "leading_electron", parameters = [ "@electron_softmax", "@electron_id" ] },
-    { name = "primary_softmax_cut",       type = "reco_particle", selector = "leading_electron", parameters = [ "@primary_softmax", "@electron_id" ] },
+    { name = "electron_softmax_cut",      type = "reco", parameters = [ "@electron_softmax", "@greater_than" ] },
+    { name = "primary_softmax_cut",       type = "reco", parameters = [ "@primary_softmax", "@greater_than" ] },
 ]
 branch = [
     { name = "fiducial_cut",            type = "reco"    },
@@ -260,8 +261,8 @@ branch = [
     { name = "mip_softmax",            type = "reco_particle", selector = "leading_electron" },
     { name = "primary_softmax",        type = "reco_particle", selector = "leading_electron" },
     { name = "secondary_softmax",      type = "reco_particle", selector = "leading_electron" },
-    { name = "electron_softmax_cut",   type = "reco_particle", selector = "leading_electron", parameters = [ "@electron_softmax", "@electron_id" ] },
-    { name = "primary_softmax_cut",    type = "reco_particle", selector = "leading_electron", parameters = [ "@primary_softmax", "@electron_id" ] },
+    { name = "electron_softmax_cut",   type = "reco", parameters = [ "@electron_softmax", "@greater_than" ] },
+    { name = "primary_softmax_cut",    type = "reco", parameters = [ "@primary_softmax", "@greater_than" ] },
 
     { name = "photon_softmax",         type = "reco_particle", selector = "leading_photon"},
     { name = "primary_softmax",        type = "reco_particle", selector = "leading_photon"},
