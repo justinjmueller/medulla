@@ -146,7 +146,7 @@ namespace vars
      * as counting towards the final state of the interaction.
      * @tparam T the type of interaction (true or reco).
      * @param obj interaction to apply the variable on.
-     * @return the total hardronic visible energy of the interaction.
+     * @return the total hardronic visible energy [MeV] of the interaction.
      */
     template<class T>
     double hadronic_visible_energy(const T & obj)
@@ -160,7 +160,7 @@ namespace vars
                 if(pvars::pid(p) == pvars::kPion)   energy += pvars::energy(p);
             }
         }
-        return energy/1000.0;
+        return energy;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, hadronic_visible_energy, hadronic_visible_energy);
 
