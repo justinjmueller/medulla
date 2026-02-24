@@ -135,7 +135,6 @@ cut = [
 ]
 branch = [
     {name = "category",              type = "true" },
-    {name = "pdg",                   type = "true_particle", selector = "leading_muon"   },
     {name = "polar_angle",           type = "both_particle", selector = "leading_muon"   },
     {name = "ke",                    type = "both_particle", selector = "leading_muon"   },
     {name = "calo_ke",               type = "both_particle", selector = "target_michel"   },
