@@ -115,6 +115,7 @@ branch = [
     { name = "axial_spread",                   type = "reco_particle", selector = "leading_electron" },
     { name = "vertex_distance",                type = "reco_particle", selector = "leading_electron" },
     { name = "electron_softmax",               type = "reco_particle", selector = "leading_electron" },
+    { name = "photon_softmax",                 type = "reco_particle", selector = "leading_electron" },
     { name = "primary_softmax",                type = "reco_particle", selector = "leading_electron" },
 
     # Leading PROTON interaction-level
@@ -198,6 +199,7 @@ branch = [
     { name = "axial_spread",                   type = "reco_particle", selector = "leading_electron" },
     { name = "vertex_distance",                type = "reco_particle", selector = "leading_electron" },
     { name = "electron_softmax",               type = "reco_particle", selector = "leading_electron" },
+    { name = "photon_softmax",                 type = "reco_particle", selector = "leading_electron" },
     { name = "primary_softmax",                type = "reco_particle", selector = "leading_electron" },
 
     # Leading PROTON interaction-level
