@@ -11,7 +11,7 @@ fsthresh = [
 
 [parameters]
 electron_threshold = 25.0
-muon_threshold = 50.0
+muon_threshold = 143.425
 proton_threshold = 40.0
 michel_threshold = 10                 # number of depositions (as opposed to MeV)
 
@@ -89,7 +89,6 @@ mode = "reco"
 cut = [
     {name = "fiducial_cut",          type = "reco" },
     {name = "containment_cut",       type = "reco" },
-    {name = "valid_flashmatch",      type = "reco" },
     {name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold"     ] },
 ]
 branch = [
@@ -112,6 +111,7 @@ branch = [
     {name = "end_y",                 type = "both_particle", selector = "leading_muon"   },
     {name = "end_z",                 type = "both_particle", selector = "leading_muon"   },
     {name = "p",                     type = "both_particle", selector = "leading_muon"   },
+    {name = "muon_softmax",          type = "reco_particle", selector = "leading_muon"   },
 
     # Target MICHEL interaction-level
     {name = "calo_ke",               type = "both_particle", selector = "target_michel"   },
@@ -130,13 +130,15 @@ mode = "true"
 cut = [
     {name = "fiducial_cut",          type = "true" },
     {name = "containment_cut",       type = "true" },
-    {name = "neutrino",              type = "true" },
     {name = "single_muon",           type = "true",  parameters = [ "@muon_threshold"     ] },
 ]
 branch = [
     {name = "category",              type = "true" },
+    {name = "visible_energy",        type = "true" },
+    {name = "pdg",                   type = "true_particle", selector = "leading_muon"   },
     {name = "polar_angle",           type = "both_particle", selector = "leading_muon"   },
     {name = "ke",                    type = "both_particle", selector = "leading_muon"   },
+    {name = "muon_softmax",          type = "reco_particle", selector = "leading_muon"   },
     {name = "calo_ke",               type = "both_particle", selector = "target_michel"   },
 
     # Cuts for applying MICHEL/NO PROTON selection / efficiency studies
@@ -146,7 +148,6 @@ branch = [
     # Cuts (for Muon selection efficiency studies)
     {name = "fiducial_cut",          type = "reco" },
     {name = "containment_cut",       type = "reco" },
-    {name = "valid_flashmatch",      type = "reco" },
     {name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold"     ] },
 
     # Cuts (for Michel selection efficiency studies)
