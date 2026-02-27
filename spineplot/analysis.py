@@ -148,18 +148,22 @@ class Analysis:
                             # Check if the variable is present in all samples
                             if not all(self._variables[x['variable']]._validity_check.values()):
                                 missing_samples = [k for k, v in self._variables[x['variable']]._validity_check.items() if not v]
-                                raise ConfigException(f"Variable '{x['variable']}' not found in all samples ({' '.join(missing_samples)}).")
+                                raise ConfigException(f"Variable '{x['variable']}' not found in all samples ({' '.join(missing_samples)})")
                             
                             # Grab artist settings
-                            show_option = x.get('draw_kwargs', {}).get('show_option', 'table')
-                            npts = x.get('draw_kwargs', {}).get('npts', 1e6)
+                            draw_kwargs = dict(x.get('draw_kwargs', {}))
+                            show_option = draw_kwargs.get('show_option', 'table')
+                            npts = draw_kwargs.get('npts', 1e6)
+                            show_counts = draw_kwargs.pop('show_counts', True)
                             
                             # Create the artist
                             art = SpineEfficiency(self._variables[x['variable']], restrict_categories,
                                                   x['cuts'], x.get('title', None), x.get('xrange', None),
-                                                  x.get('xtitle', None), show_option, npts)
-                            self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
+                                                  x.get('xtitle', None), show_option, npts, show_counts)
+                            self._figures[fig['name']].register_spine_artist(art, draw_kwargs=draw_kwargs)
                             self._artists.append(art)
+
+
 
                         elif x['type'] == 'ConfusionMatrix':
                             # Check if the true and predicted labels are present in all samples
