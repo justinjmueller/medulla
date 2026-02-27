@@ -37,15 +37,15 @@ fsthresh = [
 name = "NuMIFull"
 path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/*.root"
 ismc = true
-disable = false # Optional: default = false
+disable = true # Optional: default = false
 
 # ICARUS debug single file
 [[sample]]
 name = "debugMC"
-path = "/exp/icarus/app/users/micarrig/nuESpine/skim_spine_NuMI_nuE.root"
-#path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
+#path = "/exp/icarus/app/users/micarrig/nuESpine/skim_spine_NuMI_nuE.root"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
 ismc = true
-disable = true # Optional: default = false
+disable = false # Optional: default = false
 
 [[tree]]
 name = "all"
@@ -74,6 +74,7 @@ branch = [
     { name = "no_charged_pions",         type = "reco", parameters = [ "@pion_threshold" ] },
     { name = "no_protons",               type = "reco", parameters = [ "@photon_threshold" ] },
     { name  = "reco_interaction_type",   type = "reco" },
+    { name = "ele_beam_open_angle",      type = "reco"},
 
     { name = "baseline",                 type = "mctruth" },
     { name = "cc",                       type = "mctruth" },
@@ -205,6 +206,7 @@ branch = [
     { name = "no_charged_pions",         type = "reco", parameters = [ "@pion_threshold" ] },
     { name = "no_protons",               type = "reco", parameters = [ "@photon_threshold" ] },
     { name  = "reco_interaction_type",   type = "reco" },
+    { name = "ele_beam_open_angle",      type = "reco"},
 
     { name = "baseline",                 type = "mctruth" },
     { name = "cc",                       type = "mctruth" },
