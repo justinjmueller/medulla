@@ -741,14 +741,14 @@ namespace cuts
                 if(pvars::pid(p2) != 2 && pvars::primary_classification(p2) && pvars::ke(p2) >= params[1])
                     continue; // Not target muon
 
-                float dx = pvars::start_point_x(p) - pvars::end_point_x(p2);
-                float dy = pvars::start_point_y(p) - pvars::end_point_y(p2);
-                float dz = pvars::start_point_z(p) - pvars::end_point_z(p2);
+                float dx = pvars::start_x(p) - pvars::end_x(p2);
+                float dy = pvars::start_y(p) - pvars::end_y(p2);
+                float dz = pvars::start_z(p) - pvars::end_z(p2);
                 float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
 
-                float dx_flip = pvars::start_point_x(p) - pvars::start_point_x(p2);
-                float dy_flip = pvars::start_point_y(p) - pvars::start_point_y(p2);
-                float dz_flip = pvars::start_point_z(p) - pvars::start_point_z(p2);
+                float dx_flip = pvars::start_x(p) - pvars::start_x(p2);
+                float dy_flip = pvars::start_y(p) - pvars::start_y(p2);
+                float dz_flip = pvars::start_z(p) - pvars::start_z(p2);
                 float dist_flip = std::sqrt(dx_flip * dx_flip + dy_flip * dy_flip + dz_flip * dz_flip);
 
                 if(dist < params[2] || dist_flip < params[2])
