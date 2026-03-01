@@ -126,9 +126,14 @@ namespace mctruth
     template<typename T>
     double off_axis_angle(const T & obj)
     {
-        SRVector3D neutrino_momentum = obj.momentum;
+        const auto & neutrino_momentum = obj.momentum;
+        double mag = std::sqrt(
+            neutrino_momentum.x * neutrino_momentum.x +
+            neutrino_momentum.y * neutrino_momentum.y +
+            neutrino_momentum.z * neutrino_momentum.z
+        );
         return 180./3.141592653589793 * std::acos(
-            neutrino_momentum.Z() / neutrino_momentum.Mag()
+            neutrino_momentum.z / mag
         );
     }
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, off_axis_angle, off_axis_angle);
