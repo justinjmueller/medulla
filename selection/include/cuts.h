@@ -573,7 +573,7 @@ namespace cuts
             if(pvars::semantic_type(p) == 2 && p.size > params[0])
                 ++count;
             if(count > 1)
-                break; // No need to count further, we only care about multiplicity of 1.
+                break; // No need to count further.
         }
         return count == 1;
     }

@@ -146,7 +146,7 @@ namespace vars
      * as counting towards the final state of the interaction.
      * @tparam T the type of interaction (true or reco).
      * @param obj interaction to apply the variable on.
-     * @return the total hardronic visible energy [MeV] of the interaction.
+     * @return the total hardronic visible energy of the interaction in MeV.
      */
     template<class T>
     double hadronic_visible_energy(const T & obj)
