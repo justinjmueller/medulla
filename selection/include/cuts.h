@@ -532,15 +532,18 @@ namespace cuts
      * single Michel electron.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * number of depositions for a Michel to count towards the multiplicity. 
+     * Defaults to 10.
      * @return true if the interaction has a single Michel electron.
-    */
+     */
     template<class T>
-    bool single_michel(const T & obj)
+    bool single_michel(const T & obj, std::vector<double> params={10.0,})
     {
         size_t count(0);
         for(const auto & p : obj.particles)
         {
-            if(pvars::semantic_type(p) == 2)
+            if(pvars::semantic_type(p) == 2 && p.size > params[0])
                 ++count;
             if(count > 1)
                 break; // No need to count further, we only care about multiplicity of 1.

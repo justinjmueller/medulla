@@ -7,7 +7,9 @@ fsthresh = [
     "@electron_threshold",
     "@muon_threshold",
     "@pion_threshold",
-    "@proton_threshold"
+    "@proton_threshold",
+    "@nonprimary_shower_threshold",
+    "@michel_threshold"
 ]
 
 [parameters]
@@ -17,6 +19,7 @@ muon_threshold = 25.0
 pion_threshold = 25.0
 proton_threshold = 40.0
 nonprimary_shower_threshold = 10.0
+michel_threshold = 10                 # number of depositions (as opposed to MeV)
 
 [[sample]]
 name = "sbnd"
@@ -91,7 +94,8 @@ branch = [
     { name = "pion_multiplicity",              type = "both",  parameters = [ "@pion_threshold"              ] },
     { name = "muon_multiplicity",              type = "both",  parameters = [ "@muon_threshold"              ] },
     { name = "proton_multiplicity",            type = "both",  parameters = [ "@proton_threshold"            ] },
-    { name = "nonprimary_shower_multiplicity", type = "reco",  parameters = [ "@nonprimary_shower_threshold" ] },
+    { name = "nonprimary_shower_multiplicity", type = "both",  parameters = [ "@nonprimary_shower_threshold" ] },
+    { name = "single_michel",                  type = "both",  parameters = [ "@michel_threshold"            ] },
 
     # Leading ELECTRON interaction-level
     { name = "start_x",                        type = "both_particle", selector = "leading_electron" },
@@ -100,6 +104,7 @@ branch = [
     { name = "start_dir_x",                    type = "both_particle", selector = "leading_electron" },
     { name = "start_dir_y",                    type = "both_particle", selector = "leading_electron" },
     { name = "start_dir_z",                    type = "both_particle", selector = "leading_electron" },
+    { name = "semantic_type",                  type = "both_particle", selector = "leading_electron" },
     { name = "ke",                             type = "both_particle", selector = "leading_electron" },
     { name = "p",                              type = "both_particle", selector = "leading_electron" },
     { name = "polar_angle",                    type = "both_particle", selector = "leading_electron" },
@@ -110,6 +115,7 @@ branch = [
     { name = "axial_spread",                   type = "reco_particle", selector = "leading_electron" },
     { name = "vertex_distance",                type = "reco_particle", selector = "leading_electron" },
     { name = "electron_softmax",               type = "reco_particle", selector = "leading_electron" },
+    { name = "photon_softmax",                 type = "reco_particle", selector = "leading_electron" },
     { name = "primary_softmax",                type = "reco_particle", selector = "leading_electron" },
 
     # Leading PROTON interaction-level
@@ -167,12 +173,13 @@ branch = [
     { name = "vertex_x",                       type = "both"    },
     { name = "vertex_y",                       type = "both"    },
     { name = "vertex_z",                       type = "both"    },
-    { name = "photon_multiplicity",            type = "both",  parameters = [ "@photon_threshold"   ] },
-    { name = "electron_multiplicity",          type = "both",  parameters = [ "@electron_threshold" ] },
-    { name = "pion_multiplicity",              type = "both",  parameters = [ "@pion_threshold"     ] },
-    { name = "muon_multiplicity",              type = "both",  parameters = [ "@muon_threshold"     ] },
-    { name = "proton_multiplicity",            type = "both",  parameters = [ "@proton_threshold"   ] },
-    { name = "nonprimary_shower_multiplicity", type = "reco",  parameters = [ 10.0,                 ] },
+    { name = "photon_multiplicity",            type = "both",  parameters = [ "@photon_threshold"            ] },
+    { name = "electron_multiplicity",          type = "both",  parameters = [ "@electron_threshold"          ] },
+    { name = "pion_multiplicity",              type = "both",  parameters = [ "@pion_threshold"              ] },
+    { name = "muon_multiplicity",              type = "both",  parameters = [ "@muon_threshold"              ] },
+    { name = "proton_multiplicity",            type = "both",  parameters = [ "@proton_threshold"            ] },
+    { name = "nonprimary_shower_multiplicity", type = "both",  parameters = [ "@nonprimary_shower_threshold" ] },
+    { name = "single_michel",                  type = "both",  parameters = [ "@michel_threshold"            ] },
 
     # Leading ELECTRON interaction-level
     { name = "start_x",                        type = "both_particle", selector = "leading_electron" },
@@ -181,6 +188,7 @@ branch = [
     { name = "start_dir_x",                    type = "both_particle", selector = "leading_electron" },
     { name = "start_dir_y",                    type = "both_particle", selector = "leading_electron" },
     { name = "start_dir_z",                    type = "both_particle", selector = "leading_electron" },
+    { name = "semantic_type",                  type = "both_particle", selector = "leading_electron" },
     { name = "ke",                             type = "both_particle", selector = "leading_electron" },
     { name = "p",                              type = "both_particle", selector = "leading_electron" },
     { name = "polar_angle",                    type = "both_particle", selector = "leading_electron" },
@@ -191,6 +199,7 @@ branch = [
     { name = "axial_spread",                   type = "reco_particle", selector = "leading_electron" },
     { name = "vertex_distance",                type = "reco_particle", selector = "leading_electron" },
     { name = "electron_softmax",               type = "reco_particle", selector = "leading_electron" },
+    { name = "photon_softmax",                 type = "reco_particle", selector = "leading_electron" },
     { name = "primary_softmax",                type = "reco_particle", selector = "leading_electron" },
 
     # Leading PROTON interaction-level
