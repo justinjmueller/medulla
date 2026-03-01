@@ -206,10 +206,16 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     for(int i(0); i < input_tree->GetEntries(); ++i)
     {
         input_tree->GetEntry(i);
-        if(!use_additional_hash)
-            candidates.insert(std::make_pair<index_t, size_t>(std::make_tuple(run, subrun, event, nu_id, 0), i));
-        else
-            candidates.insert(std::make_pair<index_t, size_t>(std::make_tuple(run, subrun, event, nu_id, brs["true_neutrino_energy"]), i));
+        // Only consider entries with a valid neutrino ID. That is, cosmics and
+        // failed truth matching will not be included in the candidates map and
+        // will be copied to the non-matched TTree if it has been created.
+        if(nu_id >= 0)
+        {
+            if(!use_additional_hash)
+                candidates.insert(std::make_pair<index_t, size_t>(std::make_tuple(run, subrun, event, nu_id, 0), i));
+            else
+                candidates.insert(std::make_pair<index_t, size_t>(std::make_tuple(run, subrun, event, nu_id, brs["true_neutrino_energy"]), i));
+        }
     }
 
     /**
@@ -386,6 +392,13 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     // Fill the non-matched TTree if it has been created.
     if(nonmatched_tree)
     {
+        // Non-matched signal candidates that are actually neutrinos can happen
+        // due to file mismatching. Though the user is expected to ensure that
+        // the input TTree and the input weights file correspond to the same
+        // set of events, this is not enforced by the code. Therefore, we copy
+        // any neutrino entries that do not have a match in the input weights
+        // file to the non-matched TTree as a "audible" sign that something is
+        // amiss.
         for(auto & [key, value] : candidates)
         {
             if(std::find(saved_indices.begin(), saved_indices.end(), key) != saved_indices.end())
@@ -396,6 +409,23 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
             event = std::get<2>(key);
             nonmatched_tree->Fill();
         }
+
+        // The primary use case for the non-matched TTree is to capture cosmics
+        // and failed truth matching. We explicitly write all entries of the
+        // input tree that have a neutrino ID less than 0 to the non-matched
+        // TTree to capture these cases.
+        for(int i(0); i < input_tree->GetEntries(); ++i)
+        {
+            input_tree->GetEntry(i);
+            if(nu_id < 0)
+            {
+                run = reader.get_run();
+                subrun = reader.get_subrun();
+                event = reader.get_event();
+                nonmatched_tree->Fill();
+            }
+        }
+
         directory->WriteObject(nonmatched_tree, nonmatched_tree->GetName());
         delete nonmatched_tree;
     }
