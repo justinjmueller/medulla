@@ -8,8 +8,6 @@ fsthresh = [
     "@muon_threshold",
     "@pion_threshold",
     "@proton_threshold",
-    "@nonprimary_shower_threshold",
-    "@michel_threshold"
 ]
 
 [parameters]
