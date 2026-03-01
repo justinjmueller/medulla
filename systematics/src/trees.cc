@@ -148,6 +148,12 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     for(int i(0); i < input_tree->GetNbranches()-3; ++i)
     {
         std::string brname = input_tree->GetListOfBranches()->At(i)->GetName();
+        
+        // We explicitly handle this branch, so we skip it in this loop.
+        if(brname == "true_neutrino_id")
+            continue;
+
+        // Initialize the branch value to 0 and set the branch address.
         brs[brname] = 0;
         input_tree->SetBranchAddress(brname.c_str(), &brs[brname]);
     }
@@ -171,6 +177,7 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     TTree * output_tree = new TTree(table.get_string_field("name").c_str(), table.get_string_field("name").c_str());
     for(auto & br : brs)
         output_tree->Branch(br.first.c_str(), &br.second);
+    output_tree->Branch("true_neutrino_id", &nu_id);
     output_tree->Branch("Run", &run);
     output_tree->Branch("Subrun", &subrun);
     output_tree->Branch("Evt", &event);
