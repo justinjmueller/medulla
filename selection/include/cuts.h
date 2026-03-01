@@ -150,20 +150,19 @@ namespace cuts
     /**
      * @brief Checks if the primary lepton is mu+ or e+
      * @details This function checks if the primary lepton comes from an
-     * anti-neutrino. This is necessary because the current files do not
-     * have mctruth neutrino info, only particle truth info.
+     * anti-neutrino. This is necessary because the current files do not have
+     * mctruth neutrino info, only particle truth info. 
      * @param obj the interaction to select on.
      * @return true if the interaction has a primary lepton from an
      * anti-neutrino.
      */
     template<class T>
-    bool primary_lepton_from_antineutrino(const T & obj, std::vector<double> params={13.0,})
+    bool primary_lepton_from_antineutrino(const T & obj)
     {
-        for(const auto & p : obj.particles){
-            if((p.pdg_code == -13.0 || p.pdg_code == -11.0) && pvars::primary_classification(p)){
+        for(const auto & p : obj.particles)
+        {
+            if((p.pdg_code == -13.0 || p.pdg_code == -11.0) && pvars::primary_classification(p))
                 return true;
-                break;
-            }
         }
         return false;
     }
@@ -701,55 +700,63 @@ namespace cuts
 
     
     /**
-     * @brief Cut to select interactions with a Michel electron attached to 
-     * the end of a muon track.
+     * @brief Cut to select interactions with a Michel electron attached to the
+     * end of a muon track.
      * @details This function applies a cut to select interactions with a
      * single Michel electron that has a start point within some distance 
-     * threshold from the endpoints of a muon track. Checks both endpoint
-     * and startpoint, in case of track flipping.
+     * threshold from the endpoints of a muon track. Checks both endpoint and
+     * startpoint, in case of track flipping.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to select on.
      * @param params the parameters for the cut. In this case, this sets the
      * distance between the Michel and muon, the Michel's min # of depositions, 
      * and the muon KE threshold.
-     * @return true if the interaction has a Michel electron attached 
-     to the "end" of the selected muon track.
+     * @return true if the interaction has a Michel electron attached to the
+     * "end" of the selected muon track.
     */
     template<class T>
     bool michel_attached_muon(const T & obj, std::vector<double> params={})
     {
+        // Check that the parameters are given; if not, apply default values.
+        if(params.size() < 3)
+        {
+            params.resize(3);
+            params[0] = 10.0;    // Minimum number of depositions for the Michel electron
+            params[1] = 143.425; // Muon KE threshold (corresponds to 50 cm track length)
+            params[2] = 10.0;    // Distance threshold between Michel and muon start/end points
+        }
+
         bool is_michel = false;
         bool is_attached = false;
 
-        for (const auto & p : obj.particles)
+        for(const auto & p : obj.particles)
         {
-            if (pvars::semantic_type(p) != 2 && p.size > params[0]) continue;  // Not target Michel
+            if(pvars::semantic_type(p) != 2 && p.size > params[0])
+                continue; // Not target Michel
 
             is_michel = true;
 
-            for (const auto & p2 : obj.particles)
+            for(const auto & p2 : obj.particles)
             {
-                if (pvars::pid(p2) != 2 && pvars::primary_classification(p2) && pvars::ke(p2) >= params[1]) continue;  // Not target muon
+                if(pvars::pid(p2) != 2 && pvars::primary_classification(p2) && pvars::ke(p2) >= params[1])
+                    continue; // Not target muon
 
-                float dx = p.start_point[0] - p2.end_point[0];
-                float dy = p.start_point[1] - p2.end_point[1];
-                float dz = p.start_point[2] - p2.end_point[2];
+                float dx = pvars::start_point_x(p) - pvars::end_point_x(p2);
+                float dy = pvars::start_point_y(p) - pvars::end_point_y(p2);
+                float dz = pvars::start_point_z(p) - pvars::end_point_z(p2);
                 float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
 
-                float dx_flip = p.start_point[0] - p2.start_point[0];
-                float dy_flip = p.start_point[1] - p2.start_point[1];
-                float dz_flip = p.start_point[2] - p2.start_point[2];
+                float dx_flip = pvars::start_point_x(p) - pvars::start_point_x(p2);
+                float dy_flip = pvars::start_point_y(p) - pvars::start_point_y(p2);
+                float dz_flip = pvars::start_point_z(p) - pvars::start_point_z(p2);
                 float dist_flip = std::sqrt(dx_flip * dx_flip + dy_flip * dy_flip + dz_flip * dz_flip);
 
-                if (dist < params[2] || dist_flip < params[2]) {
-                    is_attached = true;
-                    break;  // Found a close muon, stop checking others particles
-                }
+                if(dist < params[2] || dist_flip < params[2])
+                    return true; // Michel is attached to muon
             }
-        if (is_attached) break;
         }
 
-        return is_michel && is_attached;
+        return false;
     }
 
     REGISTER_CUT_SCOPE(RegistrationScope::Reco, michel_attached_muon, michel_attached_muon);    
