@@ -327,6 +327,11 @@ namespace cuts
     template<class T>
     size_t particle_multiplicity(const T & obj, size_t mult, size_t particle_species, std::vector<double> params={})
     {
+        // Default to a kinetic energy threshold of 0 MeV if no parameters are
+        // given.
+        if(params.empty())
+            params.push_back(0.0);
+
         size_t count(0);
         for(const auto & p : obj.particles)
         {
