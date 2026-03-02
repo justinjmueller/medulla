@@ -994,5 +994,20 @@ namespace vars
             return 0; // Other interaction type
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Reco, reco_interaction_type, reco_interaction_type);
+
+    template<class T>
+    double momentum_transfer(const T & obj)
+    {
+        return obj.momentum_transfer;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, momentum_transfer, momentum_transfer);
+
+    template<class T>
+    double hadronic_invariant_mass(const T & obj)
+    {
+        return obj.hadronic_invariant_mass;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, hadronic_invariant_mass, hadronic_invariant_mass);
+
 }
 #endif // VARIABLES_H

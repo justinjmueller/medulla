@@ -76,6 +76,7 @@ branch = [
     { name  = "reco_interaction_type",   type = "reco" },
     { name = "ele_beam_open_angle",      type = "reco"},
 
+
     { name = "baseline",                 type = "mctruth" },
     { name = "cc",                       type = "mctruth" },
     { name = "pdg",                      type = "mctruth" },
@@ -94,6 +95,8 @@ branch = [
     { name = "flash_cut",                type = "true", parameters = [ "@flash_low_t", "@flash_high_t" ] },
     { name = "containment_cut",          type = "true" },
     { name = "valid_flashmatch",         type = "true" },
+    { name = "momentum_transfer",        type = "true"},
+    { name = "hadronic_invariant_mass",  type = "true"},
 
     { name = "vertex_distance",          type = "reco_particle", selector = "leading_electron" },
     { name = "ke",                       type = "reco_particle", selector = "leading_electron" },
@@ -104,6 +107,7 @@ branch = [
     { name = "start_dedx",               type = "reco_particle", selector = "leading_electron" },
     { name = "axial_spread",             type = "reco_particle", selector = "leading_electron" },
     { name = "directional_spread",       type = "reco_particle", selector = "leading_electron" },
+    { name = "p",                        type = "reco_particle", selector = "leading_electron" },
 
     { name = "start_x",                  type = "reco_particle", selector = "leading_electron" },
     { name = "start_y",                  type = "reco_particle", selector = "leading_electron" },
@@ -167,6 +171,8 @@ branch = [
     { name = "mcs_ke",                   type = "true_particle", selector = "leading_electron" },
     { name = "csda_ke",                  type = "true_particle", selector = "leading_electron" },
     { name = "length",                   type = "true_particle", selector = "leading_electron" },
+    { name = "p",                        type = "true_particle", selector = "leading_electron" },
+
 ]
 
 [[tree]]
@@ -226,6 +232,8 @@ branch = [
     { name = "flash_cut",                type = "true", parameters = [ "@flash_low_t", "@flash_high_t" ] },
     { name = "containment_cut",          type = "true" },
     { name = "valid_flashmatch",         type = "true" },
+    { name = "momentum_transfer",        type = "true"},
+    { name = "hadronic_invariant_mass",  type = "true"},
 
     { name = "vertex_distance",          type = "reco_particle", selector = "leading_electron" },
     { name = "ke",                       type = "reco_particle", selector = "leading_electron" },
@@ -236,6 +244,7 @@ branch = [
     { name = "start_dedx",               type = "reco_particle", selector = "leading_electron" },
     { name = "axial_spread",             type = "reco_particle", selector = "leading_electron" },
     { name = "directional_spread",       type = "reco_particle", selector = "leading_electron" },
+    { name = "p",                        type = "reco_particle", selector = "leading_electron" },
 
     { name = "start_x",                  type = "reco_particle", selector = "leading_electron" },
     { name = "start_y",                  type = "reco_particle", selector = "leading_electron" },
@@ -299,6 +308,7 @@ branch = [
     { name = "mcs_ke",                   type = "true_particle", selector = "leading_electron" },
     { name = "csda_ke",                  type = "true_particle", selector = "leading_electron" },
     { name = "length",                   type = "true_particle", selector = "leading_electron" },
+    { name = "p",                        type = "true_particle", selector = "leading_electron" },
 ]
 
 [[tree]]
