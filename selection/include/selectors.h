@@ -233,8 +233,8 @@ namespace selectors
     
     /**
      * @brief Finds the index corresponding to the target Michel.
-     * @details The target Michel is defined as the Michel with the
-     * most depositions in an interaction.
+     * @details The target Michel is defined as the Michel with the most
+     * depositions in the interaction. 
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to operate on.
      * @return the index of the target Michel (largest).
