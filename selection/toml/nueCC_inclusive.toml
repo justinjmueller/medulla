@@ -37,7 +37,7 @@ fsthresh = [
 name = "NuMIFull"
 path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/*.root"
 ismc = true
-disable = true # Optional: default = false
+disable = false # Optional: default = false
 
 # ICARUS debug single file
 [[sample]]
@@ -45,7 +45,7 @@ name = "debugMC"
 #path = "/exp/icarus/app/users/micarrig/nuESpine/skim_spine_NuMI_nuE.root"
 path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
 ismc = true
-disable = false # Optional: default = false
+disable = true # Optional: default = false
 
 [[tree]]
 name = "all"
