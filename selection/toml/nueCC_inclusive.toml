@@ -1,6 +1,6 @@
 [parameters]
 photon_threshold = 25.0
-electron_threshold = 0.0
+electron_threshold = 225.0
 muon_threshold = 25.0
 pion_threshold = 25.0
 proton_threshold = 50.0
@@ -75,7 +75,7 @@ branch = [
     { name = "no_protons",               type = "reco", parameters = [ "@photon_threshold" ] },
     { name  = "reco_interaction_type",   type = "reco" },
     { name = "ele_beam_open_angle",      type = "reco"},
-
+    { name = "leading_ele_energy_cut",   type = "reco", parameters = [ "@electron_threshold" ] },
 
     { name = "baseline",                 type = "mctruth" },
     { name = "cc",                       type = "mctruth" },
@@ -97,6 +97,8 @@ branch = [
     { name = "valid_flashmatch",         type = "true" },
     { name = "momentum_transfer",        type = "true"},
     { name = "hadronic_invariant_mass",  type = "true"},
+    { name = "ele_beam_open_angle",      type = "true"},
+    { name = "leading_ele_energy_cut",   type = "true", parameters = [ "@electron_threshold" ] },
 
     { name = "vertex_distance",          type = "reco_particle", selector = "leading_electron" },
     { name = "ke",                       type = "reco_particle", selector = "leading_electron" },
@@ -179,6 +181,7 @@ branch = [
 name = "selected"
 sim_only = false
 mode = "reco"
+add_systematics = true
 cut = [
     { name = "no_cut",                    type = "reco" },
     { name = "fiducial_cut",              type = "reco" },
@@ -189,6 +192,8 @@ cut = [
     { name = "no_muons",                  type = "reco", parameters = [ "@muon_threshold" ] },
     { name = "electron_softmax_cut",      type = "reco", parameters = [ "@electron_softmax", "@greater_than" ] },
     { name = "primary_softmax_cut",       type = "reco", parameters = [ "@primary_softmax", "@greater_than" ] },
+    { name = "leading_ele_energy_cut",    type = "reco", parameters = [ "@electron_threshold" ] },
+
 ]
 branch = [
     { name = "fiducial_cut",            type = "reco"    },
@@ -213,6 +218,7 @@ branch = [
     { name = "no_protons",               type = "reco", parameters = [ "@photon_threshold" ] },
     { name  = "reco_interaction_type",   type = "reco" },
     { name = "ele_beam_open_angle",      type = "reco"},
+    { name = "leading_ele_energy_cut",   type = "reco", parameters = [ "@electron_threshold" ] },
 
     { name = "baseline",                 type = "mctruth" },
     { name = "cc",                       type = "mctruth" },
@@ -234,6 +240,8 @@ branch = [
     { name = "valid_flashmatch",         type = "true" },
     { name = "momentum_transfer",        type = "true"},
     { name = "hadronic_invariant_mass",  type = "true"},
+    { name = "ele_beam_open_angle",      type = "true"},
+    { name = "leading_ele_energy_cut",   type = "true", parameters = [ "@electron_threshold" ] },
 
     { name = "vertex_distance",          type = "reco_particle", selector = "leading_electron" },
     { name = "ke",                       type = "reco_particle", selector = "leading_electron" },

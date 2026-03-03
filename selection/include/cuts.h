@@ -786,5 +786,25 @@ namespace cuts
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, ele_beam_open_angle, ele_beam_open_angle);
 
+    template<class T>
+    bool leading_ele_energy_cut(const T & obj, std::vector<double> params={25.0})
+    {
+        if(params.size() != 1)
+            throw std::invalid_argument("leading_ele_energy_cut requires exactly the energy threshold");
+
+        size_t i = selectors::leading_electron(obj);
+        if (i == kNoMatch) return false;
+        const auto & p = obj.particles[i];
+
+        double energy_threshold = params[0];
+
+        if (std::isnan(pvars::energy(p)))
+        {
+            return false; // or true, depending on how you want to handle NaN values
+        }
+        return pvars::energy(p) > energy_threshold;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, leading_ele_energy_cut, leading_ele_energy_cut);
+
 }
 #endif
