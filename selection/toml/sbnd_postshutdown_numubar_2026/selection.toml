@@ -76,7 +76,6 @@ cut = [
 branch = [
     {name = "category",              type = "true" },
     {name = "visible_energy",        type = "true" },
-    {name = "pdg",                   type = "true_particle", selector = "leading_muon"  },
     {name = "polar_angle",           type = "both_particle", selector = "leading_muon"  },
     {name = "ke",                    type = "both_particle", selector = "leading_muon"  },
     {name = "muon_softmax",          type = "reco_particle", selector = "leading_muon"  },
