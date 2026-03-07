@@ -265,7 +265,7 @@ cuts = [
     { name = "multiproton",       parameters = [ "@proton_threshold"   ] }
 ]
 
-[[category]] # 4 : Fiducial, contained, single muon, any protons, X > 0 protons
+[[category]] # 4 : Fiducial, contained, single muon, any protons, X > 0 pions
 cuts = [
     { name = "neutrino"         },
     { name = "fiducial_cut"     },
@@ -276,7 +276,7 @@ cuts = [
     { name = "single_muon",       parameters = [ "@muon_threshold"     ] }
 ]
 
-[[category]] # 5 : Fiducial, non-contained, single muon, any protons, X > 0 protons
+[[category]] # 5 : Fiducial, non-contained, single muon, any protons, X > 0 pions
 cuts = [
     { name = "neutrino"         },
     { name = "fiducial_cut"     },
