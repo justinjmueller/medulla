@@ -31,6 +31,15 @@
 #include "framework.h"
 
 /**
+ * @brief Tree-level metadata flags set by main.cc before each tree is processed.
+ * @details These globals allow interaction-level variable functions to reflect
+ * per-tree properties (e.g. whether the tree is a data or signal tree) that
+ * have no equivalent field on the interaction object itself.
+ */
+inline bool g_isdata   = false;
+inline bool g_issignal = false;
+
+/**
  * @namespace vars
  * @brief Namespace for organizing generic variables which act on interactions.
  * @details This namespace is intended to be used for organizing variables which
@@ -1009,5 +1018,33 @@ namespace vars
     }
     REGISTER_VAR_SCOPE(RegistrationScope::True, hadronic_invariant_mass, hadronic_invariant_mass);
 
+    template<class T>
+    double is_nu(const T & obj)
+    {
+        return -5.0; // Default value for non-neutrino interactions.
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, is_nu, is_nu);
+
+    template<class T>
+    double is_data(const T & obj)
+    {
+        return g_isdata ? 1.0 : 0.0;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, is_data, is_data);
+
+    /**
+     * @brief Variable indicating whether the tree is a signal tree.
+     * @details Returns 1.0 if the tree was marked issignal = true in the TOML,
+     * 0.0 otherwise. Set via the global g_issignal before each tree is processed.
+     * @tparam T the type of interaction (reco).
+     * @param obj the interaction to apply the variable on.
+     * @return 1.0 if signal tree, 0.0 otherwise.
+     */
+    template<class T>
+    double cut_type(const T & obj)
+    {
+        return g_issignal ? 1.0 : 0.0;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, cut_type, cut_type);
 }
 #endif // VARIABLES_H

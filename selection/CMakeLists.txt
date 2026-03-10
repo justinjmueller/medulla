@@ -53,6 +53,7 @@ target_link_libraries(common INTERFACE
     ROOT::RIO
     ROOT::Hist
     ROOT::Tree
+    ROOT::Physics
     Minuit2
     sbnanaobj_StandardRecordProxy
     OscLib

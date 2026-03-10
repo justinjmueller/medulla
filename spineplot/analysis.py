@@ -65,6 +65,7 @@ class Analysis:
         # Load the categories table
         self._categories = dict()
         for ci, cat in enumerate(self._config['analysis']['category_assignment']):
+            print(f"Assigning category label '{self._config['analysis']['category_labels'][ci]}' to category values {cat}.")
             self._categories.update({c : self._config['analysis']['category_labels'][ci] for c in cat})
         self._colors = {c : self._config['analysis']['category_colors'][ci] for ci, c in enumerate(self._config['analysis']['category_labels'])}
         self._category_types = {c : self._config['analysis']['category_types'][ci] for ci, c in enumerate(self._config['analysis']['category_labels'])}
@@ -160,6 +161,11 @@ class Analysis:
                             art = SpineEfficiency(self._variables[x['variable']], restrict_categories,
                                                   x['cuts'], x.get('title', None), x.get('xrange', None),
                                                   x.get('xtitle', None), show_option, npts, show_counts)
+                            # Pass category_colors from TOML so the efficiency plot uses
+                            # the same colours as all other artists.
+                            draw_kwargs['colors'] = {label: self._colors[label]
+                                                     for label in self._colors
+                                                     if label in restrict_categories.values()}
                             self._figures[fig['name']].register_spine_artist(art, draw_kwargs=draw_kwargs)
                             self._artists.append(art)
 
@@ -287,7 +293,7 @@ class Analysis:
         for s in self._samples.values():
             s.set_weight(target=ordinate)
 
-        for artist in self._artists:
+        for artist in self._figures[figure]._artists:
             for sample in self._samples.values():
                 artist.add_sample(sample, sample==ordinate)
 
