@@ -111,10 +111,15 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
      * @brief Create the output subdirectory following the nesting outlined
      * in the configuration file.
      */
+
+    std::cout << "Processing tree " << table.get_string_field("origin") << " with destination " << table.get_string_field("destination").c_str() << std::endl;
+
     TDirectory * directory = (TDirectory *) output;
     directory = create_directory(directory, table.get_string_field("destination").c_str());
     directory->cd();
-    
+
+    std::cout << "Created directory for output tree: " << directory->GetPath() << std::endl;
+
     /**
      * @brief Check if the exposure information ("POT", "Livetime") has
      * alread been copied and saved. If not, copy the exposure information
@@ -125,6 +130,7 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
         std::cout << "Copying POT and Livetime histograms." << std::endl;
         TDirectory * parent = (TDirectory *) input;
         parent = get_parent_directory(parent, table.get_string_field("origin").c_str());
+        std::cout << "Looking for POT and Livetime histograms in directory " << parent->GetPath() << std::endl;
         TH1D * pot = (TH1D *) parent->Get("POT");
         TH1D * livetime = (TH1D *) parent->Get("Livetime");
         directory->WriteObject(pot, "POT");
@@ -156,6 +162,7 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     input_tree->SetBranchAddress("Subrun", &subrun);
     input_tree->SetBranchAddress("Evt", &event);
 
+    std::cout << "Connected to input TTree with name " << input_tree->GetName() << " and " << input_tree->GetNbranches() << " branches." << std::endl;
 
     /**
      * @brief Create the output TTree with the name specified in the
@@ -212,6 +219,8 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
             candidates.insert(std::make_pair<index_t, size_t>(std::make_tuple(run, subrun, event, nu_id, brs["true_neutrino_energy"]), i));
     }
 
+    std::cout << "Created map of selected signal candidates with " << candidates.size() << " entries." << std::endl;
+
     /**
      * @brief Configure the weight-based systematics.
      * @details This block configures the weight-based systematics. The
@@ -256,6 +265,8 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
         calc.add_variable(sysvariables.back());
     }
 
+    std::cout << "Configured " << sysvariables.size() << " systematic variables." << std::endl;
+
     /**
      * @brief Loop over the systematic types in the configuration file.
      * @details This block loops over the systematic types in the
@@ -280,17 +291,25 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
         systrees[tname]->SetAutoFlush(1000);
     }
 
+    std::cout << "Created " << systrees.size() << " TTrees for systematic types." << std::endl;
+
     for(cfg::ConfigurationTable & t : config.get_subtables("sys"))
     {
+        std::cout << "Configuring systematic " << t.get_string_field("name") << " of type " << t.get_string_field("type") << std::endl;
         std::string tname = table.get_string_field("name") + '_' + t.get_string_field("type");
+        // Use name_short as the output branch name if provided, otherwise fall back to name.
+        const std::string branch_name = t.get_string_field("name_short", t.get_string_field("name"));
+        std::cout << "Branch name for systematic " << t.get_string_field("name") << " is " << branch_name << std::endl;
         systematics.insert(std::make_pair<std::string, Systematic *>(t.get_string_field("name"), new Systematic(t, systrees[tname])));
         Systematic * tmp = systematics[t.get_string_field("name")];
-        tmp->get_tree()->Branch(t.get_string_field("name").c_str(), &systematics[t.get_string_field("name")]->get_weights());
+        tmp->get_tree()->Branch(branch_name.c_str(), &systematics[t.get_string_field("name")]->get_weights());
         if(tmp->get_nsigma()->size() > 0)
         {
-            tmp->get_tree()->Branch((t.get_string_field("name") + "_sigma").c_str(), &systematics[t.get_string_field("name")]->get_nsigma());
+            tmp->get_tree()->Branch((branch_name + "_sigma").c_str(), &systematics[t.get_string_field("name")]->get_nsigma());
         }
     }
+
+    std::cout << "Configured " << systematics.size() << " systematics." << std::endl;
 
     sys::WeightReader reader(config.get_string_field("input.weights"));
     std::vector<index_t> saved_indices;
@@ -382,6 +401,8 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
             } // End of block for matched signal candidates.
         }
     }
+
+    std::cout << "Finished looping over neutrinos in the CAF input files." << std::endl;
 
     // Fill the non-matched TTree if it has been created.
     if(nonmatched_tree)

@@ -81,6 +81,9 @@ int main(int argc, char * argv[])
     TFile * input = TFile::Open(config.get_string_field("input.path").c_str(), "READ");
     TFile * output = TFile::Open(config.get_string_field("output.path").c_str(), "RECREATE");
 
+    std::cout << "Input file: " << config.get_string_field("input.path") << std::endl;
+    std::cout << "Output file: " << config.get_string_field("output.path") << std::endl;
+
     /**
      * @brief Load the DetsysCalculator, if configured.
      * @details This block loads the DetsysCalculator if it is configured in
@@ -96,6 +99,8 @@ int main(int argc, char * argv[])
         calc.write();
     }
 
+    std::cout << "Finished loading configuration and opening files." << std::endl;
+    
     /**
      * @brief Begin main loop over trees in the configuration file.
      * @details This block begins the main loop over the trees in the
@@ -132,10 +137,16 @@ int main(int argc, char * argv[])
         }
 
         std::string type(table.get_string_field("action"));
-        if(type == "copy")
+        if(type == "copy"){
+            std::cout << "Copying tree " << table.get_string_field("origin") << " without modifications." << std::endl;
             sys::trees::copy_tree(table, output, input);
-        else if(type == "add_weights")
+        }
+        else if(type == "add_weights"){
+            std::cout << "Copying tree " << table.get_string_field("origin") << " and adding weights for systematics." << std::endl;
             sys::trees::copy_with_weight_systematics(config, table, output, input, calc);
+        }
+
+        std::cout << "Finished processing tree: " << table.get_string_field("origin") << std::endl;
     }
 
     input->Close();
