@@ -38,9 +38,8 @@ branch = [
     {name = "visible_energy",        type = "both" },
 
     # Cuts for applying MICHEL/NO PROTON selection
-    {name = "single_michel",         type = "both",  parameters = [ "@michel_threshold"                        ] },
-    {name = "michel_attached_muon",  type = "reco",  parameters = [ "@michel_threshold", "@muon_threshold", 10 ] },
-    {name = "proton_multiplicity",   type = "both",  parameters = [ "@proton_threshold"                        ] },
+    {name = "single_michel",         type = "both",  parameters = [ "@michel_threshold" ] },
+    {name = "proton_multiplicity",   type = "both",  parameters = [ "@proton_threshold" ] },
 
     # Leading MUON interaction-level
     {name = "ke",                    type = "both_particle", selector = "leading_muon" },
@@ -90,8 +89,6 @@ branch = [
     {name = "containment_cut",       type = "reco" },
     {name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold" ] },
 
-    # Cuts (for Michel selection efficiency studies)
-    {name = "michel_attached_muon",  type = "reco",  parameters = ["@michel_threshold", "@muon_threshold", 10 ] },
 ]
 
 [[category]] # 0 : Contained, fiducial, numubar -> mu+ -> e+
