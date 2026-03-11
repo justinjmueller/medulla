@@ -1,0 +1,828 @@
+
+[[this_includes]]
+file = '/nashome/m/micarrig/icarus/nuESpine/medulla/spineplot/configurations/common/styles.toml'
+
+# Define your samples
+[samples]
+[samples.debugMC]
+key = "debugMC"
+exposure_type = "pot"
+trees = ['all']
+
+precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "reco_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)"}
+
+# Output directory for plots
+[output]
+path = 'plots/'
+
+# Analysis configuration
+[analysis]
+ordinate_sample = 'debugMC'
+
+########################################
+## Define your categories below
+########################################
+
+category_branch = 'true_category'
+category_assignment = [
+    [0], # CC nue
+    # [1], 
+    # [2], 
+    # [3], 
+    # [4],
+    # [5]  # Cosmic
+]
+category_labels = ['$\nu_{e}$ Signal', '$\nu_{e}$ OOFV', '$\nu_{\mu}$', '$\nu$ OOFV', '$\nu$ NC', 'Cosmic']
+#category_colors = ['#011959', '#103F60', '#1C5A62', '#3C6D56', '#687B3E', '#9D892B', '#D29343', '#F8A17B', '#FDB7BC', '#FACCFA'] #batlow
+category_colors = ['#011959', '#1C5A62', '#687B3E', '#D29343', '#FDB7BC', '#ca80a0ff']
+
+# category_branch = 'reco_category'
+# category_assignment = [
+#     [0], # QE
+#     [1], # RES
+#     [2], # DIS
+#     [10], # MEC
+#     [3], # COH
+#     [-1],  # NC
+#     [4, 5, 6, 7, 8, 9] # Other
+# ]
+# category_labels = ['QE', 'RES', 'DIS', 'MEC', 'COH', 'NC', 'Other']
+# # category_colors = ['#001261', '#033E7D', '#1E6F9D', '#71A8C4', '#C9DDE7', '#EACEBD', '#D39774', '#BE6533', '#8B2706', '#590008'] #vik
+# #category_colors = ['#001261', '#1E6F9D', '#BE6533', '#8B2706', '#590008']
+# category_colors = ['#001261', '#1E6F9D', '#71A8C4','#D39774', '#BE6533', '#8B2706', '#590008'] #vik
+
+# category_branch = 'reco_reco_interaction_type'
+# category_assignment = [
+#     [1], # QE-like
+#     [2], # MEC-like
+#     [3], # DIS-like
+#     [4], # RES-like
+#     #[5], # Other >=1 electron
+#     #[0]  # Other
+# ]
+# category_labels = ['1e1p0$\pi$', '1e2p0$\pi$', '1e$\geq3$p$0\pi$', '1e1$\pi$', 'Other >=1e', 'Other']
+# #category_colors = ['#2C194C', '#284578', '#49749F', '#83A1BE', '#CAD7E3', '#D2E1D2', '#8EB38D', '#4F894E', '#1C5B19', '#0F2903'] #cork
+# category_colors = ['#2C194C','#49749F', '#83A1BE', '#8EB38D', '#4F894E', '#1C5B19', '#0F2903'] #cork
+
+category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram']
+
+##############################################
+## Define your variables and figures below
+##############################################
+
+# Define your variables (if not already in included variables.toml)
+[variables]
+[variables.true_neutrino_energy]
+key = 'true_neutrino_energy'  
+nbins = 20
+range = [0, 5]
+xlabel = 'True Neutrino Energy [GeV]'
+
+[variables.reco_leading_electron_polar_angle]
+key = 'reco_leading_electron_polar_angle'
+nbins = 9
+range = [0.0, 3.2]
+binning_scheme = 'custom_bins'
+custom_bins = [0.0, 0.275, 0.42, 0.55, 0.68, 0.825, 1.0, 1.25, 1.7, 3.2]
+xlabel = "Reco Leading Electron Polar Angle [rad]"
+
+[variables.reco_ele_beam_cosTheta]
+key = 'reco_ele_beam_cosTheta'
+nbins = 13
+binning_scheme = 'custom_bins'
+custom_bins = [-1.0, -0.4, 0.0, 0.2, 0.35, 0.5, 0.625, 0.725, 0.8, 0.85, 0.9, 0.94, 0.97, 1.0]
+range = [-1.0, 1.0]
+xlabel = "Reco Leading Electron $cos{\\theta_{NUMI}}$"
+
+[variables.reco_leading_electron_energy]
+key = 'reco_leading_electron_energy'
+nbins = 50
+range = [0.0, 5000.0]
+#binning_scheme = 'custom_bins'
+#custom_bins = [0, 225, 350, 500, 650, 800, 1000, 1250, 1500, 2000, 5000]
+xlabel = 'Reco Leading Electron Energy [MeV]'
+
+[variables.reco_leading_electron_start_dedx]
+key = 'reco_leading_electron_start_dedx'
+nbins = 50
+range = [0.0, 10.0]
+xlabel = 'Reco Leading Electron Start dE/dx [MeV/cm]'
+
+[variables.reco_leading_electron_axial_spread]
+key = 'reco_leading_electron_axial_spread'
+nbins = 56
+range = [-0.4, 1.0]
+xlabel = 'Reco Leading Electron Axial Spread [cm]'
+
+[variables.reco_leading_electron_directional_spread]
+key = 'reco_leading_electron_directional_spread'
+nbins = 25
+range = [0.0, 0.5]
+xlabel = 'Reco Leading Electron Directional Spread [cm]'
+
+[variables.reco_leading_electron_start_x]
+key = 'reco_leading_electron_start_x'
+nbins = 175
+range = [-350, 350]
+xlabel = 'Reco Leading Electron Start Position X [cm]'
+
+[variables.reco_leading_electron_start_y]
+key = 'reco_leading_electron_start_y'
+nbins = 175
+range = [-200, 150]
+xlabel = 'Reco Leading Electron Start Position Y [cm]'
+
+[variables.reco_leading_electron_start_z]
+key = 'reco_leading_electron_start_z'
+nbins = 150
+range = [-900, 900]
+xlabel = 'Reco Leading Electron Start Position Z [cm]'
+
+[variables.reco_leading_electron_start_dir_x]
+key = 'reco_leading_electron_start_dir_x'
+nbins = 50
+range = [-1.0, 1.0]
+xlabel = 'Reco Leading Electron Start Dir X'
+
+[variables.reco_leading_electron_start_dir_y]
+key = 'reco_leading_electron_start_dir_y'
+nbins = 50
+range = [-1.0, 1.0]
+xlabel = 'Reco Leading Electron Start Dir Y'
+
+[variables.reco_leading_electron_start_dir_z]
+key = 'reco_leading_electron_start_dir_z'
+nbins = 50
+range = [-1.0, 1.0]
+xlabel = 'Reco Leading Electron Start Dir Z'
+
+[variables.reco_leading_electron_mip_softmax]
+key = 'reco_leading_electron_mip_softmax'
+nbins = 50
+range = [0.0, 1.0]
+xlabel = 'Reco Leading Electron MIP Softmax'
+
+[variables.reco_leading_electron_photon_softmax]
+key = 'reco_leading_electron_photon_softmax'
+nbins = 50
+range = [0.0, 1.0]
+xlabel = 'Reco Leading Electron Photon Softmax'
+
+[variables.reco_leading_electron_muon_softmax]
+key = 'reco_leading_electron_muon_softmax'
+nbins = 50
+range = [0.0, 1.0]
+xlabel = 'Reco Leading Electron Muon Softmax'
+
+[variables.reco_leading_electron_proton_softmax]
+key = 'reco_leading_electron_proton_softmax'
+nbins = 50
+range = [0.0, 1.0]
+xlabel = 'Reco Leading Electron Proton Softmax'
+
+[variables.reco_leading_electron_pion_softmax]
+key = 'reco_leading_electron_pion_softmax'
+nbins = 50
+range = [0.0, 1.0]
+xlabel = 'Reco Leading Electron Pion Softmax'
+
+[variables.reco_leading_electron_electron_softmax]
+key = 'reco_leading_electron_electron_softmax'
+nbins = 50
+range = [0.0, 1.0]
+xlabel = 'Reco Leading Electron Electron Softmax'
+
+[variables.reco_leading_electron_primary_softmax]
+key = 'reco_leading_electron_primary_softmax'
+nbins = 50
+range = [0.0, 1.0]
+xlabel = 'Reco Leading Electron Primary Softmax'
+
+[variables.reco_leading_electron_secondary_softmax]
+key = 'reco_leading_electron_secondary_softmax'
+nbins = 50
+range = [0.0, 1.0]
+xlabel = 'Reco Leading Electron Secondary Softmax'
+
+[variables.reco_leading_electron_vertex_distance]
+key = 'reco_leading_electron_vertex_distance'
+nbins = 100
+range = [0.0, 400.0]
+xlabel = 'Reco Leading Electron Vertex Distance [cm]'
+
+[variables.reco_muon_multiplicity]
+key = 'reco_muon_multiplicity'
+nbins = 5
+range = [0.0, 5.0]
+xlabel = 'Number of Muons'
+
+[variables.reco_photon_multiplicity]
+key = 'reco_photon_multiplicity'
+nbins = 5
+range = [0.0, 5.0]
+xlabel = 'Number of Photons'
+
+[variables.reco_pion_multiplicity]
+key = 'reco_pion_multiplicity'
+nbins = 5
+range = [0.0, 5.0]
+xlabel = 'Number of Pions'
+
+[variables.reco_proton_multiplicity]
+key = 'reco_proton_multiplicity'
+nbins = 5
+range = [0.0, 5.0]
+xlabel = 'Number of Protons'
+
+[variables.reco_electron_multiplicity]
+key = 'reco_electron_multiplicity'
+nbins = 5
+range = [0.0, 5.0]
+xlabel = 'Number of Electrons'
+
+[variables.reco_flash_time_mod]
+key = 'reco_flash_time_mod'
+nbins = 30
+range = [-20, 10]
+xlabel = 'Reco Flash Time [us]'
+
+[variables.true_leading_electron_energy]
+key = 'true_leading_electron_energy'
+nbins = 10
+range = [0.0, 5000.0]
+binning_scheme = 'custom_bins'
+custom_bins = [0, 225, 350, 500, 650, 800, 1000, 1250, 1500, 2000, 5000]
+xlabel = 'True Leading Electron Energy [MeV]'
+
+[variables.true_leading_electron_polar_angle]
+key = 'true_leading_electron_polar_angle'
+nbins = 9
+range = [0.0, 3.2]
+binning_scheme = 'custom_bins'
+custom_bins = [0.0, 0.275, 0.42, 0.55, 0.68, 0.825, 1.0, 1.25, 1.7, 3.2]
+xlabel = 'True Leading Electron Polar Angle [rad]'
+
+[variables.true_ele_beam_cosTheta]
+key = 'true_ele_beam_cosTheta'
+nbins = 13
+binning_scheme = 'custom_bins'
+custom_bins = [-1.0, -0.4, 0.0, 0.2, 0.35, 0.5, 0.625, 0.725, 0.8, 0.85, 0.9, 0.94, 0.97, 1.0]
+range = [-1.0, 1.0]
+xlabel = "True Leading Electron $cos{\\theta_{NUMI}}$"
+
+[variables.true_leading_electron_start_x]
+key = 'true_leading_electron_start_x'
+nbins = 175
+range = [-350, 350]
+xlabel = 'True Leading Electron Start Position X [cm]'
+
+[variables.true_leading_electron_start_y]
+key = 'true_leading_electron_start_y'
+nbins = 175
+range = [-200, 150]
+xlabel = 'True Leading Electron Start Position Y [cm]'
+
+[variables.true_leading_electron_start_z]
+key = 'true_leading_electron_start_z'
+nbins = 150
+range = [-900, 900]
+xlabel = 'True Leading Electron Start Position Z [cm]'
+
+[variables.true_leading_electron_start_dir_x]
+key = 'true_leading_electron_start_dir_x'
+nbins = 50
+range = [-1.0, 1.0]
+xlabel = 'True Leading Electron Start Dir X'
+
+[variables.true_leading_electron_start_dir_y]
+key = 'true_leading_electron_start_dir_y'
+nbins = 50
+range = [-1.0, 1.0]
+xlabel = 'True Leading Electron Start Dir Y'
+
+[variables.true_leading_electron_start_dir_z]
+key = 'true_leading_electron_start_dir_z'
+nbins = 50
+range = [-1.0, 1.0]
+xlabel = 'True Leading Electron Start Dir Z'
+
+[variables.true_muon_multiplicity]
+key = 'true_muon_multiplicity'
+nbins = 5
+range = [0.0, 5.0]
+xlabel = 'True Number of Muons'
+
+[variables.true_photon_multiplicity]
+key = 'true_photon_multiplicity'
+nbins = 5
+range = [0.0, 5.0]
+xlabel = 'True Number of Photons'
+
+[variables.true_pion_multiplicity]
+key = 'true_pion_multiplicity'
+nbins = 5
+range = [0.0, 5.0]
+xlabel = 'True Number of Pions'
+
+[variables.true_proton_multiplicity]
+key = 'true_proton_multiplicity'
+nbins = 5
+range = [0.0, 5.0]
+xlabel = 'True Number of Protons'
+
+[variables.true_electron_multiplicity]
+key = 'true_electron_multiplicity'
+nbins = 5
+range = [0.0, 5.0]
+xlabel = 'True Number of Electrons'
+
+[variables.true_momentum_transfer]
+key = 'true_momentum_transfer'
+nbins = 12
+range = [0.0, 2.4]
+xlabel = 'True Momentum Transfer [GeV]'
+
+[variables.true_hadronic_invariant_mass]
+key = 'true_hadronic_invariant_mass'
+nbins = 5
+range = [0.5, 2.0]
+xlabel = 'True Hadronic Invariant Mass [GeV$^{2}$]'
+
+
+###############################################
+## Define your figures below
+###############################################
+
+# Figure 1: reco leading electron energy
+[[figure]]
+name = 'reco_leading_electron_energy'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_energy'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 2: reco leading electron open angle
+[[figure]]
+name = 'reco_ele_beam_cosTheta'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_ele_beam_cosTheta'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 3: true neutrino energy
+[[figure]]
+name = 'true_neutrino_energy'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'true_neutrino_energy'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 4: leading electron dedx
+[[figure]]
+name = 'reco_leading_electron_start_dedx'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_start_dedx'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 5: leading electron axial spread
+[[figure]]
+name = 'reco_leading_electron_axial_spread'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_axial_spread'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 6: leading electron directional spread
+[[figure]]
+name = 'reco_leading_electron_directional_spread'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_directional_spread'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false, 'logy' = true}
+
+# Figure 7: leading electron start X
+[[figure]]
+name = 'reco_leading_electron_start_x'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_start_x'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 8: leading electron start Y
+[[figure]]
+name = 'reco_leading_electron_start_y'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_start_y'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 9: leading electron start Z
+[[figure]]
+name = 'reco_leading_electron_start_z'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_start_z'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 10: leading electron start dir X
+[[figure]]
+name = 'reco_leading_electron_start_dir_x'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_start_dir_x'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 11: leading electron start dir Y
+[[figure]]
+name = 'reco_leading_electron_start_dir_y'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_start_dir_y'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 12: leading electron start dir Z
+[[figure]]
+name = 'reco_leading_electron_start_dir_z'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_start_dir_z'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 13: leading electron MIP score
+[[figure]]
+name = 'reco_leading_electron_mip_softmax'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_mip_softmax'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 14: leading electron Photon score
+[[figure]]
+name = 'reco_leading_electron_photon_softmax'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_photon_softmax'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 15: leading electron Muon score
+[[figure]]
+name = 'reco_leading_electron_muon_softmax'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_muon_softmax'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 16: leading electron Proton score
+[[figure]]
+name = 'reco_leading_electron_proton_softmax'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_proton_softmax'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 17: leading electron Pion score
+[[figure]]
+name = 'reco_leading_electron_pion_softmax'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_pion_softmax'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 18: leading electron Electron score
+[[figure]]
+name = 'reco_leading_electron_electron_softmax'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_electron_softmax'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 19: leading electron Primary score
+[[figure]]
+name = 'reco_leading_electron_primary_softmax'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_primary_softmax'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 20: leading electron Secondary score
+[[figure]]
+name = 'reco_leading_electron_secondary_softmax'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_secondary_softmax'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 21: leading electron vertex distance
+[[figure]]
+name = 'reco_leading_electron_vertex_distance'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_vertex_distance'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 22: reco number of muons, photons, pions, protons, electrons
+[[figure]]
+name = 'reco_muon_multiplicity'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_muon_multiplicity'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 22: reco number of photons
+[[figure]]
+name = 'reco_photon_multiplicity'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_photon_multiplicity'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 23: reco number of pions
+[[figure]]
+name = 'reco_pion_multiplicity'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_pion_multiplicity'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 24: reco number of protons
+[[figure]]
+name = 'reco_proton_multiplicity'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_proton_multiplicity'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 25: reco number of electrons
+[[figure]]
+name = 'reco_electron_multiplicity'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_electron_multiplicity'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 26: true leading electron energy
+[[figure]]
+name = 'true_leading_electron_energy'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'true_leading_electron_energy'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 27: true leading electron polar angle
+[[figure]]
+name = 'true_ele_beam_cosTheta'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'true_ele_beam_cosTheta'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 28: true leading electron start x
+[[figure]]
+name = 'true_leading_electron_start_x'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'true_leading_electron_start_x'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 29: true leading electron start y
+[[figure]]
+name = 'true_leading_electron_start_y'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'true_leading_electron_start_y'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 30: true leading electron start z
+[[figure]]
+name = 'true_leading_electron_start_z'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'true_leading_electron_start_z'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 31: true leading electron start dir x
+[[figure]]
+name = 'true_leading_electron_start_dir_x'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'true_leading_electron_start_dir_x'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 32: true leading electron start dir y
+[[figure]]
+name = 'true_leading_electron_start_dir_y'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'true_leading_electron_start_dir_y'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 33: true leading electron start dir z
+[[figure]]
+name = 'true_leading_electron_start_dir_z'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'true_leading_electron_start_dir_z'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 34: true muon multiplicity
+[[figure]]
+name = 'true_muon_multiplicity'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'true_muon_multiplicity'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 35: true photon multiplicity
+[[figure]]
+name = 'true_photon_multiplicity'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'true_photon_multiplicity'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 36: true pion multiplicity
+[[figure]]
+name = 'true_pion_multiplicity'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'true_pion_multiplicity'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 37: true proton multiplicity
+[[figure]]
+name = 'true_proton_multiplicity'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'true_proton_multiplicity'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+# Figure 38: true electron multiplicity
+[[figure]]
+name = 'true_electron_multiplicity'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'true_electron_multiplicity'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+#Figure 39: true momentum transfer
+[[figure]]
+name = 'true_momentum_transfer'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'true_momentum_transfer'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+#Figure 40: true hadronic invariant mass
+[[figure]]
+name = 'true_hadronic_invariant_mass'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'true_hadronic_invariant_mass'   
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+
+#Figure 41: reco flash time — cut flow
+# Each line shows the distribution after all cuts up to and including that step.
+[[figure]]
+name = 'reco_flash_time_mod'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectraCutFlow'
+variable = 'reco_flash_time_mod'
+draw_kwargs = {'show_counts' = true, 'logy' = false}
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_has_particle_multiplicity = '>=1 Electron-like Particle'
+reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.72'
+reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
+reco_no_muons = 'No Muon-like Particles'
+reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
+reco_leading_ele_energy_cut = 'Leading Electron Energy > 225 MeV'
