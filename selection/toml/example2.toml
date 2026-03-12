@@ -4,13 +4,13 @@ output = "example2"
 [[category]] # 0 : Neutrino, charged current
 cuts = [
     { name = "neutrino" },
-    { name = "iscc", type = "mctruth"  },
+    { name = "iscc_mctruth", type = "mctruth"  },
 ]
 
 [[category]] # 1 : Neutrino, neutral current
 cuts = [
     { name = "neutrino" },
-    { name = "!iscc", type = "mctruth" },
+    { name = "!iscc_mctruth", type = "mctruth" },
 ]
 
 [[category]] # 2 : Cosmic
