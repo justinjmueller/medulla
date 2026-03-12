@@ -5,6 +5,7 @@
  * framework. The framework is designed to be modular and extensible, allowing
  * for easy integration and applications of cuts and variables.
  * @author mueller@fnal.gov
+ * @author rvizarr@fnal.gov
  */
 #ifndef FRAMEWORK_H
 #define FRAMEWORK_H
@@ -253,6 +254,10 @@ namespace                                                                       
             VarFactoryRegistry<EventType>::instance().register_fn(                         \
                 "event_" #name, bind<fn<EventType>, EventType, double>                     \
             );                                                                             \
+        if constexpr((scope)==RegistrationScope::MCTruth)                                  \
+            CutFactoryRegistry<MCTruth>::instance().register_fn(                           \
+                "mctruth_" #name, bind<+fn<MCTruth>, MCTruth, bool>                        \
+            );                                                                             \
         return true;                                                                       \
     }();                                                                                   \
 }
@@ -333,6 +338,10 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
  * @param var The callable that implements the variable on the selected branch.
  * @param event_cut The callable that implements the event cut.
  * @param ismc A boolean indicating whether the data is MC (true) or not (false).
+ * @param mctruth_cut The callable that implements GENIE generator-level cuts,
+ *        applied per-interaction via sr->mc.nu[i.nu_id] when a valid neutrino
+ *        index exists. Allows MCTruth-scoped cuts to be composed alongside
+ *        SPINE truth-level cuts.
  * @return A SpillMultiVar object that applies the cuts and computes the variable.
  */
 template<typename CutsOn, typename CompsOn, typename PCutsOn, typename VarOn>
@@ -342,6 +351,7 @@ ana::SpillMultiVar spill_multivar_helper(
     const CutFn<PCutsOn> & pcuts,
     const VarFn<VarOn> & var,
     const CutFn<EventType> & event_cut,
+    const CutFn<MCTruth> & mctruth_cut,
     const bool ismc = true
 );
 

@@ -88,6 +88,18 @@ namespace mctruth
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, cc, cc);
 
     /**
+     * @brief Cut for charged current interactions at the generator (GENIE) level.
+     * @details Distinct from the SPINE truth-level iscc cut. Uses obj.iscc
+     * directly from the MCTruth object.
+     * @tparam T the type of the object to apply the cut on.
+     * @param obj the SRTrueInteraction to apply the cut on.
+     * @return true if the interaction is charged current.
+     */
+    template<typename T>
+    bool iscc_mctruth(const T & obj) { return obj.iscc; }
+    REGISTER_CUT_SCOPE(RegistrationScope::MCTruth, iscc_mctruth, iscc_mctruth);
+
+    /**
      * @brief Variable for the interaction mode of the interaction.
      * @details This variable is intended to provide the interaction mode of the
      * interaction. This is based on the GENIE interaction mode enumeration 
