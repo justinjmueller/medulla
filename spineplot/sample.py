@@ -164,6 +164,7 @@ class Sample:
         # Add statistical uncertainty. This can always be added to the
         # sample, because it is not dependent on some external source
         # of weights.
+        print("Adding statistical uncertainty to sample ", self._name)
         self._systematics.update({f'{self._name}_statistical': Systematic('statistical', None)})
 
     def override_exposure(self, exposure, exposure_type='pot') -> None:

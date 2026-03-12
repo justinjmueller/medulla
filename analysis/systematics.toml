@@ -1,0 +1,185 @@
+[[this_includes]]
+file = '/nashome/m/micarrig/icarus/nuESpine/medulla/spineplot/configurations/common/styles.toml'
+
+# SIMULATION SAMPLE
+[samples]
+[samples.NuMIFull]
+key = "NuMIFull"
+exposure_type = "pot"
+trees = ['selected']
+print_sys = true
+# Comment this to avoid systematics when plotting (usually done for testing plots)
+systematics = ['selected_multisimTree', 'selected_multisigmaTree']
+precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "reco_category" = "np.where(true_cc == 1, true_interaction_mode, -1)"}
+
+# DATA SAMPLE
+# [samples.onbeam]
+# key = "onbeam"
+# exposure_type = "pot"
+# override_category = -100
+# trees = ['selected']
+
+[output]
+path = '/nashome/m/micarrig/icarus/nuESpine/systematics.root'
+
+[[systematic_recipe]]
+name = 'xsec_ccqe'
+label = 'CCQE'
+# pattern = '\bGENIEReWeight_SBN_v1_multisim_(ZExpAVariationResponse|RPA_CCQE|CoulombCCQE)\b'
+pattern = 'CCQE'
+
+[[systematic_recipe]]
+name = 'xsec_mec'
+label = 'MEC'
+#pattern = '\bGENIEReWeight_SBN_v1_multisim_Norm(CCMEC|NCMEC)\b'
+pattern = 'MEC'
+
+[[systematic_recipe]]
+name = 'xsec_res'
+label = 'Resonant'
+#pattern = '\bGENIEReWeight_SBN_v1_multisim_(NCELVariationResponse|CCRESVariationResponse|NCRESVariationResponse)\b'
+pattern = 'RES'
+
+[[systematic_recipe]]
+name = 'xsec_dis'
+label = 'DIS'
+pattern = 'DIS|BY'
+
+[[systematic_recipe]]
+name = 'xsec_coh'
+label = 'COH'
+pattern = 'COH'
+
+[[systematic_recipe]]
+name = 'xsec_nonres'
+label = 'Non-resonant'
+#pattern = '\bGENIEReWeight_SBN_v1_multisim_NonRESBG(vp|vn|vbarp|vbarn)(CC|NC)(1|2)pi\b'
+pattern = 'NonRES'
+
+[[systematic_recipe]]
+name = 'xsec_fsi'
+label = 'FSI'
+#pattern = '\bGENIEReWeight_SBN_v1_multisim_FSI_(pi|N)_VariationResponse\b'
+pattern = 'FSI'
+
+[[systematic_recipe]]
+name = 'xsec_nuclear_mfp'
+label = 'MFP'
+pattern = 'MFP'
+
+[[systematic_recipe]]
+name = 'xsec_nuclear_frcex'
+label = 'FrCEx'
+pattern = 'FrCEx'
+
+[[systematic_recipe]]
+name = 'xsec_nuclear_frinel'
+label = 'FrInel'
+pattern = 'FrInel'
+
+[[systematic_recipe]]
+name = 'xsec_nuclear_frabs'
+label = 'FrAbs'
+pattern = 'FrAbs'
+
+[[systematic_recipe]]
+name = 'xsec_nuclear_frpiprod'
+label = 'FrPiProd'
+pattern = 'FrPiProd'
+
+[[systematic_recipe]]
+name = 'xsec_ncel'
+label = 'NCEL'
+pattern = '(?i)NCEL'
+
+[[systematic_recipe]]
+name = 'xsec_rdecbr1'
+label = 'RDECBR1'
+pattern = 'RDECBR1'
+
+[[systematic_recipe]]
+name = 'xsec_theta_delta'
+label = 'Theta_Delta'
+pattern = 'Theta_Delta'
+
+[[systematic_recipe]]
+name = 'xsec_theta_delta_alt'
+label = 'ThetaDelta'
+pattern = 'ThetaDelta'
+
+[analysis]
+ordinate_sample = 'NuMIFull'
+#ordinate_sample = 'onbeam'
+category_branch = 'true_category'
+category_assignment = [
+    [0],   # $\nu_{e}$ Signal
+    [1],   # $\nu_{e}$ OOFV
+    [2],   # $\nu_{\mu}$
+    [3],   # $\nu$ OOFV
+    [4],   # $\nu$ NC
+    [5],   # Cosmic
+    ]
+category_labels = ['$\nu_{e}$ Signal', '$\nu_{e}$ OOFV', '$\nu_{\mu}$', '$\nu$ OOFV', '$\nu$ NC', 'Cosmic']
+category_colors = ['#011959', '#1C5A62', '#687B3E', '#D29343', '#FDB7BC', '#ca80a0ff']
+category_types = ['histogram', 'histogram', 'histogram', 'histogram','histogram','histogram']
+
+[variables]
+[variables.true_neutrino_energy]
+key = 'true_neutrino_energy'  
+nbins = 20
+range = [0, 5]
+xlabel = 'True Neutrino Energy [GeV]'
+
+[variables.reco_leading_electron_polar_angle]
+key = 'reco_leading_electron_polar_angle'
+nbins = 9
+range = [0.0, 3.2]
+binning_scheme = 'custom_bins'
+custom_bins = [0.0, 0.275, 0.42, 0.55, 0.68, 0.825, 1.0, 1.25, 1.7, 3.2]
+xlabel = "Reco Leading Electron Polar Angle [rad]"
+
+[variables.reco_ele_beam_cosTheta]
+key = 'reco_ele_beam_cosTheta'
+nbins = 13
+binning_scheme = 'custom_bins'
+custom_bins = [-1.0, -0.4, 0.0, 0.2, 0.35, 0.5, 0.625, 0.725, 0.8, 0.85, 0.9, 0.94, 0.97, 1.0]
+range = [-1.0, 1.0]
+xlabel = "Reco Leading Electron $cos{\\theta_{NUMI}}$"
+
+[variables.reco_leading_electron_energy]
+key = 'reco_leading_electron_energy'
+nbins = 10
+range = [0.0, 5000.0]
+binning_scheme = 'custom_bins'
+custom_bins = [0, 225, 350, 500, 650, 800, 1000, 1250, 1500, 2000, 5000]
+xlabel = 'Reco Leading Electron Energy [MeV]'
+
+[variables.true_hadronic_invariant_mass]
+key = 'true_hadronic_invariant_mass'
+nbins = 5
+range = [0.5, 2.0]
+xlabel = 'True Hadronic Invariant Mass (W) [GeV]'
+
+[variables.true_momentum_transfer]
+key = 'true_momentum_transfer'
+nbins = 12
+range = [0.0, 2.4]
+xlabel = 'True Momentum Transfer ($Q^{2}$) [GeV$^{2}$]'
+
+
+[[figure]]
+name = "sys_eleE"
+type = "SimpleFigure"
+style = 'basic_icarus'
+
+[[figure.artists]]
+type     = "SpineSystematics"
+variable = "reco_leading_electron_energy"
+# Uncomment to restrict to specific recipes:
+# systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"]
+
+[figure.artists.draw_kwargs]
+mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
+show_total = true           # overlay quadrature sum as dashed black line
+show_stat  = true          # include statistical uncertainty
+logy       = false

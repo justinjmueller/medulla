@@ -12,11 +12,11 @@ def makePlot(var, dir):
 
     fig = ana.run_interactively(var)
     fig.set_size_inches(10,8)
-    plt.legend(
-        facecolor="white",   # background color
-        #edgecolor="black",   # optional: legend border
-        framealpha=0.2       # 0 = fully transparent, 1 = fully opaque
-    )
+    for ax in fig.axes:
+        leg = ax.get_legend()
+        if leg is not None:
+            leg.get_frame().set_facecolor('white')
+            leg.get_frame().set_alpha(0.2)
     plt.savefig(f'{dir}/plot_{var}.png', dpi=300, bbox_inches='tight')
     with open(f'{dir}/plot_{var}.pkl', 'wb') as f:
         pickle.dump(fig, f)
@@ -24,14 +24,14 @@ def makePlot(var, dir):
 
 if __name__ == "__main__":
 
-    # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/nue_plots.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine12/merged_output.root')
-    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/nue_plots.toml', '/nashome/m/micarrig/icarus/nuESpine/output_nueCCInclusive2.root')
+    #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/nue_plots.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine12/merged_output.root')
+    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/nue_plots.toml', '/nashome/m/micarrig/icarus/nuESpine/output_nueCCInclusive2.root')
 
-    plot_category = 'neutrino_interactionFlashTime'
+    plot_category = 'debug'
 
     plotVars = [
         # 'true_neutrino_energy',
-        # 'reco_leading_electron_energy',
+        'reco_leading_electron_energy',
         # 'reco_ele_beam_cosTheta',
         # 'reco_leading_electron_start_dedx',
         # 'reco_leading_electron_axial_spread',
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         # 'true_electron_multiplicity',
         # 'true_momentum_transfer',
         # 'true_hadronic_invariant_mass',
-        'reco_flash_time_mod',
+        # 'reco_flash_time_mod',
     ]
 
     outputDir = f'/nashome/m/micarrig/icarus/nuESpine/plots/{plot_category}/'

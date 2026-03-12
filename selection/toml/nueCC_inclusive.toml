@@ -15,7 +15,7 @@ electron_id = 1.0
 greater_than = 1.0
 
 [general]
-output = "output_nueCCInclusive"
+output = "output_nueCCInclusive2"
 primfn = "default_primary_classification"
 pidfn = "default_pid"
 fsthresh = [
@@ -340,10 +340,10 @@ isdata = false
 mode = "true"
 add_systematics = true
 cut = [
-    { name = "neutrino",        type = "true" },
+    #{ name = "neutrino",        type = "true" },
     { name = "fiducial_cut",    type = "true" },
-    { name = "iscc",            type = "true" },
-    { name = "neutrino_pdg",    type = "true",             parameters = [ 12.0, -12.0 ] },
+    #{ name = "iscc",            type = "true" },
+    #{ name = "neutrino_pdg",    type = "true",             parameters = [ 12.0, -12.0 ] },
     { name = "has_particle_multiplicity",  type = "true",  parameters = [ 1, 1 ] },
     { name = "no_muons",                   type = "true",  parameters = [ "@muon_threshold" ] },
     { name = "containment_cut",            type = "true"},
@@ -502,7 +502,7 @@ cuts = [
     { name = "has_particle_multiplicity", parameters = [ 1, 1 ] },
     { name = "no_muons",                  parameters = [ "@muon_threshold" ] },
     { name = "containment_cut" },
-    { name = "leading_ele_energy_cut",    parameters = [ "@electron_threshold" ] },
+    #{ name = "leading_ele_energy_cut",    parameters = [ "@electron_threshold" ] },
 
 ]
 
