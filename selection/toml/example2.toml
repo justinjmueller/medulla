@@ -36,7 +36,7 @@ branch = [
     { name = "neutrino_id",      type = "true"     },
     { name = "baseline",         type = "mctruth"  },
     { name = "cc",               type = "mctruth"  },
-    { name = "iscc",             type = "mctruth"  },
+    { name = "iscc_mctruth",     type = "mctruth"  },
     { name = "pdg",              type = "mctruth"  },
     { name = "interaction_type", type = "mctruth"  },
     { name = "category",         type = "true"     },
