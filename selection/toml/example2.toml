@@ -20,8 +20,14 @@ cuts = [
 
 [[sample]]
 name = "simulation"
-path = "/pnfs/sbnd/persistent/users/mueller/v10_04_07/input*.flat.root"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input*.flat.root"
 ismc = true
+
+[[sample]]
+name = "onbeam"
+path = "/pnfs/icarus/persistent/users/mueller/production/data/onbeam/input*.flat.root"
+ismc = false
+disable = false
 
 [[tree]]
 name = "selected"
