@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 
 from sample import Sample
 from figure import SpineFigure, SimpleFigure
-from spectra1d import SpineSpectra1D
+from spectra1d import SpineSpectra1D, SpineSpectraCutFlow, SpineSystematics
 from spectra2d import SpineSpectra2D
 from efficiency import SpineEfficiency
 from confusion import ConfusionMatrix
@@ -132,6 +132,20 @@ class Analysis:
                             draw_kwargs['draw_error'] = draw_kwargs.get('draw_error', None)
                             self._figures[fig['name']].register_spine_artist(art, draw_kwargs=draw_kwargs)
                             self._artists.append(art)
+                        elif x['type'] == 'SpineSpectraCutFlow':
+                            # Check if the variable is present in all samples
+                            if not all(self._variables[x['variable']]._validity_check.values()):
+                                missing_samples = [k for k, v in self._variables[x['variable']]._validity_check.items() if not v]
+                                raise ConfigException(f"Variable '{x['variable']}' not found in all samples ({' '.join(missing_samples)}).")
+                            art = SpineSpectraCutFlow(
+                                self._variables[x['variable']], restrict_categories,
+                                self._colors, self._category_types,
+                                x['cuts'],
+                                x.get('title', None), x.get('xrange', None), x.get('xtitle', None),
+                                x.get('yrange', None), x.get('ytitle', None))
+                            self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
+                            self._artists.append(art)
+
                         elif x['type'] == 'SpineSpectra2D':
                             # Check if the variables are present in all samples
                             if not all(self._variables[x['xvariable']]._validity_check.values()) or not all(self._variables[x['yvariable']]._validity_check.values()):
@@ -210,7 +224,32 @@ class Analysis:
                                           restrict_categories, x.get('title', None))
                             self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
                             self._artists.append(art)
-                            
+
+                        elif x['type'] == 'SpineSystematics':
+                            # Check if the variable is present in all samples
+                            if not all(self._variables[x['variable']]._validity_check.values()):
+                                missing_samples = [k for k, v in self._variables[x['variable']]._validity_check.items() if not v]
+                                raise ConfigException(f"Variable '{x['variable']}' not found in all samples ({' '.join(missing_samples)}).")
+
+                            # All recipe names defined in the TOML (post-combination keys)
+                            all_recipe_names = [r['name'] for r in self._config.get('systematic_recipe', [])]
+                            # Subset requested in the artist block, or all recipes if unset
+                            recipe_names = x.get('systematics', None)
+
+                            art = SpineSystematics(
+                                self._variables[x['variable']], restrict_categories,
+                                self._colors, self._category_types,
+                                recipe_names=recipe_names,
+                                all_recipe_names=all_recipe_names,
+                                title=x.get('title', None),
+                                xrange=x.get('xrange', None),
+                                xtitle=x.get('xtitle', None),
+                                yrange=x.get('yrange', None),
+                                ytitle=x.get('ytitle', None),
+                            )
+                            self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
+                            self._artists.append(art)
+
 
     def override_exposure(self, sample_name, exposure, exposure_type='pot') -> None:
         """

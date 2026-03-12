@@ -7,7 +7,7 @@ file = '/nashome/m/micarrig/icarus/nuESpine/medulla/spineplot/configurations/com
 [samples.debugMC]
 key = "debugMC"
 exposure_type = "pot"
-trees = ['all']
+trees = ['selected']
 
 precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "reco_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)"}
 
@@ -26,11 +26,11 @@ ordinate_sample = 'debugMC'
 category_branch = 'true_category'
 category_assignment = [
     [0], # CC nue
-    # [1], 
-    # [2], 
-    # [3], 
-    # [4],
-    # [5]  # Cosmic
+    [1], 
+    [2], 
+    [3], 
+    [4],
+    [5]  # Cosmic
 ]
 category_labels = ['$\nu_{e}$ Signal', '$\nu_{e}$ OOFV', '$\nu_{\mu}$', '$\nu$ OOFV', '$\nu$ NC', 'Cosmic']
 #category_colors = ['#011959', '#103F60', '#1C5A62', '#3C6D56', '#687B3E', '#9D892B', '#D29343', '#F8A17B', '#FDB7BC', '#FACCFA'] #batlow
@@ -65,6 +65,11 @@ category_colors = ['#011959', '#1C5A62', '#687B3E', '#D29343', '#FDB7BC', '#ca80
 # category_colors = ['#2C194C','#49749F', '#83A1BE', '#8EB38D', '#4F894E', '#1C5B19', '#0F2903'] #cork
 
 category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram']
+
+[[systematic_recipe]]
+name = "total_stat"
+label = "MC statistical uncertainty"
+pattern = "statistical"
 
 ##############################################
 ## Define your variables and figures below
@@ -362,7 +367,7 @@ style = 'basic_icarus'
 [[figure.artists]]
 type = 'SpineSpectra1D'
 variable = 'reco_leading_electron_energy'
-draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false, 'draw_error' = 'total_stat'}
 
 # Figure 2: reco leading electron open angle
 [[figure]]
@@ -373,7 +378,7 @@ style = 'basic_icarus'
 [[figure.artists]]
 type = 'SpineSpectra1D'
 variable = 'reco_ele_beam_cosTheta'
-draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false, 'draw_error' = 'total_stat'}
 
 # Figure 3: true neutrino energy
 [[figure]]

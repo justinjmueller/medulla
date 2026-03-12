@@ -96,7 +96,7 @@ class SpineEfficiency(SpineArtist):
 
     def draw(self, ax, show_option, percentage=True, show_seqeff=True,
              show_unseqeff=True, show_purity=False, yrange=None, npts=100, style=None,
-             logx=False, logy=False):
+             logx=False, logy=False, colors=None):
         """
         Draw the artist on the given axis.
 
@@ -358,8 +358,8 @@ class SpineEfficiency(SpineArtist):
                             fmt(psigma[f'{key_base}{cut}']),
                         ],
                         fmt='o',
-                        color=style.get_color(ci),
-                        label=cutname,
+                        color=colors.get(groups[0], style.get_color(ci)) if (colors and show_option == 'final_only') else style.get_color(ci),
+                        label=cutname if show_option != 'final_only' else None,
                     )
             else:
                 for gi, group in enumerate(groups):
@@ -374,8 +374,8 @@ class SpineEfficiency(SpineArtist):
                                 fmt(psigma[f'{key_base}{cut}']),
                             ],
                             fmt=style.get_marker(ci),
-                            color=style.get_color(gi),
-                            label=f'{group} : {cutname}',
+                            color=colors.get(group, style.get_color(gi)) if colors else style.get_color(gi),
+                            label=group if show_option == 'final_only' else f'{group} : {cutname}',
                         )
 
             ax.set_xlabel(self._variable._xlabel if self._xtitle is None else self._xtitle)
@@ -470,9 +470,8 @@ class SpineEfficiency(SpineArtist):
             pos /= np.sum(pos)
         else:
             pos /= np.sum(pos, axis=-1)[:, np.newaxis]
-        
-        index = np.argmax(pos)
-        
+        # Clip underflow noise to keep the distribution sparse
+        pos[pos < 1e-10] = 0.0
         return pos
 
     def calculate(self, sample, significance=0.6827):
@@ -511,10 +510,6 @@ class SpineEfficiency(SpineArtist):
         for category, values in data.items():
             if category not in self._categories:
                 continue
-            if category not in self._posteriors:
-                self._posteriors[category] = {f'seq_{c}' : np.ones(efficiencies.shape) for c in self._cuts.keys()}
-                self._posteriors[category].update({f'unseq_{c}' : np.ones(efficiencies.shape) for c in self._cuts.keys()})
-                
 
             # If the group does not already have an entry in the
             # posteriors dictionary, create one.
@@ -576,17 +571,17 @@ class SpineEfficiency(SpineArtist):
                     indices = np.digitize(values[0][np.all(values[1:ci+2], axis=0)], bin_edges, right=False)
                     success = np.bincount(indices, minlength=len(bin_edges)+1)[1:-1]
                     self._successes[self._categories[category]][f'binned_seq_{cut}'] += success
-                    binomialpmf = [binom.pmf(self._successes[self._categories[category]][f'binned_seq_{cut}'][i],
-                                             self._totals[self._categories[category]][i], efficiencies) for i in range(nbins)]
-                    self._posteriors[self._categories[category]][f'binned_seq_{cut}'] = np.array(binomialpmf)
+                    _s = self._successes[self._categories[category]][f'binned_seq_{cut}'][:, np.newaxis]  # (nbins, 1)
+                    _t = self._totals[self._categories[category]][:, np.newaxis]                          # (nbins, 1)
+                    self._posteriors[self._categories[category]][f'binned_seq_{cut}'] = binom.pmf(_s, _t, efficiencies[np.newaxis, :]).astype(np.float32)
 
                     # Non-sequential cuts (binned)
                     indices = np.digitize(values[0][values[ci+1] == 1], bin_edges, right=False)
                     success = np.bincount(indices, minlength=len(bin_edges)+1)[1:-1]
                     self._successes[self._categories[category]][f'binned_unseq_{cut}'] += success
-                    binomialpmf = [binom.pmf(self._successes[self._categories[category]][f'binned_unseq_{cut}'][i],
-                                             self._totals[self._categories[category]][i], efficiencies) for i in range(nbins)]
-                    self._posteriors[self._categories[category]][f'binned_unseq_{cut}'] = np.array(binomialpmf)
+                    _s = self._successes[self._categories[category]][f'binned_unseq_{cut}'][:, np.newaxis]  # (nbins, 1)
+                    _t = self._totals[self._categories[category]][:, np.newaxis]                             # (nbins, 1)
+                    self._posteriors[self._categories[category]][f'binned_unseq_{cut}'] = binom.pmf(_s, _t, efficiencies[np.newaxis, :]).astype(np.float32)
 
     def reduce(self, group, significance=0.6827):
         """
