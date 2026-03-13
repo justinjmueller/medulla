@@ -37,7 +37,7 @@ fsthresh = [
 name = "NuMIFull"
 path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/*.root"
 ismc = true
-disable = true # Optional: default = false
+disable = false # Optional: default = false
 
 # ICARUS debug single file
 [[sample]]
@@ -45,7 +45,7 @@ name = "debugMC"
 #path = "/exp/icarus/app/users/micarrig/nuESpine/skim_spine_NuMI_nuE.root"
 path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
 ismc = true
-disable = false # Optional: default = false
+disable = true # Optional: default = false
 
 [[tree]]
 name = "all"
@@ -340,10 +340,7 @@ isdata = false
 mode = "true"
 add_systematics = true
 cut = [
-    #{ name = "neutrino",        type = "true" },
     { name = "fiducial_cut",    type = "true" },
-    #{ name = "iscc",            type = "true" },
-    #{ name = "neutrino_pdg",    type = "true",             parameters = [ 12.0, -12.0 ] },
     { name = "has_particle_multiplicity",  type = "true",  parameters = [ 1, 1 ] },
     { name = "no_muons",                   type = "true",  parameters = [ "@muon_threshold" ] },
     { name = "containment_cut",            type = "true"},
@@ -502,7 +499,7 @@ cuts = [
     { name = "has_particle_multiplicity", parameters = [ 1, 1 ] },
     { name = "no_muons",                  parameters = [ "@muon_threshold" ] },
     { name = "containment_cut" },
-    #{ name = "leading_ele_energy_cut",    parameters = [ "@electron_threshold" ] },
+    { name = "leading_ele_energy_cut",    parameters = [ "@electron_threshold" ] },
 
 ]
 

@@ -285,18 +285,22 @@ class Sample:
         # which is used to build a list of Systematic objects to
         # combine.
         for recipe in recipes:
-            # Exclude the "nsigma" branches
-            exclude = ['_nsigma', '_sigma']
-            exclude_pat = '|'.join(re.escape(x) for x in exclude)
+            # Exclude branches encoding sigma variations (e.g. `_sigma`, `_nsigma`, `_N_sigma`).
+            exclude_patterns = ['_nsigma', '_sigma']
+            exclude_pat = '|'.join(fr"{re.escape(x)}\b" for x in exclude_patterns)
 
-            # Compile the regex pattern for matching the systematic
             pattern = recipe['pattern']
-            regxp = re.compile(rf'^(?!.*(?:{exclude_pat})).*{pattern}.*$')
+            regex = rf'^(?!.*(?:{exclude_pat})).*(?:{pattern}).*$'
+            regxp = re.compile(regex, re.IGNORECASE)
             systematics = [syst for k, syst in self._systematics.items() if regxp.match(k)]
 
             # If there are no systematics to combine, skip the recipe.
             if len(systematics) == 0:
                 continue
+
+            print("Systematics in sample ", self._name, " matching pattern ", pattern, ":")
+            for k, sys in [(k, s) for k, s in self._systematics.items() if regxp.match(k)]:
+                print(f'  key={k}  name={sys._name}  has__sigma={"_sigma" in k}')
 
             # Combine the systematics and add the new Systematic object
             syst = Systematic.combine(systematics, recipe['name'], recipe.get('label', None))
@@ -304,7 +308,9 @@ class Sample:
         
         # Print the systematics for the sample (if requested).
         if self._print_sys:
+            recipe_names = {r['name'] for r in recipes}
             for sysname, syst in self._systematics.items():
+                #if sysname in recipe_names or 'statistical' in sysname.lower():
                 print(syst)
 
     def register_variable(self, variable, categories) -> None:
