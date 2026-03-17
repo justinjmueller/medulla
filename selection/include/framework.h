@@ -340,10 +340,10 @@ namespace                                                                       
 {                                                                                          \
     const bool _reg_biselector_##name = []{                                                \
         BiSelectorFactoryRegistry<TType>::instance().register_fn(                          \
-            "true_" #name, bind<fn<TType>, TType, std::pair<size_t, size_t>>               \
+            "true_biselector_" #name, bind<fn<TType>, TType, std::pair<size_t, size_t>>    \
         );                                                                                 \
         BiSelectorFactoryRegistry<RType>::instance().register_fn(                          \
-            "reco_" #name, bind<fn<RType>, RType, std::pair<size_t, size_t>>               \
+            "reco_biselector_" #name, bind<fn<RType>, RType, std::pair<size_t, size_t>>    \
         );                                                                                 \
         return true;                                                                       \
     }();                                                                                   \
@@ -356,11 +356,11 @@ namespace                                                                       
     const bool _reg_bivar_##name = []{                                                     \
         if constexpr((scope)==RegistrationScope::TrueParticle || (scope)==RegistrationScope::BothParticle) \
             BiVarFactoryRegistry<TParticleType>::instance().register_fn(                   \
-                "true_particle_" #name, bind_bivar<fn<TParticleType>, TParticleType>       \
+                "true_bivar_" #name, bind_bivar<fn<TParticleType>, TParticleType>          \
             );                                                                             \
         if constexpr((scope)==RegistrationScope::RecoParticle || (scope)==RegistrationScope::BothParticle) \
             BiVarFactoryRegistry<RParticleType>::instance().register_fn(                   \
-                "reco_particle_" #name, bind_bivar<fn<RParticleType>, RParticleType>       \
+                "reco_bivar_" #name, bind_bivar<fn<RParticleType>, RParticleType>          \
             );                                                                             \
         return true;                                                                       \
     }();                                                                                   \
