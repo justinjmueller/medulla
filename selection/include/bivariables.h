@@ -40,9 +40,9 @@ namespace bvars
     double opening_angle(const T & a, const T & b)
     {
         return std::acos(
-            a.start_dir[0] * b.start_dir[0] +
-            a.start_dir[1] * b.start_dir[1] +
-            a.start_dir[2] * b.start_dir[2]
+            pvars::start_dir_x(a) * pvars::start_dir_x(b) +
+            pvars::start_dir_y(a) * pvars::start_dir_y(b) +
+            pvars::start_dir_z(a) * pvars::start_dir_z(b)
         );
     }
     REGISTER_BIVAR_SCOPE(RegistrationScope::BothParticle, opening_angle, opening_angle);
