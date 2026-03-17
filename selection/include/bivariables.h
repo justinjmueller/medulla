@@ -48,42 +48,6 @@ namespace bvars
     REGISTER_BIVAR_SCOPE(RegistrationScope::BothParticle, opening_angle, opening_angle);
 
     /**
-     * @brief Invariant mass of two particles.
-     * @details Computes the invariant mass of two particles using their
-     * energy and momentum components.
-     * @tparam T the type of particle (true or reco).
-     * @param a the first particle.
-     * @param b the second particle.
-     * @return the invariant mass in MeV.
-     */
-    template<class T>
-    double invariant_mass(const T & a, const T & b)
-    {
-        double ea = pvars::energy(a), eb = pvars::energy(b);
-        double px = pvars::px(a) + pvars::px(b);
-        double py = pvars::py(a) + pvars::py(b);
-        double pz = pvars::pz(a) + pvars::pz(b);
-        double e  = ea + eb;
-        double m2 = e*e - px*px - py*py - pz*pz;
-        return (m2 > 0) ? std::sqrt(m2) : 0.0;
-    }
-    REGISTER_BIVAR_SCOPE(RegistrationScope::BothParticle, invariant_mass, invariant_mass);
-
-    /**
-     * @brief Sum of kinetic energies of two particles.
-     * @tparam T the type of particle (true or reco).
-     * @param a the first particle.
-     * @param b the second particle.
-     * @return the sum of kinetic energies.
-     */
-    template<class T>
-    double ke_sum(const T & a, const T & b)
-    {
-        return pvars::ke(a) + pvars::ke(b);
-    }
-    REGISTER_BIVAR_SCOPE(RegistrationScope::BothParticle, ke_sum, ke_sum);
-
-    /**
      * @brief Distance between start points of two particles.
      * @details Computes the Euclidean distance between the start points
      * of two particles.
