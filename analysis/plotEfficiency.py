@@ -1,4 +1,4 @@
-import sys
+import sys, os
 import uproot
 import ROOT as r
 import numpy as np
@@ -17,45 +17,48 @@ r.gStyle.SetOptStat(0)
 
 def main():
     # Load the analysis
-    #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/efficiency_analysis.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine12/merged_output.root')
-    #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/efficiency_recoInt.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine12/merged_output.root')
-    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/efficiency_analysis.toml', '/nashome/m/micarrig/icarus/nuESpine/output_nueCCInclusive2.root')
+    # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_analysis.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine14/merged_output.root')
+    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_recoInt.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine14/merged_output.root')
+    #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/efficiency_analysis.toml', '/nashome/m/micarrig/icarus/nuESpine/output_nueCCInclusive2.root')
 
-    # Run interactively for specific figure
-    # table = ana.run_interactively('selection_efficiency_table')
-    # plt.savefig('plots/selection_efficiency_table.png', dpi=300)
-    # with open('plots/selection_efficiency_table.pkl', 'wb') as f:
-    #     pickle.dump(table, f)
+    output_dir = 'plots/efficiency_neutrino_interaction_trueTree'
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
-    # eff_nuE = ana.run_interactively('efficiency_vs_energy')
-    # plt.savefig('plots/efficiency_vs_energy.png', dpi=300)
-    # with open('plots/efficiency_vs_energy.pkl', 'wb') as f:
-    #     pickle.dump(eff_nuE, f)
+    table = ana.run_interactively('selection_efficiency_table')
+    plt.savefig(f'{output_dir}/selection_efficiency_table.png', dpi=300)
+    with open(f'{output_dir}/selection_efficiency_table.pkl', 'wb') as f:
+        pickle.dump(table, f)
 
-    # eff_eleE = ana.run_interactively('efficiency_vs_electronEnergy')
-    # plt.savefig('plots/efficiency_vs_electronEnergy.png', dpi=300)
-    # with open ('plots/efficiency_vs_electronEnergy.pkl', 'wb') as f:
-    #     pickle.dump(eff_eleE, f)
+    eff_nuE = ana.run_interactively('efficiency_vs_energy')
+    plt.savefig(f'{output_dir}/efficiency_vs_energy.png', dpi=300)
+    with open(f'{output_dir}/efficiency_vs_energy.pkl', 'wb') as f:
+        pickle.dump(eff_nuE, f)
 
-    # eff_eleAngle = ana.run_interactively('efficiency_vs_electronAngle')
-    # plt.savefig('plots/efficiency_vs_electronAngle.png', dpi=300)
-    # with open('plots/efficiency_vs_electronAngle.pkl', 'wb') as f:
-    #     pickle.dump(eff_eleAngle, f)
+    eff_eleE = ana.run_interactively('efficiency_vs_electronEnergy')
+    plt.savefig(f'{output_dir}/efficiency_vs_electronEnergy.png', dpi=300)
+    with open (f'{output_dir}/efficiency_vs_electronEnergy.pkl', 'wb') as f:
+        pickle.dump(eff_eleE, f)
 
-    # eff_pTrans = ana.run_interactively('efficiency_vs_trueMomentumTransfer')
-    # plt.savefig('plots/efficiency_vs_trueMomentumTransfer.png', dpi=300)
-    # with open('plots/efficiency_vs_trueMomentumTransfer.pkl', 'wb') as f:
-    #     pickle.dump(eff_pTrans, f)
+    eff_eleAngle = ana.run_interactively('efficiency_vs_electronAngle')
+    plt.savefig(f'{output_dir}/efficiency_vs_electronAngle.png', dpi=300)
+    with open(f'{output_dir}/efficiency_vs_electronAngle.pkl', 'wb') as f:
+        pickle.dump(eff_eleAngle, f)
 
-    # eff_invMass = ana.run_interactively('efficiency_vs_trueInvariantMass')
-    # plt.savefig('plots/efficiency_vs_trueInvMass.png', dpi=300)
-    # with open('plots/efficiency_vs_trueInvMass.pkl', 'wb') as f:
-    #     pickle.dump(eff_invMass, f)
+    eff_pTrans = ana.run_interactively('efficiency_vs_trueMomentumTransfer')
+    plt.savefig(f'{output_dir}/efficiency_vs_trueMomentumTransfer.png', dpi=300)
+    with open(f'{output_dir}/efficiency_vs_trueMomentumTransfer.pkl', 'wb') as f:
+        pickle.dump(eff_pTrans, f)
 
-    eff_flashTime = ana.run_interactively('efficiency_vs_recoFlashTime')
-    plt.savefig('plots/efficiency_vs_recoFlashTime.png', dpi=300)
-    with open('plots/efficiency_vs_recoFlashTime.pkl', 'wb') as f:
-        pickle.dump(eff_flashTime, f)
+    eff_invMass = ana.run_interactively('efficiency_vs_trueInvariantMass')
+    plt.savefig(f'{output_dir}/efficiency_vs_trueInvMass.png', dpi=300)
+    with open(f'{output_dir}/efficiency_vs_trueInvMass.pkl', 'wb') as f:
+        pickle.dump(eff_invMass, f)
+
+    # eff_flashTime = ana.run_interactively('efficiency_vs_recoFlashTime')
+    # plt.savefig('plots/efficiency_vs_recoFlashTime.png', dpi=300)
+    # with open('plots/efficiency_vs_recoFlashTime.pkl', 'wb') as f:
+    #     pickle.dump(eff_flashTime, f)
 
 
 if __name__ == "__main__":

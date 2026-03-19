@@ -796,7 +796,7 @@ namespace cuts
     double ele_beam_open_angle(const T & obj)
     {
         size_t i = selectors::leading_electron(obj);
-        if (i == kNoMatch) return -1.0;
+        if (i == kNoMatch) return -10.0;
         const auto & p = obj.particles[i];
 
         utilities::three_vector p_dir = {pvars::px(p), pvars::py(p), pvars::pz(p)};
@@ -835,6 +835,27 @@ namespace cuts
         return pvars::energy(p) > energy_threshold;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, leading_ele_energy_cut, leading_ele_energy_cut);
+
+    template<class T>
+    bool leading_photon_energy_cut(const T & obj, std::vector<double> params={25.0})
+    {
+        if(params.size() != 1)
+            throw std::invalid_argument("leading_photon_energy_cut requires exactly the energy threshold");
+
+        size_t i = selectors::leading_photon(obj);
+        if (i == kNoMatch) return false;
+        const auto & p = obj.particles[i];
+
+        double energy_threshold = params[0];
+
+        if (std::isnan(pvars::energy(p)))
+        {
+            return false; // or true, depending on how you want to handle NaN values
+        }
+        return pvars::energy(p) > energy_threshold;
+        
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, leading_photon_energy_cut, leading_photon_energy_cut);
 
     // Dan's cuts
     template<class T>

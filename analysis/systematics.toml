@@ -1,6 +1,9 @@
 [[this_includes]]
 file = '/nashome/m/micarrig/icarus/nuESpine/medulla/spineplot/configurations/common/styles.toml'
 
+[[this_includes]]
+file = '/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/systematic_recipes.toml'
+
 # SIMULATION SAMPLE
 [samples]
 [samples.NuMIFull]
@@ -9,7 +12,7 @@ exposure_type = "pot"
 trees = ['selected']
 print_sys = true
 # Comment this to avoid systematics when plotting (usually done for testing plots)
-systematics = ['selected_multisigmaTree']
+systematics = ['selected_multisigmaTree', 'selected_multisimTree']
 precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "reco_category" = "np.where(true_cc == 1, true_interaction_mode, -1)"}
 
 # DATA SAMPLE
@@ -21,100 +24,6 @@ precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "tr
 
 [output]
 path = '/nashome/m/micarrig/icarus/nuESpine/systematics.root'
-
-# [[systematic_recipe]]
-# name = 'xsec_ccqe'
-# label = 'QE'
-# #pattern = 'VecFFCCWE|\bGENIEReWeight_SBN_v1_multisim_(ZExpAVariationResponse|RPA_CCQE|CoulombCCQE)\b'
-# pattern = '\bGENIEReWeight_SBN_v1_multisim_(ZExpAVariationResponse|RPA_CCQE|CoulombCCQE)\b'
-
-# [[systematic_recipe]]
-# name = 'xsec_mec'
-# label = 'MEC'
-# #pattern = 'DecayAngMEC|\bGENIEReWeight_SBN_v1_multisim_Norm(CCMEC|NCMEC)\b'
-# pattern = '\bGENIEReWeight_SBN_v1_multisim_Norm(CCMEC|NCMEC)\b'
-
-# [[systematic_recipe]]
-# name = 'xsec_res'
-# label = 'Resonant'
-# #pattern = 'M??CRES\bGENIEReWeight_SBN_v1_multisim_(NCELVariationResponse|CCRESVariationResponse|NCRESVariationResponse)\b'
-# #pattern = '\bGENIEReWeight_SBN_v1_multisim_(NCELVariationResponse|CCRESVariationResponse|NCRESVariationResponse)\b'
-# pattern = '\bGENIEReWeight_SBN_v1_multisim_(NCELVariationResponse|CCRESVariationResponse|NCRESVariationResponse)\b'
-
-# [[systematic_recipe]]
-# name = 'xsec_dis'
-# label = 'DIS'
-# pattern = 'DIS|BY'
-
-# [[systematic_recipe]]
-# name = 'xsec_coh'
-# label = 'COH'
-# pattern = 'COH'
-
-# [[systematic_recipe]]
-# name = 'xsec_nonres'
-# label = 'Non-resonant'
-# #pattern = '\bGENIEReWeight_SBN_v1_multisim_NonRESBG(vp|vn|vbarp|vbarn)(CC|NC)(1|2)pi\b'
-# pattern = '\bGENIEReWeight_SBN_v1_multisim_NonRESBG(vp|vn|vbarp|vbarn)(CC|NC)(1|2)pi\b'
-
-# [[systematic_recipe]]
-# name = 'xsec_fsi'
-# label = 'FSI'
-# pattern = '\bGENIEReWeight_SBN_v1_multisim_FSI_(pi|N)_VariationResponse\b'
-# #pattern = 'FSI'
-
-[[systematic_recipe]]
-name = 'xsec_other'
-label = 'Other'
-# pattern = '^(?!.*(CCQE|MEC|RES|DIS|BY|COH|NonRES|FSI))'
-#pattern = 'MFP|FrCEx|FrInel|FrAbs|FrPiProd|NCEL|RDECBR1|Theta_Delta|ThetaDelta'
-#pattern = '\bGENIEReWeight_SBN_v1_multisim_(RDecBR1gamma|RDecBR1eta|COHVariationResponse|DISBYVariationResponse)\b'
-pattern = '.*'
-
-# [[systematic_recipe]]
-# name = 'xsec_nuclear_mfp'
-# label = 'MFP'
-# pattern = 'MFP'
-
-# [[systematic_recipe]]
-# name = 'xsec_nuclear_frcex'
-# label = 'FrCEx'
-# pattern = 'FrCEx'
-
-# [[systematic_recipe]]
-# name = 'xsec_nuclear_frinel'
-# label = 'FrInel'
-# pattern = 'FrInel'
-
-# [[systematic_recipe]]
-# name = 'xsec_nuclear_frabs'
-# label = 'FrAbs'
-# pattern = 'FrAbs'
-
-# [[systematic_recipe]]
-# name = 'xsec_nuclear_frpiprod'
-# label = 'FrPiProd'
-# pattern = 'FrPiProd'
-
-# [[systematic_recipe]]
-# name = 'xsec_ncel'
-# label = 'NCEL'
-# pattern = '(?i)NCEL'
-
-# [[systematic_recipe]]
-# name = 'xsec_rdecbr1'
-# label = 'RDECBR1'
-# pattern = 'RDECBR1'
-
-# [[systematic_recipe]]
-# name = 'xsec_theta_delta'
-# label = 'Theta_Delta'
-# pattern = 'Theta_Delta'
-
-# [[systematic_recipe]]
-# name = 'xsec_theta_delta_alt'
-# label = 'ThetaDelta'
-# pattern = 'ThetaDelta'
 
 [analysis]
 ordinate_sample = 'NuMIFull'

@@ -1,6 +1,6 @@
 
 [input]
-path = '/pnfs/icarus/scratch/users/micarrig/nueCCInclusiveSpine12/merged_output.root'
+path = '/pnfs/icarus/scratch/users/micarrig/nueCCInclusiveSpine14/merged_output.root'
 weights = '/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_*.root'
 
 use_additional_hash = true

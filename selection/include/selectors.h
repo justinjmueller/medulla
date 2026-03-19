@@ -59,6 +59,38 @@ namespace selectors
     }
 
     /**
+     * @brief Finds the index corresponding to the second leading particle of the
+     * specified particle type.
+     * @details The leading particle is defined as the particle with the
+     * highest kinetic energy. The method of calculating kinetic energy is
+     * inherited by the @ref pvars::ke function.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @param pid of the particle type.
+     * @return the index of the secondary leading particle (highest KE). 
+     */
+    template <class T>
+    size_t secondary_particle_index(const T & obj, uint16_t pid)
+    {
+        size_t leading_index = leading_particle_index(obj, pid);
+
+        double secondary_ke(0);
+        size_t index(kNoMatch);
+        for(size_t i(0); i < obj.particles.size(); ++i)
+        {
+            if (i == leading_index) continue;
+            const auto & p = obj.particles[i];
+            double energy(pvars::ke(p));
+            if(pvars::pid(p) == pid && energy > secondary_ke)
+            {
+                secondary_ke = energy;
+                index = i;
+            }
+        }
+        return index;
+    }
+
+    /**
      * @brief Finds the index corresponding to the longest track.
      * @details The longest track is defined as the track with the longest
      * length, which is calculated upstream in SPINE. The particle instance is
@@ -169,6 +201,21 @@ namespace selectors
         return leading_particle_index(obj, pvars::kPhoton);
     }
     REGISTER_SELECTOR(leading_photon, leading_photon);
+
+    /**
+     * @brief Finds the index corresponding to the secondary photon.
+     * @details The leading photon is defined as the photon with the highest
+     * kinetic energy and the secondary is second highest.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the second leading photon (highest KE).
+     */
+    template<class T>
+    size_t secondary_photon(const T & obj)
+    {
+        return secondary_particle_index(obj, pvars::kPhoton);
+    }
+    REGISTER_SELECTOR(secondary_photon, secondary_photon);
 
     /**
      * @brief Finds the index corresponding to the leading electron.

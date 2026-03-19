@@ -203,6 +203,11 @@ class SpineSpectra1D(SpineSpectra):
         ax.set_xlim(*self._variable._range if self._xrange is None else self._xrange)
         ax.set_title(self._title)
 
+        # Track the total stacked histogram and its uncertainty envelope so we can
+        # expand y-limits and avoid clipping error boxes.
+        total_y = None
+        total_yerr = None
+
         if self._plotdata is not None:
             labels, data = zip(*self._plotdata.items())
             colors = [self._colors[label] for label in labels]
@@ -240,6 +245,9 @@ class SpineSpectra1D(SpineSpectra):
             hist_labels = reduce(labels)
             hist_colors = reduce(colors)
 
+            # Total stacked histogram (used for uncertainty band + ylim envelope)
+            total_y = scale * np.sum(reduce(data), axis=0)
+
             # Use either uniform bins or customized bins
             ax.hist(hist_bincenters, weights=hist_data, 
                     bins=self._variable._nbins if self._variable._custom_bins is None else self._variable._custom_bins,
@@ -249,10 +257,11 @@ class SpineSpectra1D(SpineSpectra):
                 if systs:
                     cov = np.sum(s.get_covariance(self._variable._key) for s in systs)
                     x = reduce(bincenters)[0]
-                    y = scale * np.sum(reduce(data), axis=0)
+                    y = total_y
                     xerr = [bw / 2 for bw in binwidths[0]]
                     scov = Systematic.transform_as(cov, scale if not normalize else np.sum(reduce(data), axis=0))
                     yerr = np.sqrt(np.diag(scov))
+                    total_yerr = yerr
                     draw_error_boxes(ax, x, y, xerr, yerr, facecolor='gray', edgecolor='none', alpha=0.5, hatch='///')
                 else:
                     import warnings
@@ -285,6 +294,30 @@ class SpineSpectra1D(SpineSpectra):
         elif isinstance(self._yrange, (int, float)):
             yl = ax.get_ylim()[1]
             ax.set_ylim(None, yl * self._yrange)
+        else:
+            # If the user didn't explicitly set a y-range, expand the upper limit
+            # to include the uncertainty envelope (y + yerr) so error boxes won't
+            # get clipped.
+            if total_y is not None:
+                current_low, current_high = ax.get_ylim()
+
+                y_upper = (total_y + total_yerr) if total_yerr is not None else total_y
+
+                # Ignore non-finite values.
+                env_max = np.nanmax(np.where(np.isfinite(y_upper), y_upper, np.nan))
+                if np.isfinite(env_max):
+                    if logy:
+                        # For log scale, ylim must be positive. Also add multiplicative headroom.
+                        low = current_low
+                        if low <= 0:
+                            pos = total_y[total_y > 0] if total_y is not None else np.array([])
+                            low = np.nanmin(pos) if pos.size else 1e-6
+                        high = max(current_high, env_max) * 1.3
+                        ax.set_ylim(low, high)
+                    else:
+                        # Add a bit of linear headroom.
+                        high = max(current_high, env_max) * 1.15
+                        ax.set_ylim(current_low, high)
 
         # Set the axis to be logarithmic if requested.
         if logx:

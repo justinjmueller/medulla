@@ -371,7 +371,14 @@ class Analysis:
                         config[key] = {v: c[key][v] for v in value}
             else:
                 for key, value in c.items():
-                    if key in config.keys():
-                        config[key].update(value)
-                    else:
+                    if key not in config:
                         config[key] = value
+                    elif isinstance(config[key], dict) and isinstance(value, dict):
+                        config[key].update(value)
+                    elif isinstance(config[key], list) and isinstance(value, list):
+                        config[key].extend(value)
+                    else:
+                        raise TypeError(
+                            f"Include merge type mismatch for key '{key}': "
+                            f"{type(config[key]).__name__} vs {type(value).__name__}"
+                        )

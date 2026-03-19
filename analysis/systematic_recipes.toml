@@ -1,0 +1,106 @@
+#################################
+## Systematic recipes for the multisigma tree
+#################################
+
+[[systematic_recipe]]
+name = 'xsec_ccqe'
+label = 'QE'
+pattern = 'CCQE'
+
+[[systematic_recipe]]
+name = 'xsec_mec'
+label = 'MEC'
+pattern = 'MEC'
+
+[[systematic_recipe]]
+name = 'xsec_res'
+label = 'Resonant'
+pattern = 'M??RES'
+
+[[systematic_recipe]]
+name = 'xsec_dis'
+label = 'DIS'
+pattern = 'BY'
+
+[[systematic_recipe]]
+name = 'xsec_coh'
+label = 'COH'
+pattern = 'COH'
+
+[[systematic_recipe]]
+name = 'xsec_nonres'
+label = 'Non-resonant'
+pattern = 'NonRESBG'
+
+[[systematic_recipe]]
+name = 'xsec_fsi'
+label = 'FSI'
+pattern = 'MFP|FrCEx|FrInel|FrAbs|FrPiProd'
+
+[[systematic_recipe]]
+name = 'xsec_other'
+label = 'Other'
+pattern = 'RDECBR1|Theta_Delta|ThetaDelta|MaNCEL|EtaNCEL'
+
+[[systematic_recipe]]
+name = "total"
+label = "Stat + Syst"
+pattern = "statistical|xsec_ccqe|xsec_mec|xsec_res|xsec_dis|xsec_coh|xsec_nonres|xsec_fsi|xsec_other"
+
+#######################################
+## Versions using the multisim tree
+#######################################
+
+# [[systematic_recipe]]
+# name = 'xsec_sim_ccqe'
+# label = 'QE'
+# pattern = '\bGENIEReWeight_SBN_v1_multisim_(ZExpAVariationResponse|RPA_CCQE|CoulombCCQE)\b'
+
+# [[systematic_recipe]]
+# name = 'xsec_sim_mec'
+# label = 'MEC'
+# pattern = '\bGENIEReWeight_SBN_v1_multisim_Norm(CCMEC|NCMEC)\b'
+
+# [[systematic_recipe]]
+# name = 'xsec_sim_res'
+# label = 'Resonant'
+# pattern = '\bGENIEReWeight_SBN_v1_multisim_(CCRESVariationResponse|NCRESVariationResponse)\b'
+
+# [[systematic_recipe]]
+# name = 'xsec_sim_dis'
+# label = 'DIS'
+# pattern = 'DISBYVariationResponse'
+
+# [[systematic_recipe]]
+# name = 'xsec_sim_coh'
+# label = 'COH'
+# pattern = 'COHVariationResponse'
+
+# [[systematic_recipe]]
+# name = 'xsec_sim_nonres'
+# label = 'Non-resonant'
+# pattern = '\bGENIEReWeight_SBN_v1_multisim_NonRESBG(vp|vn|vbarp|vbarn)(CC|NC)(1|2)pi\b'
+
+# [[systematic_recipe]]
+# name = 'xsec_sim_fsi'
+# label = 'FSI'
+# pattern = '\bGENIEReWeight_SBN_v1_multisim_FSI_(pi|N)_VariationResponse\b'
+
+# [[systematic_recipe]]
+# name = 'xsec_sim_other'
+# label = 'Other'
+# pattern = '\bGENIEReWeight_SBN_v1_multisim_(NCELVariationResponse|RDecBR1gamma|RDecBR1eta)\b'
+
+# [[systematic_recipe]]
+# name = "total_sim_syst"
+# label = "Total systematic uncertainty"
+# pattern = "statistical|xsec_sim_ccqe|xsec_sim_mec|xsec_sim_res|xsec_sim_dis|xsec_sim_coh|xsec_sim_nonres|xsec_sim_fsi|xsec_sim_other"
+
+########################################
+## Statistical error tree
+########################################
+
+[[systematic_recipe]]
+name = "total_stat"
+label = "MC statistical uncertainty"
+pattern = "statistical"

@@ -4,8 +4,8 @@ file = '/nashome/m/micarrig/icarus/nuESpine/medulla/spineplot/configurations/com
 
 # Define your samples
 [samples]
-[samples.debugMC]
-key = "debugMC"
+[samples.NuMIFull]
+key = "NuMIFull"
 exposure_type = "pot"
 trees = ['true_signal']
 branches = ["reco_fiducial_cut",
@@ -30,7 +30,7 @@ branches = ["reco_fiducial_cut",
             ]
 
 #precompute = {"reco_leading_electron_electron_softmax_cut" = "reco_leading_electron_electron_softmax > 0.72", "reco_leading_electron_primary_softmax_cut" = "reco_leading_electron_primary_softmax > 0.97"}
-precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)"}
+precompute = {"reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)"}
 
 # Output directory for plots
 [output]
@@ -38,7 +38,7 @@ path = 'plots/'
 
 # Analysis configuration
 [analysis]
-ordinate_sample = 'debugMC'
+ordinate_sample = 'NuMIFull'
 category_branch = 'true_category'
 category_assignment = [
     [0], # CC nue
@@ -201,7 +201,7 @@ title = 'Selection Efficiency vs Reco Electron $\cos(\theta_{NUMI})$'
 
 [[figure.artists]]
 type = 'SpineEfficiency'
-variable = 'reco_ele_beam_open_angle'
+variable = 'reco_ele_beam_cosTheta'
 groups = ['Signal']  # Can show both: ['Signal', 'Backgrounds']
 xtitle = 'Reco Electron $\cos(\theta_{NUMI})$'
 

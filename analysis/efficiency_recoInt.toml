@@ -7,7 +7,7 @@ file = '/nashome/m/micarrig/icarus/nuESpine/medulla/spineplot/configurations/com
 [samples.NuMIFull]
 key = "NuMIFull"
 exposure_type = "pot"
-trees = ['all']
+trees = ['true_signal']
 branches = ["reco_fiducial_cut",
             "reco_flash_cut",
             "true_category",
@@ -28,8 +28,8 @@ branches = ["reco_fiducial_cut",
             "true_momentum_transfer",
             "true_interaction_mode"]
 
-precompute = {"reco_category" = "np.where(true_category == 0, reco_reco_interaction_type, -1)", "reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)"}
-# precompute = {"reco_category" = "np.where(true_category == 0, true_interaction_mode, -1)", "reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)"}
+# precompute = {"reco_category" = "np.where(true_category == 0, reco_reco_interaction_type, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)"}
+precompute = {"reco_category" = "np.where(true_category == 0, true_interaction_mode, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)"}
 
 # Output directory for plots
 [output]
@@ -40,27 +40,25 @@ path = 'plots/'
 ordinate_sample = 'NuMIFull'
 category_branch = 'reco_category'
 
-category_assignment = [
-    [1], # QE-like
-    [2], # MEC-like
-    [3], # DIS-like
-    [4], # RES-like
-    [5], # Other >=1 electron
-    [0]  # Other
-]
-category_labels = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', '$\geq1e$ (Other-e)', 'Other']
-category_colors = ['#2C194C','#49749F', '#83A1BE', '#8EB38D', '#4F894E', '#1C5B19', '#0F2903'] #cork
-
 # category_assignment = [
-#     [0], # QE
-#     [1], # RES
-#     [2], # DIS
-#     [10], # MEC
-#     [3], # COH
-#     [-1]  # Other
+#     [1], # QE-like
+#     [2], # MEC-like
+#     [3], # DIS-like
+#     [4], # RES-like
+#     [5, 0]  # >1 electron, Other
 # ]
-# category_labels = ['QE', 'RES', 'DIS', 'MEC', 'COH', 'Other']
-# category_colors = ['#001261', '#1E6F9D', '#BE6533', '#8B2706', '#590008', '#000000ff']
+# category_labels = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', 'Other']
+# category_colors = ['#2C194C','#49749F', '#83A1BE', '#8EB38D', '#4F894E', '#1C5B19', '#0F2903'] #cork
+
+category_assignment = [
+    [0], # QE
+    [1], # RES
+    [2], # DIS
+    [10], # MEC
+    [3, -1]  # COH, Other
+]
+category_labels = ['QE', 'RES', 'DIS', 'MEC', 'Other']
+category_colors = ['#001261', '#1E6F9D', '#BE6533', '#8B2706', '#590008', '#000000ff']
 
 category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram']
 
@@ -110,8 +108,8 @@ title = 'Signal Selection Efficiency'
 [[figure.artists]]
 type = 'SpineEfficiency'
 variable = 'true_neutrino_energy'
-groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', '$\geq1e$ (Other-e)', 'Other']
-# groups = ['QE', 'RES', 'DIS', 'MEC', 'COH', 'Other']
+#groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', '$\geq1e$ (Other-e)', 'Other']
+groups = ['QE', 'RES', 'DIS', 'MEC', 'Other']
 
 [figure.artists.cuts]
 reco_fiducial_cut = 'Fiducial Volume'
@@ -142,8 +140,8 @@ title = 'Selection Efficiency vs True Neutrino Energy'
 [[figure.artists]]
 type = 'SpineEfficiency'
 variable = 'true_neutrino_energy'
-groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
-# groups = ['QE', 'RES', 'DIS', 'MEC']
+#groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
+groups = ['QE', 'RES', 'DIS', 'MEC']
 
 xrange = [0, 5]
 xtitle = 'True Neutrino Energy [GeV]'
@@ -174,8 +172,8 @@ title = 'Selection Efficiency vs Reco Electron Energy'
 [[figure.artists]]
 type = 'SpineEfficiency'
 variable = 'reco_leading_electron_energy'
-groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
-# groups = ['QE', 'RES', 'DIS', 'MEC']
+# groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
+groups = ['QE', 'RES', 'DIS', 'MEC']
 xrange = [0, 5000]
 xtitle = 'Reco Electron Energy [MeV]'
 
@@ -206,8 +204,8 @@ title = 'Selection Efficiency vs Reco Electron $cos{\theta_{NUMI}}$'
 [[figure.artists]]
 type = 'SpineEfficiency'
 variable = 'reco_ele_beam_cosTheta'
-groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
-# groups = ['QE', 'RES', 'DIS', 'MEC']
+# groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
+groups = ['QE', 'RES', 'DIS', 'MEC']
 xtitle = 'Reco Electron $cos{\theta_{NUMI}}$'
 
 [figure.artists.cuts]
@@ -237,8 +235,8 @@ title = 'Selection Efficiency vs True Hadronic Invariant Mass (W)'
 [[figure.artists]]
 type = 'SpineEfficiency'
 variable = 'true_hadronic_invariant_mass'
-groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
-# groups = ['QE', 'RES', 'DIS', 'MEC']
+# groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
+groups = ['QE', 'RES', 'DIS', 'MEC']
 xtitle = 'True Hadronic Invariant Mass (W) [GeV]'
 
 [figure.artists.cuts]
@@ -268,8 +266,8 @@ title = 'Selection Efficiency vs True Momentum Transfer (Q^2) [GeV$^{2}$]'
 [[figure.artists]]
 type = 'SpineEfficiency'
 variable = 'true_momentum_transfer'
-groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
-# groups = ['QE', 'RES', 'DIS', 'MEC']
+# groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
+groups = ['QE', 'RES', 'DIS', 'MEC']
 xtitle = 'True Momentum Transfer ($Q^{2}$) [GeV$^{2}$]'
 
 [figure.artists.cuts]
