@@ -35,8 +35,8 @@ fsthresh = [
 # ICARUS MC NuMI Neutrino + Cosmics CV
 [[sample]]
 name = "NuMIFull"
-#path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/*.root"
-path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/*.root"
+#path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
 ismc = true
 disable = false # Optional: default = false
 
@@ -46,7 +46,7 @@ name = "data"
 path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_data_flat_cafs_2/*.root"
 #path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_data_flat_cafs_2/NuMI_data_flat_cafs_2_00.root"
 ismc = false
-disable = true # Optional: default = false
+disable = false # Optional: default = false
 
 # ICARUS data beam off
 [[sample]]
@@ -54,7 +54,7 @@ name = "dataBeamOff"
 path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_offbeam_data_flat_cafs/*.root"
 #path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_offbeam_data_flat_cafs/NuMI_offbeam_combined_0.root"
 ismc = false
-disable = true # Optional: default = false
+disable = false # Optional: default = false
 
 
 [[tree]]
@@ -654,7 +654,7 @@ branch = [
     { name = "axial_spread",             type = "reco_particle", selector = "secondary_photon" },
     { name = "directional_spread",       type = "reco_particle", selector = "leading_photon" },
     { name = "directional_spread",       type = "reco_particle", selector = "secondary_photon" },
-    
+
     { name = "muon_softmax",           type = "reco_particle", selector = "leading_muon"},
     { name = "primary_softmax",        type = "reco_particle", selector = "leading_muon"},
 
