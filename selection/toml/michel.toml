@@ -5,7 +5,7 @@ primfn = "default_primary_classification"
 
 [[sample]]
 name = "simulation"
-path = "/pnfs/sbnd/scratch/users/mueller/production02272026/batch0/0000/*/sys/merged-caf-jobid*.flat.root"
+path = "/pnfs/sbnd/scratch/users/mueller/production02272026/batch0/*/*/sys/merged-caf-jobid*.flat.root"
 ismc = true
 disable = false
 
@@ -13,7 +13,7 @@ disable = false
 name = "offbeam"
 path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/offbeamlight/*.flat.root"
 ismc = false
-disable = true
+disable = false
 
 [[tree]]
 name = "michel"
@@ -33,6 +33,34 @@ branch = [
     {name = "pdg",                   type = "true_particle"},
     {name = "ke",                    type = "both_particle"},
     {name = "calo_ke",               type = "reco_particle"},
+    {name = "size",                  type = "both_particle"},
+    {name = "start_x",               type = "both_particle"},
+    {name = "start_y",               type = "both_particle"},
+    {name = "start_z",               type = "both_particle"},
+]
+
+[[tree]]
+name = "michel_noenergycut"
+sim_only = false
+mode = "reco"
+cut = [
+#   {name = "is_not_cathodecrosser", type = "reco"},
+    {name = "single_michel",         type = "reco",  parameters = [0,] },
+    {name = "michel_attached_muon",  type = "reco",  parameters = [0, 0, 10,] },
+    {name = "containment_cut",       type = "reco_particle"},
+    {name = "is_semantic_type",      type = "reco_particle", parameters = [2,]},
+]
+branch = [
+    {name = "nu_id",                 type = "true_particle"},
+    {name = "semantic_type",         type = "true_particle"},
+    {name = "containment",           type = "true_particle"},
+    {name = "pdg",                   type = "true_particle"},
+    {name = "ke",                    type = "both_particle"},
+    {name = "calo_ke",               type = "reco_particle"},
+    {name = "size",                  type = "both_particle"},
+    {name = "start_x",               type = "both_particle"},
+    {name = "start_y",               type = "both_particle"},
+    {name = "start_z",               type = "both_particle"},
 ]
 
 [[tree]]
@@ -41,7 +69,7 @@ sim_only = true
 mode = "true"
 cut = [
 #   {name = "is_not_cathodecrosser", type = "true"},
-    {name = "single_michel",         type = "true",  parameters = [15,] },
+    {name = "single_michel",         type = "true",  parameters = [0,] },
     {name = "containment_cut",       type = "true_particle"},
     {name = "is_semantic_type",      type = "true_particle", parameters = [2,]},
 ]
@@ -49,4 +77,5 @@ branch = [
     {name = "containment_cut",       type = "reco_particle"},
     {name = "is_semantic_type",      type = "reco_particle", parameters = [2,]},
     {name = "ke",                    type = "both_particle"},
+    {name = "size",                  type = "both_particle"},
 ]

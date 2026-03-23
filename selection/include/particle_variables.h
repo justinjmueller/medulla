@@ -34,6 +34,30 @@
 namespace pvars
 {
     /**
+     * @brief Variable for the true particle PDG code.
+     * @details This variable is intended to provide the true PDG code of the
+     * particle.
+     * @tparam T the type of the object to apply the variable on.
+     * @param obj the SRTrueParticle to apply the variable on.
+     * @return the true PDG code.
+     */
+    template<typename T>
+        double pdg(const T & obj) { return obj.pdg_code; }
+    REGISTER_VAR_SCOPE(RegistrationScope::TrueParticle, pdg, pdg);
+
+    /**
+    * @brief Variable for the true parent neutrino PDG code.
+    * @details This variable is intended to provide the true PDG code of the
+    * parent neutrino that produced this particle.
+    * @tparam T the type of the object to apply the variable on.
+    * @param obj the SRTrueParticle to apply the variable on.
+    * @return the true neutrino PDG code.
+    */
+    template<typename T>
+        double nu_id(const T & obj) { return obj.nu_id; }
+    REGISTER_VAR_SCOPE(RegistrationScope::TrueParticle, nu_id, nu_id);
+    
+    /**
      * @brief Variable for the particle's primary classification.
      * @details This variable returns the primary classification of the particle.
      * The primary classification is determined upstream in the SPINE
@@ -221,6 +245,19 @@ namespace pvars
         return p.calo_ke;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, calo_ke, calo_ke);
+
+    /**
+     * @brief Variable for the size (number of depositions) of the particle.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the size of the particle.
+     */
+    template<class T>
+    double size(const T & p)
+    {
+        return p.size;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, size, size);
 
     /**
      * @brief Variable for true particle starting kinetic energy.
