@@ -166,6 +166,12 @@ branch = [
     {name = "primary_softmax",         type = "reco_particle", selector = "secondary_photon"},
     { name = "energy",                 type = "reco_particle", selector = "leading_photon"},
     { name = "energy",                 type = "reco_particle", selector = "secondary_photon"},
+    { name = "start_dedx",               type = "reco_particle", selector = "leading_photon" },
+    { name = "start_dedx",               type = "reco_particle", selector = "secondary_photon" },
+    { name = "axial_spread",             type = "reco_particle", selector = "leading_photon" },
+    { name = "axial_spread",             type = "reco_particle", selector = "secondary_photon" },
+    { name = "directional_spread",       type = "reco_particle", selector = "leading_photon" },
+    { name = "directional_spread",       type = "reco_particle", selector = "secondary_photon" },
 
     { name = "muon_softmax",           type = "reco_particle", selector = "leading_muon"},
     { name = "primary_softmax",        type = "reco_particle", selector = "leading_muon"},
@@ -324,6 +330,12 @@ branch = [
     {name = "primary_softmax",         type = "reco_particle", selector = "secondary_photon"},
     { name = "energy",                 type = "reco_particle", selector = "leading_photon"},
     { name = "energy",                 type = "reco_particle", selector = "secondary_photon"},
+    { name = "start_dedx",               type = "reco_particle", selector = "leading_photon" },
+    { name = "start_dedx",               type = "reco_particle", selector = "secondary_photon" },
+    { name = "axial_spread",             type = "reco_particle", selector = "leading_photon" },
+    { name = "axial_spread",             type = "reco_particle", selector = "secondary_photon" },
+    { name = "directional_spread",       type = "reco_particle", selector = "leading_photon" },
+    { name = "directional_spread",       type = "reco_particle", selector = "secondary_photon" },
 
     { name = "muon_softmax",           type = "reco_particle", selector = "leading_muon"},
     { name = "primary_softmax",        type = "reco_particle", selector = "leading_muon"},
@@ -480,6 +492,12 @@ branch = [
     {name = "primary_softmax",         type = "reco_particle", selector = "secondary_photon"},
     { name = "energy",                 type = "reco_particle", selector = "leading_photon"},
     { name = "energy",                 type = "reco_particle", selector = "secondary_photon"},
+    { name = "start_dedx",               type = "reco_particle", selector = "leading_photon" },
+    { name = "start_dedx",               type = "reco_particle", selector = "secondary_photon" },
+    { name = "axial_spread",             type = "reco_particle", selector = "leading_photon" },
+    { name = "axial_spread",             type = "reco_particle", selector = "secondary_photon" },
+    { name = "directional_spread",       type = "reco_particle", selector = "leading_photon" },
+    { name = "directional_spread",       type = "reco_particle", selector = "secondary_photon" },
 
     { name = "muon_softmax",           type = "reco_particle", selector = "leading_muon"},
     { name = "primary_softmax",        type = "reco_particle", selector = "leading_muon"},
@@ -630,7 +648,13 @@ branch = [
     {name = "primary_softmax",         type = "reco_particle", selector = "secondary_photon"},
     { name = "energy",                 type = "reco_particle", selector = "leading_photon"},
     { name = "energy",                 type = "reco_particle", selector = "secondary_photon"},
-
+    { name = "start_dedx",               type = "reco_particle", selector = "leading_photon" },
+    { name = "start_dedx",               type = "reco_particle", selector = "secondary_photon" },
+    { name = "axial_spread",             type = "reco_particle", selector = "leading_photon" },
+    { name = "axial_spread",             type = "reco_particle", selector = "secondary_photon" },
+    { name = "directional_spread",       type = "reco_particle", selector = "leading_photon" },
+    { name = "directional_spread",       type = "reco_particle", selector = "secondary_photon" },
+    
     { name = "muon_softmax",           type = "reco_particle", selector = "leading_muon"},
     { name = "primary_softmax",        type = "reco_particle", selector = "leading_muon"},
 
@@ -782,7 +806,13 @@ branch = [
     {name = "primary_softmax",         type = "reco_particle", selector = "secondary_photon"},
     { name = "energy",                 type = "reco_particle", selector = "leading_photon"},
     { name = "energy",                 type = "reco_particle", selector = "secondary_photon"},
-    
+    { name = "start_dedx",               type = "reco_particle", selector = "leading_photon" },
+    { name = "start_dedx",               type = "reco_particle", selector = "secondary_photon" },
+    { name = "axial_spread",             type = "reco_particle", selector = "leading_photon" },
+    { name = "axial_spread",             type = "reco_particle", selector = "secondary_photon" },
+    { name = "directional_spread",       type = "reco_particle", selector = "leading_photon" },
+    { name = "directional_spread",       type = "reco_particle", selector = "secondary_photon" },
+
     { name = "muon_softmax",           type = "reco_particle", selector = "leading_muon"},
     { name = "primary_softmax",        type = "reco_particle", selector = "leading_muon"},
 
