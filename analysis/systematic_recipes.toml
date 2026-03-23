@@ -44,7 +44,7 @@ pattern = 'RDECBR1|Theta_Delta|ThetaDelta|MaNCEL|EtaNCEL'
 
 [[systematic_recipe]]
 name = "total"
-label = "Stat + Syst"
+label = "Total Uncertainty"
 pattern = "statistical|xsec_ccqe|xsec_mec|xsec_res|xsec_dis|xsec_coh|xsec_nonres|xsec_fsi|xsec_other"
 
 #######################################

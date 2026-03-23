@@ -35,8 +35,8 @@ fsthresh = [
 # ICARUS MC NuMI Neutrino + Cosmics CV
 [[sample]]
 name = "NuMIFull"
-path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/*.root"
-#path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
+#path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/*.root"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
 ismc = true
 disable = false # Optional: default = false
 
@@ -46,7 +46,7 @@ name = "data"
 path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_data_flat_cafs_2/*.root"
 #path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_data_flat_cafs_2/NuMI_data_flat_cafs_2_00.root"
 ismc = false
-disable = false # Optional: default = false
+disable = true # Optional: default = false
 
 # ICARUS data beam off
 [[sample]]
@@ -54,7 +54,7 @@ name = "dataBeamOff"
 path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_offbeam_data_flat_cafs/*.root"
 #path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_offbeam_data_flat_cafs/NuMI_offbeam_combined_0.root"
 ismc = false
-disable = false # Optional: default = false
+disable = true # Optional: default = false
 
 
 [[tree]]
@@ -75,6 +75,9 @@ branch = [
     { name = "particle_dedx",           type = "reco", parameters = [ "@electron_dedx" ] },
     { name = "flash_time",              type = "reco"},
 
+    { name = "has_particle_multiplicity", type = "both", parameters = [ 0.0, 2.0, 25.0 ], title = "has_photons"}, 
+    { name = "photon_opening_angle",      type = "both"},
+
     { name= "cut_type",             type = "reco" },
     { name = "is_nu",               type = "reco" },
     { name = "is_data",             type = "reco" },
@@ -83,13 +86,13 @@ branch = [
     { name = "has_particle_multiplicity", type = "reco", parameters = [1, 1] },
     { name = "no_cut",                    type = "reco" },
     { name = "electron_multiplicity",     type = "reco", parameters = [ 0 ] },
-    { name = "photon_multiplicity",      type = "reco", parameters = [ 0 ] },
+    { name = "photon_multiplicity",      type = "reco", parameters = [ "@photon_threshold" ] },
     { name = "muon_multiplicity",        type = "reco", parameters = [ 0 ] },
     { name = "pion_multiplicity",        type = "reco", parameters = [ 0 ] },
     { name = "proton_multiplicity",      type = "reco", parameters = [ 0 ] },
     { name = "no_muons",                 type = "reco", parameters = [ "@muon_threshold" ] },
     { name = "no_charged_pions",         type = "reco", parameters = [ "@pion_threshold" ] },
-    { name = "no_protons",               type = "reco", parameters = [ "@photon_threshold" ] },
+    { name = "no_photons",               type = "reco", parameters = [ "@photon_threshold" ] },
     { name  = "reco_interaction_type",   type = "reco" },
     { name = "ele_beam_open_angle",      type = "reco"},
     { name = "leading_ele_energy_cut",   type = "reco", parameters = [ "@electron_threshold" ] },
@@ -103,9 +106,9 @@ branch = [
 
     { name = "neutrino_id",               type = "true"    },
     { name = "category",                  type = "true"    },
-    { name = "electron_multiplicity",     type = "true", parameters = [ 0 ] },
+    { name = "electron_multiplicity",     type = "true", parameters = [ "@photon_threshold" ] },
     { name = "visible_energy",            type = "true"},
-    { name = "photon_multiplicity",      type = "true", parameters = [ 0 ] },
+    { name = "photon_multiplicity",      type = "true", parameters = [ 25.0 ] },
     { name = "muon_multiplicity",        type = "true", parameters = [ 0 ] },
     { name = "pion_multiplicity",        type = "true", parameters = [ 0 ] },
     { name = "proton_multiplicity",      type = "true", parameters = [ 0 ] },
@@ -158,7 +161,9 @@ branch = [
     { name = "primary_softmax_cut",    type = "reco", parameters = [ "@primary_softmax", "@greater_than" ] },
 
     { name = "photon_softmax",         type = "reco_particle", selector = "leading_photon"},
+    { name = "photon_softmax",         type = "reco_particle", selector = "secondary_photon"},
     { name = "primary_softmax",        type = "reco_particle", selector = "leading_photon"},
+    {name = "primary_softmax",         type = "reco_particle", selector = "secondary_photon"},
     { name = "energy",                 type = "reco_particle", selector = "leading_photon"},
     { name = "energy",                 type = "reco_particle", selector = "secondary_photon"},
 
@@ -227,6 +232,10 @@ branch = [
     { name = "containment_cut",         type = "reco_particle", selector = "leading_electron"},
     { name = "particle_dedx",           type = "reco", parameters = [ "@electron_dedx" ] },
     { name = "flash_time",              type = "reco"},
+
+    { name = "has_particle_multiplicity", type = "both", parameters = [ 0.0, 2.0, 25.0 ], title = "has_photons"}, 
+    { name = "photon_opening_angle",      type = "both"},
+
     { name= "cut_type",             type = "reco" },
     { name = "is_nu",               type = "reco" },
     { name = "is_data",             type = "reco" },
@@ -235,13 +244,13 @@ branch = [
     { name = "has_particle_multiplicity", type = "reco", parameters = [1, 1] },
     { name = "no_cut",                    type = "reco" },
     { name = "electron_multiplicity",     type = "reco", parameters = [ 0 ] },
-    { name = "photon_multiplicity",      type = "reco", parameters = [ 0 ] },
+    { name = "photon_multiplicity",      type = "reco", parameters = [ "@photon_threshold" ] },
     { name = "muon_multiplicity",        type = "reco", parameters = [ 0 ] },
     { name = "pion_multiplicity",        type = "reco", parameters = [ 0 ] },
     { name = "proton_multiplicity",      type = "reco", parameters = [ 0 ] },
     { name = "no_muons",                 type = "reco", parameters = [ "@muon_threshold" ] },
     { name = "no_charged_pions",         type = "reco", parameters = [ "@pion_threshold" ] },
-    { name = "no_protons",               type = "reco", parameters = [ "@photon_threshold" ] },
+    { name = "no_photons",               type = "reco", parameters = [ "@photon_threshold" ] },
     { name  = "reco_interaction_type",   type = "reco" },
     { name = "ele_beam_open_angle",      type = "reco"},
     { name = "leading_ele_energy_cut",   type = "reco", parameters = [ "@electron_threshold" ] },
@@ -257,7 +266,7 @@ branch = [
     { name = "category",                  type = "true"    },
     { name = "electron_multiplicity",     type = "true", parameters = [ 0 ] },
     { name = "visible_energy",            type = "true"},
-    { name = "photon_multiplicity",      type = "true", parameters = [ 0 ] },
+    { name = "photon_multiplicity",      type = "true", parameters = [ "@photon_threshold" ] },
     { name = "muon_multiplicity",        type = "true", parameters = [ 0 ] },
     { name = "pion_multiplicity",        type = "true", parameters = [ 0 ] },
     { name = "proton_multiplicity",      type = "true", parameters = [ 0 ] },
@@ -310,7 +319,9 @@ branch = [
     { name = "primary_softmax_cut",    type = "reco", parameters = [ "@primary_softmax", "@greater_than" ] },
 
     { name = "photon_softmax",         type = "reco_particle", selector = "leading_photon"},
+    { name = "photon_softmax",         type = "reco_particle", selector = "secondary_photon"},
     { name = "primary_softmax",        type = "reco_particle", selector = "leading_photon"},
+    {name = "primary_softmax",         type = "reco_particle", selector = "secondary_photon"},
     { name = "energy",                 type = "reco_particle", selector = "leading_photon"},
     { name = "energy",                 type = "reco_particle", selector = "secondary_photon"},
 
@@ -377,6 +388,10 @@ branch = [
     { name = "containment_cut",         type = "reco_particle", selector = "leading_electron"},
     { name = "particle_dedx",           type = "reco", parameters = [ "@electron_dedx" ] },
     { name = "flash_time",              type = "reco"},
+
+    { name = "has_particle_multiplicity", type = "both", parameters = [ 0.0, 2.0, 25.0 ], title = "has_photons"}, 
+    { name = "photon_opening_angle",      type = "both"},
+
     { name= "cut_type",             type = "reco" },
     { name = "is_nu",               type = "reco" },
     { name = "is_data",             type = "reco" },
@@ -385,13 +400,13 @@ branch = [
     { name = "has_particle_multiplicity", type = "reco", parameters = [1, 1] },
     { name = "no_cut",                    type = "reco" },
     { name = "electron_multiplicity",     type = "reco", parameters = [ 0 ] },
-    { name = "photon_multiplicity",      type = "reco", parameters = [ 0 ] },
+    { name = "photon_multiplicity",      type = "reco", parameters = [ "@photon_threshold" ] },
     { name = "muon_multiplicity",        type = "reco", parameters = [ 0 ] },
     { name = "pion_multiplicity",        type = "reco", parameters = [ 0 ] },
     { name = "proton_multiplicity",      type = "reco", parameters = [ 0 ] },
     { name = "no_muons",                 type = "reco", parameters = [ "@muon_threshold" ] },
     { name = "no_charged_pions",         type = "reco", parameters = [ "@pion_threshold" ] },
-    { name = "no_protons",               type = "reco", parameters = [ "@photon_threshold" ] },
+    { name = "no_photons",               type = "reco", parameters = [ "@photon_threshold" ] },
     { name  = "reco_interaction_type",   type = "reco" },
     { name = "ele_beam_open_angle",      type = "reco"},
     { name = "leading_ele_energy_cut",   type = "reco", parameters = [ "@electron_threshold" ] },
@@ -407,7 +422,7 @@ branch = [
     { name = "category",                  type = "true"    },
     { name = "electron_multiplicity",     type = "true", parameters = [ 0 ] },
     { name = "visible_energy",            type = "true"},
-    { name = "photon_multiplicity",      type = "true", parameters = [ 0 ] },
+    { name = "photon_multiplicity",      type = "true", parameters = [ "@photon_threshold" ] },
     { name = "muon_multiplicity",        type = "true", parameters = [ 0 ] },
     { name = "pion_multiplicity",        type = "true", parameters = [ 0 ] },
     { name = "proton_multiplicity",      type = "true", parameters = [ 0 ] },
@@ -460,7 +475,9 @@ branch = [
     { name = "primary_softmax_cut",    type = "reco", parameters = [ "@primary_softmax", "@greater_than" ] },
 
     { name = "photon_softmax",         type = "reco_particle", selector = "leading_photon"},
+    { name = "photon_softmax",         type = "reco_particle", selector = "secondary_photon"},
     { name = "primary_softmax",        type = "reco_particle", selector = "leading_photon"},
+    {name = "primary_softmax",         type = "reco_particle", selector = "secondary_photon"},
     { name = "energy",                 type = "reco_particle", selector = "leading_photon"},
     { name = "energy",                 type = "reco_particle", selector = "secondary_photon"},
 
@@ -521,6 +538,10 @@ branch = [
     { name = "containment_cut",         type = "reco_particle", selector = "leading_electron"},
     { name = "particle_dedx",           type = "reco", parameters = [ "@electron_dedx" ] },
     { name = "flash_time",              type = "reco"},
+
+    { name = "has_particle_multiplicity", type = "both", parameters = [ 0.0, 2.0, 25.0 ], title = "has_photons"}, 
+    { name = "photon_opening_angle",      type = "both"},
+
     { name= "cut_type",             type = "reco" },
     { name = "is_nu",               type = "reco" },
     { name = "is_data",             type = "reco" },
@@ -529,13 +550,13 @@ branch = [
     { name = "has_particle_multiplicity", type = "reco", parameters = [1, 1] },
     { name = "no_cut",                    type = "reco" },
     { name = "electron_multiplicity",     type = "reco", parameters = [ 0 ] },
-    { name = "photon_multiplicity",      type = "reco", parameters = [ 0 ] },
+    { name = "photon_multiplicity",      type = "reco", parameters = [ "@photon_threshold" ] },
     { name = "muon_multiplicity",        type = "reco", parameters = [ 0 ] },
     { name = "pion_multiplicity",        type = "reco", parameters = [ 0 ] },
     { name = "proton_multiplicity",      type = "reco", parameters = [ 0 ] },
     { name = "no_muons",                 type = "reco", parameters = [ "@muon_threshold" ] },
     { name = "no_charged_pions",         type = "reco", parameters = [ "@pion_threshold" ] },
-    { name = "no_protons",               type = "reco", parameters = [ "@photon_threshold" ] },
+    { name = "no_photons",               type = "reco", parameters = [ "@photon_threshold" ] },
     { name  = "reco_interaction_type",   type = "reco" },
     { name = "ele_beam_open_angle",      type = "reco"},
     { name = "leading_ele_energy_cut",   type = "reco", parameters = [ "@electron_threshold" ] },
@@ -551,7 +572,7 @@ branch = [
     { name = "category",                  type = "true"    },
     { name = "electron_multiplicity",     type = "true", parameters = [ 0 ] },
     { name = "visible_energy",            type = "true"},
-    { name = "photon_multiplicity",      type = "true", parameters = [ 0 ] },
+    { name = "photon_multiplicity",      type = "true", parameters = [ "@photon_threshold" ] },
     { name = "muon_multiplicity",        type = "true", parameters = [ 0 ] },
     { name = "pion_multiplicity",        type = "true", parameters = [ 0 ] },
     { name = "proton_multiplicity",      type = "true", parameters = [ 0 ] },
@@ -604,7 +625,9 @@ branch = [
     { name = "primary_softmax_cut",    type = "reco", parameters = [ "@primary_softmax", "@greater_than" ] },
 
     { name = "photon_softmax",         type = "reco_particle", selector = "leading_photon"},
+    { name = "photon_softmax",         type = "reco_particle", selector = "secondary_photon"},
     { name = "primary_softmax",        type = "reco_particle", selector = "leading_photon"},
+    {name = "primary_softmax",         type = "reco_particle", selector = "secondary_photon"},
     { name = "energy",                 type = "reco_particle", selector = "leading_photon"},
     { name = "energy",                 type = "reco_particle", selector = "secondary_photon"},
 
@@ -672,17 +695,20 @@ branch = [
     { name = "is_nu",               type = "reco" },
     { name = "is_data",             type = "reco" },
 
+    { name = "has_particle_multiplicity", type = "both", parameters = [ 0.0, 2.0, 25.0 ], title = "has_photons"}, 
+    { name = "photon_opening_angle",      type = "both"},
+
     { name = "visible_energy",            type = "reco"},
     { name = "has_particle_multiplicity", type = "reco", parameters = [1, 1] },
     { name = "no_cut",                    type = "reco" },
     { name = "electron_multiplicity",     type = "reco", parameters = [ 0 ] },
-    { name = "photon_multiplicity",      type = "reco", parameters = [ 0 ] },
+    { name = "photon_multiplicity",      type = "reco", parameters = [ "@photon_threshold" ] },
     { name = "muon_multiplicity",        type = "reco", parameters = [ 0 ] },
     { name = "pion_multiplicity",        type = "reco", parameters = [ 0 ] },
     { name = "proton_multiplicity",      type = "reco", parameters = [ 0 ] },
     { name = "no_muons",                 type = "reco", parameters = [ "@muon_threshold" ] },
     { name = "no_charged_pions",         type = "reco", parameters = [ "@pion_threshold" ] },
-    { name = "no_protons",               type = "reco", parameters = [ "@photon_threshold" ] },
+    { name = "no_photons",               type = "reco", parameters = [ "@photon_threshold" ] },
     { name  = "reco_interaction_type",   type = "reco" },
     { name = "ele_beam_open_angle",      type = "reco"},
     { name = "leading_ele_energy_cut",   type = "reco", parameters = [ "@electron_threshold" ] },
@@ -698,7 +724,7 @@ branch = [
     { name = "category",                  type = "true"    },
     { name = "electron_multiplicity",     type = "true", parameters = [ 0 ] },
     { name = "visible_energy",            type = "true"},
-    { name = "photon_multiplicity",      type = "true", parameters = [ 0 ] },
+    { name = "photon_multiplicity",      type = "true", parameters = [ "@photon_threshold" ] },
     { name = "muon_multiplicity",        type = "true", parameters = [ 0 ] },
     { name = "pion_multiplicity",        type = "true", parameters = [ 0 ] },
     { name = "proton_multiplicity",      type = "true", parameters = [ 0 ] },
@@ -751,7 +777,9 @@ branch = [
     { name = "primary_softmax_cut",    type = "reco", parameters = [ "@primary_softmax", "@greater_than" ] },
 
     { name = "photon_softmax",         type = "reco_particle", selector = "leading_photon"},
+    { name = "photon_softmax",         type = "reco_particle", selector = "secondary_photon"},
     { name = "primary_softmax",        type = "reco_particle", selector = "leading_photon"},
+    {name = "primary_softmax",         type = "reco_particle", selector = "secondary_photon"},
     { name = "energy",                 type = "reco_particle", selector = "leading_photon"},
     { name = "energy",                 type = "reco_particle", selector = "secondary_photon"},
     
@@ -849,4 +877,8 @@ cuts = [
 [[category]] # 5 : Cosmic events
 cuts = [
     { name = "!neutrino"        },
+]
+
+[[category]] # 6 : Other ?
+cuts = [
 ]

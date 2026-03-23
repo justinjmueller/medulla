@@ -1,8 +1,8 @@
 
 [input]
-path = '/pnfs/icarus/scratch/users/micarrig/nueCCInclusiveSpine14/merged_output.root'
+#path = '/pnfs/icarus/scratch/users/micarrig/nueCCInclusiveSpine15/merged_output.root'
+path = '/exp/icarus/app/users/micarrig/nuESpine/output_nueCCInclusive.root'
 weights = '/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_*.root'
-
 use_additional_hash = true
 
 [output]
@@ -11,17 +11,17 @@ histogram_destination = 'variations/'
 
 [[sysvar]]
 name = 'reco_leading_electron_energy'
-bins = [25, 0, 3000]
+bins = [25, 0, 5000]
 
-[variations]
-keys = ['NuMIFull'] #, 'cvext', 'var00', 'var01p','var01m', 'var02m','var02p', 'var03m', 'var03p', 'var04m','var04p', 'var05','var06','var07']
-origin = 'events/'
-tree = 'selected'
-result_destination = 'detsys_results/'
-variable = 'reco_leading_electron_energy'
-bins = [25, 0, 3000]
-nuniverses = 1000
-variable_length = false
+# [variations]
+# keys = ['NuMIFull'] #, 'cvext', 'var00', 'var01p','var01m', 'var02m','var02p', 'var03m', 'var03p', 'var04m','var04p', 'var05','var06','var07']
+# origin = 'events/'
+# tree = 'selected'
+# result_destination = 'detsys_results/'
+# variable = 'reco_leading_electron_energy'
+# bins = [25, 0, 5000]
+# nuniverses = 1000
+# variable_length = false
 
 [[tree]]
 origin = 'events/NuMIFull/selected'

@@ -745,6 +745,22 @@ namespace vars
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, opening_angle, opening_angle);
 
+    template<class T>
+    double photon_opening_angle(const T & obj)
+    {
+        size_t p1 = selectors::leading_photon(obj);
+        size_t p2 = selectors::secondary_photon(obj);
+        if(p1 == kNoMatch || p2 == kNoMatch)
+            return kNoMatchValue; // No leading muon or proton found.
+        else
+        {
+            auto & m(obj.particles[p1]);
+            auto & p(obj.particles[p2]);
+            return std::acos(m.start_dir[0] * p.start_dir[0] + m.start_dir[1] * p.start_dir[1] + m.start_dir[2] * p.start_dir[2]);
+        }
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, photon_opening_angle, photon_opening_angle);
+
     /**
      * @brief Variable for the (primary) photon multiplicity of the
      * interaction.
