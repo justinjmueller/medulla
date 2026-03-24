@@ -131,11 +131,26 @@ class SpineSpectra1D(SpineSpectra):
         """
         super().add_sample(sample, is_ordinate)
 
+        # Per-plot (per-variable) area normalization support.
+        # We track each sample's total weighted yield for this artist's variable
+        # so we can optionally rescale the final histogram stack to match the
+        # ordinate sample area at draw time.
+        if not hasattr(self, "_sample_areas") or self._sample_areas is None:
+            self._sample_areas = {}  # {sample_name: total_weighted_yield}
+            self._sample_plotdata = {}  # {sample_name: {category_label: hist}}
+            self._ordinate_sample_name = None
+            self._ordinate_area = None
+        if is_ordinate:
+            self._ordinate_sample_name = sample._name
+
         if self._plotdata is None:
             self._plotdata = {}
             self._binedges = {}
             self._onebincount = {}
         data, weights = sample.get_data([self._variable._key,], with_mask=self._variable.mask)
+        sample_area = 0.0
+        if sample._name not in self._sample_plotdata:
+            self._sample_plotdata[sample._name] = {}
         for category, values in data.items():
             values = values[0]
             if category not in self._categories.keys():
@@ -148,10 +163,25 @@ class SpineSpectra1D(SpineSpectra):
             h = np.histogram(values, 
                 bins=self._variable._nbins if self._variable._custom_bins is None else self._variable._custom_bins ,
                 range=xr, weights=weights[category])
-            self._onebincount[self._categories[category]] += np.sum(weights[category])
+            # Total (in-range) weighted yield for this sample/variable.
+            # This is the “plot area” used by exposure_type='area' normalization.
+            # Note: this corresponds to the integral/sum of bin contents, not an
+            # integral over x with bin-width factors.
+            sample_area += float(np.sum(h[0]))
+            self._onebincount[self._categories[category]] = self._onebincount.get(self._categories[category], 0.0) + float(np.sum(weights[category]))
             self._plotdata[self._categories[category]] += h[0]
+            # Also keep per-sample histograms so exposure_type='area' can rescale
+            # non-ordinate samples to match the ordinate integral (per plot).
+            if self._categories[category] not in self._sample_plotdata[sample._name]:
+                self._sample_plotdata[sample._name][self._categories[category]] = np.zeros_like(h[0])
+            self._sample_plotdata[sample._name][self._categories[category]] += h[0]
             self._binedges[self._categories[category]] = h[1]
 
+
+        # Record this sample's total weighted yield for this variable.
+        self._sample_areas[sample._name] = self._sample_areas.get(sample._name, 0.0) + sample_area
+        if is_ordinate:
+            self._ordinate_area = self._sample_areas[sample._name]
     def draw(self, ax, style, show_component_number=False,
              show_component_percentage=False, invert_stack_order=False,
              fit_type=None, logx=False, logy=False, normalize=False,
@@ -209,6 +239,48 @@ class SpineSpectra1D(SpineSpectra):
         total_yerr = None
 
         if self._plotdata is not None:
+            def _legend_count(label, payload, label_type):
+                """Compute a sensible legend count for a component.
+
+                Priority:
+                  1) `_onebincount[label]` when it exists.
+                  2) Fallback to the plotted payload sum.
+
+                Notes:
+                  - Histogram payloads are binned arrays, so sum is yield.
+                  - Scatter payloads in this code are also binned arrays.
+                """
+                """Compute a sensible legend count for a component.
+
+                Priority:
+                  1) `_onebincount[label]` when it exists.
+                  2) Fallback to the plotted payload sum.
+
+                Notes:
+                  - Histogram payloads are binned arrays, so sum is yield.
+                  - Scatter payloads in this code are also binned arrays.
+                """
+                if hasattr(self, '_onebincount') and self._onebincount is not None:
+                    if label in self._onebincount:
+                        return float(self._onebincount.get(label, 0.0))
+                try:
+                    import numpy as _np
+                    arr = _np.asarray(payload, dtype=float)
+                    return float(_np.nansum(arr))
+                except Exception:
+                    return 0.0
+
+            def _legend_count_scaled(payload):
+                """Legend count computed from the *currently plotted* payload.
+
+                This is used for exposure_type='area' so the legend reflects post-scaling yields.
+                """
+                try:
+                    arr = np.asarray(payload, dtype=float)
+                    return float(np.nansum(arr))
+                except Exception:
+                    return 0.0
+
             labels, data = zip(*self._plotdata.items())
             colors = [self._colors[label] for label in labels]
             bincenters = [self._binedges[l][:-1] + np.diff(self._binedges[l]) / 2 for l in labels]
@@ -219,11 +291,10 @@ class SpineSpectra1D(SpineSpectra):
             scatter_mask = [li for li, label in enumerate(labels) if self._category_types[label] == 'scatter']
             
             denominator = np.sum([self._onebincount[labels[i]] for i in histogram_mask])
-            counts = [x for x in self._onebincount.values()]
+            counts = [_legend_count(label, payload, self._category_types[label]) for (label, payload) in zip(labels, data)]
 
             if fit_type is not None:
                 super().fit_with_function(ax, bincenters[0], np.sum(data, axis=0), self._binedges[labels[0]], fit_type, range=xr)
-
             if show_component_number and show_component_percentage:
                 hlabel = lambda x : f'{np.sum(x):.1f}, {np.sum(x)/denominator:.2%}'
                 slabel = lambda x : f'{np.sum(x):.1f}'
@@ -247,6 +318,80 @@ class SpineSpectra1D(SpineSpectra):
 
             # Total stacked histogram (used for uncertainty band + ylim envelope)
             total_y = scale * np.sum(reduce(data), axis=0)
+            # Optional per-plot area normalization to the ordinate sample.
+            # Triggered when the ordinate sample uses exposure_type == 'area'.
+            #
+            # Behavior: keep the ordinate sample unchanged, and rescale all other samples
+            # so that their *total stack area* matches the ordinate integral for this plot.
+            #
+            # This requires per-sample histogram bookkeeping (filled in add_sample).
+            area_scales = {}
+            if getattr(self, '_exposure_type', None) == 'area' and getattr(self, '_ordinate_sample_name', None) is not None:
+                ord_name = self._ordinate_sample_name
+                ord_area = float(self._sample_areas.get(ord_name, 0.0))
+                for sname, sarea in getattr(self, '_sample_areas', {}).items():
+                    sarea = float(sarea)
+                    if sname == ord_name:
+                        area_scales[sname] = 1.0
+                    elif sarea > 0 and ord_area > 0:
+                        area_scales[sname] = ord_area / sarea
+                    else:
+                        area_scales[sname] = 1.0
+
+            if area_scales:
+                # Rebuild the merged category histograms from the per-sample ones after scaling.
+                # Keep only histogram categories (scatter are drawn separately below).
+                scaled_plotdata = {k: np.zeros(self._variable._nbins) for k in self._plotdata.keys()}
+                for sname, cat_hists in getattr(self, '_sample_plotdata', {}).items():
+                    sf = area_scales.get(sname, 1.0)
+                    for cat, hvals in cat_hists.items():
+                        if cat in scaled_plotdata:
+                            scaled_plotdata[cat] += sf * hvals
+
+                # Replace the merged histograms and recompute derived arrays.
+                self._plotdata.update(scaled_plotdata)
+                labels, data = zip(*self._plotdata.items())
+                # After area scaling, keep undecorated category labels for lookups
+                # (colors, bin edges, etc.), and build decorated labels only for the legend.
+                base_labels = list(labels)
+
+                histogram_mask = [li for li, label in enumerate(base_labels) if self._category_types[label] == 'histogram']
+                scatter_mask = [li for li, label in enumerate(base_labels) if self._category_types[label] == 'scatter']
+                denominator = np.sum([self._onebincount[base_labels[i]] for i in histogram_mask])
+                counts = [_legend_count_scaled(payload) for payload in data]
+
+                decorated_labels = base_labels
+                if show_component_number and show_component_percentage:
+                    hlabel = lambda x : f'{np.sum(x):.1f}, {np.sum(x)/denominator:.2%}'
+                    slabel = lambda x : f'{np.sum(x):.1f}'
+                    decorated_labels = [f'{label} ({hlabel(d) if li in histogram_mask else slabel(d)})'
+                                      for li, (label, d) in enumerate(zip(base_labels, counts))]
+                elif show_component_number:
+                    decorated_labels = [f'{label} ({np.sum(d):.1f})' for label, d in zip(base_labels, counts)]
+                elif show_component_percentage:
+                    decorated_labels = [f'{label} ({np.sum(d)/denominator:.2%})' if li in histogram_mask else label
+                                      for li, (label, d) in enumerate(zip(base_labels, counts))]
+
+                # Use base labels for style/data lookups
+                labels = base_labels
+                colors = [self._colors[label] for label in base_labels]
+                bincenters = [self._binedges[l][:-1] + np.diff(self._binedges[l]) / 2 for l in base_labels]
+                binwidths = [np.diff(self._binedges[l]) for l in base_labels]
+
+                if invert_stack_order:
+                    reduce = lambda x : [x[i] for i in histogram_mask[::-1]]
+                else:
+                    reduce = lambda x : [x[i] for i in histogram_mask]
+
+                scale = 1.0 if not normalize else 1.0 / np.sum(reduce(data))
+                hist_bincenters = reduce(bincenters)
+                hist_data = [scale*x for x in reduce(data)]
+                hist_labels = reduce(decorated_labels)
+                hist_colors = reduce(colors)
+                total_y = scale * np.sum(reduce(data), axis=0)
+
+                # Ensure scatter plots also get decorated legend labels in area mode.
+                scatter_labels = [decorated_labels[i] for i in scatter_mask]
 
             # Use either uniform bins or customized bins
             ax.hist(hist_bincenters, weights=hist_data, 
@@ -255,7 +400,18 @@ class SpineSpectra1D(SpineSpectra):
             if draw_error:
                 systs = [s[draw_error] for s in self._systematics.values() if draw_error in s]
                 if systs:
+                    # Sum covariances across samples for this systematic
                     cov = np.sum(s.get_covariance(self._variable._key) for s in systs)
+                    # If exposure_type='area' is active, also scale the uncertainty to match
+                    # the scaled stack: cov_total = sum_i (f_i^2 * cov_i).
+                    if area_scales:
+                        cov_scaled = np.zeros_like(cov)
+                        for sname, sdict in self._systematics.items():
+                            if draw_error not in sdict:
+                                continue
+                            sf = float(area_scales.get(sname, 1.0))
+                            cov_scaled += (sf**2) * sdict[draw_error].get_covariance(self._variable._key)
+                        cov = cov_scaled
                     x = reduce(bincenters)[0]
                     y = total_y
                     xerr = [bw / 2 for bw in binwidths[0]]
@@ -265,12 +421,21 @@ class SpineSpectra1D(SpineSpectra):
                     draw_error_boxes(ax, x, y, xerr, yerr, facecolor='gray', edgecolor='none', alpha=0.5, hatch='///')
                 else:
                     import warnings
-                    warnings.warn(f"draw_error='{draw_error}' not found in any sample's systematics. "
-                                  f"Available keys: {list(list(self._systematics.values())[0].keys()) if self._systematics else []}")
+                    available = []
+                    if self._systematics:
+                        try:
+                            available = list(next(iter(self._systematics.values())).keys())
+                        except Exception:
+                            available = []
+                    warnings.warn(
+                        f"draw_error='{draw_error}' not found in any sample's systematics. "
+                        f"Available keys: {available}"
+                    )
                     draw_error = None   # suppress legend entry
 
+            scatter_labels = [labels[i] for i in scatter_mask] if 'scatter_labels' not in locals() else scatter_labels
             reduce = lambda x : [x[i] for i in scatter_mask]
-            for i, label in enumerate(reduce(labels)):
+            for i, label in enumerate(scatter_labels):
                 scale = 1.0 if not normalize else 1.0 / np.sum(data[scatter_mask[i]])
                 ax.errorbar(bincenters[scatter_mask[i]], scale*data[scatter_mask[i]], yerr=scale*np.sqrt(data[scatter_mask[i]]), fmt='o', label=label, color=colors[scatter_mask[i]])
         

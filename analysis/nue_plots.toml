@@ -9,20 +9,27 @@ file = '/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/systematic_recipes.
 [samples]
 [samples.NuMIFull]
 key = "NuMIFull"
-exposure_type = "pot"
+exposure_type = 'area'
 trees = ['selected']
-print_sys = true
-systematics = ['selected_multisigmaTree']
-precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "reco_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)"}
-
-[samples.NuMIFullNonSel]
-key = "NuMIFull"
-exposure_type = "pot"
-trees = ['selected_nonmatched']
 print_sys = true
 systematics = []
 precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "reco_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)"}
 
+# [samples.NuMIFullNonSel]
+# key = "NuMIFull"
+# exposure_type = "pot"
+# trees = ['selected_nonmatched']
+# print_sys = true
+# systematics = []
+# precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "reco_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)"}
+
+[samples.data]
+key = "data"
+exposure_type = "area"
+trees = ['selected']
+print_sys = true
+systematics = []
+precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "reco_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "true_category" = "-1"}
 
 
 # Output directory for plots
@@ -31,7 +38,7 @@ path = 'plots/'
 
 # Analysis configuration
 [analysis]
-ordinate_sample = 'NuMIFull'
+ordinate_sample = 'data'
 
 ########################################
 ## Define your categories below
@@ -44,11 +51,12 @@ category_assignment = [
     [2], 
     [3], 
     [4],
-    [5]  # Cosmic
+    [5],  # Cosmic
+    [-1] #data
 ]
-category_labels = ['$\nu_{e}$ Signal', '$\nu_{e}$ OOFV', '$\nu_{\mu}$', '$\nu$ OOFV', '$\nu$ NC', 'Cosmic']
+category_labels = ['$\nu_{e}$ Signal', '$\nu_{e}$ OOFV', '$\nu_{\mu}$', '$\nu$ OOFV', '$\nu$ NC', 'Cosmic', 'Data']
 #category_colors = ['#011959', '#103F60', '#1C5A62', '#3C6D56', '#687B3E', '#9D892B', '#D29343', '#F8A17B', '#FDB7BC', '#FACCFA'] #batlow
-category_colors = ['#011959', '#1C5A62', '#687B3E', '#D29343', '#FDB7BC', '#ca80a0ff']
+category_colors = ['#011959', '#1C5A62', '#687B3E', '#D29343', '#FDB7BC', '#ca80a0ff', '#000000ff']
 
 # category_branch = 'reco_category'
 # category_assignment = [
@@ -78,7 +86,7 @@ category_colors = ['#011959', '#1C5A62', '#687B3E', '#D29343', '#FDB7BC', '#ca80
 # #category_colors = ['#2C194C', '#284578', '#49749F', '#83A1BE', '#CAD7E3', '#D2E1D2', '#8EB38D', '#4F894E', '#1C5B19', '#0F2903'] #cork
 # category_colors = ['#2C194C','#49749F', '#83A1BE', '#8EB38D', '#4F894E', '#1C5B19', '#0F2903'] #cork
 
-category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram']
+category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'scatter']
 
 ##############################################
 ## Define your variables and figures below

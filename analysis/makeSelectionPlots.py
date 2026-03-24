@@ -24,10 +24,10 @@ def makePlot(var, dir):
 
 if __name__ == "__main__":
 
-    #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/nue_plots.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine14/merged_output.root')
-    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/nue_plots.toml', '/nashome/m/micarrig/icarus/nuESpine/gundam_nueCCInclusive.root')
+    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/nue_plots.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine16/merged_output.root')
+    #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/nue_plots.toml', '/nashome/m/micarrig/icarus/nuESpine/gundam_nueCCInclusive.root')
 
-    plot_category = 'debug'
+    plot_category = 'debug2'
 
     plotVars = [
         #'true_neutrino_energy',

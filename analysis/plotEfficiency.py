@@ -17,11 +17,11 @@ r.gStyle.SetOptStat(0)
 
 def main():
     # Load the analysis
-    # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_analysis.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine14/merged_output.root')
-    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_recoInt.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine14/merged_output.root')
+    #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_analysis.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine16/merged_output.root')
+    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_recoInt.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine16/merged_output.root')
     #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/efficiency_analysis.toml', '/nashome/m/micarrig/icarus/nuESpine/output_nueCCInclusive2.root')
 
-    output_dir = 'plots/efficiency_neutrino_interaction_trueTree'
+    output_dir = 'plots/efficiency_reco_interaction_trueTree'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -54,6 +54,16 @@ def main():
     plt.savefig(f'{output_dir}/efficiency_vs_trueInvMass.png', dpi=300)
     with open(f'{output_dir}/efficiency_vs_trueInvMass.pkl', 'wb') as f:
         pickle.dump(eff_invMass, f)
+
+    eff_tEleEle = ana.run_interactively('efficiency_vs_trueLeadingElectronEnergy')
+    plt.savefig(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy.png', dpi=300)
+    with open(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy.pkl', 'wb') as f:
+        pickle.dump(eff_tEleEle, f) 
+
+    eff_tEleAngle = ana.run_interactively('efficiency_vs_trueLeadingElectronCosTheta')
+    plt.savefig(f'{output_dir}/efficiency_vs_trueLeadingElectronAngle.png', dpi=300)
+    with open(f'{output_dir}/efficiency_vs_trueLeadingElectronAngle.pkl', 'wb') as f:
+        pickle.dump(eff_tEleAngle, f)   
 
     # eff_flashTime = ana.run_interactively('efficiency_vs_recoFlashTime')
     # plt.savefig('plots/efficiency_vs_recoFlashTime.png', dpi=300)
