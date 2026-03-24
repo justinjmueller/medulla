@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle as _Rect
+import warnings
 
 from spectra import SpineSpectra
 from style import Style
@@ -185,7 +187,7 @@ class SpineSpectra1D(SpineSpectra):
     def draw(self, ax, style, show_component_number=False,
              show_component_percentage=False, invert_stack_order=False,
              fit_type=None, logx=False, logy=False, normalize=False,
-             draw_error=None) -> None:
+             draw_error=None, make_ratio_plot=False, ratio_scatter_label='Data', ratio_ylim=(0.5, 1.5), ratio_ylabel='Data/MC') -> None:
         """
         Plots the data for the SpineSpectra1D object.
 
@@ -233,6 +235,29 @@ class SpineSpectra1D(SpineSpectra):
         ax.set_xlim(*self._variable._range if self._xrange is None else self._xrange)
         ax.set_title(self._title)
 
+        # Optional ratio subplot (Data/MC) below the main spectrum.
+        # We create an additional axes within the same figure using the existing
+        # axis position. This avoids needing figure-level plumbing changes.
+        ratio_ax = None
+        if make_ratio_plot:
+            fig = ax.figure
+            pos = ax.get_position()
+            # Split the original axis vertically: top for spectrum, bottom for ratio.
+            gap = 0.02
+            ratio_frac = 0.28
+            ratio_h = pos.height * ratio_frac
+            main_h = pos.height - ratio_h - gap
+            # Resize the main axis and create the ratio axis below it.
+            ax.set_position([pos.x0, pos.y0 + ratio_h + gap, pos.width, main_h])
+            ratio_ax = fig.add_axes([pos.x0, pos.y0, pos.width, ratio_h], sharex=ax)
+            # Clean up tick labels on the top axis; ratio axis owns x-labels.
+            plt.setp(ax.get_xticklabels(), visible=False)
+            ax.set_xlabel('')
+            ratio_ax.set_ylabel(ratio_ylabel)
+            ratio_ax.set_ylim(*ratio_ylim)
+            ratio_ax.grid(True, axis='y', alpha=0.3)
+            ratio_ax.set_xlabel(self._variable._xlabel if self._xtitle is None else self._xtitle)
+
         # Track the total stacked histogram and its uncertainty envelope so we can
         # expand y-limits and avoid clipping error boxes.
         total_y = None
@@ -264,8 +289,7 @@ class SpineSpectra1D(SpineSpectra):
                     if label in self._onebincount:
                         return float(self._onebincount.get(label, 0.0))
                 try:
-                    import numpy as _np
-                    arr = _np.asarray(payload, dtype=float)
+                    arr = np.asarray(payload, dtype=float)
                     return float(_np.nansum(arr))
                 except Exception:
                     return 0.0
@@ -420,7 +444,6 @@ class SpineSpectra1D(SpineSpectra):
                     total_yerr = yerr
                     draw_error_boxes(ax, x, y, xerr, yerr, facecolor='gray', edgecolor='none', alpha=0.5, hatch='///')
                 else:
-                    import warnings
                     available = []
                     if self._systematics:
                         try:
@@ -439,6 +462,64 @@ class SpineSpectra1D(SpineSpectra):
                 scale = 1.0 if not normalize else 1.0 / np.sum(data[scatter_mask[i]])
                 ax.errorbar(bincenters[scatter_mask[i]], scale*data[scatter_mask[i]], yerr=scale*np.sqrt(data[scatter_mask[i]]), fmt='o', label=label, color=colors[scatter_mask[i]])
         
+
+            # Draw ratio panel if requested (first scatter component / total stack).
+            if ratio_ax is not None and scatter_mask and total_y is not None:
+                # Choose which scatter series to ratio (defaults to label 'Data').
+                si0 = None
+                try:
+                    target = ratio_scatter_label
+                    # First try exact match on the base labels.
+                    for _si in scatter_mask:
+                        if labels[_si] == target:
+                            si0 = _si
+                            break
+                    # If not found and labels are decorated (e.g. 'Data (123)'), allow prefix match.
+                    if si0 is None:
+                        for _si in scatter_mask:
+                            if str(labels[_si]).startswith(str(target)):
+                                si0 = _si
+                                break
+                except Exception:
+                    si0 = None
+                if si0 is None:
+                    si0 = scatter_mask[0]
+                # Scatter payload is stored binned (one y per bin center).
+                y_data = np.asarray(data[si0], dtype=float)
+                # Apply the same normalization used for scatter drawing above.
+                sscale = 1.0 if not normalize else 1.0 / np.sum(data[si0])
+                y_data = sscale * y_data
+                yerr_data = sscale * np.sqrt(np.clip(y_data / max(sscale, 1e-12), 0.0, None))
+
+                y_mc = np.asarray(total_y, dtype=float)
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    ratio = np.where(y_mc > 0, y_data / y_mc, np.nan)
+                    ratio_err = np.where(y_mc > 0, yerr_data / y_mc, np.nan)
+
+                x = bincenters[si0]
+                ratio_ax.errorbar(x, ratio, yerr=ratio_err, fmt='o', color=colors[si0], markersize=4)
+
+                # Optional MC uncertainty band in ratio (if available from draw_error).
+                if total_yerr is not None:
+                    ymcerr = np.asarray(total_yerr, dtype=float)
+                    with np.errstate(divide='ignore', invalid='ignore'):
+                        band = np.where(y_mc > 0, ymcerr / y_mc, np.nan)
+                    # Use bin edges so the uncertainty band spans each bin (centered at x)
+                    edges = self._binedges[labels[si0]]
+                    # Turn edges (N+1) and band (N) into step-style arrays for filled rectangles
+                    x_step = np.repeat(edges, 2)[1:-1]          # length 2*N
+                    band_step = np.repeat(band, 2)             # length 2*N
+                    ratio_ax.fill_between(x_step, 1.0 - band_step, 1.0 + band_step,
+                                         color='gray', alpha=0.35, linewidth=0)
+                    # Use the same label as the main-axis error legend when available,
+                    # otherwise fall back to a generic description.
+                    label = 'MC Uncertainty'
+                    proxy = _Rect((0, 0), 1, 1, fc='gray', alpha=0.35, linewidth=0)
+                    ratio_ax.legend([proxy], [label])
+                ratio_ax.axhline(1.0, color='k', linewidth=1, alpha=0.6)
+
+                # If top axis is logy, ratio panel should remain linear.
+                ratio_ax.set_yscale('linear')
         if invert_stack_order:
             h, l = ax.get_legend_handles_labels()
             if draw_error:
@@ -668,6 +749,28 @@ class SpineSpectraCutFlow(SpineSpectra):
         ax.set_xlim(*xr)
         ax.set_title(self._title)
 
+        # Optional ratio subplot (Data/MC) below the main spectrum.
+        # We create an additional axes within the same figure using the existing
+        # axis position. This avoids needing figure-level plumbing changes.
+        ratio_ax = None
+        if make_ratio_plot:
+            fig = ax.figure
+            pos = ax.get_position()
+            # Split the original axis vertically: top for spectrum, bottom for ratio.
+            gap = 0.02
+            ratio_frac = 0.28
+            ratio_h = pos.height * ratio_frac
+            main_h = pos.height - ratio_h - gap
+            # Resize the main axis and create the ratio axis below it.
+            ax.set_position([pos.x0, pos.y0 + ratio_h + gap, pos.width, main_h])
+            ratio_ax = fig.add_axes([pos.x0, pos.y0, pos.width, ratio_h], sharex=ax)
+            # Clean up tick labels on the top axis; ratio axis owns x-labels.
+            plt.setp(ax.get_xticklabels(), visible=False)
+            ax.set_xlabel('')
+            ratio_ax.set_ylabel(ratio_ylabel)
+            ratio_ax.set_ylim(*ratio_ylim)
+            ratio_ax.grid(True, axis='y', alpha=0.3)
+
         if self._plotdata is None or self._binedges is None:
             return
 
@@ -877,6 +980,28 @@ class SpineSystematics(SpineSpectra):
         xr = self._variable._range if self._xrange is None else self._xrange
         ax.set_xlim(*xr)
         ax.set_title(self._title)
+
+        # Optional ratio subplot (Data/MC) below the main spectrum.
+        # We create an additional axes within the same figure using the existing
+        # axis position. This avoids needing figure-level plumbing changes.
+        ratio_ax = None
+        if make_ratio_plot:
+            fig = ax.figure
+            pos = ax.get_position()
+            # Split the original axis vertically: top for spectrum, bottom for ratio.
+            gap = 0.02
+            ratio_frac = 0.28
+            ratio_h = pos.height * ratio_frac
+            main_h = pos.height - ratio_h - gap
+            # Resize the main axis and create the ratio axis below it.
+            ax.set_position([pos.x0, pos.y0 + ratio_h + gap, pos.width, main_h])
+            ratio_ax = fig.add_axes([pos.x0, pos.y0, pos.width, ratio_h], sharex=ax)
+            # Clean up tick labels on the top axis; ratio axis owns x-labels.
+            plt.setp(ax.get_xticklabels(), visible=False)
+            ax.set_xlabel('')
+            ratio_ax.set_ylabel(ratio_ylabel)
+            ratio_ax.set_ylim(*ratio_ylim)
+            ratio_ax.grid(True, axis='y', alpha=0.3)
 
         bin_edges = self._binedges
         cv        = self._cv

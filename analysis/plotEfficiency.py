@@ -25,25 +25,25 @@ def main():
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    table = ana.run_interactively('selection_efficiency_table')
-    plt.savefig(f'{output_dir}/selection_efficiency_table.png', dpi=300)
-    with open(f'{output_dir}/selection_efficiency_table.pkl', 'wb') as f:
-        pickle.dump(table, f)
+    # table = ana.run_interactively('selection_efficiency_table')
+    # plt.savefig(f'{output_dir}/selection_efficiency_table.png', dpi=300)
+    # with open(f'{output_dir}/selection_efficiency_table.pkl', 'wb') as f:
+    #     pickle.dump(table, f)
 
-    eff_nuE = ana.run_interactively('efficiency_vs_energy')
-    plt.savefig(f'{output_dir}/efficiency_vs_energy.png', dpi=300)
-    with open(f'{output_dir}/efficiency_vs_energy.pkl', 'wb') as f:
-        pickle.dump(eff_nuE, f)
+    # eff_nuE = ana.run_interactively('efficiency_vs_energy')
+    # plt.savefig(f'{output_dir}/efficiency_vs_energy.png', dpi=300)
+    # with open(f'{output_dir}/efficiency_vs_energy.pkl', 'wb') as f:
+    #     pickle.dump(eff_nuE, f)
 
-    eff_eleE = ana.run_interactively('efficiency_vs_electronEnergy')
-    plt.savefig(f'{output_dir}/efficiency_vs_electronEnergy.png', dpi=300)
-    with open (f'{output_dir}/efficiency_vs_electronEnergy.pkl', 'wb') as f:
-        pickle.dump(eff_eleE, f)
+    # eff_eleE = ana.run_interactively('efficiency_vs_electronEnergy')
+    # plt.savefig(f'{output_dir}/efficiency_vs_electronEnergy.png', dpi=300)
+    # with open (f'{output_dir}/efficiency_vs_electronEnergy.pkl', 'wb') as f:
+    #     pickle.dump(eff_eleE, f)
 
-    eff_eleAngle = ana.run_interactively('efficiency_vs_electronAngle')
-    plt.savefig(f'{output_dir}/efficiency_vs_electronAngle.png', dpi=300)
-    with open(f'{output_dir}/efficiency_vs_electronAngle.pkl', 'wb') as f:
-        pickle.dump(eff_eleAngle, f)
+    # eff_eleAngle = ana.run_interactively('efficiency_vs_electronAngle')
+    # plt.savefig(f'{output_dir}/efficiency_vs_electronAngle.png', dpi=300)
+    # with open(f'{output_dir}/efficiency_vs_electronAngle.pkl', 'wb') as f:
+    #     pickle.dump(eff_eleAngle, f)
 
     eff_pTrans = ana.run_interactively('efficiency_vs_trueMomentumTransfer')
     plt.savefig(f'{output_dir}/efficiency_vs_trueMomentumTransfer.png', dpi=300)

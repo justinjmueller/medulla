@@ -389,6 +389,8 @@ variable = 'reco_leading_electron_energy'
 show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
+make_ratio_plot = true
+ratio_scatter_label = 'data'
 draw_error = 'total'
 
 # Figure 2: reco leading electron open angle
