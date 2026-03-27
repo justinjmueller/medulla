@@ -27,13 +27,15 @@ if __name__ == "__main__":
     # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/nue_plots.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine12/merged_output.root')
     ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/systematics.toml', '/nashome/m/micarrig/icarus/nuESpine/gundam_nueCCInclusive.root')
 
-    plot_category = 'systematics_multisim'
+    plot_category = 'systematics_total'
 
 
     plotVars = [
         'sys_eleE',
         'sys_eleCosThetaNUMI',
-        'sys_nuE'
+        'sys_nuE',
+        'sys_trueEleE',
+        'sys_trueEleCosThetaNUMI'
     ]
 
     outputDir = f'/nashome/m/micarrig/icarus/nuESpine/plots/{plot_category}/'

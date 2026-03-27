@@ -17,11 +17,11 @@ r.gStyle.SetOptStat(0)
 
 def main():
     # Load the analysis
-    #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_analysis.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine16/merged_output.root')
-    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_recoInt.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine16/merged_output.root')
+    #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_analysis.toml', '/nashome/m/micarrig/icarus/nuESpine/gundam_nueCCInclusive_trueSignal.root')
+    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_recoInt.toml', '/nashome/m/micarrig/icarus/nuESpine/gundam_nueCCInclusive_trueSignal.root')
     #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/efficiency_analysis.toml', '/nashome/m/micarrig/icarus/nuESpine/output_nueCCInclusive2.root')
 
-    output_dir = 'plots/efficiency_reco_interaction_trueTree'
+    output_dir = 'plots/debug2'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -45,15 +45,15 @@ def main():
     # with open(f'{output_dir}/efficiency_vs_electronAngle.pkl', 'wb') as f:
     #     pickle.dump(eff_eleAngle, f)
 
-    eff_pTrans = ana.run_interactively('efficiency_vs_trueMomentumTransfer')
-    plt.savefig(f'{output_dir}/efficiency_vs_trueMomentumTransfer.png', dpi=300)
-    with open(f'{output_dir}/efficiency_vs_trueMomentumTransfer.pkl', 'wb') as f:
-        pickle.dump(eff_pTrans, f)
+    # eff_pTrans = ana.run_interactively('efficiency_vs_trueMomentumTransfer')
+    # plt.savefig(f'{output_dir}/efficiency_vs_trueMomentumTransfer.png', dpi=300)
+    # with open(f'{output_dir}/efficiency_vs_trueMomentumTransfer.pkl', 'wb') as f:
+    #     pickle.dump(eff_pTrans, f)
 
-    eff_invMass = ana.run_interactively('efficiency_vs_trueInvariantMass')
-    plt.savefig(f'{output_dir}/efficiency_vs_trueInvMass.png', dpi=300)
-    with open(f'{output_dir}/efficiency_vs_trueInvMass.pkl', 'wb') as f:
-        pickle.dump(eff_invMass, f)
+    # eff_invMass = ana.run_interactively('efficiency_vs_trueInvariantMass')
+    # plt.savefig(f'{output_dir}/efficiency_vs_trueInvMass.png', dpi=300)
+    # with open(f'{output_dir}/efficiency_vs_trueInvMass.pkl', 'wb') as f:
+    #     pickle.dump(eff_invMass, f)
 
     eff_tEleEle = ana.run_interactively('efficiency_vs_trueLeadingElectronEnergy')
     plt.savefig(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy.png', dpi=300)

@@ -38,7 +38,8 @@ class Sample:
     """
     def __init__(self, name, rf, category_branch, key, exposure_type, trees,
                  fillna=None, systematics=None, override_exposure=None, precompute=None,
-                 presel=None, override_category=None, print_sys=False, branches=None) -> None:
+                 presel=None, override_category=None, print_sys=False, branches=None, area_scale=None,
+                 scale_systematics_with_exposure=None) -> None:
         """
         Initializes the Sample object with the given name and key.
 
@@ -84,6 +85,16 @@ class Sample:
         """
         self._name = name
         self._exposure_type = exposure_type
+        # Whether this sample should participate in exposure_type='area' scaling
+        # when it is *not* the ordinate sample. Defaults to True.
+        self._area_scale = True if area_scale is None else bool(area_scale)
+        # Whether to rescale Systematic covariances when matching exposure to the ordinate sample.
+        # Default: True (keep legacy behavior). For exposure_type='area' plots you typically want False
+        # so covariances remain in the sample's native exposure and only the plot-level area scaling is applied.
+        if scale_systematics_with_exposure is None:
+            self._scale_systematics_with_exposure = True
+        else:
+            self._scale_systematics_with_exposure = bool(scale_systematics_with_exposure)
         self._file_handle = rf[f'events/{key}']
         self._exposure_pot = self._file_handle['POT'].to_numpy()[0][0]
         self._exposure_livetime = self._file_handle['Livetime'].to_numpy()[0][0]
@@ -217,7 +228,8 @@ class Sample:
         print(f"Setting weight for {self._name} to {scale:.2e}")
         self._data['weight'] = scale
         for syst in self._systematics.values():
-            syst.set_weight(scale)        
+            if getattr(self, "_scale_systematics_with_exposure", True):
+                syst.set_weight(scale)        
 
     def get_data(self, variables, with_mask=None) -> dict:
         """

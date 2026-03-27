@@ -2,50 +2,528 @@
 ## Systematic recipes for the multisigma tree
 #################################
 
+##################################
+## Cross Section Systematics
+##################################
+
+[[systematic_recipe]]
+name = 'ZExpA1CCQE'
+label = 'ZExpA1CCQE'
+pattern = 'ZExpA1CCQE'
+
+[[systematic_recipe]]
+name = 'ZExpA2CCQE'
+label = 'ZExpA2CCQE'
+pattern = 'ZExpA2CCQE'
+
+[[systematic_recipe]]
+name = 'ZExpA3CCQE'
+label = 'ZExpA3CCQE'
+pattern = 'ZExpA3CCQE'
+
+[[systematic_recipe]]
+name = 'ZExpA4CCQE'
+label = 'ZExpA4CCQE'
+pattern = 'ZExpA4CCQE'
+
+[[systematic_recipe]]
+name = 'VecFFCCQEshape'
+label = 'VecFFCCQEshape'
+pattern = 'VecFFCCQEshape'
+
+[[systematic_recipe]]
+name = 'RPA_CCQE'
+label = 'RPA_CCQE'
+pattern = 'RPA_CCQE'
+
+[[systematic_recipe]]
+name = 'CoulombCCQE'
+label = 'CoulombCCQE'
+pattern = 'CoulombCCQE'
+
+[[systematic_recipe]]
+name = 'NormCCMEC'
+label = 'NormCCMEC'
+pattern = 'NormCCMEC'
+
+[[systematic_recipe]]
+name = 'NormNCMEC'
+label = 'NormNCMEC'
+pattern = 'NormNCMEC'
+
+[[systematic_recipe]]
+name = 'DecayAngMEC'
+label = 'DecayAngMEC'
+pattern = 'DecayAngMEC'
+
+[[systematic_recipe]]
+name = 'MaCCRES'
+label = 'MaCCRES'
+pattern = 'MaCCRES'
+
+[[systematic_recipe]]
+name = 'MvCCRES'
+label = 'MvCCRES'
+pattern = 'MvCCRES'
+
+[[systematic_recipe]]
+name = 'MaNCRES'
+label = 'MaNCRES'
+pattern = 'MaNCRES'
+
+[[systematic_recipe]]
+name = 'MvNCRES'
+label = 'MvNCRES'
+pattern = 'MvNCRES'
+
+[[systematic_recipe]]
+name = 'NonRESBGvpCC1pi'
+label = 'NonRESBGvpCC1pi'
+pattern = 'NonRESBGvpCC1pi'
+
+[[systematic_recipe]]
+name = 'NonRESBGvnCC1pi'
+label = 'NonRESBGvnCC1pi'
+pattern = 'NonRESBGvnCC1pi'
+
+[[systematic_recipe]]
+name = 'NonRESBGvbarpCC1pi'
+label = 'NonRESBGvbarpCC1pi'
+pattern = 'NonRESBGvbarpCC1pi'
+
+[[systematic_recipe]]
+name = 'NonRESBGvbarnCC1pi'
+label = 'NonRESBGvbarnCC1pi'
+pattern = 'NonRESBGvbarnCC1pi'
+
+[[systematic_recipe]]
+name = 'NonRESBGvpCC2pi'
+label = 'NonRESBGvpCC2pi'
+pattern = 'NonRESBGvpCC2pi'
+
+[[systematic_recipe]]
+name = 'NonRESBGvnCC2pi'
+label = 'NonRESBGvnCC2pi'
+pattern = 'NonRESBGvnCC2pi'
+
+[[systematic_recipe]]
+name = 'NonRESBGvbarpCC2pi'
+label = 'NonRESBGvbarpCC2pi'
+pattern = 'NonRESBGvbarpCC2pi'
+
+[[systematic_recipe]]
+name = 'NonRESBGvbarnCC2pi'
+label = 'NonRESBGvbarnCC2pi'    
+pattern = 'NonRESBGvbarnCC2pi'
+
+[[systematic_recipe]]
+name = 'NonRESBCvpNC1pi'
+label = 'NonRESBGvpNC1pi'
+pattern = 'NonRESBGvpNC1pi'
+
+[[systematic_recipe]]
+name = 'NonRESBGvnNC1pi'
+label = 'NonRESBGvnNC1pi'
+pattern = 'NonRESBGvnNC1pi'
+
+[[systematic_recipe]]
+name = 'NonRESBGvbarpNC1pi'
+label = 'NonRESBGvbarpNC1pi'
+pattern = 'NonRESBGvbarpNC1pi'
+
+[[systematic_recipe]]
+name = 'NonRESBGvbarnNC1pi'
+label = 'NonRESBGvbarnNC1pi'
+pattern = 'NonRESBGvbarnNC1pi'
+
+[[systematic_recipe]]
+name = 'NonRESBGvpNC2pi'
+label = 'NonRESBGvpNC2pi'
+pattern = 'NonRESBGvpNC2pi'
+
+[[systematic_recipe]]
+name = 'NonRESBGvnNC2pi'
+label = 'NonRESBGvnNC2pi'
+pattern = 'NonRESBGvnNC2pi'
+
+[[systematic_recipe]]
+name = 'NonRESBGvbarpNC2pi'
+label = 'NonRESBGvbarpNC2pi'
+pattern = 'NonRESBGvbarpNC2pi'
+
+[[systematic_recipe]]
+name = 'NonRESBGvbarnNC2pi'
+label = 'NonRESBGvbarnNC2pi'
+pattern = 'NonRESBGvbarnNC2pi'
+
+[[systematic_recipe]]
+name = 'AhtBY'
+label = 'AhtBY'
+pattern = 'AhtBY'
+
+[[systematic_recipe]]
+name = 'BhtBY'
+label = 'BhtBY'
+pattern = 'BhtBY'
+
+[[systematic_recipe]]
+name = 'CV1uBY'
+label = 'CV1uBY'
+pattern = 'CV1uBY'
+
+[[systematic_recipe]]
+name = 'CV2uBY'
+label = 'CV2uBY'
+pattern = 'CV2uBY'
+
+[[systematic_recipe]]
+name = 'NormCCOH'
+label = 'NormCCOH'  
+pattern = 'NormCCOH'
+
+[[systematic_recipe]]
+name = 'NormNCCOH'
+label = 'NormNCCOH'
+pattern = 'NormNCCOH'
+
+[[systematic_recipe]]
+name = 'MFP_pi'
+label = 'MFP_pi'
+pattern = 'MFP_pi'
+
+[[systematic_recipe]]
+name = 'FrCEx_pi'
+label = 'FrCEx_pi'
+pattern = 'FrCEx_pi'
+
+[[systematic_recipe]]
+name = 'FrInel_pi'
+label = 'FrInel_pi'
+pattern = 'FrInel_pi'
+
+[[systematic_recipe]]
+name = 'FrAbs_pi'
+label = 'FrAbs_pi'
+pattern = 'FrAbs_pi'
+
+[[systematic_recipe]]
+name = 'FrPiProd_pi'
+label = 'FrPiProd_pi'
+pattern = 'FrPiProd_pi'
+
+[[systematic_recipe]]
+name = 'MFP_N'
+label = 'MFP_N'
+pattern = 'MFP_N'
+
+[[systematic_recipe]]
+name = 'FrCEx_N'
+label = 'FrCEx_N'
+pattern = 'FrCEx_N'
+
+[[systematic_recipe]]
+name = 'FrInel_N'
+label = 'FrInel_N'
+pattern = 'FrInel_N'
+
+[[systematic_recipe]]
+name = 'FrAbs_N'
+label = 'FrAbs_N'
+pattern = 'FrAbs_N'
+
+[[systematic_recipe]]
+name = 'FrPiProd_N'
+label = 'FrPiProd_N'
+pattern = 'FrPiProd_N'
+
+[[systematic_recipe]]
+name = 'MaNCEL'
+label = 'MaNCEL'
+pattern = 'MaNCEL'
+
+[[systematic_recipe]]
+name = 'EtaNCEL'
+label = 'EtaNCEL'
+pattern = 'EtaNCEL'
+
+[[systematic_recipe]]
+name = 'RDECBR1gamma'
+label = 'RDECBR1gamma'
+pattern = 'RDECBR1gamma'
+
+[[systematic_recipe]]
+name = 'RDECBR1eta'
+label = 'RDECBR1eta'
+pattern = 'RDECBR1eta'
+
+[[systematic_recipe]]
+name = 'Theta_Delta2Npi'
+label = 'Theta_Delta2Npi'
+pattern = 'Theta_Delta2Npi'
+
+[[systematic_recipe]]
+name = 'ThetaDelta2NRad'
+label = 'ThetaDelta2NRad'
+pattern = 'ThetaDelta2NRad'
+
 [[systematic_recipe]]
 name = 'xsec_ccqe'
 label = 'QE'
-pattern = 'CCQE'
+pattern = '^(ZExpA1CCQE|ZExpA2CCQE|ZExpA3CCQE|ZExpA4CCQE|VecFFCCQEshape|RPA_CCQE|CoulombCCQE)$'
 
 [[systematic_recipe]]
 name = 'xsec_mec'
 label = 'MEC'
-pattern = 'MEC'
+pattern = '^(NormCCMEC|NormNCMEC|DecayAngMEC)$'
 
 [[systematic_recipe]]
 name = 'xsec_res'
 label = 'Resonant'
-pattern = 'M??RES'
+pattern = '^(MaCCRES|MvCCRES|MaNCRES|MvNCRES)$'
 
 [[systematic_recipe]]
 name = 'xsec_dis'
 label = 'DIS'
-pattern = 'BY'
+pattern = '^(AhtBY|BhtBY|CV1uBY|CV2uBY)$'
 
 [[systematic_recipe]]
 name = 'xsec_coh'
 label = 'COH'
-pattern = 'COH'
+pattern = '^(NormCCOH|NormNCCOH)$'
 
 [[systematic_recipe]]
 name = 'xsec_nonres'
 label = 'Non-resonant'
-pattern = 'NonRESBG'
+pattern = '^(NonRESBGvpCC1pi|NonRESBGvnCC1pi|NonRESBGvbarpCC1pi|NonRESBGvbarnCC1pi|NonRESBGvpCC2pi|NonRESBGvnCC2pi|NonRESBGvbarpCC2pi|NonRESBGvbarnCC2pi|NonRESBGvpNC1pi|NonRESBGvnNC1pi|NonRESBGvbarpNC1pi|NonRESBGvbarnNC1pi|NonRESBGvpNC2pi|NonRESBGvnNC2pi|NonRESBGvbarpNC2pi|NonRESBGvbarnNC2pi)$'
 
 [[systematic_recipe]]
 name = 'xsec_fsi'
 label = 'FSI'
-pattern = 'MFP|FrCEx|FrInel|FrAbs|FrPiProd'
+pattern = '^(MFP_pi|FrCEx_pi|FrInel_pi|FrAbs_pi|FrPiProd_pi|MFP_N|FrCEx_N|FrInel_N|FrAbs_N|FrPiProd_N)$'
 
 [[systematic_recipe]]
 name = 'xsec_other'
 label = 'Other'
-pattern = 'RDECBR1|Theta_Delta|ThetaDelta|MaNCEL|EtaNCEL'
+pattern = '^(MaNCEL|EtaNCEL|RDECBR1gamma|RDECBR1eta|Theta_Delta2Npi|ThetaDelta2NRad)$'
 
 [[systematic_recipe]]
-name = "total"
-label = "Total Uncertainty"
-pattern = "statistical|xsec_ccqe|xsec_mec|xsec_res|xsec_dis|xsec_coh|xsec_nonres|xsec_fsi|xsec_other"
+name = 'xsec_total'
+label = 'XSec'
+pattern = '^(xsec_ccqe|xsec_mec|xsec_res|xsec_dis|xsec_coh|xsec_nonres|xsec_fsi|xsec_other)$'
+
+# #################################
+# ## Flux Systematics
+# #################################
+
+[[systematic_recipe]]
+name = 'hysyst_beam_horm_2kA'
+label = 'Horn 2kA'
+pattern = 'hysyst_beam_horm_2kA'
+
+[[systematic_recipe]]
+name = 'hysyst_beam_horm1_x_3mm'
+label = 'Horn1 x 3mm'
+pattern = 'hysyst_beam_horm1_x_3mm'
+
+[[systematic_recipe]]
+name = 'hysyst_beam_horm1_y_3mm'
+label = 'Horn1 y 3mm'
+pattern = 'hysyst_beam_horm1_y_3mm'
+
+[[systematic_recipe]]
+name = 'hysyst_beam_spot_1_3mm'
+label = 'Spot 1 3mm'
+pattern = 'hysyst_beam_spot_1_3mm'
+
+[[systematic_recipe]]
+name = 'hysyst_beam_spot_1_7mm'
+label = 'Spot 1 7mm'
+pattern = 'hysyst_beam_spot_1_7mm'
+
+[[systematic_recipe]]
+name = 'hysyst_beam_horm2_x_3mm'
+label = 'Horn2 x 3mm'
+pattern = 'hysyst_beam_horm2_x_3mm'
+
+[[systematic_recipe]]
+name = 'hysyst_beam_horm2_y_3mm'
+label = 'Horn2 y 3mm'
+pattern = 'hysyst_beam_horm2_y_3mm'
+
+[[systematic_recipe]]
+name = 'hysyst_beam_horms_0mm_water'
+label = 'Horns 0mm water'
+pattern = 'hysyst_beam_horms_0mm_water'
+
+[[systematic_recipe]]
+name = 'hysyst_beam_horms_2mm_water'
+label = 'Horns 2mm water'
+pattern = 'hysyst_beam_horms_2mm_water'
+
+[[systematic_recipe]]
+name = 'hysyst_beam_Beam_shift_x_1mm'
+label = 'Beam shift x 1mm'
+pattern = 'hysyst_beam_Beam_shift_x_1mm'
+
+[[systematic_recipe]]
+name = 'hysyst_beam_Beam_shift_y_1mm'
+label = 'Beam shift y 1mm'
+pattern = 'hysyst_beam_Beam_shift_y_1mm'
+
+[[systematic_recipe]]
+name = 'hysyst_beam_Target_z_7mm'
+label = 'Target z 7mm'
+pattern = 'hysyst_beam_Target_z_7mm'
+
+[[systematic_recipe]]
+name = 'hysyst_hpc_0'
+label = 'HPC 0'
+pattern = 'hysyst_hpc_0'
+
+[[systematic_recipe]]
+name = 'hysyst_hpc_1'
+label = 'HPC 1'
+pattern = 'hysyst_hpc_1'
+
+[[systematic_recipe]]
+name = 'hysyst_hpc_2'
+label = 'HPC 2'
+pattern = 'hysyst_hpc_2'
+
+[[systematic_recipe]]
+name = 'hysyst_hpc_3'
+label = 'HPC 3'
+pattern = 'hysyst_hpc_3'
+
+[[systematic_recipe]]
+name = 'hysyst_hpc_4'
+label = 'HPC 4'
+pattern = 'hysyst_hpc_4'
+
+[[systematic_recipe]]
+name = 'hysyst_hpc_5'
+label = 'HPC 5'
+pattern = 'hysyst_hpc_5'
+
+[[systematic_recipe]]
+name = 'hysyst_hpc_6'
+label = 'HPC 6'
+pattern = 'hysyst_hpc_6'
+
+[[systematic_recipe]]
+name = 'hysyst_hpc_7'
+label = 'HPC 7'
+pattern = 'hysyst_hpc_7'
+
+[[systematic_recipe]]
+name = 'hysyst_hpc_8'
+label = 'HPC 8'
+pattern = 'hysyst_hpc_8'
+
+[[systematic_recipe]]
+name = 'hysyst_hpc_9'
+label = 'HPC 9'
+pattern = 'hysyst_hpc_9'
+
+[[systematic_recipe]]
+name = 'hysyst_hpc_10'
+label = 'HPC 10'
+pattern = 'hysyst_hpc_10'
+
+[[systematic_recipe]]
+name = 'hysyst_hpc_11'
+label = 'HPC 11'
+pattern = 'hysyst_hpc_11'
+
+[[systematic_recipe]]
+name = 'hysyst_hpc_12'
+label = 'HPC 12'
+pattern = 'hysyst_hpc_12'
+
+[[systematic_recipe]]
+name = 'hysyst_hpc_13'
+label = 'HPC 13'
+pattern = 'hysyst_hpc_13'
+
+[[systematic_recipe]]
+name = 'hysyst_hpc_14'
+label = 'HPC 14'
+pattern = 'hysyst_hpc_14'
+
+[[systematic_recipe]]
+name = 'flux'
+label = 'Flux'
+pattern = '^(hysyst_beam_horm_2kA|hysyst_beam_horm1_x_3mm|hysyst_beam_horm1_y_3mm|hysyst_beam_spot_1_3mm|hysyst_beam_spot_1_7mm|hysyst_beam_horm2_x_3mm|hysyst_beam_horm2_y_3mm|hysyst_beam_horms_0mm_water|hysyst_beam_horms_2mm_water|hysyst_beam_Beam_shift_x_1mm|hysyst_beam_Beam_shift_y_1mm|hysyst_beam_Target_z_7mm|hysyst_hpc_0|hysyst_hpc_1|hysyst_hpc_2|hysyst_hpc_3|hysyst_hpc_4|hysyst_hpc_5|hysyst_hpc_6|hysyst_hpc_7|hysyst_hpc_8|hysyst_hpc_9|hysyst_hpc_10|hysyst_hpc_11|hysyst_hpc_12|hysyst_hpc_13|hysyst_hpc_14)$'
+
+# [[systematic_recipe]]
+# name = 'flux_skin'
+# label = 'Exp Skin'
+# pattern = 'expskin_Flux'
+
+# [[systematic_recipe]]
+# name = 'flux_hornCurrent'
+# label = 'Horn Current'
+# pattern = 'horncurrent_Flux'
+
+# [[systematic_recipe]]
+# name = 'flux_kMinus'
+# label = '$K^{-}$'
+# pattern = 'kminus_Flux'
+
+# [[systematic_recipe]]
+# name = 'flux_kPlus'
+# label = '$K^{+}$'
+# pattern = 'kplux_Flux'
+
+# [[systematic_recipe]]
+# name = 'flux_kZero'
+# label = '$K^{0}$'
+# pattern = 'kzero_Flux'
+
+# [[systematic_recipe]]
+# name = 'flux_nucleonIneXsec'
+# label = 'Nuc Ine Rescatter'
+# pattern = 'nucleoninexsec_Flux'
+
+# [[systematic_recipe]]
+# name = 'flux_nucleonQEXsec'
+# label = 'Nuc QE Rescatter'
+# pattern = 'nucleonqexsec_Flux'
+
+# [[systematic_recipe]]
+# name = 'flux_nucleonTotXsec'
+# label = 'Nuc Tot Rescatter'
+# pattern = 'nucleontotxsec_Flux'
+
+# [[systematic_recipe]]
+# name = 'flux_piMinus'
+# label = '$pi^{-}$'
+# pattern = 'piminus_Flux'
+
+# [[systematic_recipe]]
+# name = 'flux_piIneXsec'
+# label = 'Pion Ine Rescatter'
+# pattern = 'pioninexsec_Flux'
+
+# [[systematic_recipe]]
+# name = 'flux_piQEXsec'
+# label = 'Pion QE Rescatter'
+# pattern = 'pionqexsec_Flux'
+
+# [[systematic_recipe]]
+# name = 'flux_piTotXsec'
+# label = 'Pion Tot Rescatter'
+# pattern = 'piontotxsec_Flux'
+
+# [[systematic_recipe]]
+# name = 'flux_piPlus'
+# label = '$pi^{+}$'
+# pattern = 'piplus_Flux'
+
+# [[systematic_recipe]]
+# name = 'flux'
+# label = 'Flux'
+# pattern = '^(flux_skin|flux_hornCurrent|flux_kMinus|flux_kPlus|flux_kZero|flux_nucleonIneXsec|flux_nucleonQEXsec|flux_nucleonTotXsec|flux_piMinus|flux_piIneXsec|flux_piQEXsec|flux_piTotXsec|flux_piPlus)$'
 
 #######################################
 ## Versions using the multisim tree
@@ -104,3 +582,12 @@ pattern = "statistical|xsec_ccqe|xsec_mec|xsec_res|xsec_dis|xsec_coh|xsec_nonres
 name = "total_stat"
 label = "MC statistical uncertainty"
 pattern = "statistical"
+
+########################################
+## Total Uncertainty
+########################################
+
+[[systematic_recipe]]
+name = "total"
+label = "Total Uncertainty"
+pattern = "^(total_stat|xsec_ccqe|xsec_mec|xsec_res|xsec_dis|xsec_coh|xsec_nonres|xsec_fsi|xsec_other|flux)$"

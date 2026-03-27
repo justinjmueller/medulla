@@ -96,7 +96,9 @@ class SpineEfficiency(SpineArtist):
 
     def draw(self, ax, show_option, percentage=True, show_seqeff=True,
              show_unseqeff=True, show_purity=False, yrange=None, npts=100, style=None,
-             logx=False, logy=False, colors=None):
+             logx=False, logy=False, colors=None,
+             draw_error=None, show_syst_band=True, syst_alpha=0.25,
+             syst_color='gray', syst_label=None, show_legend=True):
         """
         Draw the artist on the given axis.
 
@@ -142,6 +144,81 @@ class SpineEfficiency(SpineArtist):
         None.
         """
         ax.set_title(self._title)
+
+        # Note on uncertainties:
+        # - Points + asymmetric error bars are statistical (Bayesian/binomial) from reduce().
+        # - Optional systematic uncertainty is drawn as a filled band around the CV.
+        #
+        # Systematic band support relies on Sample.process_systematics() having been run
+        # so that samples expose recipe-combined Systematic objects with covariance matrices.
+        # If unavailable, the band is silently skipped.
+
+        def _compute_syst_sigma_eff(group, eff_cv):
+            """Return per-bin 1-sigma systematic uncertainty on efficiency.
+
+            We reuse the existing systematic covariance machinery (as used by spectra)
+            which provides a covariance matrix for the VARIABLE yield in each bin.
+            Efficiency is a ratio N/D; here we approximate the systematic uncertainty on
+            efficiency by propagating the *fractional* yield uncertainty of the denominator:
+
+                sigma_eff ~= eff_cv * sigma_D / D
+
+            where sigma_D is derived from the diagonal of the summed covariance matrix.
+            """
+            if draw_error is None:
+                return None
+            if group not in self._totals:
+                return None
+
+            denom = np.asarray(self._totals[group], dtype=float)
+            eff_cv = np.asarray(eff_cv, dtype=float)
+            if denom.shape != eff_cv.shape:
+                return None
+
+            cov_total = None
+            seen_draw_error = False
+            seen_any_cov_key = False
+            for s in self._samples:
+                systs = getattr(s, '_systematics', None)
+                if not systs or draw_error not in systs:
+                    continue
+                seen_draw_error = True
+                syst = systs[draw_error]
+                if not hasattr(syst, 'get_covariance'):
+                    continue
+                try:
+                    cov = syst.get_covariance(self._variable._key)
+                except Exception:
+                    continue
+                if cov is None:
+                    continue
+                seen_any_cov_key = True
+                cov = np.asarray(cov, dtype=float)
+                cov_total = cov if cov_total is None else (cov_total + cov)
+
+            if cov_total is None:
+                # Don't fail silently: this is a common misconfiguration.
+                if show_syst_band and draw_error is not None:
+                    if not seen_draw_error:
+                        print(
+                            f"[SpineEfficiency] Requested draw_error='{draw_error}' but no sample has that systematic key. "
+                            f"Available example keys for '{self._samples[0]._name}': {list(getattr(self._samples[0], '_systematics', {}).keys())[:10]}"
+                        )
+                    elif not seen_any_cov_key:
+                        print(
+                            f"[SpineEfficiency] Requested draw_error='{draw_error}' but no covariance was found for variable '{self._variable._key}'."
+                        )
+                return None
+
+            var = np.diag(cov_total)
+            var = np.where(var < 0, 0.0, var)
+            sigma_yield = np.sqrt(var)
+
+            with np.errstate(divide='ignore', invalid='ignore'):
+                frac = np.where(denom > 0, sigma_yield / denom, np.nan)
+                sigma_eff = np.where(np.isfinite(frac), np.abs(eff_cv) * frac, np.nan)
+            return sigma_eff
+
 
         # Get a list of the groups, while respecting the order of the
         # groups as they are configured in the analysis block. It is
@@ -349,6 +426,23 @@ class SpineEfficiency(SpineArtist):
             if len(groups) == 1:
                 for ci, (cut, cutname) in enumerate(cuts_to_draw):
                     _, cv, msigma, psigma = self.reduce(groups[0], significance=0.6827)
+
+                    # Optional systematic band (draw behind points).
+                    if show_syst_band and draw_error is not None:
+                        eff_cv = fmt(cv[f'{key_base}{cut}'])
+                        sigma_eff = _compute_syst_sigma_eff(groups[0], eff_cv)
+                        if sigma_eff is not None:
+                            _lab = syst_label if syst_label is not None else f'{draw_error} syst.'
+                            ax.fill_between(
+                                self._variable._bin_centers[groups[0]],
+                                eff_cv - fmt(sigma_eff),
+                                eff_cv + fmt(sigma_eff),
+                                color=syst_color,
+                                alpha=syst_alpha,
+                                label=_lab,
+                                zorder=0,
+                            )
+
                     ax.errorbar(
                         self._variable._bin_centers[groups[0]],
                         fmt(cv[f'{key_base}{cut}']),
@@ -365,6 +459,23 @@ class SpineEfficiency(SpineArtist):
                 for gi, group in enumerate(groups):
                     for ci, (cut, cutname) in enumerate(cuts_to_draw):
                         _, cv, msigma, psigma = self.reduce(group, significance=0.6827)
+
+                        # Optional systematic band (draw behind points).
+                        if show_syst_band and draw_error is not None:
+                            eff_cv = fmt(cv[f'{key_base}{cut}'])
+                            sigma_eff = _compute_syst_sigma_eff(group, eff_cv)
+                            if sigma_eff is not None:
+                                _lab = syst_label if syst_label is not None else f'{draw_error} syst.'
+                                ax.fill_between(
+                                    self._variable._bin_centers[group],
+                                    eff_cv - fmt(sigma_eff),
+                                    eff_cv + fmt(sigma_eff),
+                                    color=syst_color,
+                                    alpha=syst_alpha,
+                                    label=_lab,
+                                    zorder=0,
+                                )
+
                         ax.errorbar(
                             self._variable._bin_centers[group],
                             fmt(cv[f'{key_base}{cut}']),
@@ -399,7 +510,8 @@ class SpineEfficiency(SpineArtist):
             if logy:
                 ax.set_yscale('log')
 
-            ax.legend()
+            if show_legend:
+                ax.legend()
 
             # Mark the POT and preliminary information on the plot.
             if style.scilimits:

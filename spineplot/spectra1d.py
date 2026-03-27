@@ -140,6 +140,7 @@ class SpineSpectra1D(SpineSpectra):
         if not hasattr(self, "_sample_areas") or self._sample_areas is None:
             self._sample_areas = {}  # {sample_name: total_weighted_yield}
             self._sample_plotdata = {}  # {sample_name: {category_label: hist}}
+            self._sample_area_scale = {}  # {sample_name: bool}
             self._ordinate_sample_name = None
             self._ordinate_area = None
         if is_ordinate:
@@ -153,6 +154,8 @@ class SpineSpectra1D(SpineSpectra):
         sample_area = 0.0
         if sample._name not in self._sample_plotdata:
             self._sample_plotdata[sample._name] = {}
+        # Record whether this sample should participate in area scaling when non-ordinate.
+        self._sample_area_scale[sample._name] = getattr(sample, '_area_scale', True)
         for category, values in data.items():
             values = values[0]
             if category not in self._categories.keys():
@@ -187,7 +190,8 @@ class SpineSpectra1D(SpineSpectra):
     def draw(self, ax, style, show_component_number=False,
              show_component_percentage=False, invert_stack_order=False,
              fit_type=None, logx=False, logy=False, normalize=False,
-             draw_error=None, make_ratio_plot=False, ratio_scatter_label='Data', ratio_ylim=(0.5, 1.5), ratio_ylabel='Data/MC') -> None:
+             draw_error=None, make_ratio_plot=False, ratio_scatter_label='Data', ratio_ylim=(0.5, 1.5), ratio_ylabel='Data/MC', scatter_from_ordinate_only=True,
+             area_error_apply_sample_weights=False, debug_area_error_scale=False) -> None:
         """
         Plots the data for the SpineSpectra1D object.
 
@@ -290,7 +294,7 @@ class SpineSpectra1D(SpineSpectra):
                         return float(self._onebincount.get(label, 0.0))
                 try:
                     arr = np.asarray(payload, dtype=float)
-                    return float(_np.nansum(arr))
+                    return float(np.nansum(arr))
                 except Exception:
                     return 0.0
 
@@ -306,6 +310,18 @@ class SpineSpectra1D(SpineSpectra):
                     return 0.0
 
             labels, data = zip(*self._plotdata.items())
+            # Enforce a deterministic category order for plotting/legend: use the order
+            # implied by the category mapping configuration (self._categories values).
+            # Without this, dict insertion order can depend on which category appears
+            # first in the input data, which can make legend order surprising.
+            desired_order = []
+            for _cat in self._categories.values():
+                if _cat not in desired_order:
+                    desired_order.append(_cat)
+            ordered_items = [(k, self._plotdata[k]) for k in desired_order if k in self._plotdata]
+            # Append any extra keys not present in the configuration order.
+            ordered_items.extend([(k, v) for k, v in self._plotdata.items() if k not in desired_order])
+            labels, data = zip(*ordered_items)
             colors = [self._colors[label] for label in labels]
             bincenters = [self._binedges[l][:-1] + np.diff(self._binedges[l]) / 2 for l in labels]
             binwidths = [np.diff(self._binedges[l]) for l in labels]
@@ -314,19 +330,26 @@ class SpineSpectra1D(SpineSpectra):
             histogram_mask = [li for li, label in enumerate(labels) if self._category_types[label] == 'histogram']
             scatter_mask = [li for li, label in enumerate(labels) if self._category_types[label] == 'scatter']
             
-            denominator = np.sum([self._onebincount[labels[i]] for i in histogram_mask])
-            counts = [_legend_count(label, payload, self._category_types[label]) for (label, payload) in zip(labels, data)]
+            # Legend yield bookkeeping:
+            # Use the plotted payloads (hist bin contents) for component yields so
+            # legend numbers/percentages are consistent with what's drawn.
+            yields = [float(np.nansum(np.asarray(payload, dtype=float))) for payload in data]
+            denominator = float(np.nansum([yields[i] for i in histogram_mask]))
 
             if fit_type is not None:
                 super().fit_with_function(ax, bincenters[0], np.sum(data, axis=0), self._binedges[labels[0]], fit_type, range=xr)
             if show_component_number and show_component_percentage:
-                hlabel = lambda x : f'{np.sum(x):.1f}, {np.sum(x)/denominator:.2%}'
-                slabel = lambda x : f'{np.sum(x):.1f}'
-                labels = [f'{label} ({hlabel(d) if li in histogram_mask else slabel(d)})' for li, (label, d) in enumerate(zip(labels, counts))]
+                hlabel = lambda y : f'{y:.1f}, {y/denominator:.2%}' if denominator > 0 else f'{y:.1f}, 0.00%'
+                slabel = lambda y : f'{y:.1f}'
+                labels = [f'{label} ({hlabel(y) if li in histogram_mask else slabel(y)})'
+                          for li, (label, y) in enumerate(zip(labels, yields))]
             elif show_component_number:
-                labels = [f'{label} ({np.sum(d):.1f})' for label, d in zip(labels, counts)]
+                labels = [f'{label} ({y:.1f})' for label, y in zip(labels, yields)]
             elif show_component_percentage:
-                labels = [f'{label} ({np.sum(d)/denominator:.2%})' if li in histogram_mask else label for li, (label, d) in enumerate(zip(labels, counts))]
+                labels = [
+                    f'{label} ({(y/denominator):.2%})' if (li in histogram_mask and denominator > 0) else label
+                    for li, (label, y) in enumerate(zip(labels, yields))
+                ]
 
             if invert_stack_order:
                 reduce = lambda x : [x[i] for i in histogram_mask[::-1]]
@@ -353,14 +376,44 @@ class SpineSpectra1D(SpineSpectra):
             if getattr(self, '_exposure_type', None) == 'area' and getattr(self, '_ordinate_sample_name', None) is not None:
                 ord_name = self._ordinate_sample_name
                 ord_area = float(self._sample_areas.get(ord_name, 0.0))
-                for sname, sarea in getattr(self, '_sample_areas', {}).items():
-                    sarea = float(sarea)
+
+                # Stack-level area normalization: scale *all other samples together* so that
+                # the total stacked (non-ordinate) yield matches the ordinate yield for this plot.
+                #
+                # By default this normalization is based on histogram components ONLY (scatter is excluded).
+                ord_area_hist = 0.0
+                other_area_hist = 0.0
+
+                # Sum histogram yields from the per-sample category histograms.
+                for sname, cat_hists in getattr(self, "_sample_plotdata", {}).items():
+                    # Skip samples that opted out of area scaling (when non-ordinate).
+                    participate = bool(getattr(self, '_sample_area_scale', {}).get(sname, True))
+                    for cat, hvals in cat_hists.items():
+                        if getattr(self, '_category_types', {}).get(cat) != 'histogram':
+                            continue
+                        area = float(np.nansum(hvals))
+                        if sname == ord_name:
+                            ord_area_hist += area
+                        else:
+                            if participate:
+                                other_area_hist += area
+
+                # Fall back to total sample areas if histogram-only areas are unavailable.
+                ord_area_eff = ord_area_hist if ord_area_hist > 0 else ord_area
+                other_area_eff = other_area_hist
+                if other_area_eff <= 0:
+                    other_area_eff = sum(float(v) for k, v in getattr(self, '_sample_areas', {}).items() if k != ord_name)
+
+                global_scale = 1.0
+                if ord_area_eff > 0 and other_area_eff > 0:
+                    global_scale = ord_area_eff / other_area_eff
+
+                for sname in getattr(self, "_sample_areas", {}).keys():
                     if sname == ord_name:
                         area_scales[sname] = 1.0
-                    elif sarea > 0 and ord_area > 0:
-                        area_scales[sname] = ord_area / sarea
                     else:
-                        area_scales[sname] = 1.0
+                        participate = bool(getattr(self, '_sample_area_scale', {}).get(sname, True))
+                        area_scales[sname] = global_scale if participate else 1.0
 
             if area_scales:
                 # Rebuild the merged category histograms from the per-sample ones after scaling.
@@ -433,13 +486,32 @@ class SpineSpectra1D(SpineSpectra):
                         for sname, sdict in self._systematics.items():
                             if draw_error not in sdict:
                                 continue
+
+                            # Note: samples have already been exposure-scaled upstream via Sample.set_weight()
+                            # (which also calls Systematic.set_weight on covariance matrices).
+                            # Therefore the covariances we pull here already include the exposure weight w_s^2.
+                            #
+                            # In area mode we only want to apply the additional area rescale used to build the stack
+                            # (sf^2), *not* re-apply exposure weights a second time.
                             sf = float(area_scales.get(sname, 1.0))
                             cov_scaled += (sf**2) * sdict[draw_error].get_covariance(self._variable._key)
                         cov = cov_scaled
+
+                        if debug_area_error_scale:
+                            # scalar summary: compare CV integral scaling vs covariance trace scaling
+                            try:
+                                cv_sum = float(np.nansum(total_y))
+                                tr = float(np.nansum(np.diag(cov)))
+                                print(f"[SpineSpectra1D] area error debug: sum(CV)={cv_sum:.6g} trace(Cov)={tr:.6g} normalize_scale={scale:.6g}")
+                            except Exception:
+                                pass
+
+
                     x = reduce(bincenters)[0]
                     y = total_y
                     xerr = [bw / 2 for bw in binwidths[0]]
-                    scov = Systematic.transform_as(cov, scale if not normalize else np.sum(reduce(data), axis=0))
+                    # Apply normalization scaling consistently: histogram normalization is a simple scale on bin contents.
+                    scov = Systematic.transform_as(cov, scale)
                     yerr = np.sqrt(np.diag(scov))
                     total_yerr = yerr
                     draw_error_boxes(ax, x, y, xerr, yerr, facecolor='gray', edgecolor='none', alpha=0.5, hatch='///')
@@ -459,8 +531,20 @@ class SpineSpectra1D(SpineSpectra):
             scatter_labels = [labels[i] for i in scatter_mask] if 'scatter_labels' not in locals() else scatter_labels
             reduce = lambda x : [x[i] for i in scatter_mask]
             for i, label in enumerate(scatter_labels):
-                scale = 1.0 if not normalize else 1.0 / np.sum(data[scatter_mask[i]])
-                ax.errorbar(bincenters[scatter_mask[i]], scale*data[scatter_mask[i]], yerr=scale*np.sqrt(data[scatter_mask[i]]), fmt='o', label=label, color=colors[scatter_mask[i]])
+                # Optionally only draw scatter from the ordinate sample (common for real data overlays).
+                si = scatter_mask[i]
+                y_scatter = data[si]
+                if scatter_from_ordinate_only and getattr(self, '_ordinate_sample_name', None) is not None:
+                    # If we can, take the scatter payload only from the ordinate sample's stored histogram.
+                    ord_name = self._ordinate_sample_name
+                    if hasattr(self, '_sample_plotdata') and ord_name in self._sample_plotdata:
+                        base_label = labels[si]
+                        if base_label in self._sample_plotdata[ord_name]:
+                            y_scatter = self._sample_plotdata[ord_name][base_label]
+
+                scale = 1.0 if not normalize else 1.0 / np.sum(y_scatter)
+                ax.errorbar(bincenters[si], scale*y_scatter, yerr=scale*np.sqrt(y_scatter), fmt='o',
+                            label=label, color=colors[si])
         
 
             # Draw ratio panel if requested (first scatter component / total stack).
@@ -505,7 +589,13 @@ class SpineSpectra1D(SpineSpectra):
                     with np.errstate(divide='ignore', invalid='ignore'):
                         band = np.where(y_mc > 0, ymcerr / y_mc, np.nan)
                     # Use bin edges so the uncertainty band spans each bin (centered at x)
-                    edges = self._binedges[labels[si0]]
+                    edges = self._binedges.get(labels[si0])
+                    # base_labels may not exist outside area-mode; use labels and stripped labels only.
+                    if edges is None:
+                        edges = self._binedges.get(str(labels[si0]).split(" (")[0])
+                    if edges is None:
+                        # As a last resort, just use the first available binning.
+                        edges = next(iter(self._binedges.values()))
                     # Turn edges (N+1) and band (N) into step-style arrays for filled rectangles
                     x_step = np.repeat(edges, 2)[1:-1]          # length 2*N
                     band_step = np.repeat(band, 2)             # length 2*N
@@ -752,24 +842,24 @@ class SpineSpectraCutFlow(SpineSpectra):
         # Optional ratio subplot (Data/MC) below the main spectrum.
         # We create an additional axes within the same figure using the existing
         # axis position. This avoids needing figure-level plumbing changes.
-        ratio_ax = None
-        if make_ratio_plot:
-            fig = ax.figure
-            pos = ax.get_position()
-            # Split the original axis vertically: top for spectrum, bottom for ratio.
-            gap = 0.02
-            ratio_frac = 0.28
-            ratio_h = pos.height * ratio_frac
-            main_h = pos.height - ratio_h - gap
-            # Resize the main axis and create the ratio axis below it.
-            ax.set_position([pos.x0, pos.y0 + ratio_h + gap, pos.width, main_h])
-            ratio_ax = fig.add_axes([pos.x0, pos.y0, pos.width, ratio_h], sharex=ax)
-            # Clean up tick labels on the top axis; ratio axis owns x-labels.
-            plt.setp(ax.get_xticklabels(), visible=False)
-            ax.set_xlabel('')
-            ratio_ax.set_ylabel(ratio_ylabel)
-            ratio_ax.set_ylim(*ratio_ylim)
-            ratio_ax.grid(True, axis='y', alpha=0.3)
+        # ratio_ax = None
+        # if make_ratio_plot:
+        #     fig = ax.figure
+        #     pos = ax.get_position()
+        #     # Split the original axis vertically: top for spectrum, bottom for ratio.
+        #     gap = 0.02
+        #     ratio_frac = 0.28
+        #     ratio_h = pos.height * ratio_frac
+        #     main_h = pos.height - ratio_h - gap
+        #     # Resize the main axis and create the ratio axis below it.
+        #     ax.set_position([pos.x0, pos.y0 + ratio_h + gap, pos.width, main_h])
+        #     ratio_ax = fig.add_axes([pos.x0, pos.y0, pos.width, ratio_h], sharex=ax)
+        #     # Clean up tick labels on the top axis; ratio axis owns x-labels.
+        #     plt.setp(ax.get_xticklabels(), visible=False)
+        #     ax.set_xlabel('')
+        #     ratio_ax.set_ylabel(ratio_ylabel)
+        #     ratio_ax.set_ylim(*ratio_ylim)
+        #     ratio_ax.grid(True, axis='y', alpha=0.3)
 
         if self._plotdata is None or self._binedges is None:
             return
@@ -984,24 +1074,24 @@ class SpineSystematics(SpineSpectra):
         # Optional ratio subplot (Data/MC) below the main spectrum.
         # We create an additional axes within the same figure using the existing
         # axis position. This avoids needing figure-level plumbing changes.
-        ratio_ax = None
-        if make_ratio_plot:
-            fig = ax.figure
-            pos = ax.get_position()
-            # Split the original axis vertically: top for spectrum, bottom for ratio.
-            gap = 0.02
-            ratio_frac = 0.28
-            ratio_h = pos.height * ratio_frac
-            main_h = pos.height - ratio_h - gap
-            # Resize the main axis and create the ratio axis below it.
-            ax.set_position([pos.x0, pos.y0 + ratio_h + gap, pos.width, main_h])
-            ratio_ax = fig.add_axes([pos.x0, pos.y0, pos.width, ratio_h], sharex=ax)
-            # Clean up tick labels on the top axis; ratio axis owns x-labels.
-            plt.setp(ax.get_xticklabels(), visible=False)
-            ax.set_xlabel('')
-            ratio_ax.set_ylabel(ratio_ylabel)
-            ratio_ax.set_ylim(*ratio_ylim)
-            ratio_ax.grid(True, axis='y', alpha=0.3)
+        # ratio_ax = None
+        # if make_ratio_plot:
+        #     fig = ax.figure
+        #     pos = ax.get_position()
+        #     # Split the original axis vertically: top for spectrum, bottom for ratio.
+        #     gap = 0.02
+        #     ratio_frac = 0.28
+        #     ratio_h = pos.height * ratio_frac
+        #     main_h = pos.height - ratio_h - gap
+        #     # Resize the main axis and create the ratio axis below it.
+        #     ax.set_position([pos.x0, pos.y0 + ratio_h + gap, pos.width, main_h])
+        #     ratio_ax = fig.add_axes([pos.x0, pos.y0, pos.width, ratio_h], sharex=ax)
+        #     # Clean up tick labels on the top axis; ratio axis owns x-labels.
+        #     plt.setp(ax.get_xticklabels(), visible=False)
+        #     ax.set_xlabel('')
+        #     ratio_ax.set_ylabel(ratio_ylabel)
+        #     ratio_ax.set_ylim(*ratio_ylim)
+        #     ratio_ax.grid(True, axis='y', alpha=0.3)
 
         bin_edges = self._binedges
         cv        = self._cv
