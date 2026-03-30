@@ -3,7 +3,7 @@ output = "icarus_bnb"
 
 [[sample]]
 name = "onbeam"
-path = "/pnfs/sbn/data/sbn_fd/poms_production/data/Reproc_Run2_SBN_2/reconstructed/icaruscode_v10_06_00_06p03/bnbmajority/flatcaf_unblind/*/*/*.root"
+path = "/pnfs/sbn/data/sbn_fd/poms_production/data/Reproc_Run2_SBN_2/reconstructed/icaruscode_v10_06_00_06p03/bnbmajority/flatcaf_unblind/00*/*/*.root"
 ismc = false
 disable = false
 
@@ -11,7 +11,7 @@ disable = false
 name = "offbeam"
 path = "/pnfs/sbn/data/sbn_fd/poms_production/data/Reproc_Run2_SBN_2/reconstructed/icaruscode_v10_06_00_06p03/offbeambnbmajority/flatcaf_unblind/*/*/*.root"
 ismc = false
-disable = false
+disable = true
 
 [[tree]]
 name = "events"
@@ -28,4 +28,21 @@ branch = [
     { name = "unfolded_nbnb",           type = "event" },
     { name = "global_trigger_time",     type = "event" },
     { name = "trigger_within_gate",     type = "event" },
+]
+
+[[tree]]
+name = "spills"
+sim_only = false
+mode = "event"
+cut = [
+    { name = "no_cut", type = "event" },
+]
+branch = [
+    { name = "tor875", type = "bnb_spill" },
+    { name = "thcurr", type = "bnb_spill" },
+    { name = "hp875",  type = "bnb_spill" },
+    { name = "vp875",  type = "bnb_spill" },
+    { name = "lm875a", type = "bnb_spill" },
+    { name = "lm875b", type = "bnb_spill" },
+    { name = "lm875c", type = "bnb_spill" },
 ]
