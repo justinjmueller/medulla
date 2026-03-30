@@ -1,0 +1,31 @@
+[general]
+output = "icarus_bnb"
+
+[[sample]]
+name = "onbeam"
+path = "/pnfs/sbn/data/sbn_fd/poms_production/data/Reproc_Run2_SBN_2/reconstructed/icaruscode_v10_06_00_06p03/bnbmajority/flatcaf_unblind/*/*/*.root"
+ismc = false
+disable = false
+
+[[sample]]
+name = "offbeam"
+path = "/pnfs/sbn/data/sbn_fd/poms_production/data/Reproc_Run2_SBN_2/reconstructed/icaruscode_v10_06_00_06p03/offbeambnbmajority/flatcaf_unblind/*/*/*.root"
+ismc = false
+disable = false
+
+[[tree]]
+name = "events"
+sim_only = false
+mode = "event"
+cut = [
+    { name = "no_cut", type = "event" },
+]
+branch = [
+    { name = "is_first_in_subrun",      type = "event" },
+    { name = "nbnb",                    type = "event" },
+    { name = "noffbeambnb",             type = "event" },
+    { name = "unfolded_pot_bnb",        type = "event" },
+    { name = "unfolded_nbnb",           type = "event" },
+    { name = "global_trigger_time",     type = "event" },
+    { name = "trigger_within_gate",     type = "event" },
+]
