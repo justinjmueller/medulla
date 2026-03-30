@@ -243,7 +243,7 @@ cut = [
     { name = "!no_protons",               type = "reco",  parameters = [ "@proton_threshold"             ] },    
     { name = "trigger_emulation_cut",     type = "event", decrements_exposure = false },
     { name = "data_quality_cut",          type = "event", decrements_exposure = true },
-    { name = "beam_quality_cut",          type = "spill", decrements_exposure = false }, # Should decrement exposure, but CAF files are bugged
+    { name = "beam_quality_cut",          type = "bnb_spill", decrements_exposure = false }, # Should decrement exposure, but CAF files are bugged
     { name = "bnb_fom2_cut",              type = "event", decrements_exposure = false, parameters = [ "@bnb_fom2_cut" ]}, # Should decrement exposure, but CAF files are bugged
 ]
 branch = [
