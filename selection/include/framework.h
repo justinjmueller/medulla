@@ -33,7 +33,8 @@ using MCTruth = caf::Proxy<caf::SRTrueInteraction>;
 using TParticleType = caf::Proxy<caf::SRParticleTruthDLP>;
 using RParticleType = caf::Proxy<caf::SRParticleDLP>;
 using EventType = caf::Proxy<caf::StandardRecord>;
-using SpillType = caf::Proxy<caf::SRBNBInfo>;
+using BNBSpillType = caf::Proxy<caf::SRBNBInfo>;
+using NuMISpillType = caf::Proxy<caf::SRNuMIInfo>;
 
 using NamedSpillMultiVar = std::pair<std::string, ana::SpillMultiVar>;
 
@@ -268,7 +269,7 @@ inline BiVarFn<ParticleT> bind_bivar(const std::vector<double>& pars)
  */
 enum class RegistrationScope { True, Reco, Both, MCTruth,
                                TrueParticle, RecoParticle, BothParticle,
-                               Event, Spill };
+                               Event, BNBSpill, NuMISpill };
 
 // Register a cut with scope, auto‐detecting its signature
 #define REGISTER_CUT_SCOPE(scope, name, fn)                                                \
@@ -295,9 +296,13 @@ namespace                                                                       
             CutFactoryRegistry<EventType>::instance().register_fn(                         \
                 "event_" #name, bind<+fn<EventType>, EventType, bool>                      \
             );                                                                             \
-        if constexpr((scope)==RegistrationScope::Spill)                                    \
-            CutFactoryRegistry<SpillType>::instance().register_fn(                         \
-                "spill_" #name, bind<+fn<SpillType>, SpillType, bool>                      \
+        if constexpr((scope)==RegistrationScope::BNBSpill)                                 \
+            CutFactoryRegistry<BNBSpillType>::instance().register_fn(                      \
+                "bnb_spill_" #name, bind<+fn<BNBSpillType>, BNBSpillType, bool>            \
+            );                                                                             \
+        if constexpr((scope)==RegistrationScope::NuMISpill)                                \
+            CutFactoryRegistry<NuMISpillType>::instance().register_fn(                     \
+                "numi_spill_" #name, bind<+fn<NuMISpillType>, NuMISpillType, bool>         \
             );                                                                             \
         return true;                                                                       \
     }();                                                                                   \
@@ -336,6 +341,14 @@ namespace                                                                       
         if constexpr((scope)==RegistrationScope::MCTruth)                                  \
             CutFactoryRegistry<MCTruth>::instance().register_fn(                           \
                 "mctruth_" #name, bind<+fn<MCTruth>, MCTruth, bool>                        \
+            );                                                                             \
+        if constexpr((scope)==RegistrationScope::BNBSpill)                                 \
+            VarFactoryRegistry<BNBSpillType>::instance().register_fn(                      \
+                "bnb_spill_" #name, bind<fn<BNBSpillType>, BNBSpillType, double>           \
+            );                                                                             \
+        if constexpr((scope)==RegistrationScope::NuMISpill)                                \
+            VarFactoryRegistry<NuMISpillType>::instance().register_fn(                     \
+                "numi_spill_" #name, bind<fn<NuMISpillType>, NuMISpillType, double>        \
             );                                                                             \
         return true;                                                                       \
     }();                                                                                   \
@@ -500,6 +513,23 @@ NamedSpillMultiVar construct_category(const std::vector<cfg::ConfigurationTable>
                                       const CategoryFns & categories,
                                       const std::string & mode,
                                       bool ismc);
+
+/**
+ * @brief Helper method for constructing a SpillMultiVar that loops over a
+ * spill-level collection (BNB or NuMI).
+ * @details Iterates over @c hdr.bnbinfo (when @p SpillT is @ref BNBSpillType)
+ * or @c hdr.numiinfo (when @p SpillT is @ref NuMISpillType), applying the
+ * event cut once and emitting one value per spill element.
+ * @tparam SpillT Either @ref BNBSpillType or @ref NuMISpillType.
+ * @param event_cut The callable that gates the entire event.
+ * @param var The callable that computes a value from a single spill element.
+ * @return A SpillMultiVar object that collects per-spill values.
+ */
+template<typename SpillT>
+ana::SpillMultiVar spill_collection_multivar_helper(
+    const CutFn<EventType> & event_cut,
+    const VarFn<SpillT> & var
+);
 
 /**
  * @brief Helper method for constructing a set of SpillMultiVar objects that
