@@ -219,5 +219,22 @@ namespace svar
     double trtgtd(const T & spill) { return spill.TRTGTD; }
     REGISTER_VAR_SCOPE(RegistrationScope::NuMISpill, trtgtd, trtgtd);
 
+    //=========================================================================
+    // Shared spill variables
+    //=========================================================================
+
+    /**
+     * @brief Variable for the event number matched to the spill.
+     * @details Each spill is associated with a single event by grouping the
+     * spills between the previous and current event boundaries. The spill
+     * directly overlapping with the even is associated with that event.
+     * @tparam T the spill container type (BNB or NuMI).
+     * @param spill the spill info object to apply the variable on.
+     * @return the event number associated with the spill.
+     */
+    template<typename T>
+    double event(const T & spill) { return spill.event; }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothSpill, event, event);
+
 } // namespace svar
 #endif // SPILL_VARS_H

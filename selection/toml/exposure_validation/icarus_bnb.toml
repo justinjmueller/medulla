@@ -38,6 +38,7 @@ cut = [
     { name = "no_cut", type = "event" },
 ]
 branch = [
+    { name = "event",  type = "bnb_spill" },
     { name = "tor875", type = "bnb_spill" },
     { name = "thcurr", type = "bnb_spill" },
     { name = "hp875",  type = "bnb_spill" },
