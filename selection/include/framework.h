@@ -269,7 +269,7 @@ inline BiVarFn<ParticleT> bind_bivar(const std::vector<double>& pars)
  */
 enum class RegistrationScope { True, Reco, Both, MCTruth,
                                TrueParticle, RecoParticle, BothParticle,
-                               Event, BNBSpill, NuMISpill };
+                               Event, BNBSpill, NuMISpill, BothSpill };
 
 // Register a cut with scope, auto‐detecting its signature
 #define REGISTER_CUT_SCOPE(scope, name, fn)                                                \
@@ -342,13 +342,13 @@ namespace                                                                       
             CutFactoryRegistry<MCTruth>::instance().register_fn(                           \
                 "mctruth_" #name, bind<+fn<MCTruth>, MCTruth, bool>                        \
             );                                                                             \
-        if constexpr((scope)==RegistrationScope::BNBSpill)                                 \
-            VarFactoryRegistry<BNBSpillType>::instance().register_fn(                      \
-                "bnb_spill_" #name, bind<fn<BNBSpillType>, BNBSpillType, double>           \
-            );                                                                             \
-        if constexpr((scope)==RegistrationScope::NuMISpill)                                \
+        if constexpr((scope)==RegistrationScope::NuMISpill || (scope)==RegistrationScope::BothSpill) \
             VarFactoryRegistry<NuMISpillType>::instance().register_fn(                     \
                 "numi_spill_" #name, bind<fn<NuMISpillType>, NuMISpillType, double>        \
+            );                                                                             \
+        if constexpr((scope)==RegistrationScope::BNBSpill || (scope)==RegistrationScope::BothSpill) \
+            VarFactoryRegistry<BNBSpillType>::instance().register_fn(                      \
+                "bnb_spill_" #name, bind<fn<BNBSpillType>, BNBSpillType, double>           \
             );                                                                             \
         return true;                                                                       \
     }();                                                                                   \
