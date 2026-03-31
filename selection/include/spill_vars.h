@@ -17,6 +17,8 @@
 #include "sbnanaobj/StandardRecord/SRBNBInfo.h"
 #include "sbnanaobj/StandardRecord/SRNuMIInfo.h"
 
+#include "sbnana/SBNAna/Vars/getBNBFoM.h"
+
 #include "framework.h"
 
 /**
@@ -64,17 +66,32 @@ namespace svar
     REGISTER_VAR_SCOPE(RegistrationScope::BNBSpill, tor860, tor860);
 
     /**
-     * @brief Variable for the BNB Figure of Merit (FOM).
-     * @details The FOM is a composite beam-quality metric for the BNB. See
-     * [SBN DocDB 41901](https://sbn-docdb.fnal.gov/cgi-bin/sso/ShowDocument?docid=41901)
-     * for the definition. It is useful for quantifying the overall quality of
-     * a spill beyond the individual monitor readings.
+     * @brief Computed BNB Figure of Merit (FOM) from individual beam monitors.
+     * @details Computes the FOM from the individual beam monitoring device
+     * readings using getBNBFoM(), taking into account both position/intensity
+     * monitors and multi-wire beam-width measurements. This is the equivalent
+     * of kSpillFoM in sbnana/SBNAna/Vars/BNBVars.cxx.
      * @tparam T the BNB spill container type.
      * @param spill the BNB spill info object to apply the variable on.
-     * @return the FOM value for the spill.
+     * @return the computed FOM value for the spill.
      */
     template<typename T>
-    double fom(const T & spill) { return spill.FOM; }
+    double fom(const T & spill) {
+        return getBNBFoM(
+            (double)spill.spill_time_sec,
+            (double)spill.TOR860,
+            (double)spill.TOR875,
+            (double)spill.HP875,
+            (double)spill.HPTG1,
+            (double)spill.HPTG2,
+            (double)spill.VP873,
+            (double)spill.VP875,
+            (double)spill.M875HS,
+            (double)spill.M875VS,
+            (double)spill.M876HS,
+            (double)spill.M876VS
+        );
+    }
     REGISTER_VAR_SCOPE(RegistrationScope::BNBSpill, fom, fom);
 
     /**
