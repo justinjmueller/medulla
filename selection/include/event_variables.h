@@ -437,6 +437,12 @@ namespace evar
     template<typename T>
     double bnb_fom(const T & sr)
     {
+        if(std::isnan(sr.hdr.spillbnbinfo.TOR860))
+        {
+            // This means that the spill information is not available for this
+            // event, so we return a placeholder value.
+            return PLACEHOLDERVALUE;
+        }
         return svar::fom(sr.hdr.spillbnbinfo);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Event, bnb_fom, bnb_fom);
