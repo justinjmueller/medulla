@@ -58,6 +58,38 @@ namespace selectors
         return index;
     }
 
+    template<class T>
+      size_t subleading_particle_index(const T & obj, uint16_t pid)
+      {
+        double largest_energy(0);
+        double second_largest_energy(0);
+        size_t index(kNoMatch), second_index(kNoMatch);
+        for(size_t i(0); i < obj.particles.size(); ++i)
+	  {
+            const auto & p = obj.particles[i];
+	    double energy(pvars::ke(p));
+            // Check if the current particle is longer than the longest found
+            // so far. If so, update the longest and second longest lengths.
+            if(pvars::pid(p) == pid && energy > largest_energy)
+	      {
+                second_largest_energy = largest_energy;
+                largest_energy = energy;
+                second_index = index;
+                index = i;
+	      }
+
+            // If the current particle is not longer than the longest but
+            // is longer than the second longest, update the second longest.
+            else if(pvars::pid(p) == pid && energy > second_largest_energy)
+	      {
+                second_largest_energy = energy;
+                second_index = i;
+	      }
+	  }
+        return second_index;
+      }
+
+
     /**
      * @brief Finds the index corresponding to the longest track.
      * @details The longest track is defined as the track with the longest
@@ -185,6 +217,13 @@ namespace selectors
         return leading_particle_index(obj, pvars::kElectron);
     }
     REGISTER_SELECTOR(leading_electron, leading_electron);
+
+    template<class T>
+      size_t subleading_electron(const T & obj)
+      {
+	return subleading_particle_index(obj, pvars::kElectron);
+      }
+    REGISTER_SELECTOR(subleading_electron, subleading_electron);
 
     /**
      * @brief Finds the index corresponding to the leading muon.

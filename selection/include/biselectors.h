@@ -72,5 +72,20 @@ namespace biselectors
         return { selectors::leading_muon(obj), selectors::leading_pion(obj) };
     }
     REGISTER_BISELECTOR(muon_pion, muon_pion);
+
+  template<class T>
+  std::pair<size_t, size_t> electron_photon(const T & obj)
+  {
+    return { selectors::leading_electron(obj), selectors::leading_photon(obj) };
+  }
+  REGISTER_BISELECTOR(electron_photon, electron_photon);
+
+  template<class T>
+    std::pair<size_t, size_t> electron_electron(const T & obj)
+    {
+      return { selectors::leading_electron(obj), selectors::subleading_electron(obj) };
+    }
+  REGISTER_BISELECTOR(electron_electron, electron_electron);
+
 }
 #endif // BISELECTORS_H

@@ -65,5 +65,13 @@ namespace bvars
         return std::sqrt(dx*dx + dy*dy + dz*dz);
     }
     REGISTER_BIVAR_SCOPE(RegistrationScope::BothParticle, start_distance, start_distance);
+
+  template<class T>
+  double invariant_mass(const T & a, const T & b)
+  {
+    double inv_mass = std::sqrt(pvars::mass(a)*pvars::mass(a) + pvars::mass(b)*pvars::mass(b) + 2*(pvars::energy(a)*pvars::energy(b) - (pvars::px(a) * pvars::px(b) + pvars::py(a) * pvars::py(b) + pvars::pz(a) * pvars::pz(b))));
+    return inv_mass;
+  }
+  REGISTER_BIVAR_SCOPE(RegistrationScope::BothParticle, invariant_mass, invariant_mass);
 }
 #endif // BIVARIABLES_H

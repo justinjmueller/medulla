@@ -316,3 +316,221 @@ class SpineSpectra1D(SpineSpectra):
             mark_pot(ax, self._exposure, style.mark_pot_horizontal, vadj=vadj)
         if style.mark_preliminary is not None:
             mark_preliminary(ax, style.mark_preliminary, hadj=hadj, vadj=vadj)
+
+class SpineSpectraCutFlow(SpineSpectra):
+    """
+    An artist that shows the distribution of a single variable after
+    each of an ordered sequence of cuts, drawn as overlaid step
+    histograms (one per cut) on a shared axis. Each histogram is the
+    *total* event count (all categories summed), coloured by cut
+    position so the effect of each selection step is visible at a
+    glance.
+
+    Attributes
+    ----------
+    _cuts : dict
+        Ordered mapping of cut branch name → human-readable cut label.
+        The branch name must exist as a boolean (0/1) column in the
+        sample data. Cuts are applied cumulatively in order: the first
+        entry is the distribution with only that cut applied, the
+        second with the first AND second cut applied, etc.
+        A special key ``'no_cut'`` (or any key whose branch evaluates
+        to all-True) can be used as the pre-selection baseline.
+    _plotdata : dict
+        {cut_label: np.ndarray of bin counts} accumulated across
+        all registered samples.
+    _binedges : np.ndarray
+        Shared bin edges (same for every cut).
+    """
+
+    def __init__(self, variable, categories, colors, category_types,
+                 cuts, title=None, xrange=None, xtitle=None,
+                 yrange=None, ytitle=None) -> None:
+        """
+        Parameters
+        ----------
+        variable : Variable
+            The variable whose distribution is shown.
+        categories : dict
+            Category-key → category-label mapping (passed through to
+            the base class; used only for exposure tracking here).
+        colors : dict
+            Category-label → colour mapping (not used for line colours,
+            which are taken from the style cycle, but kept for API
+            compatibility).
+        category_types : dict
+            Unused by this artist but kept for API compatibility.
+        cuts : dict
+            Ordered mapping of cut branch name → cut label. Cuts are
+            applied cumulatively in the listed order.
+        title : str, optional
+        xrange : tuple, optional
+        xtitle : str, optional
+        yrange : tuple or float, optional
+        ytitle : str, optional
+        """
+        super().__init__([variable], categories, colors, title,
+                         xrange, xtitle, yrange, ytitle)
+        self._variable = self._variables[0]
+        self._category_types = category_types
+        # Store cuts as an ordered list of (branch, label) pairs so
+        # iteration order is deterministic on all Python versions.
+        self._cuts = list(cuts.items())   # [(branch, label), ...]
+        self._plotdata = None             # {label: np.ndarray}
+        self._binedges = None
+
+    # ------------------------------------------------------------------
+    def add_sample(self, sample, is_ordinate) -> None:
+        """Accumulate per-cut histograms from *sample*."""
+        super().add_sample(sample, is_ordinate)
+
+        if self._plotdata is None:
+            self._plotdata = {label: np.zeros(self._variable._nbins)
+                              for _, label in self._cuts}
+            self._binedges = None
+
+        xr = self._variable._range if self._xrange is None else self._xrange
+        bins = (self._variable._nbins
+                if self._variable._custom_bins is None
+                else self._variable._custom_bins)
+
+        # Build the cumulative mask expression progressively.
+        cumulative_branches = []
+        for branch, label in self._cuts:
+            cumulative_branches.append(branch)
+
+            # Combine masks: each cut column is 1.0/0.0 in the data.
+            # Build a pandas eval expression that ANDs all cuts so far.
+            if len(cumulative_branches) == 1:
+                mask_expr = f'{branch} == 1'
+            else:
+                mask_expr = ' & '.join(
+                    f'({b} == 1)' for b in cumulative_branches)
+
+            # get_data applies the mask and returns per-category arrays.
+            data, weights = sample.get_data(
+                [self._variable._key], with_mask=mask_expr)
+
+            total_counts = np.zeros(self._variable._nbins)
+            total_weights = []
+            all_values = []
+
+            for category, values in data.items():
+                if category not in self._categories:
+                    continue
+                vals = values[0]
+                w = weights[category]
+                all_values.append(vals)
+                total_weights.append(w)
+
+            if all_values:
+                combined_vals = np.concatenate(all_values)
+                combined_w = np.concatenate(total_weights)
+                h, edges = np.histogram(combined_vals, bins=bins,
+                                        range=xr, weights=combined_w)
+                total_counts += h
+                if self._binedges is None:
+                    self._binedges = edges
+
+            self._plotdata[label] += total_counts
+
+    # ------------------------------------------------------------------
+    def draw(self, ax, style, logx=False, logy=False,
+             normalize=False, show_counts=True) -> None:
+        """
+        Draw overlaid step histograms — one per cut — on *ax*.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+        style : Style
+        logx : bool
+        logy : bool
+        normalize : bool
+            Normalise each histogram to unit area independently.
+        show_counts : bool
+            Append the total event count to each legend label.
+        """
+        ax.set_xlabel(
+            self._variable._xlabel if self._xtitle is None else self._xtitle)
+        ax.set_ylabel('Candidates' if not normalize else 'A.U.')
+        xr = self._variable._range if self._xrange is None else self._xrange
+        ax.set_xlim(*xr)
+        ax.set_title(self._title)
+
+        # Optional ratio subplot (Data/MC) below the main spectrum.
+        # We create an additional axes within the same figure using the existing
+        # axis position. This avoids needing figure-level plumbing changes.
+        # ratio_ax = None
+        # if make_ratio_plot:
+        #     fig = ax.figure
+        #     pos = ax.get_position()
+        #     # Split the original axis vertically: top for spectrum, bottom for ratio.
+        #     gap = 0.02
+        #     ratio_frac = 0.28
+        #     ratio_h = pos.height * ratio_frac
+        #     main_h = pos.height - ratio_h - gap
+        #     # Resize the main axis and create the ratio axis below it.
+        #     ax.set_position([pos.x0, pos.y0 + ratio_h + gap, pos.width, main_h])
+        #     ratio_ax = fig.add_axes([pos.x0, pos.y0, pos.width, ratio_h], sharex=ax)
+        #     # Clean up tick labels on the top axis; ratio axis owns x-labels.
+        #     plt.setp(ax.get_xticklabels(), visible=False)
+        #     ax.set_xlabel('')
+        #     ratio_ax.set_ylabel(ratio_ylabel)
+        #     ratio_ax.set_ylim(*ratio_ylim)
+        #     ratio_ax.grid(True, axis='y', alpha=0.3)
+
+        if self._plotdata is None or self._binedges is None:
+            return
+
+        bins = (self._variable._nbins
+                if self._variable._custom_bins is None
+                else self._variable._custom_bins)
+        bin_edges = self._binedges
+        bin_centers = bin_edges[:-1] + np.diff(bin_edges) / 2
+
+        # Use the style colour cycle for cut lines.
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        colors = [c['color'] for c in prop_cycle]
+
+        for ci, (_, label) in enumerate(self._cuts):
+            counts = self._plotdata[label].copy()
+            scale = 1.0 / np.sum(counts) if (normalize and np.sum(counts) > 0) else 1.0
+            counts = counts * scale
+
+            legend_label = label
+            if show_counts:
+                legend_label = f'{label} ({np.sum(self._plotdata[label]):.1f})'
+
+            color = colors[ci % len(colors)]
+            ax.stairs(counts, bin_edges, label=legend_label,
+                      color=color, linewidth=1.8)
+
+        ax.legend()
+
+        # y-range
+        if isinstance(self._yrange, (tuple, list)):
+            ax.set_ylim(*self._yrange)
+        elif isinstance(self._yrange, (int, float)):
+            ax.set_ylim(None, ax.get_ylim()[1] * self._yrange)
+
+        if logx:
+            if xr[0] == 0:
+                xhigh = np.floor(np.log10(xr[1]))
+                ax.set_xlim(10 ** (xhigh - 3), xr[1])
+            ax.set_xscale('log')
+        if logy:
+            ax.set_yscale('log')
+
+        hadj, vadj = 0, 0
+        if style.scilimits and not logy:
+            ax.ticklabel_format(axis='y', scilimits=style.scilimits)
+            hadj = 0.035
+        if logy:
+            vadj = 0.1
+
+        if style.mark_pot:
+            mark_pot(ax, self._exposure, style.mark_pot_horizontal, vadj=vadj)
+        if style.mark_preliminary is not None:
+            mark_preliminary(ax, style.mark_preliminary, hadj=hadj, vadj=vadj)
+

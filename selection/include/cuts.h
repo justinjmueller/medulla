@@ -308,6 +308,25 @@ namespace cuts
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, flash_cut, flash_cut);
 
+  template<class T>
+  size_t num_showers(const T & obj, size_t mult, size_t semantic_type, std::vector<double> params={})
+    { 
+        if(params.empty())
+            params.push_back(0.0);
+
+        size_t count(0);
+        for(const auto & p : obj.particles)
+        {
+	  //look for the semantic type for showers
+	  if(pcuts::is_semantic_type(p) && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
+                ++count;
+            if(count > mult)
+                break; // No need to count further.                                                                     
+        }
+        return count;
+    }
+
+
     /**
      * @brief Base particle multiplicity for a specific multiplicity.
      * @details This function calculates the multiplicity of a specific
@@ -354,7 +373,7 @@ namespace cuts
      * @return true if the interaction has a single primary photon.
      */
     template<class T>
-    bool single_photon(const T & obj, std::vector<double> params={25.0,})
+    bool single_photon(const T & obj, std::vector<double> params={10.0,})
     {
         return particle_multiplicity(obj, 1, 0, params) == 1;
     }
@@ -372,12 +391,33 @@ namespace cuts
      * @return true if the interaction has a single primary electron.
      */
     template<class T>
-    bool single_electron(const T & obj, std::vector<double> params={25.0,})
+    bool single_electron(const T & obj, std::vector<double> params={10.0,})
     {
         return particle_multiplicity(obj, 1, 1, params) == 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, single_electron, single_electron);
 
+  template<class T>
+    bool di_electron(const T & obj, std::vector<double> params={10.0,})
+    {
+      return particle_multiplicity(obj, 2, 1, params) == 2;
+    }
+  REGISTER_CUT_SCOPE(RegistrationScope::Both, di_electron, di_electron);
+  
+  template<class T>
+  bool di_shower(const T & obj, std::vector<double> params={10.0,})
+  {
+    return num_showers(obj, 2, 0, params) == 2;
+  }
+  REGISTER_CUT_SCOPE(RegistrationScope::Both, di_shower, di_shower);
+  
+  template<class T>
+  bool single_shower(const T & obj, std::vector<double> params={10.0,})
+  {
+    return num_showers(obj, 1, 0, params) == 1;
+  }
+  REGISTER_CUT_SCOPE(RegistrationScope::Both, single_shower, single_shower);
+  
     /**
      * @brief Binding for a single particle muon multiplicity cut.
      * @details This function binds the single particle multiplicity cut for
