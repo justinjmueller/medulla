@@ -378,6 +378,14 @@ namespace cuts
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, single_electron, single_electron);
 
+    template<class T>
+    bool single_shower(const T & obj, std::vector<double> params={25.0, 25.0})
+    {
+        if(params.size() < 2) return false;
+        return single_photon(obj, {params[0]}) || single_electron(obj, {params[1]});
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, single_shower, single_shower);
+
     /**
      * @brief Binding for a single particle muon multiplicity cut.
      * @details This function binds the single particle multiplicity cut for
@@ -634,5 +642,17 @@ namespace cuts
     }
 
     REGISTER_CUT_SCOPE(RegistrationScope::Reco, michel_attached_muon, michel_attached_muon);    
+
+    template<class T>
+    bool is_cathodecrosser(const T & obj)
+    {
+        for (const auto & p : obj.particles)
+            {
+            if (pvars::pid(p) == 2) // Muon
+                { return p.is_cathode_crosser;}
+            }
+        return false;                
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, is_cathodecrosser, is_cathodecrosser);
 }
 #endif
