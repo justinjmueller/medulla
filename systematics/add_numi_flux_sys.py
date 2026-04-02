@@ -19,14 +19,14 @@ if not file_name.endswith('.root'):
 
 horn_current = 'fhc'
 file_nu = uproot.open(file_name)
-file_flux = uproot.open('/pnfs/icarus/persistent/users/faabdalr/2025-04-08_out_450.37_7991.98_79512.66.root')
+file_flux = uproot.open('/nashome/m/micarrig/icarus/nuESpine/flux.root')
 
 
 flux_g4numi = file_flux[f'g4numi_reweight_v03_01-->v03_02;1/{horn_current};1']
 flux_beam_focus = file_flux[f'beam_focusing_uncertainties;1/{horn_current};1']
 flux_pca = file_flux['pca;1/principal_components;1']
 
-nu_df = file_nu['events/NuMIFull/selected;1']
+nu_df = file_nu['events/NuMIFull/true_signal;1']
 nu_df=nu_df.arrays(library='pd')
 
 hysyst_beam_horn_2kA = []
@@ -112,6 +112,10 @@ for e,event in tqdm(nu_df.iterrows()):
     events.append(event['Evt'])
     pdg = event['true_pdg']
     parent_pdg = event['true_parent_pdg']
+
+    parent_pdg = np.nan_to_num(parent_pdg, nan=-999)
+    pdg = np.nan_to_num(pdg, nan=-999)
+
     nu_e = event['true_neutrino_energy']
     if abs(int(parent_pdg)) == 311: #K0
         if int(pdg) == 12:
@@ -520,10 +524,11 @@ for k in keys_2d7:
         raise ValueError(f"{k}: outer length {len(spec[k][1])} != {N}")
 for k in keys_1d:
     if len(spec[k][1]) != N:
+        print(k, len(spec[keys_2d7[0]][1]), len(spec[keys_1d[0]][1]), spec[k][1])
         raise ValueError(f"{k}: length {len(spec[k][1])} != {N}")
 
 # ------------ build tree in the desired directory -------------
-tdir = ensure_dir(f, "events/full")
+tdir = ensure_dir(f, "events/NuMIFull")
 tdir.cd()
 
 t = ROOT.TTree("selected_NuMIfluxsimTree", "per-entry vectors (len=7) plus scalars")
