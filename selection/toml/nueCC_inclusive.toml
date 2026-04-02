@@ -35,8 +35,8 @@ fsthresh = [
 # ICARUS MC NuMI Neutrino + Cosmics CV
 [[sample]]
 name = "NuMIFull"
-path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/*.root"
-#path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
+#path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/*.root"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
 ismc = true
 disable = false # Optional: default = false
 
@@ -46,7 +46,7 @@ name = "data"
 path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_data_flat_cafs_2/*.root"
 #path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_data_flat_cafs_2/NuMI_data_flat_cafs_2_00.root"
 ismc = false
-disable = false # Optional: default = false
+disable = true # Optional: default = false
 
 # ICARUS data beam off
 [[sample]]
@@ -54,7 +54,7 @@ name = "dataBeamOff"
 path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_offbeam_data_flat_cafs/*.root"
 #path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_offbeam_data_flat_cafs/NuMI_offbeam_combined_0.root"
 ismc = false
-disable = false # Optional: default = false
+disable = true # Optional: default = false
 
 
 # [[tree]]
@@ -373,8 +373,6 @@ branch = [
     { name = "length",                   type = "true_particle", selector = "leading_electron" },
     { name = "p",                        type = "true_particle", selector = "leading_electron" },
     { name = "energy",                   type = "true_particle", selector = "leading_pion" },
-    { name = "primary_softmax",          type = "true_particle", selector = "leading_pion"},
-    { name = "pion_softmax",             type = "true_particle", selector = "leading_pion"},
 ]
 
 [[tree]]
@@ -534,8 +532,6 @@ branch = [
     { name = "length",                   type = "true_particle", selector = "leading_electron" },
     { name = "p",                        type = "true_particle", selector = "leading_electron" },
     { name = "energy",                   type = "true_particle", selector = "leading_pion" },
-    { name = "primary_softmax",          type = "true_particle", selector = "leading_pion"},
-    { name = "pion_softmax",             type = "true_particle", selector = "leading_pion"},
 ]
 
 [[tree]]
