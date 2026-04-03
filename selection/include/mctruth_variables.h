@@ -1,5 +1,5 @@
 /**
- * @file mctruth.h
+ * @file mctruth_variables.h
  * @brief Definitions of analysis variables which can extract information from
  * the SRTrueInteraction object.
  * @details This file contains definitions of analysis variables which can be
@@ -9,9 +9,10 @@
  * object to an SRTrueInteraction object is handled upstream in the SpineVar
  * functions.
  * @author mueller@fnal.gov
+ * @author rvizarr@fnal.gov
  */
-#ifndef MCTRUTH_H
-#define MCTRUTH_H
+#ifndef MCTRUTH_VARIABLES_H
+#define MCTRUTH_VARIABLES_H
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
 #include "sbnanaobj/StandardRecord/SRTrueInteraction.h"
 #include "sbnanaobj/StandardRecord/SRVector3D.h"
@@ -86,18 +87,6 @@ namespace mctruth
     template<typename T>
         double cc(const T & obj) { return obj.iscc; }
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, cc, cc);
-
-    /**
-     * @brief Cut for charged current interactions at the generator (GENIE) level.
-     * @details Distinct from the SPINE truth-level iscc cut. Uses obj.iscc
-     * directly from the MCTruth object.
-     * @tparam T the type of the object to apply the cut on.
-     * @param obj the SRTrueInteraction to apply the cut on.
-     * @return true if the interaction is charged current.
-     */
-    template<typename T>
-        bool iscc(const T & obj) { return obj.iscc; }
-    REGISTER_CUT_SCOPE(RegistrationScope::MCTruth, iscc, iscc);
 
     /**
      * @brief Variable for the interaction mode of the interaction.
