@@ -26,6 +26,8 @@
 #include "include/utilities.h"
 #include "include/particle_utilities.h"
 #include "include/selectors.h"
+#include "include/biselectors.h"
+#include "include/bivariables.h"
 #include "framework.h"
 
 /**

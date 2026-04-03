@@ -14,6 +14,7 @@
 #include <functional>
 #include <stdexcept>
 #include <type_traits>
+#include <utility>
 
 #include "sbnana/CAFAna/Core/MultiVar.h"
 #include "configuration.h"
@@ -156,6 +157,41 @@ using SelectorFactory = std::function<SelectorFn<EventT>(const std::vector<doubl
 template<typename EventT>
 using SelectorFactoryRegistry = Registry<SelectorFactory<EventT>>;
 
+//-----------------------------------------------------------------------------
+// 4) Biselector and Bivariable function registries
+//-----------------------------------------------------------------------------
+/**
+ * @brief Alias for BiSelector functions with signature
+ * std::pair<size_t, size_t>(const EventT&).
+ */
+template<typename EventT>
+using BiSelectorFn = std::function<std::pair<size_t, size_t>(const EventT&)>;
+
+/**
+ * @brief A factory function: given params, returns a BiSelectorFn<EventT>
+ */
+template<typename EventT>
+using BiSelectorFactory = std::function<BiSelectorFn<EventT>(const std::vector<double>&)>;
+
+template<typename EventT>
+using BiSelectorFactoryRegistry = Registry<BiSelectorFactory<EventT>>;
+
+/**
+ * @brief Alias for BiVariable functions with signature
+ * double(const ParticleT&, const ParticleT&).
+ */
+template<typename ParticleT>
+using BiVarFn = std::function<double(const ParticleT&, const ParticleT&)>;
+
+/**
+ * @brief A factory function: given params, returns a BiVarFn<ParticleT>
+ */
+template<typename ParticleT>
+using BiVarFactory = std::function<BiVarFn<ParticleT>(const std::vector<double>&)>;
+
+template<typename ParticleT>
+using BiVarFactoryRegistry = Registry<BiVarFactory<ParticleT>>;
+
 /**
  * @brief Bind a function to a specific parameter set.
  * @details This function binds a function to a specific parameter set. It uses
@@ -177,6 +213,25 @@ inline std::function<ValueT(const EventT&)> bind(const std::vector<double>& pars
         return [pars](const EventT& e){ return F(e, pars); };
     else
         return [=](const EventT& e){ return F(e); };
+}
+
+/**
+ * @brief Bind a bivariable function to a specific parameter set.
+ * @details This function binds a bivariable function (which takes two particles)
+ * to a specific parameter set. It uses std::is_invocable_v to check if the
+ * function can accept a vector of parameters.
+ * @tparam F The function to bind.
+ * @tparam ParticleT The type of particle.
+ * @param pars The parameters to bind to the function.
+ * @return A BiVarFn<ParticleT> that applies the bivariable to a pair of particles.
+ */
+template<auto F, typename ParticleT>
+inline BiVarFn<ParticleT> bind_bivar(const std::vector<double>& pars)
+{
+    if constexpr(std::is_invocable_v<decltype(F), const ParticleT&, const ParticleT&, const std::vector<double>&>)
+        return [pars](const ParticleT& a, const ParticleT& b){ return F(a, b, pars); };
+    else
+        return [=](const ParticleT& a, const ParticleT& b){ return F(a, b); };
 }
 
 /**
@@ -269,6 +324,39 @@ namespace                                                                       
         SelectorFactoryRegistry<RType>::instance().register_fn(                            \
             "reco_" #name, bind<fn<RType>, RType, size_t>                                  \
         );                                                                                 \
+        return true;                                                                       \
+    }();                                                                                   \
+}
+
+// Register a biselector for use in selecting a pair of particles within an
+// interaction.
+#define REGISTER_BISELECTOR(name, fn)                                                      \
+namespace                                                                                  \
+{                                                                                          \
+    const bool _reg_biselector_##name = []{                                                \
+        BiSelectorFactoryRegistry<TType>::instance().register_fn(                          \
+            "true_biselector_" #name, bind<fn<TType>, TType, std::pair<size_t, size_t>>    \
+        );                                                                                 \
+        BiSelectorFactoryRegistry<RType>::instance().register_fn(                          \
+            "reco_biselector_" #name, bind<fn<RType>, RType, std::pair<size_t, size_t>>    \
+        );                                                                                 \
+        return true;                                                                       \
+    }();                                                                                   \
+}
+
+// Register a bivariable with scope.
+#define REGISTER_BIVAR_SCOPE(scope, name, fn)                                              \
+namespace                                                                                  \
+{                                                                                          \
+    const bool _reg_bivar_##name = []{                                                     \
+        if constexpr((scope)==RegistrationScope::TrueParticle || (scope)==RegistrationScope::BothParticle) \
+            BiVarFactoryRegistry<TParticleType>::instance().register_fn(                   \
+                "true_bivar_" #name, bind_bivar<fn<TParticleType>, TParticleType>          \
+            );                                                                             \
+        if constexpr((scope)==RegistrationScope::RecoParticle || (scope)==RegistrationScope::BothParticle) \
+            BiVarFactoryRegistry<RParticleType>::instance().register_fn(                   \
+                "reco_bivar_" #name, bind_bivar<fn<RParticleType>, RParticleType>          \
+            );                                                                             \
         return true;                                                                       \
     }();                                                                                   \
 }
