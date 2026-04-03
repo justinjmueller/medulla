@@ -1,0 +1,49 @@
+[general]
+output = "sbnd_bnb"
+
+[[sample]]
+name = "onbeam"
+path = "/pnfs/sbn/data_add/sbn_nd/poms_production/data/MCP2025C/v10_06_00_09/Spring25_reprocess_Dev1e20_bnblight/flatcaf/bnblight/00/*.root"
+ismc = false
+disable = false
+
+[[sample]]
+name = "offbeam"
+path = "/pnfs/sbn/data/sbn_fd/poms_production/data/Reproc_Run2_SBN_2/reconstructed/icaruscode_v10_06_00_06p03/offbeambnbmajority/flatcaf_unblind/*/*/*.root"
+ismc = false
+disable = true
+
+[[tree]]
+name = "events"
+sim_only = false
+mode = "event"
+cut = [
+    { name = "no_cut", type = "event" },
+]
+branch = [
+    { name = "is_first_in_subrun",      type = "event" },
+    { name = "nbnb",                    type = "event" },
+    { name = "noffbeambnb",             type = "event" },
+    { name = "unfolded_pot_bnb",        type = "event" },
+    { name = "unfolded_nbnb",           type = "event" },
+    { name = "global_trigger_time",     type = "event" },
+    { name = "trigger_within_gate",     type = "event" },
+]
+
+[[tree]]
+name = "spills"
+sim_only = false
+mode = "event"
+cut = [
+    { name = "no_cut", type = "event" },
+]
+branch = [
+    { name = "event",  type = "bnb_spill" },
+    { name = "tor875", type = "bnb_spill" },
+    { name = "thcurr", type = "bnb_spill" },
+    { name = "hp875",  type = "bnb_spill" },
+    { name = "vp875",  type = "bnb_spill" },
+    { name = "lm875a", type = "bnb_spill" },
+    { name = "lm875b", type = "bnb_spill" },
+    { name = "lm875c", type = "bnb_spill" },
+]
