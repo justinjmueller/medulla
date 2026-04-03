@@ -49,6 +49,26 @@ namespace cuts
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, valid_flashmatch, valid_flashmatch);
 
+    template<class T>
+    bool intime(const T & obj, std::vector<double> params={})
+    {
+        if(params.size() != 2)
+        {
+            throw std::runtime_error("intime cut requires two parameters: [start time, end time]");
+        }
+        bool inwindow = false;
+        for(const auto & p : obj.particles)
+        {
+            if(p.t >= params[0] && p.t <= params[1])
+            {
+                inwindow = true;
+                break;
+            }
+        }
+        return inwindow;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::True, intime, intime);
+
     /**
      * @brief Apply no cut; all interactions passed.
      * @details This is a placeholder function for a cut which does not apply
@@ -643,16 +663,30 @@ namespace cuts
 
     REGISTER_CUT_SCOPE(RegistrationScope::Reco, michel_attached_muon, michel_attached_muon);    
 
+    /**
+     * @brief Cut to select cosmic interactions that are cathode-crossing.
+     * @details This function applies a cut to select interactions where 
+     * the start point and end point of the cosmic muon are in different TPCs.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the interaction has a cathode-crossing muon.
+    */
     template<class T>
     bool is_cathodecrosser(const T & obj)
     {
         for (const auto & p : obj.particles)
-            {
+        {
             if (pvars::pid(p) == 2) // Muon
-                { return p.is_cathode_crosser;}
+            {
+                double prod = p.start_point[0] * p.end_point[0];
+                if (prod < 0) {
+                    return true;
+                }
             }
+        }
         return false;                
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, is_cathodecrosser, is_cathodecrosser);
+
 }
 #endif
