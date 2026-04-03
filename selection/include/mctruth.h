@@ -96,8 +96,8 @@ namespace mctruth
      * @return true if the interaction is charged current.
      */
     template<typename T>
-    bool iscc_mctruth(const T & obj) { return obj.iscc; }
-    REGISTER_CUT_SCOPE(RegistrationScope::MCTruth, iscc_mctruth, iscc_mctruth);
+        bool iscc(const T & obj) { return obj.iscc; }
+    REGISTER_CUT_SCOPE(RegistrationScope::MCTruth, iscc, iscc);
 
     /**
      * @brief Variable for the interaction mode of the interaction.
