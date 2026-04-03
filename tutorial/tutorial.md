@@ -7,6 +7,7 @@ The `medulla` package is designed to be an all-encompassing tool for selection d
 
 This tutorial will reference the example configuration files located in the `tutorial/examples` directory. These files can be used as a starting point for your own selection development. The examples provided include:
 * `example01_ccqe.toml` - a simple charged-current quasi-elastic (CCQE)-like selection.
+* `example01_ccqe_mctruth.toml` - an extension of `example01_ccqe.toml` demonstrating the use of GENIE generator-level cuts via `type = "mctruth"` to define a CCQE-like signal tree and the corresponding categories.
 * `example02_muons.toml` - a particle-level selection focusing on muons.
 * `example03_cccoh.toml` - a charged-current coherent pion production (CCCOH) selection.
 
