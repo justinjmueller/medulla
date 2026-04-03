@@ -142,7 +142,7 @@ int main(int argc, char * argv[])
                     if(cut.has_field("parameters"))
                         params = cut.get_double_vector("parameters");
 
-                    std::string type = cut.has_field("type") ? cut.get_string_field("type") : "true";
+                    std::string type = cut.get_string_field("type", "true");
 
                     if(type == "mctruth")
                     {
@@ -266,7 +266,7 @@ int main(int argc, char * argv[])
                                 if(tinvert) tname = tname.substr(1);
                                 std::vector<double> tparams;
                                 if(tcut.has_field("parameters")) tparams = tcut.get_double_vector("parameters");
-                                std::string ttype = tcut.has_field("type") ? tcut.get_string_field("type") : "true";
+                                std::string ttype = tcut.get_string_field("type", "true");
                                 if(ttype == "mctruth")
                                 {
                                     auto factory = CutFactoryRegistry<MCTruth>::instance().get("mctruth_" + tname);
