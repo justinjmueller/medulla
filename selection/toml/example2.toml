@@ -4,13 +4,13 @@ output = "example2"
 [[category]] # 0 : Neutrino, charged current
 cuts = [
     { name = "neutrino" },
-    { name = "iscc_mctruth", type = "mctruth"  },
+    { name = "iscc",         type = "mctruth"  },
 ]
 
 [[category]] # 1 : Neutrino, neutral current
 cuts = [
     { name = "neutrino" },
-    { name = "!iscc_mctruth", type = "mctruth" },
+    { name = "!iscc",        type = "mctruth" },
 ]
 
 [[category]] # 2 : Cosmic
@@ -42,7 +42,7 @@ branch = [
     { name = "neutrino_id",      type = "true"     },
     { name = "baseline",         type = "mctruth"  },
     { name = "cc",               type = "mctruth"  },
-    { name = "iscc_mctruth",     type = "mctruth"  },
+    { name = "iscc",             type = "mctruth"  },
     { name = "pdg",              type = "mctruth"  },
     { name = "interaction_type", type = "mctruth"  },
     { name = "category",         type = "true"     },
@@ -60,13 +60,13 @@ cut = [
     { name = "fiducial_cut",    type = "true"     },
     { name = "containment_cut", type = "true"     },
     { name = "neutrino",        type = "true"     },
-    { name = "iscc_mctruth",    type = "mctruth"  },
+    { name = "iscc",            type = "mctruth"  },
 ]
 branch = [
     { name = "neutrino_id",      type = "true"    },
     { name = "baseline",         type = "mctruth" },
     { name = "cc",               type = "mctruth" },
-    { name = "iscc_mctruth",     type = "mctruth"  },
+    { name = "iscc",             type = "mctruth" },
     { name = "pdg",              type = "mctruth" },
     { name = "interaction_type", type = "mctruth" },
     { name = "category",         type = "true"    },
