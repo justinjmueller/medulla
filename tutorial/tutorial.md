@@ -288,6 +288,38 @@ cuts = [
     { name = "single_proton",    parameters = [ "@proton_threshold"   ] },
 ]
 ```
+### MCTruth Cut and Variable Configuration
+
+In addition to SPINE truth-level (`type = "true"`) and reco-level (`type = "reco"`) cuts and variables, `medulla` supports GENIE generator-level cuts and variables via `type = "mctruth"`. These operate directly on the `SRTrueInteraction` object matched to the selected interaction, bypassing the SPINE reconstruction chain entirely.
+
+This is useful when the analysis signal definition needs to be applied at the generator level — for example, to match the signal definition used by external tools such as NUISANCE for closure tests. Common use cases include vetoing neutral pions, extra mesons, or extra baryons at the generator level.
+
+MCTruth cuts are defined in `mctruth_cuts.h` and MCTruth variables are defined in `mctruth_variables.h`. They can be used in `cut` and `branch` lists exactly like any other type:
+```toml
+[[category]] # 0 : CC neutrino
+cuts = [
+    { name = "neutrino"                    },
+    { name = "iscc",    type = "mctruth"   },
+]
+
+[[tree]]
+name = "signal"
+sim_only = true
+mode = "true"
+cut = [
+    { name = "fiducial_cut",    type = "true"    },
+    { name = "containment_cut", type = "true"    },
+    { name = "neutrino",        type = "true"    },
+    { name = "iscc",            type = "mctruth" },
+]
+branch = [
+    { name = "neutrino_energy", type = "mctruth" },
+    { name = "baseline",        type = "mctruth" },
+    { name = "cc",              type = "mctruth" },
+]
+```
+
+MCTruth cuts and variables are only meaningful for MC samples. For data samples, interactions have no associated MCTruth object, and MCTruth branches will return NaN.
 
 ## Running the Selection
 Once the configuration file is set up, running the selection is straightforward. The `medulla` executable takes a single argument: the path to the configuration file. For example, to run the selection defined in `example01_ccqe.toml`, one would use the following command:
