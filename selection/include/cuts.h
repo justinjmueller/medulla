@@ -417,7 +417,35 @@ namespace cuts
     return num_showers(obj, 1, 0, params) == 1;
   }
   REGISTER_CUT_SCOPE(RegistrationScope::Both, single_shower, single_shower);
-  
+
+  template<class T>
+  bool atleast_one_shower(const T & obj, std::vector<double> params={10.0,})
+  {
+    return num_showers(obj, 1, 0, params) >= 1;
+  }
+  REGISTER_CUT_SCOPE(RegistrationScope::Both, atleast_one_shower, atleast_one_shower);
+
+  template<class T>
+    bool atleast_two_showers(const T & obj, std::vector<double> params={10.0,})
+    {
+      return num_showers(obj, 1, 0, params) >= 2;
+    }
+  REGISTER_CUT_SCOPE(RegistrationScope::Both, atleast_two_showers, atleast_two_showers);
+
+  template<class T>
+    bool atleast_one_electron(const T & obj, std::vector<double> params={10.0,})
+    {
+      return particle_multiplicity(obj, 1, 1, params) >= 1;
+    }
+  REGISTER_CUT_SCOPE(RegistrationScope::Both, atleast_one_electron, atleast_one_electron);
+
+  template<class T>
+    bool no_tracks(const T & obj, std::vector<double> params={10.0,})
+    {
+      return num_showers(obj, 0, 0, params) == 0;
+    }
+  REGISTER_CUT_SCOPE(RegistrationScope::Both, no_tracks, no_tracks);
+
     /**
      * @brief Binding for a single particle muon multiplicity cut.
      * @details This function binds the single particle multiplicity cut for
