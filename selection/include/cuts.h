@@ -673,19 +673,14 @@ namespace cuts
             params[2] = 10.0;    // Distance threshold between Michel and muon start/end points
         }
 
-        bool is_michel = false;
-        bool is_attached = false;
-
         for(const auto & p : obj.particles)
         {
-            if(pvars::semantic_type(p) != 2 && p.size > params[0])
+            if(pvars::semantic_type(p) != 2 || p.size < params[0])
                 continue; // Not target Michel
-
-            is_michel = true;
 
             for(const auto & p2 : obj.particles)
             {
-                if(pvars::pid(p2) != 2 && pvars::primary_classification(p2) && pvars::ke(p2) >= params[1])
+                if(pvars::pid(p2) != 2 || !pvars::primary_classification(p2) || pvars::ke(p2) < params[1])
                     continue; // Not target muon
 
                 float dx = pvars::start_x(p) - pvars::end_x(p2);
