@@ -49,7 +49,7 @@ namespace selectors
         {
             const auto & p = obj.particles[i];
             double energy(pvars::ke(p));
-            if(pvars::pid(p) == pid && energy > leading_ke)
+            if(pvars::pid(p) == pid && energy > leading_ke && pvars::primary_classification(p))
             {
                 leading_ke = energy;
                 index = i;
