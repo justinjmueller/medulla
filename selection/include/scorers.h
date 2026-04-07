@@ -88,6 +88,16 @@ namespace pvars
     }
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, lax_primary_classification, lax_primary_classification);
 
+    template<class T>
+    double lax_proton_primary_classification(const T & p)
+    {
+        if(p.pid == pvars::kProton) 
+            return p.primary_scores[1] > 0 ? 1 : 0;
+        else 
+            return p.is_primary ? 1 : 0;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, lax_proton_primary_classification, lax_proton_primary_classification);
+
     /**
      * @brief Variable for the particle's PID.
      * @details This variable returns the PID of the particle. The PID is
