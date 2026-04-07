@@ -105,9 +105,11 @@ class Sample:
             self.override_exposure(override_exposure, exposure_type)
 
         if branches is None:
-            self._data = pd.concat([self._file_handle[tree].arrays(library='pd') for tree in trees])
+            self._data = pd.concat([self._file_handle[tree].arrays(library='pd') for tree in trees], ignore_index=True)
         else:
-            self._data = pd.concat([self._file_handle[tree].arrays(library='pd', expressions=branches) for tree in trees])
+            self._data = pd.concat([self._file_handle[tree].arrays(library='pd', expressions=branches) for tree in trees], ignore_index=True)
+            print(f"Loaded branches {branches} for sample {self._name}. Available branches in file: {self._file_handle[trees[0]].keys()}")
+            print(f"Data columns for sample {self._name}: {self._data.columns} with length {len(self._data)}")
         
         if precompute is not None:
             for k, v in precompute.items():
@@ -132,12 +134,15 @@ class Sample:
         if presel is not None:
             self._presel_mask = self._data.eval(presel)
             self._data = self._data[self._presel_mask]
+            # DataFrame is now filtered; keep _presel_mask aligned to current rows.
+            self._presel_mask = np.ones(len(self._data), dtype=bool)
         else:
             self._presel_mask = np.ones(len(self._data), dtype=bool)
 
         # Check category branch for NaNs
         if np.isnan(self._data[self._category_branch]).any():
             nanmask = self._data[self._category_branch].isna()
+            print("Found NaN category in sample ", self._name, ": ", self._data[self._category_branch][nanmask])
             
             # Fill NaNs if requested. If we explicitly fill NaNs, we
             # print a warning, but we do not remove the entries from
@@ -159,6 +164,8 @@ class Sample:
                     f' may lead to issues with systematics!'
                 )
                 self._data = self._data[~nanmask]
+                # DataFrame is now filtered; keep _presel_mask aligned to current rows.
+                self._presel_mask = np.ones(len(self._data), dtype=bool)
 
         # Initialize the systematics dictionary for the sample. Note:
         # the sample will always have a statistical uncertainty.
@@ -170,6 +177,7 @@ class Sample:
         if systematics is not None:    
             for sys in systematics:
                 systs = [k for k in self._file_handle[sys].keys() if k not in ['Run', 'Subrun', 'Evt']]
+                print("Sample adding systematics for systematic ", sys, ": ", systs, " (from branches ", self._file_handle[sys].keys(), ")")
                 self._systematics.update({syst: Systematic(syst, self._file_handle[sys][syst]) for syst in systs})
         
         # Add statistical uncertainty. This can always be added to the

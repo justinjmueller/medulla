@@ -531,7 +531,7 @@ for k in keys_1d:
 tdir = ensure_dir(f, "events/NuMIFull")
 tdir.cd()
 
-t = ROOT.TTree("selected_NuMIfluxsimTree", "per-entry vectors (len=7) plus scalars")
+t = ROOT.TTree("true_signal_NuMIfluxsimTree", "per-entry vectors (len=7) plus scalars")
 branch_order = list(spec.keys())
 tdir.WriteObject(ROOT.TObjString(json.dumps(branch_order)), "branch_labels_json")
 

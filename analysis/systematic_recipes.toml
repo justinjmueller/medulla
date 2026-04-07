@@ -316,14 +316,14 @@ pattern = '^(xsec_ccqe|xsec_mec|xsec_res|xsec_dis|xsec_coh|xsec_nonres|xsec_fsi|
 # #################################
 
 [[systematic_recipe]]
-name = 'hysyst_beam_horm_2kA'
+name = 'hysyst_beam_horn_2kA'
 label = 'Horn 2kA'
-pattern = 'hysyst_beam_horm_2kA'
+pattern = '^(hysyst_beam_horn_2kA_v)$'
 
 [[systematic_recipe]]
-name = 'hysyst_beam_horm1_x_3mm'
+name = 'hysyst_beam_horn1_x_3mm'
 label = 'Horn1 x 3mm'
-pattern = 'hysyst_beam_horm1_x_3mm'
+pattern = 'hysyst_beam_horn1_x_3mm'
 
 [[systematic_recipe]]
 name = 'hysyst_beam_horm1_y_3mm'

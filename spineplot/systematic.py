@@ -95,6 +95,7 @@ class Systematic:
         self._label = label
         self._handle = handle
         self._variables = dict()
+        self._components = None
 
     def register_variable(self, variable):
         """
@@ -130,62 +131,12 @@ class Systematic:
         # Check that the handle is valid. This is the "usual" case
         # where the systematic weights are stored in a TTree.
         if self._handle is not None:
-            # Read the weights from the TTree
-            weights_array = np.stack(
-                self._handle.array(library='np')
-            )[mask, :]
-
-            # Some assumptions are made here about the shape and
-            # structure of the weights array. If the shape indicates
-            # that these are "n-sigma" weights, the appropriate
-            # interpolation is performed to generate the universe
-            # weights. Otherwise, the weights array is assumed to be
-            # the universe weights directly. The "general" GENIE
-            # multisigma weights have shape (N,6) corresponding to
-            # -1, +1, -2, +2, -3, +3 sigma variations, whereas we tend
-            # to store detector systematic multisigma weights with
-            # shape (N,7) corresponding to -3, -2, -1, 0, +1, +2, +3
-            # sigma variations.
-            if weights_array.shape[1] in (6, 7):
-                # Case for GENIE multisigma weights
-                if weights_array.shape[1] == 6:
-                    sigma_levels_raw = np.array(
-                        [-1, 1, -2, 2, -3, 3],
-                        dtype=float
-                    )
-                    order = np.argsort(sigma_levels_raw)
-                    sigma_levels = sigma_levels_raw[order]
-                    W = np.asarray(
-                        weights_array,
-                        dtype=float
-                    )[:, order]
-                # Case for detector multisigma weights
-                else:
-                    sigma_levels = np.linspace(-3, 3, 7)
-                    W = np.asarray(
-                        weights_array,
-                        dtype=float
-                    )
-
-                # A set of `nuniv` random values is drawn from a normal
-                # distribution with mean 0 and standard deviation 1.
-                # The weights retrieved above are then interpolated at
-                # these values to generate the universe weights.
-                random_sigmas = np.random.normal(
-                    0, 1,
-                    (W.shape[0], nuniv)
-                )
-                self._universe_weights = np.apply_along_axis(
-                    lambda w: np.interp(
-                        random_sigmas[0],
-                        sigma_levels,
-                        w
-                    ),
-                    axis=1,
-                    arr=W
-                )
-            else:
-                self._universe_weights = weights_array
+            universe_weights = self.get_universe_weights(
+                sample=sample,
+                mask=mask,
+                nuniv=nuniv,
+            )
+            self._universe_weights = universe_weights
 
             # The universe weights are used to characterize the
             # systematic uncertainty for each of the Variables by
@@ -237,6 +188,228 @@ class Systematic:
                 self._covariances[f'{self._name}_{name}'] = np.diag(histogram)
                 self._std = np.sqrt(histogram.sum())
                 self._std /= histogram.sum()
+
+    def get_universe_weights(self, sample, mask, nuniv=1000, seed=None) -> np.ndarray:
+        """
+        Return per-event universe weights after applying a boolean mask.
+
+        Parameters
+        ----------
+        sample : Sample
+            Parent Sample object (unused except for alignment checks).
+        mask : array-like of bool
+            Boolean mask over sample._data rows.
+        nuniv : int, optional
+            Number of universes to generate for multisigma inputs.
+        seed : int, optional
+            Random seed for reproducibility.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of shape (N_selected, nuniv) with per-event universe weights.
+        """
+        print(f"Getting universe weights for systematic '{self._name}' from branch {self._handle} with mask of length {len(mask)} and nuniv={nuniv}.")
+        if self._handle is None:
+            raise ValueError(
+                f"Systematic '{self._name}' has no handle; cannot build universe weights."
+            )
+
+        mask = np.asarray(mask, dtype=bool)
+
+        # Read raw weights from the TTree branch.
+        # IMPORTANT: `mask` is defined over rows of sample._data. Since sample._data
+        # may have been filtered after loading, we first align the weights to the
+        # current DataFrame rows using its (integer) index, then apply `mask`.
+        weights_all = np.stack(self._handle.array(library='np'))
+
+        if sample is not None and hasattr(sample, '_data'):
+            try:
+                row_idx = sample._data.index.to_numpy()
+                # If indices are valid integer positions into the raw array, align.
+                if row_idx.ndim == 1 and row_idx.size > 0 and np.issubdtype(row_idx.dtype, np.integer):
+                    if row_idx.max() < weights_all.shape[0] and row_idx.min() >= 0:
+                        weights_all = weights_all[row_idx, :]
+            except Exception:
+                pass
+
+        weights_array = weights_all[mask, :]  # shape (N_sel, Uraw)
+
+        # Multisigma interpolation if shape is 6 or 7
+        if weights_array.shape[1] in (6, 7):
+            if weights_array.shape[1] == 6:
+                # GENIE multisigma: -1, +1, -2, +2, -3, +3
+                sigma_levels_raw = np.array([-1, 1, -2, 2, -3, 3], dtype=float)
+                order = np.argsort(sigma_levels_raw)
+                sigma_levels = sigma_levels_raw[order]
+                W = np.asarray(weights_array, dtype=float)[:, order]
+            else:
+                # Detector multisigma: -3, -2, -1, 0, +1, +2, +3
+                sigma_levels = np.linspace(3, -3, 7)
+                W = np.asarray(weights_array, dtype=float)
+
+            rng = np.random.default_rng(seed)
+            # Draw per-event random sigma values for each universe
+            random_sigmas = rng.normal(0.0, 1.0, size=(W.shape[0], nuniv))
+
+            # Interpolate each event's 6/7-point curve at its own random_sigmas
+            universe_weights = np.empty((W.shape[0], nuniv), dtype=float)
+            for i in range(W.shape[0]):
+                universe_weights[i] = np.interp(random_sigmas[i], sigma_levels, W[i])
+
+            return universe_weights
+
+        # Multisim or already-universe weights
+        return np.asarray(weights_array, dtype=float)
+
+    def efficiency_covariance(
+        self,
+        sample,
+        x_key,
+        mask_den,
+        mask_num,
+        bin_edges,
+        nuniv=10,
+        seed=12345,
+        empty_value=0.0,
+    ) -> np.ndarray:
+        """
+        Compute per-bin efficiency covariance for this Systematic:
+
+            e_b^(u) = N_b^(u) / D_b^(u)
+
+        where N_b^(u) and D_b^(u) are numerator/denominator yields in bin b
+        for universe u, built from the same per-event universe weights.
+
+        Parameters
+        ----------
+        sample : Sample
+            Parent Sample object containing the dataset.
+        x_key : str
+            Column name in sample._data used for binning (the efficiency variable).
+        mask_den : array-like of bool
+            Denominator mask over sample._data rows.
+        mask_num : array-like of bool
+            Numerator mask over sample._data rows (must be subset of mask_den).
+        bin_edges : array-like
+            Bin edges for the efficiency variable (length B+1).
+        nuniv : int, optional
+            Number of universes to generate for multisigma inputs.
+        seed : int, optional
+            Random seed for reproducibility.
+        empty_value : float, optional
+            Efficiency value to assign in bins with zero denominator.
+
+        Returns
+        -------
+        numpy.ndarray
+            Efficiency covariance matrix of shape (B, B).
+        """
+        # Combined systematics (created via Systematic.combine) have no branch handle.
+        # For efficiency, we combine by summing component efficiency covariances.
+        if self._handle is None and getattr(self, '_components', None):
+            cov_total = None
+            for comp in self._components:
+                cov_i = comp.efficiency_covariance(
+                    sample=sample,
+                    x_key=x_key,
+                    mask_den=mask_den,
+                    mask_num=mask_num,
+                    bin_edges=bin_edges,
+                    nuniv=nuniv,
+                    seed=seed,
+                    empty_value=empty_value,
+                )
+                cov_total = cov_i if cov_total is None else (cov_total + cov_i)
+
+            if cov_total is None:
+                raise ValueError(
+                    f"Combined systematic '{self._name}' has no components; cannot compute efficiency covariance."
+                )
+            return cov_total
+
+        if self._handle is None:
+            raise ValueError(
+                f"Systematic '{self._name}' has no handle; cannot compute efficiency covariance."
+            )
+
+        mask_den = np.asarray(mask_den, dtype=bool)
+        mask_num = np.asarray(mask_num, dtype=bool)
+
+        if mask_den.shape[0] != len(sample._data):
+            raise ValueError("mask_den length does not match sample._data")
+        if mask_num.shape[0] != len(sample._data):
+            raise ValueError("mask_num length does not match sample._data")
+
+        # Ensure numerator is subset of denominator
+        if not np.all(~mask_num | mask_den):
+            raise ValueError("mask_num must be a subset of mask_den for efficiency.")
+
+        bin_edges = np.asarray(bin_edges, dtype=float)
+        B = len(bin_edges) - 1
+        if B <= 0:
+            print("Warning: No bins defined for efficiency covariance calculation.")
+            return np.zeros((0, 0), dtype=float)
+
+        # Base mask: events that participate in the denominator
+        base = mask_den.copy()
+
+        # Variable values for base events
+        x_all = sample._data[x_key].to_numpy()
+        x = x_all[base]
+
+        # Universe weights for base events only
+        print(f"Getting universe weights for efficiency covariance of systematic '{self._name}' with base mask of length {base.sum()}, nuniv={nuniv}, and seed {seed}.")
+        W = self.get_universe_weights(sample, mask=base, nuniv=nuniv, seed=seed)
+        # W has shape (N_base, U); we want universes as "rows"
+        N_base, U = W.shape
+
+        # Reduce masks to base
+        den_base = mask_den[base]
+        num_base = mask_num[base]
+
+        # Bin indices for base events
+        b_idx = np.digitize(x, bin_edges) - 1
+        in_range = (b_idx >= 0) & (b_idx < B)
+
+        # Per-universe numerator and denominator in each bin
+        Num = np.zeros((U, B), dtype=float)
+        Den = np.zeros((U, B), dtype=float)
+
+        for bi in range(B):
+            sel_bin = (b_idx == bi) & in_range
+
+            sel_den = sel_bin & den_base
+            sel_num = sel_bin & num_base
+
+            if np.any(sel_den):
+                # Sum over selected events (axis=0) -> shape (U,)
+                Den[:, bi] = W[sel_den].sum(axis=0)
+            if np.any(sel_num):
+                Num[:, bi] = W[sel_num].sum(axis=0)
+
+        # Per-universe efficiency in each bin
+        E_u = np.zeros((U, B), dtype=float)
+        good = Den > 0.0
+        print(f"Debug: efficiency numerator and denominator sums per universe and bin:\nNum:\n{Num[good]}\nDen:\n{Den[good]}")
+        E_u[good] = Num[good] / Den[good]
+        E_u[~good] = empty_value
+
+        # mean across universes per bin
+        E_mean = E_u.mean(axis=0)
+        print(f"Debug: mean efficiency across universes per bin:\n{E_mean}")
+
+        # Covariance across universes (rows=universes, cols=bins)
+        if B == 1:
+            # 1x1 covariance: var of the single bin
+            var = np.var(E_u[:, 0], ddof=1)
+            return np.array([[var]], dtype=float)
+
+        Cov = np.cov(E_u, rowvar=False, ddof=1)
+
+        print("Systematic efficiency covariance matrix:\n", Cov)
+
+        return Cov
 
     def get_covariance(self, variable) -> np.ndarray:
         """
@@ -302,6 +475,9 @@ class Systematic:
             A new Systematic object with the covariance matrices added.
         """
         new_systematic = Systematic(name, None, label)
+        # Retain the component systematics for quantities that require
+        # per-event universe weights (e.g. efficiency covariances).
+        new_systematic._components = list(systematics)
         new_systematic._variables = systematics[0]._variables
         new_systematic._covariances = dict()
         for kvar, vvar in new_systematic._variables.items():
