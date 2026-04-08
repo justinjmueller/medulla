@@ -174,7 +174,7 @@ name = "signal"
 sim_only = true
 mode = "true"
 cut = [
-    { name = "valid_flashmatch", type = "true"},
+    #{ name = "valid_flashmatch", type = "true"},
     { name = "no_muons",      type = "true", parameters = [ "@muon_threshold"     ] },
     { name = "fiducial_cut",     type = "true" }, 
     { name = "single_electron",     type = "true", parameters = [ "@electron_threshold" ] },

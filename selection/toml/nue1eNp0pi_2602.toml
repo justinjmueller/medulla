@@ -116,14 +116,14 @@ sim_only = false
 add_systematics = true
 mode = "reco"
 cut = [
-    { name = "valid_flashmatch", type = "reco"},
-    { name = "fiducial_cut",     type = "reco" }, 
-    { name = "nonelectron_containment_cut",  type = "reco" }, 
-    { name = "single_electron",     type = "reco", parameters = [ "@electron_threshold" ] },
-    { name = "no_photons",       type = "reco", parameters = [ "@photon_threshold"   ] },
-    { name = "no_muons",      type = "reco", parameters = [ "@muon_threshold"     ] },
-    { name = "no_charged_pions", type = "reco", parameters = [ "@pion_threshold"     ] },
-    { name = "!no_protons",    type = "reco", parameters = [ "@proton_threshold"   ] }
+    #{ name = "valid_flashmatch", type = "true"},
+    { name = "fiducial_cut",     type = "true" }, 
+    { name = "nonelectron_containment_cut",  type = "true" }, 
+    { name = "single_electron",     type = "true", parameters = [ "@electron_threshold" ] },
+    { name = "no_photons",       type = "true", parameters = [ "@photon_threshold"   ] },
+    { name = "no_muons",      type = "true", parameters = [ "@muon_threshold"     ] },
+    { name = "no_charged_pions", type = "true", parameters = [ "@pion_threshold"     ] },
+    { name = "!no_protons",    type = "true", parameters = [ "@proton_threshold"   ] }
 ]
 
 branch = [
