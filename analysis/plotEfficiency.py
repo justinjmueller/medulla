@@ -17,11 +17,11 @@ r.gStyle.SetOptStat(0)
 
 def main():
     # Load the analysis
-    #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_analysis.toml', '/nashome/m/micarrig/icarus/nuESpine/gundam_nueCCInclusive_trueSignal.root')
-    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_recoInt.toml', '/nashome/m/micarrig/icarus/nuESpine/gundam_nueCCInclusive_trueSignal.root')
+    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_analysis.toml', '/nashome/m/micarrig/icarus/nuESpine/gundam_nueCCInclusive_trueSignal2.root')
+    # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_recoIntDebug.toml', '/nashome/m/micarrig/icarus/nuESpine/gundam_nueCCInclusive_trueSignal2.root')
     #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/efficiency_analysis.toml', '/nashome/m/micarrig/icarus/nuESpine/output_nueCCInclusive2.root')
 
-    output_dir = 'plots/debug2'
+    output_dir = 'plots/efficiency_with_error/'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -56,14 +56,14 @@ def main():
     #     pickle.dump(eff_invMass, f)
 
     eff_tEleEle = ana.run_interactively('efficiency_vs_trueLeadingElectronEnergy')
-    plt.savefig(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy.png', dpi=300)
-    with open(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy.pkl', 'wb') as f:
+    plt.savefig(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy_total.png', dpi=300)
+    with open(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy_total.pkl', 'wb') as f:
         pickle.dump(eff_tEleEle, f) 
 
-    eff_tEleAngle = ana.run_interactively('efficiency_vs_trueLeadingElectronCosTheta')
-    plt.savefig(f'{output_dir}/efficiency_vs_trueLeadingElectronAngle.png', dpi=300)
-    with open(f'{output_dir}/efficiency_vs_trueLeadingElectronAngle.pkl', 'wb') as f:
-        pickle.dump(eff_tEleAngle, f)   
+    # eff_tEleAngle = ana.run_interactively('efficiency_vs_trueLeadingElectronCosTheta')
+    # plt.savefig(f'{output_dir}/efficiency_vs_trueLeadingElectronAngle.png', dpi=300)
+    # with open(f'{output_dir}/efficiency_vs_trueLeadingElectronAngle.pkl', 'wb') as f:
+    #     pickle.dump(eff_tEleAngle, f)   
 
     # eff_flashTime = ana.run_interactively('efficiency_vs_recoFlashTime')
     # plt.savefig('plots/efficiency_vs_recoFlashTime.png', dpi=300)

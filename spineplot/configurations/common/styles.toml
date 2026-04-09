@@ -4,7 +4,7 @@ style_sheet = "styles/muon2024.mplstyle"
 markers = ['o', '^', 's', 'P', 'D']
 default_figsize = [6.4,4.8]
 title = ''
-mark_pot = true
+mark_pot = false
 mark_preliminary = '$\bf{ICARUS}$ Work-in-Progress'
 plot_kwargs = {'histtype' = 'barstacked', 'stacked' = true}
 

@@ -12,6 +12,8 @@ file = '/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/systematic_recipes.
 key = "NuMIFull"
 exposure_type = "pot"
 trees = ['true_signal']
+# systematics = ['true_signal_multisimTree', 'true_signal_multisigmaTree', 'true_signal_NuMIFluxsimTree']
+#systematics = ['true_signal_NuMIfluxsimTree']
 branches = ["reco_fiducial_cut",
             "reco_flash_cut",
             "true_category",
@@ -32,40 +34,42 @@ branches = ["reco_fiducial_cut",
             "true_momentum_transfer",
             "true_interaction_mode",
             "true_ele_beam_open_angle",
-            "true_leading_electron_energy"]
+            "true_leading_electron_energy", 
+            "reco_leading_pion_energy",
+            "true_leading_pion_energy"]
 
-precompute = {"reco_category" = "np.where(true_category == 0, reco_reco_interaction_type, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(true_ele_beam_open_angle != 10, np.cos(true_ele_beam_open_angle), -10)"}
+precompute = {"reco_pionE_corr" = "np.nan_to_num(reco_leading_pion_energy, -1)", "reco_pionSel" = "np.where((reco_pionE_corr > 160) | (reco_pionE_corr <= 0), True, False)", "true_pionE_corr" = "np.nan_to_num(true_leading_pion_energy, -1)", "true_pionSel" = "np.where((true_pionE_corr > 160) | (true_pionE_corr <= 0), True, False)", "reco_category" = "np.where((true_category == 0) & (true_pionSel), reco_reco_interaction_type, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(true_ele_beam_open_angle != 10, np.cos(true_ele_beam_open_angle), -10)"}
 # precompute = {"reco_category" = "np.where(true_category == 0, true_interaction_mode, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)"}
 
-[samples.NuMIFullNonSel]
-key = "NuMIFull"
-exposure_type = "pot"
-trees = ['true_signal']
-systematics = ['true_signal_multisimTree', 'true_signal_multisigmaTree']
-branches = ["reco_fiducial_cut",
-            "reco_flash_cut",
-            "true_category",
-            "true_neutrino_energy",
-            "reco_leading_electron_ke",
-            "reco_ele_beam_open_angle",
-            "reco_leading_electron_energy",
-            "reco_containment_cut",
-            "reco_has_particle_multiplicity",
-            "reco_no_muons",
-            "reco_vertex_distance_cut",
-            "reco_track_length",
-            "reco_electron_softmax_cut",
-            "reco_primary_softmax_cut",
-            "reco_leading_ele_energy_cut",
-            "reco_reco_interaction_type",
-            "true_hadronic_invariant_mass",
-            "true_momentum_transfer",
-            "reco_flash_time",
-            "true_leading_electron_energy",
-            "true_ele_beam_open_angle"
-            ]
-precompute = {"reco_category" = "np.where(true_category == 0, reco_reco_interaction_type, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(true_ele_beam_open_angle != 10, np.cos(true_ele_beam_open_angle), -10)"}
-# precompute = {"reco_category" = "np.where(true_category == 0, true_interaction_mode, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)"}
+# [samples.NuMIFullNonSel]
+# key = "NuMIFull"
+# exposure_type = "pot"
+# trees = ['true_signal_nonmatched']
+# #systematics = []
+# branches = ["reco_fiducial_cut",
+#             "reco_flash_cut",
+#             "true_category",
+#             "true_neutrino_energy",
+#             "reco_leading_electron_ke",
+#             "reco_ele_beam_open_angle",
+#             "reco_leading_electron_energy",
+#             "reco_containment_cut",
+#             "reco_has_particle_multiplicity",
+#             "reco_no_muons",
+#             "reco_vertex_distance_cut",
+#             "reco_track_length",
+#             "reco_electron_softmax_cut",
+#             "reco_primary_softmax_cut",
+#             "reco_leading_ele_energy_cut",
+#             "reco_reco_interaction_type",
+#             "true_hadronic_invariant_mass",
+#             "true_momentum_transfer",
+#             "reco_flash_time",
+#             "true_leading_electron_energy",
+#             "true_ele_beam_open_angle"
+#             ]
+# precompute = {"reco_pionE_corr" = "np.nan_to_num(reco_leading_pion_energy, -1)", "reco_pionSel" = "np.where((reco_pionE_corr > 160) | (reco_pionE_corr <= 0), True, False)", "true_pionE_corr" = "np.nan_to_num(true_leading_pion_energy, -1)", "true_pionSel" = "np.where((true_pionE_corr > 160) | (true_pionE_corr <= 0), True, False)", "reco_category" = "np.where((true_category == 0) & (true_pionSel), reco_reco_interaction_type, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(true_ele_beam_open_angle != 10, np.cos(true_ele_beam_open_angle), -10)"}
+# # precompute = {"reco_category" = "np.where(true_category == 0, true_interaction_mode, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)"}
 
 
 # Output directory for plots
@@ -174,6 +178,7 @@ reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
 reco_no_muons = 'No Muon-like Particles'
 reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
 reco_leading_ele_energy_cut = 'Leading Electron Energy > 225 MeV'
+reco_pionSel = 'Leading Pion Energy > 160 MeV or No Leading Pion'
 
 [figure.artists.draw_kwargs]
 show_option = 'table'
@@ -364,13 +369,14 @@ reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
 reco_no_muons = 'No Muon-like Particles'
 reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
 reco_leading_ele_energy_cut = 'Leading Electron Energy > 225 MeV'
+reco_pionSel = 'Leading Pion Energy > 160 MeV or No Leading Pion'
 
 [figure.artists.draw_kwargs]
 show_option = 'final_only'  # KEY: This makes it a plot vs energy!
 percentage = true
 show_seqeff = true     # Show cumulative efficiency curve
 show_unseqeff = false  # Don't show individual cut curves
-draw_error = 'total_stat'
+#draw_error = 'hysyst_beam_horm_2kA'
 
 # FIGURE 9: Efficiency vs true leading electron cosTheta Numi
 [[figure]]

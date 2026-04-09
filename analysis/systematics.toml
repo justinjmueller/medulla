@@ -210,7 +210,7 @@ variable = "true_leading_electron_energy"
 # systematics = ['flux_skin', 'flux_hornCurrent', 'flux_kMinus', 'flux_kPlus', 'flux_kZero', 'flux_nucleonIneXsec', 
 #                'flux_nucleonQEXsec', 'flux_nucleonTotXsec', 'flux_piMinus', 'flux_piIneXsec', 'flux_piQEXsec', 'flux_piTotXsec',
 #                'flux_piPlus'] # flux systematics
-systematics = ['flux', 'xsec_total', 'total_stat'] # total systematics
+systematics = ['xsec_total', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
