@@ -191,7 +191,7 @@ class SpineSpectra2D(SpineSpectra):
     def draw(self, ax, style, show_option='2d', draw_identity=True,
              draw_colorbar=True, invert_stack_order=False,
              fit_type=None, logx=False, logy=False, logz=False,
-             draw_stat_error=False) -> None:
+             draw_stat_error=False, draw_bin_counts=False) -> None:
         """
         Plots the data for the SpineSpectra2D object.
 
@@ -233,6 +233,9 @@ class SpineSpectra2D(SpineSpectra):
         draw_stat_error : bool
             A flag to indicate if the statistical error should be drawn
             on the plot. The default is False.
+        draw_bin_counts : bool
+            A flag to indicate if the (weighted) bin counts should be drawn
+            at the center of each 2D bin (show_option='2d'). The default is False.
         
         Returns
         -------
@@ -263,9 +266,48 @@ class SpineSpectra2D(SpineSpectra):
                         self._variables[1]._bin_edges[list(self._plotdata.keys())[0]] if self._variables[1]._custom_bins is None else self._variables[1]._custom_bins, # y bin edges
                         values.T, shading='auto', norm=ln if logz else None
                     )
+            if draw_bin_counts:
+                xr = self._variables[0]._range if self._xrange is None else self._xrange
+                yr = self._variables[1]._range if self._yrange is None else self._yrange
+
+                if self._variables[0]._custom_bins is None:
+                    x_edges = np.linspace(xr[0], xr[1], self._variables[0]._nbins + 1)
+                else:
+                    x_edges = np.asarray(self._variables[0]._custom_bins, dtype=float)
+
+                if self._variables[1]._custom_bins is None:
+                    y_edges = np.linspace(yr[0], yr[1], self._variables[1]._nbins + 1)
+                else:
+                    y_edges = np.asarray(self._variables[1]._custom_bins, dtype=float)
+
+                x_centers = (x_edges[:-1] + x_edges[1:]) / 2.0
+                y_centers = (y_edges[:-1] + y_edges[1:]) / 2.0
+
+                for xi, xc in enumerate(x_centers):
+                    for yi, yc in enumerate(y_centers):
+                        v = values[xi, yi]
+                        if (not np.isfinite(v)) or v == 0:
+                            continue
+                        if abs(v - round(v)) < 1e-6:
+                            label = str(int(round(v)))
+                        else:
+                            label = f'{v:.2g}'
+                        ax.text(
+                            xc,
+                            yc,
+                            label,
+                            ha='center',
+                            va='center',
+                            fontsize='x-small',
+                            color='black',
+                            zorder=3,
+                        )
+
             ax.set_xlabel(self._variables[0]._xlabel if self._xtitle is None else self._xtitle)
             ax.set_ylabel(self._variables[1]._xlabel)
             ax.set_aspect('equal')
+
+            
             
             # Draw the identity line. This must span the full range
             # of the plot, so we need to find the minimum and maximum

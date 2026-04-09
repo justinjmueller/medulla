@@ -165,6 +165,9 @@ class Systematic:
                 diff = histogram - cv_histogram[:, np.newaxis]
                 self._covariances[f'{self._name}_{name}'] = (diff @ diff.T) / (self._universe_weights.shape[1])
 
+                # print(f"Debug: systematic '{self._name}', variable '{name}': covariance matrix:\n{self._covariances[f'{self._name}_{name}']}")
+                # print(f"Debug: cv histogram:\n {cv_histogram}, universe histogram:\n {histogram}, diff:\n {diff}, shape: {self._universe_weights.shape}, nuniv: {nuniv}")
+                # print(f"Debug: numpy covariance:\n {np.cov(histogram, rowvar=True, ddof=1)}")
                 # One-bin uncertainty
                 diff = np.sum(diff, axis=0)
                 self._std = np.sqrt((diff @ diff.T) / (self._universe_weights.shape[1]))
@@ -209,7 +212,7 @@ class Systematic:
         numpy.ndarray
             Array of shape (N_selected, nuniv) with per-event universe weights.
         """
-        print(f"Getting universe weights for systematic '{self._name}' from branch {self._handle} with mask of length {len(mask)} and nuniv={nuniv}.")
+        # print(f"Getting universe weights for systematic '{self._name}' from branch {self._handle} with mask of length {len(mask)} and nuniv={nuniv}.")
         if self._handle is None:
             raise ValueError(
                 f"Systematic '{self._name}' has no handle; cannot build universe weights."
@@ -245,7 +248,7 @@ class Systematic:
                 W = np.asarray(weights_array, dtype=float)[:, order]
             else:
                 # Detector multisigma: -3, -2, -1, 0, +1, +2, +3
-                sigma_levels = np.linspace(3, -3, 7)
+                sigma_levels = np.linspace(-3, 3, 7)
                 W = np.asarray(weights_array, dtype=float)
 
             rng = np.random.default_rng(seed)
@@ -272,6 +275,7 @@ class Systematic:
         nuniv=10,
         seed=12345,
         empty_value=0.0,
+        return_yields=False,
     ) -> np.ndarray:
         """
         Compute per-bin efficiency covariance for this Systematic:
@@ -308,6 +312,8 @@ class Systematic:
         # Combined systematics (created via Systematic.combine) have no branch handle.
         # For efficiency, we combine by summing component efficiency covariances.
         if self._handle is None and getattr(self, '_components', None):
+            if return_yields:
+                raise ValueError("Combined systematic cannot return Num/Den; call efficiency_covariance(return_yields=True) on its components.")
             cov_total = None
             for comp in self._components:
                 cov_i = comp.efficiency_covariance(
@@ -359,7 +365,7 @@ class Systematic:
         x = x_all[base]
 
         # Universe weights for base events only
-        print(f"Getting universe weights for efficiency covariance of systematic '{self._name}' with base mask of length {base.sum()}, nuniv={nuniv}, and seed {seed}.")
+        # print(f"Getting universe weights for efficiency covariance of systematic '{self._name}' with base mask of length {base.sum()}, nuniv={nuniv}, and seed {seed}.")
         W = self.get_universe_weights(sample, mask=base, nuniv=nuniv, seed=seed)
         # W has shape (N_base, U); we want universes as "rows"
         N_base, U = W.shape
@@ -387,28 +393,31 @@ class Systematic:
                 Den[:, bi] = W[sel_den].sum(axis=0)
             if np.any(sel_num):
                 Num[:, bi] = W[sel_num].sum(axis=0)
+            # print(f"Debug: bin {bi}: {np.sum(sel_num)} numerator events, {np.sum(sel_den)} denominator events.")
+
 
         # Per-universe efficiency in each bin
-        E_u = np.zeros((U, B), dtype=float)
+        E_u = np.full((U, B), float(empty_value), dtype=float)
         good = Den > 0.0
-        print(f"Debug: efficiency numerator and denominator sums per universe and bin:\nNum:\n{Num[good]}\nDen:\n{Den[good]}")
+        # print(f"Debug: efficiency numerator and denominator sums per universe and bin:\nNum:\n{Num[good]}\nDen:\n{Den[good]}")
         E_u[good] = Num[good] / Den[good]
-        E_u[~good] = empty_value
 
-        # mean across universes per bin
-        E_mean = E_u.mean(axis=0)
-        print(f"Debug: mean efficiency across universes per bin:\n{E_mean}")
+        # Build CV efficiency histogram (same spirit as `process`, i.e. diff wrt CV)
+        den_cv = np.bincount(b_idx[den_base & in_range], minlength=B).astype(float)
+        num_cv = np.bincount(b_idx[num_base & in_range], minlength=B).astype(float)
+        E_cv = np.full(B, float(empty_value), dtype=float)
+        good_cv = den_cv > 0.0
+        E_cv[good_cv] = num_cv[good_cv] / den_cv[good_cv]
 
-        # Covariance across universes (rows=universes, cols=bins)
-        if B == 1:
-            # 1x1 covariance: var of the single bin
-            var = np.var(E_u[:, 0], ddof=1)
-            return np.array([[var]], dtype=float)
+        # Hand covariance around CV efficiency: Cov = (diff^T diff) / U
+        diff = E_u - E_cv[np.newaxis, :]
+        Cov = (diff.T @ diff) / float(U)
 
-        Cov = np.cov(E_u, rowvar=False, ddof=1)
+        # print(f"Debug: cv efficiency per bin:\n{E_cv}")
+        # print("Systematic efficiency covariance matrix (CV-centered, hand-built):\n", Cov)
 
-        print("Systematic efficiency covariance matrix:\n", Cov)
-
+        if return_yields:
+            return Cov, Num, Den
         return Cov
 
     def get_covariance(self, variable) -> np.ndarray:

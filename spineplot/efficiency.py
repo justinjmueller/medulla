@@ -360,19 +360,21 @@ class SpineEfficiency(SpineArtist):
                     # Optional systematic band (draw behind points).
                     if show_syst_band and draw_error is not None:
                         eff_raw = cv[f'{key_base}{cut}']
-                        print("Computing efficiency for cut:", cutname, cut)
+                        # print("Computing efficiency for cut:", cutname, cut)
                         sigma_eff = self.compute_syst_sigma_eff(groups[0], cut, sequential=(key_base == 'binned_seq_'))
                         if sigma_eff is not None:
                             _lab = syst_label if syst_label is not None else f'{draw_error} syst.'
-                            ax.fill_between(
+                            ax.bar(
                                 self._variable._bin_centers[groups[0]],
-                                fmt(eff_raw - sigma_eff),
-                                fmt(eff_raw + sigma_eff),
-                                color=colors.get(groups[0], style.get_color(ci)) if (colors and show_option == 'final_only') else style.get_color(ci),
+                                2 * fmt(sigma_eff),
+                                width=self._variable._bin_widths[groups[0]],
+                                bottom=fmt(eff_raw - sigma_eff),
+                                color=colors.get(groups[0], style.get_color(0)) if colors else style.get_color(0),
                                 alpha=syst_alpha,
                                 zorder=0,
+                                edgecolor='none',
                             )
-                            print(f"Debug: Adding systematic band for group {groups[0]}, cut {cut}, with sigma_eff = {sigma_eff}, raw_eff = {eff_raw}, cv = {cv[f'{key_base}{cut}']}")
+                            # print(f"Debug: Adding systematic band for group {groups[0]}, cut {cut}, with sigma_eff = {sigma_eff}, raw_eff = {eff_raw}, cv = {cv[f'{key_base}{cut}']}")
 
                     ax.errorbar(
                         self._variable._bin_centers[groups[0]],
@@ -390,7 +392,7 @@ class SpineEfficiency(SpineArtist):
                 for gi, group in enumerate(groups):
                     for ci, (cut, cutname) in enumerate(cuts_to_draw):
                         _, cv, msigma, psigma = self.reduce(group, significance=0.6827)
-                        print("Computing efficiency for cut:", cutname, cut)
+                        # print("Computing efficiency for cut:", cutname, cut)
 
                         # Optional systematic band (draw behind points).
                         if show_syst_band and draw_error is not None:
@@ -408,7 +410,7 @@ class SpineEfficiency(SpineArtist):
                                     zorder=0,
                                     edgecolor='none',
                                 )
-                                print(f"Debug: Adding systematic band for group {groups[gi]}, cut {cut}, with sigma_eff = {sigma_eff}, raw_eff = {eff_raw}, cv = {cv[f'{key_base}{cut}']}")
+                                # print(f"Debug: Adding systematic band for group {groups[gi]}, cut {cut}, with sigma_eff = {sigma_eff}, raw_eff = {eff_raw}, cv = {cv[f'{key_base}{cut}']}")
 
                         ax.errorbar(
                             self._variable._bin_centers[group],
@@ -851,6 +853,7 @@ class SpineEfficiency(SpineArtist):
         nuniv,
         seed,
         empty_value,
+        return_yields=False,
     ):
         """Return an efficiency covariance matrix for a Systematic-like object.
 
@@ -867,6 +870,9 @@ class SpineEfficiency(SpineArtist):
         # Combined systematic: sum component covariances.
         components = getattr(systematic, '_components', None)
         if components:
+            if return_yields:
+                raise ValueError("Cannot use return_yields=True for combined systematics; request yields from components instead.")
+
             cov_sum = None
             for comp in components:
                 cov_i = self.efficiency_covariance_for_systematic(
@@ -879,7 +885,9 @@ class SpineEfficiency(SpineArtist):
                     nuniv=nuniv,
                     seed=seed,
                     empty_value=empty_value,
+                    return_yields=return_yields,
                 )
+                # print(f"Debug: Component systematic '{getattr(comp, '_name', 'unknown')}' covariance:\n{cov_i}")
                 if cov_i is None:
                     continue
                 cov_sum = cov_i if cov_sum is None else (cov_sum + cov_i)
@@ -908,6 +916,7 @@ class SpineEfficiency(SpineArtist):
             nuniv=nuniv,
             seed=seed,
             empty_value=empty_value,
+            return_yields=return_yields,
         )
 
     def compute_efficiency_with_systematics(
@@ -918,9 +927,11 @@ class SpineEfficiency(SpineArtist):
         mask_num,
         bin_edges,
         draw_error,
+        systematic=None,
         nuniv=None,
         seed=None,
         empty_value=0.0,
+        return_yields=False,
     ):
         """Return efficiency covariance for the requested systematic key/name."""
         if nuniv is None:
@@ -930,24 +941,28 @@ class SpineEfficiency(SpineArtist):
 
         if not hasattr(sample, '_systematics'):
             return None
-
-        # Try to find the systematic by key first (typical for recipe names like 'total_stat').
-        syst = sample._systematics.get(draw_error)
-
-        # If that fails, fall back to matching by the underlying systematic name
-        # (e.g. draw_error='statistical' but the stored key is 'NuMIFull_statistical').
+        # Resolve which systematic to use.
+        # - If `systematic` is provided, use it directly.
+        # - Otherwise, resolve from `draw_error` key/name in the sample.
+        syst = systematic
         if syst is None:
-            want = str(draw_error).lower()
-            matches = [
-                s for s in sample._systematics.values()
-                if str(getattr(s, '_name', '')).lower() == want
-            ]
-            if len(matches) == 1:
-                syst = matches[0]
+            # Try to find the systematic by key first (typical for recipe names like 'total_stat').
+            syst = sample._systematics.get(draw_error)
 
-        print(f"Debug: For sample '{sample._name}', draw_error '{draw_error}', found systematic: {syst}")
+            # If that fails, fall back to matching by the underlying systematic name
+            # (e.g. draw_error='statistical' but the stored key is 'NuMIFull_statistical').
+            if syst is None:
+                want = str(draw_error).lower()
+                matches = [
+                    s for s in sample._systematics.values()
+                    if str(getattr(s, '_name', '')).lower() == want
+                ]
+                if len(matches) == 1:
+                    syst = matches[0]
+
+        # print(f"Debug: For sample '{sample._name}', draw_error '{draw_error}', found systematic: {syst}", flush=True)
         if syst is None:
-            print(f"Debug: No systematic matching '{draw_error}' for sample '{sample._name}'; skipping.")
+            print(f"Debug: No systematic matching '{draw_error}' for sample '{sample._name}'; skipping.", flush=True)
             return None
 
         mask_den = np.asarray(mask_den, dtype=bool)
@@ -963,68 +978,117 @@ class SpineEfficiency(SpineArtist):
             nuniv=nuniv,
             seed=seed,
             empty_value=empty_value,
+            return_yields=return_yields,
         )
 
+        # print(f"Debug: Efficiency covariance for sample '{sample._name}', systematic '{draw_error}':\n{cov}")
         return cov
 
+
     def compute_syst_sigma_eff(self, group, cut, sequential=True):
-        """
-        Return per-bin systematic sigma on efficiency (absolute units, 0–1)
-        for the given group and cut, summing contributions over all samples
-        in self._samples. Returns None if no universe-based info is available.
+        """Return per-bin systematic sigma on efficiency (absolute units, 0–1).
+
+        Important: efficiency is a ratio. When combining multiple samples,
+        combine per-universe (Num, Den) yields across samples first, then build
+        per-universe efficiencies and compute the covariance.
+
+        For recipe/combined systematics, recursively flatten to leaf systematics
+        and de-duplicate leaves so the same branch isn't counted twice.
         """
         variable = self._variable
         x_key = variable._key
-        bin_edges = variable._bin_edges[group]
+        bin_edges = np.asarray(variable._bin_edges[group], dtype=float)
+        B = len(bin_edges) - 1
+        if B <= 0:
+            return None
 
-        # Map from category id -> group label (self._categories values)
         group_categories = [
             cat_id for cat_id, g_label in self._categories.items() if g_label == group
         ]
+        if not group_categories:
+            return None
 
-        cov_total = None
+        def _resolve_systematic(sample):
+            if not hasattr(sample, '_systematics'):
+                return None
+
+            syst = sample._systematics.get(self._draw_error)
+            if syst is not None:
+                return syst
+
+            want = str(self._draw_error).lower()
+            matches = [
+                s for s in sample._systematics.values()
+                if str(getattr(s, '_name', '')).lower() == want
+            ]
+            if len(matches) == 1:
+                return matches[0]
+            return None
+
+        def _iter_leaves(syst):
+            components = getattr(syst, '_components', None)
+            if components:
+                for comp in components:
+                    yield from _iter_leaves(comp)
+                return
+            yield syst
+
+        def _leaf_key(leaf):
+            name = str(getattr(leaf, '_name', ''))
+            handle = getattr(leaf, '_handle', None)
+            if handle is None:
+                return name
+            hname = getattr(handle, 'name', None)
+            if hname is None:
+                hname = getattr(handle, 'fName', None)
+            if hname is None:
+                hname = f'handle_{id(handle)}'
+            return f"{name}::{hname}"
+
+        def _cov_from_num_den(Num_tot, Den_tot, E_cv, empty_value=0.0):
+            U, Bb = Num_tot.shape
+            if Bb != B:
+                raise ValueError("Bin-count mismatch while building efficiency covariance")
+            if U < 1:
+                return np.zeros((B, B), dtype=float)
+
+            E_u = np.full((U, B), float(empty_value), dtype=float)
+            good = Den_tot > 0.0
+            E_u[good] = Num_tot[good] / Den_tot[good]
+
+            diff = E_u - E_cv[np.newaxis, :]
+            Cov = (diff.T @ diff) / float(U)
+            return Cov
+
+        NumDen_by_leaf = {}  # leaf_key -> (Num_tot, Den_tot)
+
+        stat_den_counts = np.zeros(B, dtype=float)
+        stat_num_counts = np.zeros(B, dtype=float)
+
+        cv_den_counts = np.zeros(B, dtype=float)
+        cv_num_counts = np.zeros(B, dtype=float)
+
+        contributed = False
 
         for sample in self._samples:
             n_events = len(sample._data)
-            print(f"Debug: Processing sample '{sample._name}' with {n_events} events for group '{group}', cut '{cut}'")
 
-            # Variable-level mask: use the Variable's mask expression, if any.
             var_mask_expr = getattr(variable, "mask", None)
-            print(f"Debug: Variable mask expression for sample '{sample._name}': {var_mask_expr}")
             if var_mask_expr:
                 mask_var = sample._data.eval(var_mask_expr).to_numpy(dtype=bool)
             else:
                 mask_var = np.ones(n_events, dtype=bool)
 
-            # Group/category mask: events whose category id maps to this *group* label.
-            if group_categories:
-                cat_series = sample._data[sample._category_branch]
-                print(f"sample categories for '{sample._name}':", cat_series.unique(), "total events:", len(sample._data))
-                print("Debug: count category", np.sum(np.where(cat_series==group_categories[0], 1, 0)), len(cat_series))
-                category_counts = {cat: np.sum(np.where(cat_series==cat, 1, 0)) for cat in group_categories}
-                print("category counts", [np.sum(np.where(cat_series==cat, 1, 0)) for cat in self._categories.keys()])
-                mask_group = cat_series.isin(group_categories).to_numpy(dtype=bool)
-            else:
-                # No categories belong to this group for this analysis; nothing to do.
-                continue
+            cat_series = sample._data[sample._category_branch]
+            mask_group = cat_series.isin(group_categories).to_numpy(dtype=bool)
 
-            # Base mask for denominator: events in the requested group and passing var mask.
-            print(f"Debug: For sample '{sample._name}', base mask has {mask_var.sum()} events passing variable mask, {mask_group.sum()} events in group '{group}', var mask has {mask_var.sum()} events")
             base_mask = mask_var & mask_group
+            mask_den = base_mask
 
-            # Denominator: all events passing base_mask
-            mask_den = base_mask.copy()
-
-            # Numerator:
-            # - sequential=True  -> require ALL cuts up to and including `cut`
-            # - sequential=False -> require ONLY the single `cut`
             if cut:
                 cuts_order = list(self._cuts.keys())
-
                 if cut not in cuts_order:
-                    raise ValueError(
-                        f"Cut '{cut}' not found in configured cuts: {cuts_order}"
-                    )
+                    raise ValueError(f"Cut '{cut}' not found in configured cuts: {cuts_order}")
 
                 if sequential:
                     cut_index = cuts_order.index(cut)
@@ -1034,56 +1098,130 @@ class SpineEfficiency(SpineArtist):
 
                 missing = [c for c in required_cuts if c not in sample._data.columns]
                 if missing:
-                    # If any required cut branches are missing for this sample, skip it.
                     continue
 
-                # Require all requested cuts.
                 mask_all = np.ones(n_events, dtype=bool)
                 for c in required_cuts:
-                    mc = sample._data[c].to_numpy(dtype=bool)
-                    if mc.shape[0] != n_events:
-                        raise ValueError(
-                            f"Cut mask for '{c}' has length {mc.shape[0]} "
-                            f"but sample '{sample._name}' has {n_events} events."
-                        )
-                    mask_all &= mc
-
+                    mask_all &= sample._data[c].to_numpy(dtype=bool)
                 mask_num = base_mask & mask_all
             else:
                 mask_num = base_mask
 
-            # If there are no denominator events at all, this sample contributes nothing.
             if not mask_den.any():
                 continue
 
-            print(f"entries in denominator for sample '{sample._name}': {mask_den.sum()}, numerator: {mask_num.sum()}")
-
-            cov_eff_sample = self.compute_efficiency_with_systematics(
-                sample=sample,
-                x_key=x_key,
-                mask_den=mask_den,
-                mask_num=mask_num,
-                bin_edges=bin_edges,
-                draw_error=self._draw_error,
-                nuniv=self._nuniv,
-                seed=self._seed,
-                empty_value=0.0,
-            )
-
-            if cov_eff_sample is None:
+            syst = _resolve_systematic(sample)
+            if syst is None:
                 continue
 
-            print(f"covariance for sample '{sample._name}': {cov_eff_sample}")
+            # CV counts for this sample/group/cut (used for CV-centered covariance)
+            x_all = sample._data[x_key].to_numpy()
+            b_idx = np.digitize(x_all, bin_edges) - 1
+            in_range = (b_idx >= 0) & (b_idx < B)
+            cv_den_counts += np.bincount(b_idx[mask_den & in_range], minlength=B).astype(float)
+            cv_num_counts += np.bincount(b_idx[mask_num & in_range], minlength=B).astype(float)
 
-            cov_total = cov_eff_sample if cov_total is None else cov_total + cov_eff_sample
+            # De-dup leaves within this sample to avoid counting the same branch twice
+            # when recipes contain repeated entries.
+            seen = set()
 
-        if cov_total is None:
-            print(
-                f"[SpineEfficiency] No universe-based systematic info for "
-                f"group={group}, cut={cut}, draw_error={self._draw_error}"
-            )
+            for leaf in _iter_leaves(syst):
+                leaf_name = str(getattr(leaf, '_name', '')).lower()
+                leaf_handle = getattr(leaf, '_handle', None)
+
+                sig = _leaf_key(leaf)
+                if sig in seen:
+                    continue
+                seen.add(sig)
+
+                if leaf_handle is None:
+                    if leaf_name == 'statistical':
+                        x_all = sample._data[x_key].to_numpy()
+                        b_idx = np.digitize(x_all, bin_edges) - 1
+                        in_range = (b_idx >= 0) & (b_idx < B)
+                        stat_den_counts += np.bincount(b_idx[mask_den & in_range], minlength=B).astype(float)
+                        stat_num_counts += np.bincount(b_idx[mask_num & in_range], minlength=B).astype(float)
+                        contributed = True
+                    continue
+
+                out = self.compute_efficiency_with_systematics(
+                    sample=sample,
+                    x_key=x_key,
+                    mask_den=mask_den,
+                    mask_num=mask_num,
+                    bin_edges=bin_edges,
+                    draw_error=self._draw_error,
+                    systematic=leaf,
+                    nuniv=self._nuniv,
+                    seed=self._seed,
+                    empty_value=0.0,
+                    return_yields=True,
+                )
+                if out is None:
+                    continue
+
+                _cov_i, Num, Den = out
+
+                key = _leaf_key(leaf)
+                if key not in NumDen_by_leaf:
+                    NumDen_by_leaf[key] = (Num.copy(), Den.copy())
+                else:
+                    Num_tot, Den_tot = NumDen_by_leaf[key]
+                    if Num_tot.shape != Num.shape:
+                        raise ValueError("Universe-count mismatch while combining leaf yields")
+                    NumDen_by_leaf[key] = (Num_tot + Num, Den_tot + Den)
+
+                contributed = True
+
+        if not contributed:
             return None
 
-        # Convert summed covariance to per-bin sigma
+        cov_total = None
+
+        E_cv = np.full(B, 0.0, dtype=float)
+        good_cv = cv_den_counts > 0.0
+        E_cv[good_cv] = cv_num_counts[good_cv] / cv_den_counts[good_cv]
+
+        for _, (Num_tot, Den_tot) in NumDen_by_leaf.items():
+            cov_i = _cov_from_num_den(Num_tot, Den_tot, E_cv, empty_value=0.0)
+            cov_total = cov_i if cov_total is None else (cov_total + cov_i)
+
+        if stat_den_counts.sum() > 0:
+            eff = np.zeros(B, dtype=float)
+            good = stat_den_counts > 0
+            eff[good] = stat_num_counts[good] / stat_den_counts[good]
+            var = np.zeros(B, dtype=float)
+            var[good] = eff[good] * (1.0 - eff[good]) / stat_den_counts[good]
+            cov_stat = np.diag(var)
+            cov_total = cov_stat if cov_total is None else (cov_total + cov_stat)
+
+        if cov_total is None:
+            return None
+
+        # print(f"Debug: CV denominator histogram for group '{group}', cut '{cut}': {cv_den_counts}")
+
+        # Track denominator covariance for all contributing leaves.
+        # denom_cov_total = None
+        # for leaf_key, (_Num_leaf, Den_leaf) in NumDen_by_leaf.items():
+        #     U_den = Den_leaf.shape[0]
+        #     denom_diff = Den_leaf - cv_den_counts[np.newaxis, :]
+        #     denom_cov_leaf = (denom_diff.T @ denom_diff) / float(U_den)
+        #     print(
+        #         f"Debug: Denominator covariance for leaf '{leaf_key}' (group '{group}', cut '{cut}'):\n{denom_cov_leaf}"
+        #     )
+        #     denom_cov_total = denom_cov_leaf if denom_cov_total is None else (denom_cov_total + denom_cov_leaf)
+
+        # if denom_cov_total is not None:
+        #     print(
+        #         f"Debug: Total denominator covariance across leaves for group '{group}', cut '{cut}':\n{denom_cov_total}"
+        #     )
+
+        # print(f"Debug: Total efficiency covariance for group '{group}', cut '{cut}':\n{cov_total}", flush=True)
+
+
         sigma_eff = np.sqrt(np.clip(np.diag(cov_total), 0.0, np.inf))
+        # print(
+        #     f"Debug: Per-bin systematic sigma on efficiency for group '{group}', cut '{cut}': {sigma_eff}",
+        #     flush=True,
+        # )
         return sigma_eff

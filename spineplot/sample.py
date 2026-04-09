@@ -320,7 +320,7 @@ class Sample:
 
             print("Systematics in sample ", self._name, " matching pattern ", pattern, ":")
             for k, sys in [(k, s) for k, s in self._systematics.items() if regxp.match(k)]:
-                print(f'  key={k}  name={sys._name}  has__sigma={"_sigma" in k}')
+                print(f'  key={k}  name={sys._name}  has__sigma={"_sigma" in k} sigma={sys._sigma if hasattr(sys, "_sigma") else "N/A"}')
 
             # Combine the systematics and add the new Systematic object
             syst = Systematic.combine(systematics, recipe['name'], recipe.get('label', None))
@@ -328,9 +328,7 @@ class Sample:
         
         # Print the systematics for the sample (if requested).
         if self._print_sys:
-            recipe_names = {r['name'] for r in recipes}
             for sysname, syst in self._systematics.items():
-                #if sysname in recipe_names or 'statistical' in sysname.lower():
                 print(syst)
 
     def register_variable(self, variable, categories) -> None:

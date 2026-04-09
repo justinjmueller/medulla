@@ -506,7 +506,7 @@ class SpineSpectra1D(SpineSpectra):
                             except Exception:
                                 pass
 
-
+                    print(f"[SpineSpectra1D] Total covariance: \n{cov}")
                     x = reduce(bincenters)[0]
                     y = total_y
                     xerr = [bw / 2 for bw in binwidths[0]]
@@ -514,6 +514,9 @@ class SpineSpectra1D(SpineSpectra):
                     scov = Systematic.transform_as(cov, scale)
                     yerr = np.sqrt(np.diag(scov))
                     total_yerr = yerr
+                    print("total errors:", yerr)
+                    print("central values:", y)
+                    print("relative errors:", np.where(y > 0, yerr / y, 0.0))
                     draw_error_boxes(ax, x, y, xerr, yerr, facecolor='gray', edgecolor='none', alpha=0.5, hatch='///')
                 else:
                     available = []
@@ -1112,6 +1115,7 @@ class SpineSystematics(SpineSpectra):
             label = self._recipe_labels.get(sysname, sysname)
             color = colors[plotted % len(colors)]
             ax.stairs(y, bin_edges, label=label, color=color, linewidth=1.8)
+            print("covariance trace for {}: {:.6g}".format(sysname, np.nansum(np.diag(cov))))
             total_var += np.diag(cov)
             plotted   += 1
 
