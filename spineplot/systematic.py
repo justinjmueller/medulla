@@ -131,31 +131,67 @@ class Systematic:
         # where the systematic weights are stored in a TTree.
         if self._handle is not None:
             # Read the weights from the TTree
-            weights_array = np.stack(self._handle.array(library='np'))[mask, :]
-            
-            if weights_array.shape[1] == 7:
-                # Set the "sigma" levels corresponding to each weight in the
-                # array. 
-                sigma_levels = np.linspace(-3, 3, 7)
+            weights_array = np.stack(
+                self._handle.array(library='np')
+            )[mask, :]
+
+            # Some assumptions are made here about the shape and
+            # structure of the weights array. If the shape indicates
+            # that these are "n-sigma" weights, the appropriate
+            # interpolation is performed to generate the universe
+            # weights. Otherwise, the weights array is assumed to be
+            # the universe weights directly. The "general" GENIE
+            # multisigma weights have shape (N,6) corresponding to
+            # -1, +1, -2, +2, -3, +3 sigma variations, whereas we tend
+            # to store detector systematic multisigma weights with
+            # shape (N,7) corresponding to -3, -2, -1, 0, +1, +2, +3
+            # sigma variations.
+            if weights_array.shape[1] in (6, 7):
+                # Case for GENIE multisigma weights
+                if weights_array.shape[1] == 6:
+                    sigma_levels_raw = np.array(
+                        [-1, 1, -2, 2, -3, 3],
+                        dtype=float
+                    )
+                    order = np.argsort(sigma_levels_raw)
+                    sigma_levels = sigma_levels_raw[order]
+                    W = np.asarray(
+                        weights_array,
+                        dtype=float
+                    )[:, order]
+                # Case for detector multisigma weights
+                else:
+                    sigma_levels = np.linspace(-3, 3, 7)
+                    W = np.asarray(
+                        weights_array,
+                        dtype=float
+                    )
 
                 # A set of `nuniv` random values is drawn from a normal
-                # distribution with mean 0 and standard deviation 1. The
-                # weights retrieved above are then interpolated at these
-                # values to generate the universe weights.
-                random_sigmas = np.random.normal(0, 1, (weights_array.shape[0], nuniv))
+                # distribution with mean 0 and standard deviation 1.
+                # The weights retrieved above are then interpolated at
+                # these values to generate the universe weights.
+                random_sigmas = np.random.normal(
+                    0, 1,
+                    (W.shape[0], nuniv)
+                )
                 self._universe_weights = np.apply_along_axis(
-                    lambda w: np.interp(random_sigmas[0], sigma_levels, w),
+                    lambda w: np.interp(
+                        random_sigmas[0],
+                        sigma_levels,
+                        w
+                    ),
                     axis=1,
-                    arr=weights_array
+                    arr=W
                 )
             else:
                 self._universe_weights = weights_array
 
-            # The universe weights are used to characterize the systematic
-            # uncertainty for each of the Variables by method of covariance
-            # matrix. Each Variable has an associated binning and field
-            # name, which are used to bin the events for each set of
-            # universe weights.
+            # The universe weights are used to characterize the
+            # systematic uncertainty for each of the Variables by
+            # method of covariance matrix. Each Variable has an
+            # associated binning and field name, which are used to bin
+            # the events for each set of universe weights.
             self._covariances = dict()
             for name, variable in self._variables.items():
                 data = sample._data[name].to_numpy()

@@ -1,0 +1,153 @@
+[general]
+output = "sbnd_postshutdown_numubar_2026"
+primfn = "default_primary_classification"
+pidfn = "default_pid"
+fsthresh = [
+    "@photon_threshold",
+    "@electron_threshold",
+    "@muon_threshold",
+    "@proton_threshold",
+    "@michel_threshold" 
+]
+
+[parameters]
+photon_threshold = 25.0
+electron_threshold = 25.0
+muon_threshold = 143.425
+proton_threshold = 40.0
+michel_threshold = 10      # number of depositions (as opposed to MeV)
+
+[[sample]]
+name = "simulation"
+path = "/exp/sbnd/data/users/noza/rhc_sample.flat.caf.root"
+ismc = true
+disable = false
+
+[[tree]]
+name = "selected"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "fiducial_cut",          type = "reco" },
+    {name = "containment_cut",       type = "reco" },
+    {name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold" ] },
+]
+branch = [
+    {name = "neutrino_id",           type = "true" },
+    {name = "category",              type = "true" },
+    {name = "visible_energy",        type = "both" },
+
+    # Cuts for applying MICHEL/NO PROTON selection
+    {name = "single_michel",         type = "both",  parameters = [ "@michel_threshold" ] },
+    {name = "proton_multiplicity",   type = "both",  parameters = [ "@proton_threshold" ] },
+
+    # Leading MUON interaction-level
+    {name = "ke",                    type = "both_particle", selector = "leading_muon" },
+    {name = "polar_angle",           type = "both_particle", selector = "leading_muon" },
+    {name = "start_x",               type = "both_particle", selector = "leading_muon" },
+    {name = "start_y",               type = "both_particle", selector = "leading_muon" },
+    {name = "start_z",               type = "both_particle", selector = "leading_muon" },
+    {name = "end_x",                 type = "both_particle", selector = "leading_muon" },
+    {name = "end_y",                 type = "both_particle", selector = "leading_muon" },
+    {name = "end_z",                 type = "both_particle", selector = "leading_muon" },
+    {name = "p",                     type = "both_particle", selector = "leading_muon" },
+    {name = "muon_softmax",          type = "reco_particle", selector = "leading_muon" },
+
+    # Target MICHEL interaction-level
+    {name = "calo_ke",               type = "both_particle", selector = "target_michel" },
+    {name = "start_x",               type = "both_particle", selector = "target_michel" },
+    {name = "start_y",               type = "both_particle", selector = "target_michel" },
+    {name = "start_z",               type = "both_particle", selector = "target_michel" },
+    {name = "start_dir_x",           type = "both_particle", selector = "target_michel" },
+    {name = "start_dir_y",           type = "both_particle", selector = "target_michel" },
+    {name = "start_dir_z",           type = "both_particle", selector = "target_michel" },
+]
+
+[[tree]]
+name = "signal"
+sim_only = true
+mode = "true"
+cut = [
+    {name = "fiducial_cut",          type = "true" },
+    {name = "containment_cut",       type = "true" },
+    {name = "single_muon",           type = "true",  parameters = [ "@muon_threshold" ] },
+]
+branch = [
+    {name = "category",              type = "true" },
+    {name = "visible_energy",        type = "true" },
+    {name = "polar_angle",           type = "both_particle", selector = "leading_muon"  },
+    {name = "ke",                    type = "both_particle", selector = "leading_muon"  },
+    {name = "muon_softmax",          type = "reco_particle", selector = "leading_muon"  },
+    {name = "calo_ke",               type = "both_particle", selector = "target_michel" },
+
+    # Cuts for applying MICHEL/NO PROTON selection / efficiency studies
+    {name = "single_michel",         type = "both",  parameters = [ "@michel_threshold" ] },
+    {name = "proton_multiplicity",   type = "both",  parameters = [ "@proton_threshold" ] },
+
+    # Cuts (for Muon selection efficiency studies)
+    {name = "fiducial_cut",          type = "reco" },
+    {name = "containment_cut",       type = "reco" },
+    {name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold" ] },
+
+]
+
+[[category]] # 0 : Contained, fiducial, numubar -> mu+ -> e+
+cuts = [
+    { name = "neutrino"                         },
+    { name = "fiducial_cut"                     },
+    { name = "containment_cut"                  },
+    { name = "primary_lepton_from_antineutrino" },
+    { name = "single_muon",   parameters = [ "@muon_threshold"   ] },
+    { name = "single_michel", parameters = [ "@michel_threshold" ] },   
+]
+
+[[category]] # 1 : Contained, fiducial, numu -> mu- -> e-
+cuts = [
+    { name = "neutrino"                          },
+    { name = "fiducial_cut"                      },
+    { name = "containment_cut"                   },
+    { name = "!primary_lepton_from_antineutrino" },
+    { name = "single_muon",   parameters = [ "@muon_threshold"   ] },
+    { name = "single_michel", parameters = [ "@michel_threshold" ] },
+]
+
+[[category]] # 2 : Contained, fiducial, numubar -> mu+, no e+
+cuts = [
+    { name = "neutrino"                         },
+    { name = "fiducial_cut"                     },
+    { name = "containment_cut"                  },
+    { name = "primary_lepton_from_antineutrino" },
+    { name = "single_muon", parameters = [ "@muon_threshold"     ] },
+]
+
+[[category]] # 3 : Contained, fiducial, numu -> mu-, no e-
+cuts = [
+    { name = "neutrino"                          },
+    { name = "fiducial_cut"                      },
+    { name = "containment_cut"                   },
+    { name = "!primary_lepton_from_antineutrino" },
+    { name = "single_muon", parameters = [ "@muon_threshold"     ] },
+]
+
+[[category]] # 4 : OOFV/Uncontained numu/numubar
+cuts = [
+    { name = "neutrino" },
+    { name = "single_muon", parameters = [ "@muon_threshold" ] },
+]
+
+[[category]] # 5 : Neutrino, CC Nue
+cuts = [
+    { name = "neutrino" },
+    { name = "single_electron", parameters = [ "@electron_threshold" ]}
+]
+
+[[category]] # 6 : Neutrino, NC
+cuts = [
+    { name = "neutrino" },
+    { name = "!iscc"    },
+]
+
+[[category]] # 7 : Cosmic
+cuts = [
+    { name = "!neutrino" },
+]

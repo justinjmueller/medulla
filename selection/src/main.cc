@@ -22,11 +22,13 @@
 #include "scorers.h"
 #include "cuts.h"
 #include "variables.h"
+#include "bivariables.h"
 #include "mctruth.h"
 #include "event_cuts.h"
 #include "event_variables.h"
 #include "spill_cuts.h"
 #include "selectors.h"
+#include "biselectors.h"
 #include "analysis.h"
 
 std::shared_ptr<VarFn<RParticleType>> pvars::primfn = std::make_shared<VarFn<RParticleType>>(pvars::default_primary_classification<RParticleType>);
@@ -241,11 +243,20 @@ int main(int argc, char * argv[])
                         vars_map.try_emplace(thisvar_true.first, thisvar_true.second);
                         vars_map.try_emplace(thisvar_reco.first, thisvar_reco.second);
                     }
+                    else if(var.get_string_field("type") == "both_bivar")
+                    {
+                        NamedSpillMultiVar thisvar_true = construct(cuts, var, mode, "true_bivar", sample.get_bool_field("ismc"));
+                        NamedSpillMultiVar thisvar_reco = construct(cuts, var, mode, "reco_bivar", sample.get_bool_field("ismc"));
+                        vars_map.try_emplace(thisvar_true.first, thisvar_true.second);
+                        vars_map.try_emplace(thisvar_reco.first, thisvar_reco.second);
+                    }
                     else if(var.get_string_field("type") == "true"
                             || var.get_string_field("type") == "reco"
                             || var.get_string_field("type") == "mctruth"
                             || var.get_string_field("type") == "true_particle"
                             || var.get_string_field("type") == "reco_particle"
+                            || var.get_string_field("type") == "true_bivar"
+                            || var.get_string_field("type") == "reco_bivar"
                             || var.get_string_field("type") == "event")
                     {
                         NamedSpillMultiVar thisvar = construct(cuts, var, mode, var.get_string_field("type"), sample.get_bool_field("ismc"));

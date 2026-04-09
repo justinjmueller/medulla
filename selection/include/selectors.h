@@ -230,5 +230,32 @@ namespace selectors
         return leading_particle_index(obj, pvars::kProton);
     }
     REGISTER_SELECTOR(leading_proton, leading_proton);
+    
+    /**
+     * @brief Finds the index corresponding to the target Michel.
+     * @details The target Michel is defined as the Michel with the most
+     * depositions in the interaction. 
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the target Michel (largest).
+     */
+    template<class T>
+    size_t target_michel(const T & obj)
+    {
+        double largest_size(0);
+        size_t index(kNoMatch);
+        for(size_t i(0); i < obj.particles.size(); ++i)
+        {
+            const auto & p = obj.particles[i];
+            double size(p.size);
+            if(pvars::semantic_type(p) == 2 && size > largest_size)
+            {
+                largest_size = size;
+                index = i;
+            }
+        }
+        return index;
+    }
+    REGISTER_SELECTOR(target_michel, target_michel);
 }
 #endif // SELECTORS_H

@@ -26,6 +26,8 @@
 #include "include/utilities.h"
 #include "include/particle_utilities.h"
 #include "include/selectors.h"
+#include "include/biselectors.h"
+#include "include/bivariables.h"
 #include "framework.h"
 
 /**
@@ -138,6 +140,31 @@ namespace vars
         return energy/1000.0;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, visible_energy, visible_energy);
+
+    /**
+     * @brief Variable for total visible energy from the hadrons in interaction.
+     * @details This function calculates the total visible energy of the hadrons
+     * in an interaction by summing the energy of all protons that are identified
+     * as counting towards the final state of the interaction.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj interaction to apply the variable on.
+     * @return the total hardronic visible energy of the interaction in MeV.
+     */
+    template<class T>
+    double hadronic_visible_energy(const T & obj)
+    {
+        double energy(0);
+        for(const auto & p : obj.particles)
+        {
+            if(pcuts::final_state_signal(p))
+            {
+                if(pvars::pid(p) == pvars::kProton) energy += pvars::energy(p) - pvars::mass(p) - PROTON_BINDING_ENERGY;
+                if(pvars::pid(p) == pvars::kPion)   energy += pvars::energy(p);
+            }
+        }
+        return energy;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, hadronic_visible_energy, hadronic_visible_energy);
 
     /**
      * @brief Variable for energy reconstruction assuming CCQE kinematics using
@@ -359,6 +386,52 @@ namespace vars
     template<class T>
     double vertex_z(const T & obj) { return obj.vertex[2]; }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, vertex_z, vertex_z);
+
+    /**
+     * @brief Variable for the PRISM off-axis angle of the interaction for a
+     * location consistent with SBND detector location.
+     * @details The PRISM off-axis angle is the angle made by the neutrino
+     * direction vector and the vector aligned with the BNB axis (z-axis).
+     * Because we have no handle on the production vertex, we assume the
+     * direction is the one formed by the unit vector pointing from the BNB
+     * target to the interaction vertex.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the PRISM off-axis angle of the interaction.
+     */
+    template<class T>
+    double off_axis_angle_sbnd(const T & obj)
+    {
+        return 180./3.141592653589793 * std::atan(std::sqrt(
+            std::pow(vertex_x(obj) + 74, 2) +
+            std::pow(vertex_y(obj), 2)
+        ) / 11000);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, off_axis_angle_sbnd, off_axis_angle_sbnd);
+
+    /**
+     * @brief Variable for the PRISM off-axis angle of the interaction for a
+     * location consistent with ICARUS detector location.
+     * @details The PRISM off-axis angle is the angle made by the neutrino
+     * direction vector and the vector aligned with the BNB axis (z-axis).
+     * Because we have no handle on the production vertex, we assume the
+     * direction is the one formed by the unit vector pointing from the BNB
+     * target to the interaction vertex. 59105 cm is the distance from the BNB
+     * target (600m) minus the offset of the ICARUS origin along the beam axis
+     * (8.95m).
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the PRISM off-axis angle of the interaction.
+     */
+    template<class T>
+    double off_axis_angle_icarus(const T & obj)
+    {
+        return 180./3.141592653589793 * std::atan(std::sqrt(
+            std::pow(vertex_x(obj), 2) +
+            std::pow(vertex_y(obj), 2)
+        ) / (vertex_z(obj) + 59105));
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, off_axis_angle_icarus, off_axis_angle_icarus);
 
     /**
      * @brief Variable for the transverse momentum of the interaction counting
@@ -721,6 +794,35 @@ namespace vars
         return count;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, electron_multiplicity, electron_multiplicity);
+
+    /**
+     * @brief Variable for the non-primary shower multiplicity of the
+     * interaction.
+     * @details This function calculates the multiplicity of non-primary
+     * showers in the interaction by counting the number of non-primary particles
+     * that are identified as photons or electrons and have a kinetic energy above a
+     * threshold. The threshold is set by the `params` vector, which defaults
+     * to 25 MeV. The function returns the number of non-primary showers in the
+     * interaction.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for a shower to count towards the
+     * multiplicity. Defaults to 25 MeV.
+     * @return the multiplicity of non-primary showers in the interaction.
+     */
+    template<class T>
+    double nonprimary_shower_multiplicity(const T & obj, std::vector<double> params={25.0,})
+    {
+        size_t count(0);
+        for(const auto & p : obj.particles)
+        {
+            if(pvars::pid(p) <= 1 && !pvars::primary_classification(p) && pvars::ke(p) >= params[0])
+                ++count;
+        }
+        return count;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, nonprimary_shower_multiplicity, nonprimary_shower_multiplicity);
 
     /**
      * @brief Variable for the (primary) muon multiplicity of the

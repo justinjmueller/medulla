@@ -254,9 +254,29 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
         if(var.has_field("parameters"))
             varPars = var.get_double_vector("parameters");
 
-        if(var_type == "true" || (var.has_field("selector") && var_type == "true_particle"))
+        if(var_type == "true" || (var.has_field("selector") && var_type == "true_particle") || (var.has_field("biselector") && var_type == "true_bivar"))
         {
-            if(var.has_field("selector"))
+            if(var.has_field("biselector"))
+            {
+                std::string full_name = "true_bivar_" + var.get_string_field("biselector") + "_" + var_name;
+                std::string biselector_name = "true_biselector_" + var.get_string_field("biselector");
+                auto biselector_factory = BiSelectorFactoryRegistry<TType>::instance().get(biselector_name);
+                auto biselector = biselector_factory(std::vector<double>{});
+                var_name = "true_bivar_" + var_name;
+                auto factory = BiVarFactoryRegistry<TParticleType>::instance().get(var_name);
+                auto bivar_fn = factory(varPars);
+                VarFn<TType> var_fn_composed = [bivar_fn, biselector](const TType & e) -> double
+                {
+                    auto [first_idx, second_idx] = biselector(e);
+                    if(first_idx == kNoMatch || second_idx == kNoMatch) return kNoMatchValue;
+                    return bivar_fn(e.particles[first_idx], e.particles[second_idx]);
+                };
+                return std::make_pair(full_name, spill_multivar_helper<TType, RType, TParticleType, TType>(
+                    true_cut,
+                    reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
+                    true_particle_cut, var_fn_composed, event_cut, ismc));
+            }
+            else if(var.has_field("selector"))
             {
                 // Full name for the variable.
                 std::string full_name = "true_" + var.get_string_field("selector") + "_" + var_name;
@@ -302,9 +322,29 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             }
         }
         
-        else if(var_type == "reco" || (var.has_field("selector") && var_type == "reco_particle"))
+        else if(var_type == "reco" || (var.has_field("selector") && var_type == "reco_particle") || (var.has_field("biselector") && var_type == "reco_bivar"))
         {
-            if(var.has_field("selector"))
+            if(var.has_field("biselector"))
+            {
+                std::string full_name = "reco_biselector_" + var.get_string_field("biselector") + "_" + var_name;
+                std::string biselector_name = "reco_biselector_" + var.get_string_field("biselector");
+                auto biselector_factory = BiSelectorFactoryRegistry<RType>::instance().get(biselector_name);
+                auto biselector = biselector_factory(std::vector<double>{});
+                var_name = "reco_bivar_" + var_name;
+                auto factory = BiVarFactoryRegistry<RParticleType>::instance().get(var_name);
+                auto bivar_fn = factory(varPars);
+                VarFn<RType> var_fn_composed = [bivar_fn, biselector](const RType & e) -> double
+                {
+                    auto [first_idx, second_idx] = biselector(e);
+                    if(first_idx == kNoMatch || second_idx == kNoMatch) return kNoMatchValue;
+                    return bivar_fn(e.particles[first_idx], e.particles[second_idx]);
+                };
+                return std::make_pair(full_name, spill_multivar_helper<TType, RType, TParticleType, RType>(
+                    true_cut,
+                    reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
+                    true_particle_cut, var_fn_composed, event_cut, ismc));
+            }
+            else if(var.has_field("selector"))
             {
                 // Full name for the variable.
                 std::string full_name = "reco_" + var.get_string_field("selector") + "_" + var_name;
@@ -407,9 +447,29 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
         if(var.has_field("parameters"))
             varPars = var.get_double_vector("parameters");
 
-        if(var_type == "true" || (var.has_field("selector") && var_type == "true_particle"))
+        if(var_type == "true" || (var.has_field("selector") && var_type == "true_particle") || (var.has_field("biselector") && var_type == "true_bivar"))
         {
-            if(var.has_field("selector"))
+            if(var.has_field("biselector"))
+            {
+                std::string full_name = "true_bivar_" + var.get_string_field("biselector") + "_" + var_name;
+                std::string biselector_name = "true_biselector_" + var.get_string_field("biselector");
+                auto biselector_factory = BiSelectorFactoryRegistry<TType>::instance().get(biselector_name);
+                auto biselector = biselector_factory(std::vector<double>{});
+                var_name = "true_bivar_" + var_name;
+                auto factory = BiVarFactoryRegistry<TParticleType>::instance().get(var_name);
+                auto bivar_fn = factory(varPars);
+                VarFn<TType> var_fn_composed = [bivar_fn, biselector](const TType & e) -> double
+                {
+                    auto [first_idx, second_idx] = biselector(e);
+                    if(first_idx == kNoMatch || second_idx == kNoMatch) return kNoMatchValue;
+                    return bivar_fn(e.particles[first_idx], e.particles[second_idx]);
+                };
+                return std::make_pair(full_name, spill_multivar_helper<RType, TType, TParticleType, TType>(
+                    reco_cut,
+                    true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
+                    true_particle_cut, var_fn_composed, event_cut, ismc));
+            }
+            else if(var.has_field("selector"))
             {
                 // Full name for the variable.
                 std::string full_name = "true_" + var.get_string_field("selector") + "_" + var_name;
@@ -454,9 +514,29 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     ismc));
             }
         }
-        else if(var_type == "reco" || (var.has_field("selector") && var_type == "reco_particle"))
+        else if(var_type == "reco" || (var.has_field("selector") && var_type == "reco_particle") || (var.has_field("biselector") && var_type == "reco_bivar"))
         {
-            if(var.has_field("selector"))
+            if(var.has_field("biselector"))
+            {
+                std::string full_name = "reco_bivar_" + var.get_string_field("biselector") + "_" + var_name;
+                std::string biselector_name = "reco_biselector_" + var.get_string_field("biselector");
+                auto biselector_factory = BiSelectorFactoryRegistry<RType>::instance().get(biselector_name);
+                auto biselector = biselector_factory(std::vector<double>{});
+                var_name = "reco_bivar_" + var_name;
+                auto factory = BiVarFactoryRegistry<RParticleType>::instance().get(var_name);
+                auto bivar_fn = factory(varPars);
+                VarFn<RType> var_fn_composed = [bivar_fn, biselector](const RType & e) -> double
+                {
+                    auto [first_idx, second_idx] = biselector(e);
+                    if(first_idx == kNoMatch || second_idx == kNoMatch) return kNoMatchValue;
+                    return bivar_fn(e.particles[first_idx], e.particles[second_idx]);
+                };
+                return std::make_pair(full_name, spill_multivar_helper<RType, TType, RParticleType, RType>(
+                    reco_cut,
+                    true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
+                    reco_particle_cut, var_fn_composed, event_cut, ismc));
+            }
+            else if(var.has_field("selector"))
             {
                 // Full name for the variable.
                 std::string full_name = "reco_" + var.get_string_field("selector") + "_" + var_name;
@@ -859,3 +939,11 @@ template class Registry<VarFactory<EventType>>;
 // Explicit instantiation for selector registries
 template class Registry<SelectorFactory<TType>>;
 template class Registry<SelectorFactory<RType>>;
+
+// Biselector Registry
+template class Registry<BiSelectorFactory<TType>>;
+template class Registry<BiSelectorFactory<RType>>;
+
+// Bivariable Registry
+template class Registry<BiVarFactory<TParticleType>>;
+template class Registry<BiVarFactory<RParticleType>>;

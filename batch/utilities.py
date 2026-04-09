@@ -300,13 +300,42 @@ def check_project_status(
     conn = sqlite3.connect('./project.db')
     curs = conn.cursor()
 
-    # Get the list of job outputs in the output directory.
+    # Get the list of job outputs in the output directory. We require
+    # that the output file be at least 1 KB in size to be considered
+    # complete. This helps avoid marking jobs as complete if they
+    # failed and produced an empty output file.
     output_files = glob(str(project_dir / 'output' / 'output_jobid*.root'))
-    completed_jobs = [int(Path(f).stem.split('jobid')[-1]) for f in output_files]
+    completed_jobs = [
+        int(Path(f).stem.split('jobid')[-1])
+        for f in output_files if Path(f).stat().st_size >= 1024
+    ]
     ins = [('completed', jid) for jid in completed_jobs]
     command(curs, "UPDATE jobs SET status = ? WHERE jobid = ?", ins)
     conn.commit()
     conn.close()
+
+    stub_jobs = [
+        int(Path(f).stem.split("jobid")[-1])
+        for f in output_files
+        if Path(f).stat().st_size < 1024
+    ]
+    if stub_jobs:
+        resp = input(
+            f"[INFO] -- Found {len(stub_jobs)} stub output file(s) <"
+            f" 1024 bytes.\nDelete these stub outputs? [Y/N] "
+        )
+        if resp.strip().lower() != 'y':
+            print(
+                "[INFO] -- Keeping stub output files. Please check"
+                " these files manually to determine if they are valid"
+                " outputs or if the jobs need to be resubmitted."
+            )
+        else:
+            for jid in stub_jobs:
+                stub_file = project_dir / 'output' / f'output_jobid{jid:04d}.root'
+                if stub_file.exists():
+                    stub_file.unlink()
+            print(f"[INFO] -- Deleted {len(stub_jobs)} stub output file(s).")
 
     # Replace the project database copy with the updated version.
     subprocess.run(['mv', './project.db', project_dir / 'project.db'], check=True)
