@@ -128,8 +128,8 @@ class Systematic:
         numpy.ndarray
             An array of weights for the systematic uncertainty.
         """
-        # Check that the handle is valid. This is the "usual" case
-        # where the systematic weights are stored in a TTree.
+        # # Check that the handle is valid. This is the "usual" case
+        # # where the systematic weights are stored in a TTree.
         if self._handle is not None:
             universe_weights = self.get_universe_weights(
                 sample=sample,
@@ -226,16 +226,6 @@ class Systematic:
         # current DataFrame rows using its (integer) index, then apply `mask`.
         weights_all = np.stack(self._handle.array(library='np'))
 
-        if sample is not None and hasattr(sample, '_data'):
-            try:
-                row_idx = sample._data.index.to_numpy()
-                # If indices are valid integer positions into the raw array, align.
-                if row_idx.ndim == 1 and row_idx.size > 0 and np.issubdtype(row_idx.dtype, np.integer):
-                    if row_idx.max() < weights_all.shape[0] and row_idx.min() >= 0:
-                        weights_all = weights_all[row_idx, :]
-            except Exception:
-                pass
-
         weights_array = weights_all[mask, :]  # shape (N_sel, Uraw)
 
         # Multisigma interpolation if shape is 6 or 7
@@ -251,14 +241,21 @@ class Systematic:
                 sigma_levels = np.linspace(-3, 3, 7)
                 W = np.asarray(weights_array, dtype=float)
 
-            rng = np.random.default_rng(seed)
             # Draw per-event random sigma values for each universe
-            random_sigmas = rng.normal(0.0, 1.0, size=(W.shape[0], nuniv))
-
-            # Interpolate each event's 6/7-point curve at its own random_sigmas
-            universe_weights = np.empty((W.shape[0], nuniv), dtype=float)
-            for i in range(W.shape[0]):
-                universe_weights[i] = np.interp(random_sigmas[i], sigma_levels, W[i])
+            random_sigmas = np.random.normal(
+                0, 1,
+                (W.shape[0], nuniv)
+            )
+            # Interpolate each universes's 6/7-point curve at its own random_sigmas
+            universe_weights = np.apply_along_axis(
+                lambda w: np.interp(
+                    random_sigmas[0],
+                    sigma_levels,
+                    w
+                ),
+                axis=1,
+                arr=W
+            )
 
             return universe_weights
 
