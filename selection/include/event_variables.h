@@ -611,6 +611,24 @@ namespace evar
         return nnumis;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Event, unfolded_nnumi, unfolded_nnumi);
+
+    /**
+     * @brief Variable for the time of the trigger in the beam reference frame.
+     * @details This variable returns the time of the trigger in the beam 
+     * reference frame. Beam-related activity should appear as a "top hat"
+     * above the bath of cosmogenic activity.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the time of the trigger in the beam reference frame in
+     * nanoseconds.
+     */
+    template<typename T>
+    double beam_time(const T & sr)
+    {
+        return sr.sbnd_frames.frameHltBeamGate;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, beam_time, beam_time);
+
 }
 
 #endif
