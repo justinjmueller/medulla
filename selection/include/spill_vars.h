@@ -198,6 +198,34 @@ namespace svar
     REGISTER_VAR_SCOPE(RegistrationScope::BNBSpill, lm875c, lm875c);
 
     /**
+     * @brief Variable for the vertical beam position near Mag 873 (VP873).
+     * @details VP873 is a vertical position monitor located after Magnet 873,
+     * in millimetres. It serves as a reliable replacement for VPTG1 and VPTG2
+     * which are known to be unreliable for ICARUS and SBND runs, and is used
+     * in the BNB Figure of Merit calculation.
+     * @tparam T the BNB spill container type.
+     * @param spill the BNB spill info object to apply the variable on.
+     * @return the VP873 reading in mm.
+     */
+    template<typename T>
+    double vp873(const T & spill) { SAFE_SPILL_VAR(spill.VP873); }
+    REGISTER_VAR_SCOPE(RegistrationScope::BNBSpill, vp873, vp873);
+
+    /**
+     * @brief Variable for the horizontal beam position near Mag 873 (HP873).
+     * @details HP873 is a horizontal position monitor located after Magnet 873,
+     * in millimetres. It serves as a reliable replacement for HPTG1 and HPTG2
+     * which are known to be unreliable for ICARUS and SBND runs, and is used
+     * in the BNB Figure of Merit calculation.
+     * @tparam T the BNB spill container type.
+     * @param spill the BNB spill info object to apply the variable on.
+     * @return the HP873 reading in mm.
+     */
+    template<typename T>
+    double hp873(const T & spill) { SAFE_SPILL_VAR(spill.HP873); }
+    REGISTER_VAR_SCOPE(RegistrationScope::BNBSpill, hp873, hp873);
+
+    /**
      * @brief Variable for the horizontal beam position near Mag 875 (HP875).
      * @details HP875 is a horizontal position monitor located after Magnet
      * 875, in millimetres. It characterises the transverse centering of the
@@ -210,6 +238,19 @@ namespace svar
     template<typename T>
     double hp875(const T & spill) { SAFE_SPILL_VAR(spill.HP875); }
     REGISTER_VAR_SCOPE(RegistrationScope::BNBSpill, hp875, hp875);
+
+    /**
+     * @brief Variable for the vertical beam position near Mag 875 (VP875).
+     * @details VP875 is a vertical position monitor located after Magnet 875,
+     * in millimetres. It is the vertical counterpart to @ref hp875 and is
+     * used together with it to characterise the 2D beam spot position.
+     * @tparam T the BNB spill container type.
+     * @param spill the BNB spill info object to apply the variable on.
+     * @return the VP875 reading in mm.
+     */
+    template<typename T>
+    double vp875(const T & spill) { SAFE_SPILL_VAR(spill.VP875); }
+    REGISTER_VAR_SCOPE(RegistrationScope::BNBSpill, vp875, vp875);
 
     /**
      * @brief Variable for the horizontal beam position at Target Station 1
@@ -227,31 +268,18 @@ namespace svar
     REGISTER_VAR_SCOPE(RegistrationScope::BNBSpill, hptg1, hptg1);
 
     /**
-     * @brief Variable for the vertical beam position near Mag 875 (VP875).
-     * @details VP875 is a vertical position monitor located after Magnet 875,
-     * in millimetres. It is the vertical counterpart to @ref hp875 and is
-     * used together with it to characterise the 2D beam spot position.
+     * @brief Variable for the vertical beam position at Target Station 1
+     * (VPTG1).
+     * @details VPTG1 is the vertical position monitor at Target Station 1,
+     * upstream of the beryllium target, in millimetres. It is the
+     * vertical counterpart to @ref hptg1.
      * @tparam T the BNB spill container type.
      * @param spill the BNB spill info object to apply the variable on.
-     * @return the VP875 reading in mm.
+     * @return the VPTG1 reading in mm.
      */
     template<typename T>
-    double vp875(const T & spill) { SAFE_SPILL_VAR(spill.VP875); }
-    REGISTER_VAR_SCOPE(RegistrationScope::BNBSpill, vp875, vp875);
-
-    /**
-     * @brief Variable for the vertical beam position near Mag 873 (VP873).
-     * @details VP873 is a vertical position monitor located after Magnet 873,
-     * in millimetres. It serves as a reliable replacement for VPTG1 and VPTG2
-     * which are known to be unreliable for ICARUS and SBND runs, and is used
-     * in the BNB Figure of Merit calculation.
-     * @tparam T the BNB spill container type.
-     * @param spill the BNB spill info object to apply the variable on.
-     * @return the VP873 reading in mm.
-     */
-    template<typename T>
-    double vp873(const T & spill) { SAFE_SPILL_VAR(spill.VP873); }
-    REGISTER_VAR_SCOPE(RegistrationScope::BNBSpill, vp873, vp873);
+    double vptg1(const T & spill) { SAFE_SPILL_VAR(spill.VPTG1); }
+    REGISTER_VAR_SCOPE(RegistrationScope::BNBSpill, vptg1, vptg1);
 
     /**
      * @brief Variable for the horizontal beam position at Target Station 2
