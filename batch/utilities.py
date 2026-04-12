@@ -2,6 +2,7 @@
 import os
 import sqlite3
 import toml
+from catalog import resolve_samples
 from glob import glob
 import subprocess
 from pathlib import Path
@@ -82,6 +83,7 @@ def get_samples(
     # Get the initial list of samples from the TOML file that have not
     # been disabled.
     cfg = toml.load(tml)
+    cfg = resolve_samples(cfg, toml_dir=Path(tml).parent)
     samples = cfg.get('sample', [])
     enabled_samples = [s for s in samples if not s.get('disable', False)]
 
@@ -243,6 +245,7 @@ def create_new_project(
 
     # Load the TOML file and get the samples.
     cfg = toml.load(tml)
+    cfg = resolve_samples(cfg, toml_dir=Path(tml).parent)
     samples = get_samples(tml, batch_size)
 
     # Create a systematics configuration based on the selection

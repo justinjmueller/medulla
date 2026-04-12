@@ -1,16 +1,16 @@
 #!/bin/bash
 
 #######################################################################
-# Usage: submit.sh [--project=PROJECT] [--branch=BRANCH]
+# Usage: submit.sh [--project=PROJECT] [--tag=TAG]
 # 
 # Arguments:
 #   --project=PROJECT   : Specify the project directory
-#   --branch=BRANCH     : Git branch to checkout (default: develop)
+#   --tag=TAG           : Git ref to checkout on grid nodes (default: develop)
 #######################################################################
 
 # Initialize variables
 PROJECT=""
-BRANCH="develop"
+TAG="develop"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -23,12 +23,12 @@ while [[ $# -gt 0 ]]; do
       PROJECT="$2"
       shift 2
       ;;
-    --branch=*)
-      BRANCH="${1#*=}"
+    --tag=*)
+      TAG="${1#*=}"
       shift
       ;;
-    --branch)
-      BRANCH="$2"
+    --tag)
+      TAG="$2"
       shift 2
       ;;
     -h|--help)
@@ -77,7 +77,7 @@ ups active
 # Build medulla
 git clone https://github.com/justinjmueller/medulla.git
 cd medulla
-git checkout "$BRANCH"
+git checkout ${TAG}
 mkdir build && cd build
 export CC=$(which gcc)
 export CXX=$(which g++)
