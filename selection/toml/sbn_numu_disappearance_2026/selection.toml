@@ -17,41 +17,14 @@ muon_threshold = 25.0
 pion_threshold = 25.0
 proton_threshold = 50.0
 
-[[sample]]
-name = "sbnd"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/*-reweighted.flat.caf.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "sbnd"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/*-reweighted.flat.caf.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "sbnd_offbeam"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/offbeamlight/*.flat.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "icarus"
-path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/*.flat.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "icarus"
-path = "/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/*.flat.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "icarus_offbeam"
-path = "/pnfs/icarus/persistent/users/mueller/production/data/offbeam/*.flat.root"
-ismc = true
-disable = true
+[[include_samples]]
+file = "common/samples.toml"
+keys = [
+    "sbnd_mc5e18", "sbnd_mc1e20", "sbnd_offbeam",
+    "icarus_nominal", "icarus_cvext", "icarus_offbeam",
+]
+# For interactive debugging, uncomment:
+# enable = ["sbnd_mc5e18"]
 
 [[tree]]
 name = "selected"
