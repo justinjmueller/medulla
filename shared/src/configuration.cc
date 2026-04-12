@@ -145,10 +145,12 @@ namespace cfg
                     continue;
 
                 // Copy the catalog entry and set the disable flag.
-                bool is_enabled = !enabled_keys.empty() &&
-                    enabled_keys.find(*sample_key) != enabled_keys.end();
+                // A sample is enabled only when the 'enable' list is non-empty
+                // and the sample's key appears in it; otherwise it is disabled.
+                bool in_enabled_list = enabled_keys.find(*sample_key) != enabled_keys.end();
+                bool should_disable = enabled_keys.empty() || !in_enabled_list;
                 toml::table new_sample = *sample_tbl;
-                new_sample.insert_or_assign("disable", !is_enabled);
+                new_sample.insert_or_assign("disable", should_disable);
                 sample_arr->push_back(std::move(new_sample));
             }
 

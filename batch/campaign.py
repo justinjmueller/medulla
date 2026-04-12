@@ -3,7 +3,7 @@ import argparse
 import sqlite3
 import sys
 import toml
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from auth import authenticate
@@ -153,7 +153,7 @@ def cmd_create(args):
 
     # Build a campaign name from the tag and timestamp.
     tag = args.tag
-    ts = datetime.utcnow().strftime('%Y%m%dT%H%M%S')
+    ts = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')
     campaign_name = f"campaign_{tag}_{ts}"
     campaign_dir = output_base / campaign_name
     campaign_dir.mkdir(parents=True, exist_ok=True)
@@ -287,7 +287,7 @@ def cmd_launch(args):
                 launch_jobsub(proj_dir, exp=exp)
                 curs.execute(
                     "UPDATE projects SET status = 'submitted', submitted_at = ? WHERE project_id = ?",
-                    (datetime.utcnow().isoformat(), row['project_id']),
+                    (datetime.now(timezone.utc).isoformat(), row['project_id']),
                 )
             except Exception as e:
                 print(f"[CAMPAIGN] Launch failed for {proj_dir}: {e}")
