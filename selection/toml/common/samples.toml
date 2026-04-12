@@ -1,0 +1,140 @@
+# ═══════════════════════════════════════════════════════════════════
+# Centralized sample catalog for medulla selection configurations.
+#
+# Each [[sample]] block has two layers of fields:
+#   (1) Operational fields: consumed by the C++ selection code and
+#       the Python batch system (name, path, ismc, disable).
+#   (2) Metadata fields: provenance and bookkeeping information
+#       ignored by the C++ code but used by the campaign system
+#       and stored for reproducibility.
+#
+# The 'key' and 'experiment' fields are metadata for the Python
+# campaign tooling and are ignored by the C++ selection executable.
+# ═══════════════════════════════════════════════════════════════════
+
+# ─── SBND Central Value (5e18 POT) ───────────────────────────────
+[[sample]]
+key = "sbnd_mc5e18"
+name = "sbnd"
+experiment = "sbnd"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/*-reweighted.flat.caf.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND central value MC, 5e18 POT sample"
+  parent_production = "MCP2025B"
+  spine_production = "v03_02_00"
+  spine_config = "configs/sbnd_mc_nominal.fcl"
+  exposure_pot = 5.0e18
+
+# ─── SBND Central Value (1e20 POT) ───────────────────────────────
+[[sample]]
+key = "sbnd_mc1e20"
+name = "sbnd"
+experiment = "sbnd"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/*-reweighted.flat.caf.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND central value MC, 1e20 POT sample (higher statistics)"
+  parent_production = "MCP2025B"
+  spine_production = "v03_02_00"
+  spine_config = "configs/sbnd_mc_nominal.fcl"
+  exposure_pot = 1.0e20
+
+# ─── SBND Off-Beam (Cosmics) ─────────────────────────────────────
+[[sample]]
+key = "sbnd_offbeam"
+name = "sbnd_offbeam"
+experiment = "sbnd"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/offbeamlight/*.flat.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND off-beam cosmic data overlay"
+  parent_production = "MCP2025B"
+  spine_production = "v03_02_00"
+  spine_config = "configs/sbnd_offbeam.fcl"
+
+# ─── ICARUS Central Value (Nominal) ──────────────────────────────
+[[sample]]
+key = "icarus_nominal"
+name = "icarus"
+experiment = "icarus"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/*.flat.root"
+ismc = true
+
+  [sample.metadata]
+  description = "ICARUS nominal central value MC"
+  parent_production = "production_2025A"
+  spine_production = "v03_02_00"
+  spine_config = "configs/icarus_mc_nominal.fcl"
+
+# ─── ICARUS Central Value (CV Extension) ─────────────────────────
+[[sample]]
+key = "icarus_cvext"
+name = "icarus"
+experiment = "icarus"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/*.flat.root"
+ismc = true
+
+  [sample.metadata]
+  description = "ICARUS CV extension MC (higher statistics)"
+  parent_production = "production_2025A"
+  spine_production = "v03_02_00"
+  spine_config = "configs/icarus_mc_cvext.fcl"
+
+# ─── ICARUS Off-Beam ─────────────────────────────────────────────
+[[sample]]
+key = "icarus_offbeam"
+name = "icarus_offbeam"
+experiment = "icarus"
+path = "/pnfs/icarus/persistent/users/mueller/production/data/offbeam/*.flat.root"
+ismc = true
+
+  [sample.metadata]
+  description = "ICARUS off-beam cosmic data overlay"
+  parent_production = "production_2025A"
+  spine_production = "v03_02_00"
+  spine_config = "configs/icarus_offbeam.fcl"
+
+# ─── Data Samples ────────────────────────────────────────────────
+[[sample]]
+key = "sbnd_bnblight"
+name = "sbnd_bnblight"
+experiment = "sbnd"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/devsample/*.flat.root"
+ismc = false
+
+  [sample.metadata]
+  description = "SBND BNB on-beam data (development sample)"
+  parent_production = "MCP2025B"
+  spine_production = "v03_02_00"
+  spine_config = "configs/sbnd_data_bnb.fcl"
+
+[[sample]]
+key = "icarus_bnblight"
+name = "icarus_bnblight"
+experiment = "icarus"
+path = "/pnfs/icarus/persistent/users/mueller/production/data/onbeam/*.flat.root"
+ismc = false
+
+  [sample.metadata]
+  description = "ICARUS BNB on-beam data"
+  parent_production = "production_2025A"
+  spine_production = "v03_02_00"
+  spine_config = "configs/icarus_data_bnb.fcl"
+
+# ─── Utility ─────────────────────────────────────────────────────
+[[sample]]
+key = "sbnd_offbeamlight_dq"
+name = "offbeamlight"
+experiment = "sbnd"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/offbeamlight/input*.flat.root"
+ismc = false
+
+  [sample.metadata]
+  description = "SBND off-beam light data for data quality checks"
+  parent_production = "MCP2025B"
+  spine_production = "v03_02_00"
+  spine_config = "configs/sbnd_offbeam.fcl"
