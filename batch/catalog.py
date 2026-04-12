@@ -53,7 +53,7 @@ def resolve_samples(cfg, toml_dir=None, enable_keys=None):
                 'name': sample['name'],
                 'path': sample['path'],
                 'ismc': sample['ismc'],
-                'disable': key not in active_keys if active_keys else True,
+                'disable': (not active_keys) or (key not in active_keys),
             }
             resolved.append(entry)
 
