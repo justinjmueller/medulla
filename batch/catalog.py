@@ -4,7 +4,7 @@ from pathlib import Path
 
 CATALOG_DIR = Path(__file__).resolve().parent.parent / 'selection' / 'toml'
 
-def resolve_samples(cfg, toml_dir=None, enable_keys=None):
+def resolve_samples(cfg, catalog_path=None, enable_keys=None):
     """
     Resolve [[include_samples]] directives in a parsed TOML config.
 
@@ -12,8 +12,8 @@ def resolve_samples(cfg, toml_dir=None, enable_keys=None):
     ----------
     cfg : dict
         Parsed TOML configuration dictionary.
-    toml_dir : Path
-        Directory of the source TOML (for resolving relative paths).
+    catalog_path : str | Path
+        Path to the shared sample catalog TOML file.
     enable_keys : list[str]
         Sample keys to enable (disable=False). All others disabled.
         If None, uses the 'enable' list from the directive itself.
@@ -22,19 +22,34 @@ def resolve_samples(cfg, toml_dir=None, enable_keys=None):
     -------
     dict
         Config with [[include_samples]] replaced by [[sample]].
+
+    Raises
+    ------
+    KeyError
+        If a requested key is not found in the catalog.
+    FileNotFoundError
+        If the catalog file does not exist.
     """
     includes = cfg.pop('include_samples', [])
     if not includes:
         return cfg
 
     resolved = cfg.get('sample', [])
-    # The catalog path is relative to the parent of the analysis directory
-    # (i.e., selection/toml/), not the analysis directory itself.
-    base = (toml_dir.parent if toml_dir else CATALOG_DIR)
+
+    if catalog_path is None:
+        catalog_path = CATALOG_DIR / 'samples.toml'
+    catalog = toml.load(Path(catalog_path))
+
+    catalog_by_key = {
+        s['key']: s for s in catalog.get('sample', []) if 'key' in s
+    }
 
     for inc in includes:
-        catalog = toml.load(base / inc['file'])
         requested_keys = set(inc.get('keys', []))
+
+        # Empty keys list → resolve nothing for this directive
+        if not requested_keys:
+            continue
 
         # Priority: function argument > directive 'enable' field > none
         if enable_keys is not None:
@@ -42,13 +57,10 @@ def resolve_samples(cfg, toml_dir=None, enable_keys=None):
         else:
             active_keys = set(inc.get('enable', []))
 
-        for sample in catalog.get('sample', []):
-            key = sample.get('key')
-            if key is None:
-                continue
-            if requested_keys and key not in requested_keys:
-                continue
-
+        for key in requested_keys:
+            if key not in catalog_by_key:
+                raise KeyError(key)
+            sample = catalog_by_key[key]
             entry = {
                 'name': sample['name'],
                 'path': sample['path'],
