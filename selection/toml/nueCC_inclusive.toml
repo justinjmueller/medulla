@@ -39,23 +39,23 @@ name = "NuMIFull"
 path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p02_2/*.flat.root" # extended sample
 #path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
 ismc = true
-disable = true # Optional: default = false
-
-# ICARUS data beam on (10%)
-[[sample]]
-name = "data"
-path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_data_flat_cafs_2/*.root"
-#path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_data_flat_cafs_2/NuMI_data_flat_cafs_2_00.root"
-ismc = false
 disable = false # Optional: default = false
 
-# ICARUS data beam off
-[[sample]]
-name = "dataBeamOff"
-path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_offbeam_data_flat_cafs/*.root"
-#path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_offbeam_data_flat_cafs/NuMI_offbeam_combined_0.root"
-ismc = false
-disable = false # Optional: default = false
+# # ICARUS data beam on (10%)
+# [[sample]]
+# name = "data"
+# path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_data_flat_cafs_2/*.root"
+# #path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_data_flat_cafs_2/NuMI_data_flat_cafs_2_00.root"
+# ismc = false
+# disable = false # Optional: default = false
+
+# # ICARUS data beam off
+# [[sample]]
+# name = "dataBeamOff"
+# path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_offbeam_data_flat_cafs/*.root"
+# #path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_offbeam_data_flat_cafs/NuMI_offbeam_combined_0.root"
+# ismc = false
+# disable = false # Optional: default = false
 
 
 [[tree]]

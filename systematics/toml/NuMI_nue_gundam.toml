@@ -1,11 +1,13 @@
 
 [input]
-path = '/pnfs/icarus/scratch/users/micarrig/nueCCInclusiveSpine17/merged_output.root'
-weights = '/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_*.root'
+path = '/exp/icarus/data/users/micarrig/merged_output.root'
+#weights = '/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_*.root'
+weights = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p02_2/*.flat.root" # extended sample
+
 use_additional_hash = true
 
 [output]
-path = '/exp/icarus/app/users/micarrig/nuESpine/gundam_nueCCInclusive_trueSignal2.root'
+path = '/exp/icarus/data/users/micarrig/gundam_merged.root'
 histogram_destination = 'variations/'
 
 [[sysvar]]
@@ -33,23 +35,23 @@ gundam_store_syst = true
 is_nu = true
 is_data = false
 
-[[tree]]
-origin = 'events/data/true_signal'
-destination = 'events/data/'
-name = 'selected'
-action = 'copy'
-gundam_store_syst = false
-is_nu = false
-is_data = true
+# [[tree]]
+# origin = 'events/data/selected'
+# destination = 'events/data/'
+# name = 'selected'
+# action = 'copy'
+# gundam_store_syst = false
+# is_nu = false
+# is_data = true
 
-[[tree]]
-origin = 'events/dataBeamOff/true_signal'
-destination = 'events/dataBeamOff/'
-name = 'selected'
-action = 'copy'
-gundam_store_syst = false
-is_nu = false
-is_data = true
+# [[tree]]
+# origin = 'events/dataBeamOff/selected'
+# destination = 'events/dataBeamOff/'
+# name = 'selected'
+# action = 'copy'
+# gundam_store_syst = false
+# is_nu = false
+# is_data = true
 
 # [[sys]]
 # name = 'var00'
