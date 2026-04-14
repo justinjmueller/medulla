@@ -10,6 +10,7 @@
  * @author mueller@fnal.gov
  */
 #include <filesystem>
+#include <set>
 #include <string>
 
 #include "configuration.h"
@@ -86,23 +87,6 @@ namespace cfg
             throw ConfigurationError(
                 "[[include_samples]] is not an array of tables.");
 
-        // Collect all requested keys from the [[include_samples]] blocks.
-        std::vector<std::string> requested_keys;
-        for (const auto & entry : *include_arr)
-        {
-            const toml::table * entry_tbl = entry.as_table();
-            if (!entry_tbl) continue;
-
-            const toml::array * keys_arr = (*entry_tbl)["keys"].as_array();
-            if (!keys_arr) continue;
-
-            for (const auto & k : *keys_arr)
-            {
-                auto key = k.value<std::string>();
-                if (key) requested_keys.push_back(*key);
-            }
-        }
-
         // Ensure the document has a [[sample]] array to append to.
         if (!doc.contains("sample"))
             doc.insert("sample", toml::array{});
@@ -112,27 +96,79 @@ namespace cfg
             throw ConfigurationError(
                 "'sample' key in the configuration is not an array.");
 
-        // For each requested key, find the matching entry in the catalog and
-        // append it to the document's [[sample]] array.
-        for (const auto & key : requested_keys)
+        // Process each [[include_samples]] block independently, preserving
+        // its own 'keys' filter and 'enable' list.
+        for (const auto & entry : *include_arr)
         {
-            bool found = false;
+            const toml::table * entry_tbl = entry.as_table();
+            if (!entry_tbl) continue;
+
+            // Collect the requested keys for this include block.
+            std::set<std::string> requested_keys;
+            const toml::array * keys_arr = (*entry_tbl)["keys"].as_array();
+            if (keys_arr)
+            {
+                for (const auto & k : *keys_arr)
+                {
+                    auto key = k.value<std::string>();
+                    if (key) requested_keys.insert(*key);
+                }
+            }
+
+            // Collect the enabled keys for this include block.  If no
+            // 'enable' array is present, the set remains empty, meaning all
+            // resolved samples default to disable = true.
+            std::set<std::string> enabled_keys;
+            const toml::array * enable_arr = (*entry_tbl)["enable"].as_array();
+            if (enable_arr)
+            {
+                for (const auto & k : *enable_arr)
+                {
+                    auto key = k.value<std::string>();
+                    if (key) enabled_keys.insert(*key);
+                }
+            }
+
+            // Walk the catalog and append matching entries with the
+            // appropriate disable flag.
             for (const auto & cat_sample : *catalog_samples)
             {
                 const toml::table * sample_tbl = cat_sample.as_table();
                 if (!sample_tbl) continue;
 
                 auto sample_key = (*sample_tbl)["key"].value<std::string>();
-                if (sample_key && *sample_key == key)
-                {
-                    sample_arr->push_back(*sample_tbl);
-                    found = true;
-                    break;
-                }
+                if (!sample_key) continue;
+
+                // Skip entries not in the requested-keys filter (if any).
+                if (!requested_keys.empty() &&
+                    requested_keys.find(*sample_key) == requested_keys.end())
+                    continue;
+
+                // Copy the catalog entry and set the disable flag.
+                // A sample is enabled only when the 'enable' list is non-empty
+                // and the sample's key appears in it; otherwise it is disabled.
+                bool in_enabled_list = enabled_keys.find(*sample_key) != enabled_keys.end();
+                bool should_disable = enabled_keys.empty() || !in_enabled_list;
+                toml::table new_sample = *sample_tbl;
+                new_sample.insert_or_assign("disable", should_disable);
+                sample_arr->push_back(std::move(new_sample));
             }
-            if (!found)
-                throw ConfigurationError(
-                    "Sample key '" + key + "' not found in the sample catalog.");
+
+            // Verify that all explicitly requested keys were found.
+            for (const auto & key : requested_keys)
+            {
+                bool found = false;
+                for (const auto & cat_sample : *catalog_samples)
+                {
+                    const toml::table * sample_tbl = cat_sample.as_table();
+                    if (!sample_tbl) continue;
+                    auto sample_key = (*sample_tbl)["key"].value<std::string>();
+                    if (sample_key && *sample_key == key) { found = true; break; }
+                }
+                if (!found)
+                    throw ConfigurationError(
+                        "Sample key '" + key + "' not found in the sample catalog.");
+            }
         }
 
         // Remove the [[include_samples]] key from the document so that
