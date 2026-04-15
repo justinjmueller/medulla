@@ -207,6 +207,49 @@ int main(int argc, char * argv[])
         mark_contained(&rec->dlp[0], &rec->dlp_true[0]);
         write_event(rec, 1, 3, 3, pot, nevt, t);
 
+        /**
+         * @brief Generate "MCTruth-cut" events to test the mctruth cut and
+         * variable paths in the framework (Run=2).
+         *
+         * - EM00: Paired reco+truth, nu_id=0, mc.nu[0].iscc=true.  The iscc
+         *   mctruth cut passes; true_neutrino_energy == NEUTRINO_ENERGY.
+         *
+         * - EM01: Paired reco+truth, nu_id=0, mc.nu[0].iscc=false.  The iscc
+         *   mctruth cut fails; the interaction must NOT appear in the tree.
+         *
+         * - EM02: Paired reco+truth, nu_id=-1 (cosmic).  The mctruth cut
+         *   filters the interaction out; no entry appears in the tree.
+         */
+
+        // EM00: CC neutrino — mctruth cut passes, neutrino energy readable.
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs));
+        rec->dlp_true[0].nu_id = 0;
+        pair(rec->dlp[0], rec->dlp_true[0]);
+        rec->mc.nu.push_back(generate_neutrino(true));
+        rec->mc.nnu = rec->mc.nu.size();
+        write_event(rec, 2, 0, 0, pot, nevt, t);
+        rec->mc.nu.clear();
+        rec->mc.nnu = 0;
+
+        // EM01: NC neutrino — mctruth cut fails, interaction filtered out.
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs));
+        rec->dlp_true[0].nu_id = 0;
+        pair(rec->dlp[0], rec->dlp_true[0]);
+        rec->mc.nu.push_back(generate_neutrino(false));
+        rec->mc.nnu = rec->mc.nu.size();
+        write_event(rec, 2, 0, 1, pot, nevt, t);
+        rec->mc.nu.clear();
+        rec->mc.nnu = 0;
+
+        // EM02: Cosmic (nu_id=-1) — mctruth cut filters out, event absent from tree.
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs));
+        rec->dlp_true[0].nu_id = -1;
+        pair(rec->dlp[0], rec->dlp_true[0]);
+        write_event(rec, 2, 0, 2, pot, nevt, t);
+
         // Write the tree and histograms to the file.
         t->Write();
         pot->Write();
@@ -1238,6 +1281,72 @@ int main(int argc, char * argv[])
         conditions = {
             {"SER00", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
             {"!SER01", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        match_conditions(rows, conditions);
+
+        /**
+         * @brief The ninth set of events to validate is the "sim-like" EM
+         * events and the response of the framework when an MCTruth cut and
+         * variable are applied in "reco" mode.
+         *
+         * - SMR00: EM00 (CC neutrino, nu_id=0) passes the iscc mctruth cut and
+         *   has a valid reco vertex position.
+         *
+         * - SMR01: EM00 has a valid true_neutrino_energy (== NEUTRINO_ENERGY).
+         *
+         * - SMR02: EM01 (NC neutrino, iscc=false) is filtered by the mctruth
+         *   cut and must NOT appear in the tree.
+         *
+         * - SMR03: EM02 (cosmic, nu_id=-1) has no generator-level neutrino and
+         *   is filtered out by the mctruth cut, consistent with how truth cuts
+         *   treat interactions with no corresponding truth instance.
+         */
+        std::cout << "\n\033[1mSimulation-like events with mctruth cut/variable in mode == 'reco' \033[0m" << std::endl;
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_simlike/test_reco_with_mctruth_cut");
+
+        // Expected results for validation.
+        conditions = {
+            {"SMR00", {{"Run", 2}, {"Subrun", 0}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
+            {"SMR01", {{"Run", 2}, {"Subrun", 0}, {"Evt", 0}, {"true_neutrino_energy", NEUTRINO_ENERGY}}},
+            {"!SMR02", {{"Run", 2}, {"Subrun", 0}, {"Evt", 1}}},
+            {"!SMR03", {{"Run", 2}, {"Subrun", 0}, {"Evt", 2}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        match_conditions(rows, conditions);
+
+        /**
+         * @brief The tenth set of events to validate is the "sim-like" EM
+         * events and the response of the framework when an MCTruth cut and
+         * variable are applied in "true" mode.
+         *
+         * - SMT00: EM00 (CC neutrino, nu_id=0) passes the iscc mctruth cut and
+         *   has a valid true vertex position.
+         *
+         * - SMT01: EM00 has a valid true_neutrino_energy (== NEUTRINO_ENERGY).
+         *
+         * - SMT02: EM01 (NC neutrino, iscc=false) is filtered by the mctruth
+         *   cut and must NOT appear in the tree.
+         *
+         * - SMT03: EM02 (cosmic, nu_id=-1) has no generator-level neutrino and
+         *   is filtered out by the mctruth cut, consistent with how truth cuts
+         *   treat interactions with no corresponding truth instance.
+         */
+        std::cout << "\n\033[1mSimulation-like events with mctruth cut/variable in mode == 'true' \033[0m" << std::endl;
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_simlike/test_truth_with_mctruth_cut");
+
+        // Expected results for validation.
+        conditions = {
+            {"SMT00", {{"Run", 2}, {"Subrun", 0}, {"Evt", 0}, {"true_vertex_x", -210.0}}},
+            {"SMT01", {{"Run", 2}, {"Subrun", 0}, {"Evt", 0}, {"true_neutrino_energy", NEUTRINO_ENERGY}}},
+            {"!SMT02", {{"Run", 2}, {"Subrun", 0}, {"Evt", 1}}},
+            {"!SMT03", {{"Run", 2}, {"Subrun", 0}, {"Evt", 2}}},
         };
 
         // Check if each condition_t entry is present in the rows vector.

@@ -115,6 +115,15 @@ void pair(T & left, U & right)
     right.match_ids.push_back(left.id);
 }
 
+// Generate a neutrino truth object.
+caf::SRTrueInteraction generate_neutrino(bool iscc, double E)
+{
+    caf::SRTrueInteraction nu;
+    nu.iscc = iscc;
+    nu.E = E;
+    return nu;
+}
+
 // Mark the particles as contained.
 void mark_contained(caf::SRInteractionDLP * reco_interaction,
                     caf::SRInteractionTruthDLP * true_interaction)
