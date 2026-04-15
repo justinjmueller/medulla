@@ -1,0 +1,31 @@
+[general]
+output = "icarus_numi"
+
+[[sample]]
+name = "onbeam"
+path = "/pnfs/sbn/data/sbn_fd/poms_production/data/Run2reprocess/reconstructed/icaruscode_v09_89_01_02p02/numimajority/flatcaf_unblind/00*/*/*.root"
+ismc = false
+disable = false
+
+[[sample]]
+name = "offbeam"
+path = "/pnfs/sbn/data/sbn_fd/poms_production/data/Run2reprocess/reconstructed/icaruscode_v09_89_01_02p02/offbeamnumimajority/flatcaf_unblind/00*/*/*.root"
+ismc = false
+disable = false
+
+[[tree]]
+name = "events"
+sim_only = false
+mode = "event"
+cut = [
+    { name = "no_cut", type = "event" },
+]
+branch = [
+    { name = "is_first_in_subrun",      type = "event" },
+    { name = "nnumi",                   type = "event" },
+    { name = "noffbeamnumi",            type = "event" },
+    { name = "unfolded_pot_numi",       type = "event" },
+    { name = "unfolded_nnumi",          type = "event" },
+    { name = "global_trigger_time",     type = "event" },
+    { name = "trigger_within_gate",     type = "event" },
+]

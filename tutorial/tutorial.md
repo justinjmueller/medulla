@@ -273,6 +273,45 @@ Each entry in the `branch` list defines a variable to be extracted from the sele
 
 The user has the duty to ensure that all branch variables are of the same length. Particle-level and interaction-level branches cannot be mixed in the same tree, as this will lead to a mismatch in the number of entries and a thrown exception.
 
+#### Biselectors and Bivariables
+
+Many analyses require computing observables that depend on *two* particles within an interaction — for example, the opening angle between a muon and a proton. The standard `selector` mechanism identifies a single particle; **biselectors** extend this pattern to particle pairs.
+
+A **biselector** is a function that receives an interaction object and returns the indices of exactly two particles (as a `std::pair<size_t, size_t>`). A **bivariable** is a function that receives those two particles and returns a `double`. Together they allow interaction-level branch variables to capture two-particle kinematics in a one-to-one correspondence with the interaction entry — no particle-level loop is needed.
+
+##### Using a Biselector in the Configuration
+
+To use a biselector, specify `type = "reco_bivar"` (or `"true_bivar"`) and add a `biselector` field naming the desired biselector:
+
+```toml
+branch = [
+    { name = "opening_angle", type = "reco_bivar", biselector = "muon_proton"      },
+]
+```
+
+The `name` field now identifies a **bivariable** function instead of a standard branch variable function. As with ordinary branches, an optional `parameters` list may be supplied if the bivariable accepts configurable arguments.
+
+##### Full Example
+
+The snippet below adds two-particle observables to a CCQE-like selection. Both the reconstructed and true versions are extracted through the shortcut of `type = "both_bivar"`, which creates two branches with the same name but different types. The `muon_proton` biselector identifies the leading muon and leading proton in the interaction, and the `opening_angle` bivariable computes the opening angle between those two particles.
+
+```toml
+[[tree]]
+name = "selected"
+sim_only = false
+mode = "reco"
+cut = [
+    { name = "fiducial_cut",     type = "reco" },
+    { name = "containment_cut",  type = "reco" },
+    { name = "single_muon",      type = "reco", parameters = [ "@muon_threshold"    ] },
+    { name = "single_proton",    type = "reco", parameters = [ "@proton_threshold"  ] },
+]
+branch = [
+    { name = "neutrino_energy",  type = "mctruth"   },
+    { name = "opening_angle",    type = "both_bivar", biselector = "muon_proton" },
+]
+```
+
 ### Category Block Configuration
 The `category` blocks are optional sections that allow the user to define named categories for interactions at the truth level. These categories can be used to classify interactions based on specific criteria, such as interaction type or final state particle content. Each `category` block defines a single category through application of a series of cuts. The categories are assigned in order of appearance in the configuration file, with the first category that an interaction passes being assigned to that interaction. If an interaction does not pass any category, it is assigned a default category of NaN. The user is responsible for ensuring that the defined categories are mutually exclusive and collectively exhaustive.
 
