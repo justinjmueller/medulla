@@ -29,6 +29,9 @@
 // in particles falling below various thresholds in the framework.
 #define ENERGY_SCALE 200.0
 
+// Define a neutrino energy value used for the MCTruth variable tests.
+#define NEUTRINO_ENERGY 1.5
+
 // Define a type for multiplicity, which is used to define the number of
 // particles of each type in an interaction. This is a fixed-size array
 // of integers, where each element corresponds to a different particle type.
@@ -101,6 +104,14 @@ T generate_interaction(int64_t id,
  */
 template<typename T, typename U>
 void pair(T & left, U & right);
+
+/**
+ * @brief Generate a neutrino truth object.
+ * @param iscc Whether the interaction is charged-current.
+ * @param E The neutrino energy in GeV (default: NEUTRINO_ENERGY).
+ * @return A SRTrueInteraction object with iscc and E set.
+ */
+caf::SRTrueInteraction generate_neutrino(bool iscc, double E = NEUTRINO_ENERGY);
 
 /**
  * @brief Mark the particles as contained.
