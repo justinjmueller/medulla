@@ -5,6 +5,7 @@
  * framework. The framework is designed to be modular and extensible, allowing
  * for easy integration and application of cuts and variables.
  * @author mueller@fnal.gov
+ * @author rvizarr@fnal.gov
  */
 #include <map>
 #include <string>
@@ -85,6 +86,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
     std::vector<CutFn<TParticleType>> true_particle_cut_functions;
     std::vector<CutFn<RParticleType>> reco_particle_cut_functions;
     std::vector<CutFn<EventType>> event_cut_functions;
+    std::vector<CutFn<MCTruth>> mctruth_cut_functions;
     for(const auto & cut : cuts)
     {
         // Retrieve the cut name and check for negation.
@@ -95,7 +97,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             invert = true;
             name = name.substr(1); // Remove the negation character.
         }
-         
+
         if(!cut.has_field("type"))
             throw std::runtime_error("Cut " + name + " does not have a type field.");
         if(cut.get_string_field("type") == "true")
@@ -183,6 +185,21 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 // Otherwise, we just add the function as is.
                 event_cut_functions.push_back(factory(params));
         }
+        else if(cut.get_string_field("type") == "mctruth")
+        {
+            std::string cut_name = "mctruth_" + name;
+            std::vector<double> params;
+            if(cut.has_field("parameters"))
+                params = cut.get_double_vector("parameters");
+            auto factory = CutFactoryRegistry<MCTruth>::instance().get(cut_name);
+            if(invert)
+            {
+                auto fn = factory(params);
+                mctruth_cut_functions.push_back([fn](const MCTruth & m) { return !fn(m); });
+            }
+            else
+                mctruth_cut_functions.push_back(factory(params));
+        }
         else if(cut.get_string_field("type") == "spill")
         {
             std::string cut_name = "spill_" + name;
@@ -239,6 +256,10 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
     auto event_cut = [event_cut_functions](const EventType & e) -> bool {
         return std::all_of(event_cut_functions.begin(), event_cut_functions.end(), [&e](auto & f) { return f(e); });
     };
+    auto mctruth_cut = [mctruth_cut_functions](const MCTruth & m) -> bool {
+        return std::all_of(mctruth_cut_functions.begin(), mctruth_cut_functions.end(),
+                           [&m](auto & f) { return f(m); });
+    };
 
     if(exec_mode == Mode::True)
     {
@@ -285,12 +306,12 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 std::string selector_name = "true_" + var.get_string_field("selector");
                 auto selector_factory = SelectorFactoryRegistry<TType>::instance().get(selector_name);
                 auto selector = selector_factory(std::vector<double>{});
-                                
+
                 // Retrieve the particle-level variable function.
                 var_name = "true_particle_" + var_name;
                 auto factory = VarFactoryRegistry<TParticleType>::instance().get(var_name);
                 auto var_fn = factory(varPars);
-                
+
                 VarFn<TType> var_fn_with_selector = [var_fn, selector](const TType & e) -> double
                 {
                     // Apply the selector to the event.
@@ -305,6 +326,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     true_particle_cut,
                     var_fn_with_selector,
                     event_cut,
+                    mctruth_cut,
                     ismc));
             }
             else
@@ -318,6 +340,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     true_particle_cut,
                     var_fn,
                     event_cut,
+                    mctruth_cut,
                     ismc));
             }
         }
@@ -353,12 +376,12 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 std::string selector_name = "reco_" + var.get_string_field("selector");
                 auto selector_factory = SelectorFactoryRegistry<RType>::instance().get(selector_name);
                 auto selector = selector_factory(std::vector<double>{});
-                                
+
                 // Retrieve the particle-level variable function.
                 var_name = "reco_particle_" + var_name;
                 auto factory = VarFactoryRegistry<RParticleType>::instance().get(var_name);
                 auto var_fn = factory(varPars);
-                
+
                 VarFn<RType> var_fn_with_selector = [var_fn, selector](const RType & e) -> double
                 {
                     // Apply the selector to the event.
@@ -373,6 +396,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     true_particle_cut,
                     var_fn_with_selector,
                     event_cut,
+                    mctruth_cut,
                     ismc));
             }
             else
@@ -386,6 +410,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     true_particle_cut,
                     var_fn,
                     event_cut,
+                    mctruth_cut,
                     ismc));
             }
         }
@@ -400,6 +425,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 true_particle_cut,
                 var_fn,
                 event_cut,
+                mctruth_cut,
                 ismc));
         }
         else if(var_type == "true_particle")
@@ -413,6 +439,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 true_particle_cut,
                 var_fn,
                 event_cut,
+                mctruth_cut,
                 ismc));
         }
         else if(var_type == "reco_particle")
@@ -426,6 +453,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 true_particle_cut,
                 var_fn,
                 event_cut,
+                mctruth_cut,
                 ismc));
         }
         else
@@ -478,12 +506,12 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 std::string selector_name = "true_" + var.get_string_field("selector");
                 auto selector_factory = SelectorFactoryRegistry<TType>::instance().get(selector_name);
                 auto selector = selector_factory(std::vector<double>{});
-                                
+
                 // Retrieve the particle-level variable function.
                 var_name = "true_particle_" + var_name;
                 auto factory = VarFactoryRegistry<TParticleType>::instance().get(var_name);
                 auto var_fn = factory(varPars);
-                
+
                 VarFn<TType> var_fn_with_selector = [var_fn, selector](const TType & e) -> double
                 {
                     // Apply the selector to the event.
@@ -498,6 +526,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     true_particle_cut,
                     var_fn_with_selector,
                     event_cut,
+                    mctruth_cut,
                     ismc));
             }
             else
@@ -511,6 +540,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     true_particle_cut,
                     var_fn,
                     event_cut,
+                    mctruth_cut,
                     ismc));
             }
         }
@@ -565,6 +595,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     reco_particle_cut,
                     var_fn_with_selector,
                     event_cut,
+                    mctruth_cut,
                     ismc));
             }
             else
@@ -578,6 +609,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     true_particle_cut,
                     var_fn,
                     event_cut,
+                    mctruth_cut,
                     ismc));
             }
         }
@@ -592,6 +624,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 true_particle_cut,
                 var_fn,
                 event_cut,
+                mctruth_cut,
                 ismc));
         }
         else if(var_type == "true_particle")
@@ -605,6 +638,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 reco_particle_cut,
                 var_fn,
                 event_cut,
+                mctruth_cut,
                 ismc));
         }
         else if(var_type == "reco_particle")
@@ -618,6 +652,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 reco_particle_cut,
                 var_fn,
                 event_cut,
+                mctruth_cut,
                 ismc));
         }
         else
@@ -654,6 +689,9 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
 }
 
 // Helper method for constructing a SpillMultiVar object.
+// mctruth_cut is applied per-interaction using sr->mc.nu[i.nu_id] when
+// a valid neutrino index exists. It allows GENIE generator-level cuts
+// to be applied alongside SPINE truth-level cuts.
 template<typename CutsOn, typename CompsOn, typename PCutsOn, typename VarOn>
 ana::SpillMultiVar spill_multivar_helper(
     const CutFn<CutsOn> & cuts,
@@ -661,10 +699,11 @@ ana::SpillMultiVar spill_multivar_helper(
     const CutFn<PCutsOn> & pcuts,
     const VarFn<VarOn> & var,
     const CutFn<EventType> & event_cut,
+    const CutFn<MCTruth> & mctruth_cut,
     const bool ismc
 )
 {
-    return ana::SpillMultiVar([comps, cuts, pcuts, var, ismc, event_cut](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
+    return ana::SpillMultiVar([comps, cuts, pcuts, var, ismc, event_cut, mctruth_cut](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
     {
         std::vector<double> values;
 
@@ -697,28 +736,33 @@ ana::SpillMultiVar spill_multivar_helper(
 
                 if constexpr(std::is_same_v<VarOn, RType>)
                 {
-                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))))                    
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id])))
+                        // nu_id < 0 means cosmic/no neutrino; >= size() guards against out-of-bounds on data.
+                       && (i.nu_id < 0 || (size_t)i.nu_id >= sr->mc.nu.size() || mctruth_cut(sr->mc.nu[i.nu_id])))
                     {
                         values.push_back(match_id != kNoMatch ? var(sr->dlp[match_id]) : kNoMatchValue);
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, TType>)
                 {
-                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))) && (i.nu_id < 0 || (size_t)i.nu_id >= sr->mc.nu.size() || mctruth_cut(sr->mc.nu[i.nu_id])))
                     {
                         values.push_back(var(i));
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, MCTruth>)
                 {
-                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && match_id < sr->dlp.size() && (*comps)(sr->dlp[match_id]))) && (i.nu_id < 0 || (size_t)i.nu_id >= sr->mc.nu.size() || mctruth_cut(sr->mc.nu[i.nu_id])))
                     {
-                        values.push_back(i.nu_id >= 0 ? var(sr->mc.nu[i.nu_id]) : kNoMatchValue);
+                        if(i.nu_id >= 0)
+                            values.push_back(var(sr->mc.nu[i.nu_id]));
+                        else
+                            values.push_back(kNoMatchValue);
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, TParticleType> || std::is_same_v<VarOn, RParticleType>)
                 {
-                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))) && (i.nu_id < 0 || (size_t)i.nu_id >= sr->mc.nu.size() || mctruth_cut(sr->mc.nu[i.nu_id])))
                     {
                         for(auto const & j : i.particles)
                         {
@@ -766,21 +810,24 @@ ana::SpillMultiVar spill_multivar_helper(
 
                 if constexpr(std::is_same_v<VarOn, TType>)
                 {
-                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])) || !ismc))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])) || !ismc)
+                        && (match_id == kNoMatch || sr->dlp_true[match_id].nu_id < 0 || mctruth_cut(sr->mc.nu[sr->dlp_true[match_id].nu_id])))
                     {
                         values.push_back(ismc && match_id != kNoMatch ? var(sr->dlp_true[match_id]) : kNoMatchValue);
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, RType>)
                 {
-                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])) || !ismc))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])) || !ismc)
+                        && (match_id == kNoMatch || sr->dlp_true[match_id].nu_id < 0 || mctruth_cut(sr->mc.nu[sr->dlp_true[match_id].nu_id])))
                     {
                         values.push_back(var(i));
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, MCTruth>)
                 {
-                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])) || !ismc))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])))
+                        && (match_id == kNoMatch || sr->dlp_true[match_id].nu_id < 0 || mctruth_cut(sr->mc.nu[sr->dlp_true[match_id].nu_id])))
                     {
                         if(!ismc || match_id == kNoMatch)
                         {
@@ -816,7 +863,7 @@ ana::SpillMultiVar spill_multivar_helper(
                 }
             }
         }
-        
+
         // Return the collected values.
         return values;
     });
@@ -829,7 +876,7 @@ ana::SpillMultiVar spill_multivar_helper(const CutFn<EventType> & cut, const Var
     return ana::SpillMultiVar([cut, var](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
     {
         std::vector<double> values;
-        if(cut(*sr))        
+        if(cut(*sr))
             values.push_back(var(*sr));
         return values;
     });
@@ -869,7 +916,7 @@ std::vector<NamedSpillMultiVar> construct_exposure_vars(const std::vector<cfg::C
                 name = "spill_" + name;
                 auto factory = CutFactoryRegistry<SpillType>::instance().get(name);
                 auto cut_fn = factory(params);
-                
+
                 // We do not transform this to an event-level cut because we
                 // need to apply it to each and every spill that contains
                 // exposure that we want to track.
@@ -886,7 +933,7 @@ std::vector<NamedSpillMultiVar> construct_exposure_vars(const std::vector<cfg::C
     auto cut = [cut_functions](const EventType & e) -> bool {
         return std::all_of(cut_functions.begin(), cut_functions.end(), [&e](auto & f) { return f(e); });
     };
-    
+
     // Compose a common spill cut function.
     auto spill_cut = [spill_cut_functions](const SpillType & s) -> bool {
         return std::all_of(spill_cut_functions.begin(), spill_cut_functions.end(), [&s](auto & f) { return f(s); });
@@ -903,7 +950,7 @@ std::vector<NamedSpillMultiVar> construct_exposure_vars(const std::vector<cfg::C
     exposure_vars.push_back(std::make_pair("livetime", spill_multivar_helper(cut, livetime_var)));
 
     auto pot_var = [spill_cut](const EventType & e) -> double {
-        
+
         if(e.hdr.ismc)
             return (e.hdr.first_in_subrun) ? (double)e.hdr.pot : 0.0;
         else
@@ -926,6 +973,7 @@ template class Registry<CutFactory<RType>>;
 template class Registry<CutFactory<TParticleType>>;
 template class Registry<CutFactory<RParticleType>>;
 template class Registry<CutFactory<EventType>>;
+template class Registry<CutFactory<MCTruth>>;
 template class Registry<CutFactory<SpillType>>;
 
 // Var Registry
