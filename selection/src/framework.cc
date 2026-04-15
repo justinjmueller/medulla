@@ -295,7 +295,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 return std::make_pair(full_name, spill_multivar_helper<TType, RType, TParticleType, TType>(
                     true_cut,
                     reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
-                    true_particle_cut, var_fn_composed, event_cut, ismc));
+                    true_particle_cut, var_fn_composed, event_cut, mctruth_cut, ismc));
             }
             else if(var.has_field("selector"))
             {
@@ -365,7 +365,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 return std::make_pair(full_name, spill_multivar_helper<TType, RType, TParticleType, RType>(
                     true_cut,
                     reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
-                    true_particle_cut, var_fn_composed, event_cut, ismc));
+                    true_particle_cut, var_fn_composed, event_cut, mctruth_cut, ismc));
             }
             else if(var.has_field("selector"))
             {
@@ -495,7 +495,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 return std::make_pair(full_name, spill_multivar_helper<RType, TType, TParticleType, TType>(
                     reco_cut,
                     true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
-                    true_particle_cut, var_fn_composed, event_cut, ismc));
+                    true_particle_cut, var_fn_composed, event_cut, mctruth_cut, ismc));
             }
             else if(var.has_field("selector"))
             {
@@ -564,7 +564,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 return std::make_pair(full_name, spill_multivar_helper<RType, TType, RParticleType, RType>(
                     reco_cut,
                     true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
-                    reco_particle_cut, var_fn_composed, event_cut, ismc));
+                    reco_particle_cut, var_fn_composed, event_cut, mctruth_cut, ismc));
             }
             else if(var.has_field("selector"))
             {
