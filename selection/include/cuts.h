@@ -108,6 +108,25 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::True, iscc, iscc);
 
     /**
+     * @brief Apply a cut on the neutrino pdg.
+     * @details This function applies a cut to select interactions based on
+     * the neutrino pdg
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this is a vector
+     * of neutrino pdg codes accepted
+     * @return true if the neutrino pdg is one of the specified pdgs.
+     */
+    template<class T>
+    bool is_neutrino_pdg(const T & obj, std::vector<double> params={})
+    {
+        if(params.empty())
+            return true; // No cut applied if no parameters are given.
+        return std::find(params.begin(), params.end(), obj.pdg_code) != params.end();
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::True, is_neutrino_pdg, is_neutrino_pdg);
+  
+    /**
      * @brief Apply a cut on the interaction mode.
      * @details This function applies a cut to select interactions based on
      * the interaction mode. The interaction mode is stored by Genie as an
