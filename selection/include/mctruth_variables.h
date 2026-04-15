@@ -51,8 +51,8 @@ namespace mctruth
      * in the lab frame.
      */
     template<typename T>
-        double e_transfer(const T & obj) { return obj.q0_lab; }
-    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, e_transfer, e_transfer);
+        double energy_transfer(const T & obj) { return obj.q0_lab; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, energy_transfer, energy_transfer);
   
     /**
      * @brief Variable for the true neutrino baseline.
