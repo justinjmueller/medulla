@@ -186,5 +186,24 @@ namespace mctruth
     }
     REGISTER_CUT_SCOPE(RegistrationScope::MCTruth, single_proton, single_proton);
 
+    /**
+     * @brief Apply a cut for a maximum energy transfer
+     * @details This function applies a cut to select interactions below
+     * a maximum energy transfer (aka, omega or q0).This cut is on the
+     * true energy transfer from the neutrino to the hadronic system.
+     * This is defined in the lab frame.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this is a
+     * double representing an energy transfer in GeV
+     * @return true if the energy transfer is below the given value
+     */
+    template<class T>
+    bool is_below_max_e_transfer(const T & obj, std::vector<double> params={0.1,})
+    {
+      return obj.q0_lab<params[0];
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::MCTruth, is_below_max_e_transfer, is_below_max_e_transfer);
+
 } // namespace mctruth
 #endif
