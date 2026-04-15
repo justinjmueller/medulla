@@ -5,6 +5,7 @@
  * framework. The framework is designed to be modular and extensible, allowing
  * for easy integration and applications of cuts and variables.
  * @author mueller@fnal.gov
+ * @author rvizarr@fnal.gov
  */
 #ifndef FRAMEWORK_H
 #define FRAMEWORK_H
@@ -126,6 +127,14 @@ using VarFn = std::function<double(const EventT&)>;
  */
 template<typename EventT>
 using SelectorFn = std::function<size_t(const EventT&)>;
+
+/**
+ * @brief Ordered list of category definitions.
+ * @details Each entry pairs a true-level cut (applied to TType) with an
+ * MCTruth-level cut. Categories are tested in order and the index of the
+ * first match is emitted as the branch value.
+ */
+using CategoryFns = std::vector<std::pair<CutFn<TType>, CutFn<MCTruth>>>;
 
 //-----------------------------------------------------------------------------
 // 3) Factory function registries
@@ -308,6 +317,10 @@ namespace                                                                       
             VarFactoryRegistry<EventType>::instance().register_fn(                         \
                 "event_" #name, bind<fn<EventType>, EventType, double>                     \
             );                                                                             \
+        if constexpr((scope)==RegistrationScope::MCTruth)                                  \
+            CutFactoryRegistry<MCTruth>::instance().register_fn(                           \
+                "mctruth_" #name, bind<+fn<MCTruth>, MCTruth, bool>                        \
+            );                                                                             \
         return true;                                                                       \
     }();                                                                                   \
 }
@@ -421,6 +434,10 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
  * @param var The callable that implements the variable on the selected branch.
  * @param event_cut The callable that implements the event cut.
  * @param ismc A boolean indicating whether the data is MC (true) or not (false).
+ * @param mctruth_cut The callable that implements GENIE generator-level cuts,
+ *        applied per-interaction via sr->mc.nu[i.nu_id] when a valid neutrino
+ *        index exists. Allows MCTruth-scoped cuts to be composed alongside
+ *        SPINE truth-level cuts.
  * @return A SpillMultiVar object that applies the cuts and computes the variable.
  */
 template<typename CutsOn, typename CompsOn, typename PCutsOn, typename VarOn>
@@ -430,6 +447,7 @@ ana::SpillMultiVar spill_multivar_helper(
     const CutFn<PCutsOn> & pcuts,
     const VarFn<VarOn> & var,
     const CutFn<EventType> & event_cut,
+    const CutFn<MCTruth> & mctruth_cut,
     const bool ismc = true
 );
 
@@ -445,6 +463,26 @@ ana::SpillMultiVar spill_multivar_helper(
  * variable.
  */
 ana::SpillMultiVar spill_multivar_helper(const CutFn<EventType> & cut, const VarFn<EventType> & var);
+
+/**
+ * @brief Construct the "true_category" SpillMultiVar for a given tree.
+ * @details Parses @p cuts into per-type cut functions, then builds a
+ * SpillMultiVar that iterates over interactions in the given @p mode,
+ * applies all tree-level cuts, and assigns each surviving interaction the
+ * index of the first matching entry in @p categories (or NaN if none match).
+ * Supports cut types: "true", "reco", "mctruth", "event".
+ * @param cuts  Vector of [[tree.cut]] subtables.
+ * @param categories  Ordered list of (TType cut, MCTruth cut) pairs built
+ *        from the [[category]] configuration.
+ * @param mode  Iteration mode: "true" loops over dlp_true, "reco" over dlp.
+ * @param ismc  Whether this sample is MC; gates application of true-level
+ *        complementary cuts in reco mode.
+ * @return A NamedSpillMultiVar with name "true_category".
+ */
+NamedSpillMultiVar construct_category(const std::vector<cfg::ConfigurationTable> & cuts,
+                                      const CategoryFns & categories,
+                                      const std::string & mode,
+                                      bool ismc);
 
 /**
  * @brief Helper method for constructing a set of SpillMultiVar objects that
