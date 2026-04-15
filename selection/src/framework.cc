@@ -811,7 +811,7 @@ ana::SpillMultiVar spill_multivar_helper(
                 if constexpr(std::is_same_v<VarOn, TType>)
                 {
                     if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])) || !ismc)
-                        && (match_id == kNoMatch || sr->dlp_true[match_id].nu_id < 0 || mctruth_cut(sr->mc.nu[sr->dlp_true[match_id].nu_id])))
+                        && (match_id == kNoMatch || sr->dlp_true[match_id].nu_id < 0 || (size_t)sr->dlp_true[match_id].nu_id >= sr->mc.nu.size() || mctruth_cut(sr->mc.nu[sr->dlp_true[match_id].nu_id])))
                     {
                         values.push_back(ismc && match_id != kNoMatch ? var(sr->dlp_true[match_id]) : kNoMatchValue);
                     }
@@ -819,7 +819,7 @@ ana::SpillMultiVar spill_multivar_helper(
                 else if constexpr(std::is_same_v<VarOn, RType>)
                 {
                     if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])) || !ismc)
-                        && (match_id == kNoMatch || sr->dlp_true[match_id].nu_id < 0 || mctruth_cut(sr->mc.nu[sr->dlp_true[match_id].nu_id])))
+                        && (match_id == kNoMatch || sr->dlp_true[match_id].nu_id < 0 || (size_t)sr->dlp_true[match_id].nu_id >= sr->mc.nu.size() || mctruth_cut(sr->mc.nu[sr->dlp_true[match_id].nu_id])))
                     {
                         values.push_back(var(i));
                     }
@@ -827,7 +827,7 @@ ana::SpillMultiVar spill_multivar_helper(
                 else if constexpr(std::is_same_v<VarOn, MCTruth>)
                 {
                     if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])))
-                        && (match_id == kNoMatch || sr->dlp_true[match_id].nu_id < 0 || mctruth_cut(sr->mc.nu[sr->dlp_true[match_id].nu_id])))
+                        && (match_id == kNoMatch || sr->dlp_true[match_id].nu_id < 0 || (size_t)sr->dlp_true[match_id].nu_id >= sr->mc.nu.size() || mctruth_cut(sr->mc.nu[sr->dlp_true[match_id].nu_id])))
                     {
                         if(!ismc || match_id == kNoMatch)
                         {
@@ -880,6 +880,136 @@ ana::SpillMultiVar spill_multivar_helper(const CutFn<EventType> & cut, const Var
             values.push_back(var(*sr));
         return values;
     });
+}
+
+// Construct the "true_category" SpillMultiVar for a given tree.
+NamedSpillMultiVar construct_category(
+    const std::vector<cfg::ConfigurationTable> & cuts,
+    const CategoryFns & categories,
+    const std::string & mode,
+    const bool ismc)
+{
+    std::vector<CutFn<TType>>     true_cut_functions;
+    std::vector<CutFn<RType>>     reco_cut_functions;
+    std::vector<CutFn<MCTruth>>   mctruth_cut_functions;
+    std::vector<CutFn<EventType>> event_cut_functions;
+
+    for(const auto & cut : cuts)
+    {
+        std::string name = cut.get_string_field("name");
+        const bool invert = (name[0] == '!');
+        if(invert) name = name.substr(1);
+        std::vector<double> params;
+        if(cut.has_field("parameters")) params = cut.get_double_vector("parameters");
+        const std::string type = cut.get_string_field("type", "true");
+
+        if(type == "true")
+        {
+            auto factory = CutFactoryRegistry<TType>::instance().get("true_" + name);
+            if(invert) { auto fn = factory(params); true_cut_functions.push_back([fn](const TType & e){ return !fn(e); }); }
+            else true_cut_functions.push_back(factory(params));
+        }
+        else if(type == "reco")
+        {
+            auto factory = CutFactoryRegistry<RType>::instance().get("reco_" + name);
+            if(invert) { auto fn = factory(params); reco_cut_functions.push_back([fn](const RType & e){ return !fn(e); }); }
+            else reco_cut_functions.push_back(factory(params));
+        }
+        else if(type == "mctruth")
+        {
+            auto factory = CutFactoryRegistry<MCTruth>::instance().get("mctruth_" + name);
+            if(invert) { auto fn = factory(params); mctruth_cut_functions.push_back([fn](const MCTruth & m){ return !fn(m); }); }
+            else mctruth_cut_functions.push_back(factory(params));
+        }
+        else if(type == "event")
+        {
+            auto factory = CutFactoryRegistry<EventType>::instance().get("event_" + name);
+            if(invert) { auto fn = factory(params); event_cut_functions.push_back([fn](const EventType & e){ return !fn(e); }); }
+            else event_cut_functions.push_back(factory(params));
+        }
+        // spill/true_particle/reco_particle cuts are not meaningful for category assignment.
+    }
+
+    const bool has_true_cuts = !true_cut_functions.empty();
+    const bool has_reco_cuts = !reco_cut_functions.empty();
+
+    auto true_cut = [true_cut_functions](const TType & e) -> bool {
+        return std::all_of(true_cut_functions.begin(), true_cut_functions.end(), [&e](auto & f){ return f(e); });
+    };
+    auto reco_cut = [reco_cut_functions](const RType & e) -> bool {
+        return std::all_of(reco_cut_functions.begin(), reco_cut_functions.end(), [&e](auto & f){ return f(e); });
+    };
+    auto mctruth_cut = [mctruth_cut_functions](const MCTruth & m) -> bool {
+        return std::all_of(mctruth_cut_functions.begin(), mctruth_cut_functions.end(), [&m](auto & f){ return f(m); });
+    };
+    auto event_cut = [event_cut_functions](const EventType & e) -> bool {
+        return std::all_of(event_cut_functions.begin(), event_cut_functions.end(), [&e](auto & f){ return f(e); });
+    };
+
+    return std::make_pair("true_category", ana::SpillMultiVar(
+        [true_cut, reco_cut, mctruth_cut, event_cut, categories, mode, ismc, has_true_cuts, has_reco_cuts]
+        (const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
+        {
+            std::vector<double> values;
+            if(!event_cut(*sr)) return values;
+
+            // Walk the category list and push the index of the first match,
+            // or kNoMatchValue if none match.
+            auto assign_category = [&](const TType & ti, const int64_t nu_id)
+            {
+                for(size_t idx = 0; idx < categories.size(); ++idx)
+                {
+                    const auto & [cat_true, cat_mctruth] = categories[idx];
+                    if(cat_true(ti) && (nu_id < 0 || (size_t)nu_id >= sr->mc.nu.size() || cat_mctruth(sr->mc.nu[nu_id])))
+                    {
+                        values.push_back((double)idx);
+                        return;
+                    }
+                }
+                values.push_back(kNoMatchValue);
+            };
+
+            if(mode == "true")
+            {
+                for(auto const & i : sr->dlp_true)
+                {
+                    if(!true_cut(i)) continue;
+                    size_t match_id = i.match_ids.size() > 0 ? (size_t)i.match_ids[0] : kNoMatch;
+                    if(has_reco_cuts)
+                    {
+                        if(match_id == kNoMatch) continue;
+                        if(!reco_cut(sr->dlp[match_id])) continue;
+                    }
+                    // nu_id < 0: cosmic; >= size(): guard against unpopulated mc.nu on data.
+                    if(i.nu_id >= 0 && (size_t)i.nu_id < sr->mc.nu.size() && !mctruth_cut(sr->mc.nu[i.nu_id])) continue;
+                    assign_category(i, i.nu_id);
+                }
+            }
+            else if(mode == "reco")
+            {
+                for(auto const & i : sr->dlp)
+                {
+                    if(!reco_cut(i)) continue;
+                    size_t match_id = i.match_ids.size() > 0 ? (size_t)i.match_ids[0] : kNoMatch;
+                    if(has_true_cuts)
+                    {
+                        if(match_id == kNoMatch) { values.push_back(kNoMatchValue); continue; }
+                        if(ismc && !true_cut(sr->dlp_true[match_id])) continue;
+                    }
+                    if(match_id != kNoMatch)
+                    {
+                        int64_t nu_id = sr->dlp_true[match_id].nu_id;
+                        if(nu_id >= 0 && !mctruth_cut(sr->mc.nu[nu_id])) continue;
+                    }
+                    if(match_id != kNoMatch && match_id < sr->dlp_true.size())
+                        assign_category(sr->dlp_true[match_id], sr->dlp_true[match_id].nu_id);
+                    else
+                        values.push_back(kNoMatchValue);
+                }
+            }
+            return values;
+        }
+    ));
 }
 
 // Helper method for constructing a set of SpillMultiVar objects that track the

@@ -128,6 +128,14 @@ using VarFn = std::function<double(const EventT&)>;
 template<typename EventT>
 using SelectorFn = std::function<size_t(const EventT&)>;
 
+/**
+ * @brief Ordered list of category definitions.
+ * @details Each entry pairs a true-level cut (applied to TType) with an
+ * MCTruth-level cut. Categories are tested in order and the index of the
+ * first match is emitted as the branch value.
+ */
+using CategoryFns = std::vector<std::pair<CutFn<TType>, CutFn<MCTruth>>>;
+
 //-----------------------------------------------------------------------------
 // 3) Factory function registries
 //-----------------------------------------------------------------------------
@@ -455,6 +463,26 @@ ana::SpillMultiVar spill_multivar_helper(
  * variable.
  */
 ana::SpillMultiVar spill_multivar_helper(const CutFn<EventType> & cut, const VarFn<EventType> & var);
+
+/**
+ * @brief Construct the "true_category" SpillMultiVar for a given tree.
+ * @details Parses @p cuts into per-type cut functions, then builds a
+ * SpillMultiVar that iterates over interactions in the given @p mode,
+ * applies all tree-level cuts, and assigns each surviving interaction the
+ * index of the first matching entry in @p categories (or NaN if none match).
+ * Supports cut types: "true", "reco", "mctruth", "event".
+ * @param cuts  Vector of [[tree.cut]] subtables.
+ * @param categories  Ordered list of (TType cut, MCTruth cut) pairs built
+ *        from the [[category]] configuration.
+ * @param mode  Iteration mode: "true" loops over dlp_true, "reco" over dlp.
+ * @param ismc  Whether this sample is MC; gates application of true-level
+ *        complementary cuts in reco mode.
+ * @return A NamedSpillMultiVar with name "true_category".
+ */
+NamedSpillMultiVar construct_category(const std::vector<cfg::ConfigurationTable> & cuts,
+                                      const CategoryFns & categories,
+                                      const std::string & mode,
+                                      bool ismc);
 
 /**
  * @brief Helper method for constructing a set of SpillMultiVar objects that
