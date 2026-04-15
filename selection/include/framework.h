@@ -437,7 +437,8 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
  * @param mctruth_cut The callable that implements GENIE generator-level cuts,
  *        applied per-interaction via sr->mc.nu[i.nu_id] when a valid neutrino
  *        index exists. Allows MCTruth-scoped cuts to be composed alongside
- *        SPINE truth-level cuts.
+ *        SPINE truth-level cuts. This is wrapped by std::optional to allow for
+ *        the case where no GENIE cuts are applied or when running on data.
  * @return A SpillMultiVar object that applies the cuts and computes the variable.
  */
 template<typename CutsOn, typename CompsOn, typename PCutsOn, typename VarOn>
@@ -447,7 +448,7 @@ ana::SpillMultiVar spill_multivar_helper(
     const CutFn<PCutsOn> & pcuts,
     const VarFn<VarOn> & var,
     const CutFn<EventType> & event_cut,
-    const CutFn<MCTruth> & mctruth_cut,
+    const std::optional<CutFn<MCTruth>> & mctruth_cut,
     const bool ismc = true
 );
 

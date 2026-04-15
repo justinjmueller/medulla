@@ -256,10 +256,12 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
     auto event_cut = [event_cut_functions](const EventType & e) -> bool {
         return std::all_of(event_cut_functions.begin(), event_cut_functions.end(), [&e](auto & f) { return f(e); });
     };
-    auto mctruth_cut = [mctruth_cut_functions](const MCTruth & m) -> bool {
-        return std::all_of(mctruth_cut_functions.begin(), mctruth_cut_functions.end(),
-                           [&m](auto & f) { return f(m); });
-    };
+    auto mctruth_cut = mctruth_cut_functions.empty()
+        ? std::optional<CutFn<MCTruth>>(std::nullopt)
+        : std::optional<CutFn<MCTruth>>([mctruth_cut_functions](const MCTruth & m) -> bool {
+            return std::all_of(mctruth_cut_functions.begin(), mctruth_cut_functions.end(),
+                               [&m](auto & f) { return f(m); });
+        });
 
     if(exec_mode == Mode::True)
     {
@@ -699,7 +701,7 @@ ana::SpillMultiVar spill_multivar_helper(
     const CutFn<PCutsOn> & pcuts,
     const VarFn<VarOn> & var,
     const CutFn<EventType> & event_cut,
-    const CutFn<MCTruth> & mctruth_cut,
+    const std::optional<CutFn<MCTruth>> & mctruth_cut,
     const bool ismc
 )
 {
@@ -737,22 +739,21 @@ ana::SpillMultiVar spill_multivar_helper(
                 if constexpr(std::is_same_v<VarOn, RType>)
                 {
                     if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id])))
-                        // nu_id < 0 means cosmic/no neutrino; >= size() guards against out-of-bounds on data.
-                       && (i.nu_id < 0 || (size_t)i.nu_id >= sr->mc.nu.size() || mctruth_cut(sr->mc.nu[i.nu_id])))
+                       && (!mctruth_cut || (i.nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[i.nu_id]))))
                     {
                         values.push_back(match_id != kNoMatch ? var(sr->dlp[match_id]) : kNoMatchValue);
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, TType>)
                 {
-                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))) && (i.nu_id < 0 || (size_t)i.nu_id >= sr->mc.nu.size() || mctruth_cut(sr->mc.nu[i.nu_id])))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))) && (!mctruth_cut || (i.nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[i.nu_id]))))
                     {
                         values.push_back(var(i));
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, MCTruth>)
                 {
-                    if(cuts(i) && (!comps || (match_id != kNoMatch && match_id < sr->dlp.size() && (*comps)(sr->dlp[match_id]))) && (i.nu_id < 0 || (size_t)i.nu_id >= sr->mc.nu.size() || mctruth_cut(sr->mc.nu[i.nu_id])))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && match_id < sr->dlp.size() && (*comps)(sr->dlp[match_id]))) && (!mctruth_cut || (i.nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[i.nu_id]))))
                     {
                         if(i.nu_id >= 0)
                             values.push_back(var(sr->mc.nu[i.nu_id]));
@@ -762,7 +763,7 @@ ana::SpillMultiVar spill_multivar_helper(
                 }
                 else if constexpr(std::is_same_v<VarOn, TParticleType> || std::is_same_v<VarOn, RParticleType>)
                 {
-                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))) && (i.nu_id < 0 || (size_t)i.nu_id >= sr->mc.nu.size() || mctruth_cut(sr->mc.nu[i.nu_id])))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))) && (!mctruth_cut || (i.nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[i.nu_id]))))
                     {
                         for(auto const & j : i.particles)
                         {
@@ -811,7 +812,7 @@ ana::SpillMultiVar spill_multivar_helper(
                 if constexpr(std::is_same_v<VarOn, TType>)
                 {
                     if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])) || !ismc)
-                        && (match_id == kNoMatch || sr->dlp_true[match_id].nu_id < 0 || (size_t)sr->dlp_true[match_id].nu_id >= sr->mc.nu.size() || mctruth_cut(sr->mc.nu[sr->dlp_true[match_id].nu_id])))
+                        && (match_id == kNoMatch || (!mctruth_cut || (sr->dlp_true[match_id].nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[sr->dlp_true[match_id].nu_id])))))
                     {
                         values.push_back(ismc && match_id != kNoMatch ? var(sr->dlp_true[match_id]) : kNoMatchValue);
                     }
@@ -819,7 +820,7 @@ ana::SpillMultiVar spill_multivar_helper(
                 else if constexpr(std::is_same_v<VarOn, RType>)
                 {
                     if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])) || !ismc)
-                        && (match_id == kNoMatch || sr->dlp_true[match_id].nu_id < 0 || (size_t)sr->dlp_true[match_id].nu_id >= sr->mc.nu.size() || mctruth_cut(sr->mc.nu[sr->dlp_true[match_id].nu_id])))
+                        && (match_id == kNoMatch || (!mctruth_cut || (sr->dlp_true[match_id].nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[sr->dlp_true[match_id].nu_id])))))
                     {
                         values.push_back(var(i));
                     }
@@ -827,7 +828,7 @@ ana::SpillMultiVar spill_multivar_helper(
                 else if constexpr(std::is_same_v<VarOn, MCTruth>)
                 {
                     if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])))
-                        && (match_id == kNoMatch || sr->dlp_true[match_id].nu_id < 0 || (size_t)sr->dlp_true[match_id].nu_id >= sr->mc.nu.size() || mctruth_cut(sr->mc.nu[sr->dlp_true[match_id].nu_id])))
+                        && (match_id == kNoMatch || (!mctruth_cut || (sr->dlp_true[match_id].nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[sr->dlp_true[match_id].nu_id])))))
                     {
                         if(!ismc || match_id == kNoMatch)
                         {
