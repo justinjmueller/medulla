@@ -1,11 +1,11 @@
 [meta]
-analysis = "sbn_numu_disappearance"
+analysis = "sbn_numu_disappearance_2026"
 description = "SBN numu disappearance oscillation analysis"
-owners = ["mueller", "smith"]
+owners = ["mueller", "dtotani"]
 experiments = ["sbnd", "icarus"]
 
 [defaults]
-batch_size = 50
+batch_size = 1
 
 [[toml]]
 role = "primary"
@@ -33,4 +33,4 @@ file = "data_quality.toml"
 experiments = ["sbnd"]
 
   [toml.enable.sbnd]
-  keys = ["sbnd_offbeamlight_dq"]
+  keys = ["sbnd_offbeam"]
