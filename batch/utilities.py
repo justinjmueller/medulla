@@ -58,7 +58,9 @@ def command(
 
 def get_samples(
     tml : str,
-    batch_size : int
+    batch_size : int,
+    catalog_path = None,
+    enable_keys = None,
 ):
     """
     Get the list of samples from the TOML file after filtering the list
@@ -73,6 +75,10 @@ def get_samples(
     batch_size : int
         Number of files to include in each batch. If <= 0, no batching
         is performed.
+    catalog_path : str | Path | None
+        Path to the sample catalog.  Passed to resolve_samples.
+    enable_keys : list[str] | None
+        Sample keys to enable.  Passed to resolve_samples.
 
     Returns
     -------
@@ -82,7 +88,7 @@ def get_samples(
     # Get the initial list of samples from the TOML file that have not
     # been disabled.
     cfg = toml.load(tml)
-    cfg = resolve_samples(cfg)
+    cfg = resolve_samples(cfg, catalog_path=catalog_path, enable_keys=enable_keys)
     samples = cfg.get('sample', [])
     enabled_samples = [s for s in samples if not s.get('disable', False)]
 
@@ -201,6 +207,8 @@ def create_new_project(
     tml : str,
     batch_size : int,
     sys : str = None,
+    catalog_path = None,
+    enable_keys = None,
 ):
     """
     Create a new project directory with the necessary subdirectories
@@ -244,8 +252,8 @@ def create_new_project(
 
     # Load the TOML file and get the samples.
     cfg = toml.load(tml)
-    cfg = resolve_samples(cfg)
-    samples = get_samples(tml, batch_size)
+    cfg = resolve_samples(cfg, catalog_path=catalog_path, enable_keys=enable_keys)
+    samples = get_samples(tml, batch_size, catalog_path=catalog_path, enable_keys=enable_keys)
 
     # Create a systematics configuration based on the selection
     # configuration. This will be used by each job to run systematics

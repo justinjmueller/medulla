@@ -49,6 +49,7 @@ class ProjectUnit:
     experiment: str
     toml_path: str
     enable_keys: list = field(default_factory=list)
+    batch_size: int = 50
 
 
 # ---------------------------------------------------------------------------
@@ -57,8 +58,9 @@ class ProjectUnit:
 
 SCHEMA_CAMPAIGN_META = """
 CREATE TABLE IF NOT EXISTS campaign_meta (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL
+    name TEXT NOT NULL,
+    tag  TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 """
 
@@ -173,8 +175,93 @@ def expand_campaign(analyses, catalog_path,
                     experiment=exp,
                     toml_path=t.file,
                     enable_keys=t.enable.get(exp, []),
+                    batch_size=a.defaults.get('batch_size', 50),
                 ))
     return units
+
+
+def create_campaign(campaign_dir, project_units, catalog_path,
+                    name, tag,
+                    batch_size_override=None, campaign_cfg=None):
+    """
+    Create a campaign directory with campaign.db and one project sub-directory
+    per ProjectUnit.
+
+    Parameters
+    ----------
+    campaign_dir : str | Path
+        Directory to create.  Raises FileExistsError if campaign.db already
+        exists there.
+    project_units : list[ProjectUnit]
+    catalog_path : str | Path
+        Sample catalog passed to create_new_project for sample resolution.
+    name : str
+        Human-readable campaign name stored in campaign.db.
+    tag : str
+        Git ref / version tag stored in campaign.db.
+    batch_size_override : int | None
+        When set, overrides every project's batch size.
+    campaign_cfg : dict | None
+        Optional config dict.  ``campaign_cfg["overrides"]`` is a list of
+        dicts with keys (analysis, role, experiment, batch_size) that provide
+        per-project batch size overrides, taking precedence over
+        batch_size_override.
+
+    Raises
+    ------
+    FileExistsError
+        If campaign.db already exists in campaign_dir.
+    """
+    campaign_dir = Path(campaign_dir)
+    db_path = campaign_dir / 'campaign.db'
+    if db_path.exists():
+        raise FileExistsError(f"Campaign database already exists: {db_path}")
+
+    campaign_dir.mkdir(parents=True, exist_ok=True)
+
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    curs = conn.cursor()
+    curs.executescript(SCHEMA_CAMPAIGN_META + SCHEMA_PROJECTS)
+    curs.execute("INSERT INTO campaign_meta (name, tag) VALUES (?, ?)", (name, tag))
+    conn.commit()
+
+    # Build per-project batch_size override lookup from campaign_cfg.
+    cfg_overrides = {}
+    if campaign_cfg:
+        for ov in campaign_cfg.get('overrides', []):
+            key = (ov['analysis'], ov['role'], ov['experiment'])
+            cfg_overrides[key] = ov
+
+    for u in project_units:
+        proj_dir = campaign_dir / f"{u.analysis}_{u.role}_{u.experiment}"
+
+        # Precedence: per-project cfg override > global override > unit default.
+        batch_size = u.batch_size
+        if batch_size_override is not None:
+            batch_size = batch_size_override
+        ov = cfg_overrides.get((u.analysis, u.role, u.experiment), {})
+        if 'batch_size' in ov:
+            batch_size = ov['batch_size']
+
+        create_new_project(
+            project_dir=proj_dir,
+            tml=u.toml_path,
+            batch_size=batch_size,
+            catalog_path=catalog_path,
+            enable_keys=u.enable_keys,
+        )
+
+        curs.execute(
+            "INSERT INTO projects "
+            "(analysis, role, experiment, toml_file, project_dir, batch_size) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (u.analysis, u.role, u.experiment,
+             u.toml_path, str(proj_dir), batch_size),
+        )
+        conn.commit()
+
+    conn.close()
 
 
 def _discover_meta_files():
@@ -225,9 +312,6 @@ def _expand_projects(meta_path, filters_exp=None, filters_roles=None):
 def cmd_create(args):
     """Discover analyses, expand project units, and create the campaign."""
     output_base = Path(args.output) if args.output else None
-    manifest_override = {}
-    if args.manifest:
-        manifest_override = toml.load(args.manifest)
 
     filters_exp      = set(args.experiment) if args.experiment else None
     filters_roles    = list(args.roles) if args.roles else None
@@ -247,9 +331,6 @@ def cmd_create(args):
     )
     if filters_exp and len(filters_exp) > 1:
         all_units = [u for u in all_units if u.experiment in filters_exp]
-
-    # batch_size lives on AnalysisMeta, not ProjectUnit — build a lookup.
-    batch_size_map = {a.analysis: a.defaults.get('batch_size', 50) for a in analyses}
 
     if not all_units:
         print("[CAMPAIGN] No project units matched the given filters.")
@@ -277,60 +358,29 @@ def cmd_create(args):
         print("[CAMPAIGN] Aborted.")
         return
 
-    # Build a campaign name from the tag and timestamp.
     tag = args.tag
     ts = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')
     campaign_name = f"campaign_{tag}_{ts}"
     campaign_dir = output_base / campaign_name
-    campaign_dir.mkdir(parents=True, exist_ok=True)
 
-    # Initialise the campaign database.
-    conn = sqlite3.connect(campaign_dir / 'campaign.db')
-    conn.row_factory = sqlite3.Row
-    curs = conn.cursor()
-    curs.executescript(SCHEMA_CAMPAIGN_META + SCHEMA_PROJECTS)
-    curs.execute("INSERT OR REPLACE INTO campaign_meta VALUES (?, ?)", ('tag', tag))
-    curs.execute("INSERT OR REPLACE INTO campaign_meta VALUES (?, ?)", ('name', campaign_name))
-    curs.execute("INSERT OR REPLACE INTO campaign_meta VALUES (?, ?)", ('created_at', ts))
-    conn.commit()
+    manifest_cfg = toml.load(args.manifest) if args.manifest else None
 
-    created = []
-    for u in all_units:
-        proj_dir  = campaign_dir / u.analysis / f"{u.role}_{u.experiment}"
-        batch_size = batch_size_map.get(u.analysis, 50)
-        try:
-            create_new_project(
-                project_dir=proj_dir,
-                tml=u.toml_path,
-                batch_size=batch_size,
-            )
-            status = 'created'
-        except FileExistsError:
-            print(f"[CAMPAIGN] Skipping existing project: {proj_dir}")
-            status = 'exists'
-        except Exception as e:
-            print(f"[CAMPAIGN] Failed to create {proj_dir}: {e}")
-            status = 'failed'
+    create_campaign(
+        campaign_dir=campaign_dir,
+        project_units=all_units,
+        catalog_path=catalog_path,
+        name=campaign_name,
+        tag=tag,
+        campaign_cfg=manifest_cfg,
+    )
 
-        curs.execute(
-            "INSERT OR IGNORE INTO projects "
-            "(analysis, role, experiment, toml_file, project_dir, batch_size, status) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (u.analysis, u.role, u.experiment,
-             u.toml_path, str(proj_dir), batch_size, status),
-        )
-        conn.commit()
-        created.append((u, str(proj_dir), status))
-
-    conn.close()
-
-    # Write a manifest snapshot.
+    # Write a CLI-level manifest snapshot alongside campaign.db.
+    ts_str = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')
     manifest_snapshot = {
-        'campaign': {'name': campaign_name, 'tag': tag, 'created_at': ts},
+        'campaign': {'name': campaign_name, 'tag': tag, 'created_at': ts_str},
         'projects': [
             {'analysis': u.analysis, 'role': u.role, 'experiment': u.experiment,
-             'toml_path': u.toml_path,
-             'batch_size': batch_size_map.get(u.analysis, 50)}
+             'toml_path': u.toml_path, 'batch_size': u.batch_size}
             for u in all_units
         ],
     }
@@ -338,7 +388,7 @@ def cmd_create(args):
         toml.dump(manifest_snapshot, f)
 
     print(f"\n[CAMPAIGN] Campaign '{campaign_name}' created at {campaign_dir}")
-    print(f"[CAMPAIGN] {sum(1 for _, _, s in created if s == 'created')} project(s) created successfully.")
+    print(f"[CAMPAIGN] {len(all_units)} project(s) created.")
 
 
 # ---------------------------------------------------------------------------

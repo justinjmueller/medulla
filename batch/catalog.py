@@ -3,6 +3,7 @@ import toml
 from pathlib import Path
 
 CATALOG_DIR = Path(__file__).resolve().parent.parent / 'selection' / 'toml'
+DEFAULT_CATALOG = CATALOG_DIR / 'common' / 'samples.toml'
 
 def resolve_samples(cfg, catalog_path=None, enable_keys=None):
     """
@@ -37,7 +38,7 @@ def resolve_samples(cfg, catalog_path=None, enable_keys=None):
     resolved = cfg.get('sample', [])
 
     if catalog_path is None:
-        catalog_path = CATALOG_DIR / 'samples.toml'
+        catalog_path = DEFAULT_CATALOG
     catalog = toml.load(Path(catalog_path))
 
     catalog_by_key = {
