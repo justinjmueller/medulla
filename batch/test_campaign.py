@@ -724,3 +724,195 @@ class TestAuthentication:
         assert len(calls) == 2
         assert "sbnd"   in " ".join(str(c) for c in calls[0])
         assert "icarus" in " ".join(str(c) for c in calls[1])
+
+
+# ===================================================================
+# T3.8 — Status synchronisation
+# ===================================================================
+
+try:
+    from campaign import _sync_project_status, cmd_sync
+    _SYNC_AVAILABLE = _CREATE_AVAILABLE
+except ImportError:
+    _SYNC_AVAILABLE = False
+
+skip_sync = pytest.mark.skipif(
+    not _SYNC_AVAILABLE,
+    reason="sync helpers not yet implemented in campaign.py",
+)
+
+
+@skip_sync
+class TestStatusSync:
+    """n_jobs is populated at creation; sync updates completion counts and
+    campaign status from job output files."""
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+
+    def _make_campaign(self, workspace, name="sync", n_fake_samples=1):
+        """Create a campaign for the beta analysis with *n_fake_samples* jobs."""
+        analyses = discover_analyses(workspace["toml_root"])
+        units = expand_campaign(
+            analyses, workspace["catalog"], analysis_filter=["beta"]
+        )
+        campaign_dir = workspace["root"] / f"campaign_{name}"
+        fake_samples = [
+            {"name": f"sbnd_{i}", "path": [f"/fake/{i}.root"],
+             "ismc": True, "disable": False}
+            for i in range(n_fake_samples)
+        ]
+        with mock.patch("utilities.get_samples", return_value=fake_samples):
+            create_campaign(
+                campaign_dir=campaign_dir,
+                project_units=units,
+                catalog_path=workspace["catalog"],
+                name=f"campaign_{name}",
+                tag="v1.0",
+            )
+        return campaign_dir
+
+    def _project_dir(self, campaign_dir):
+        """Return the single project directory inside *campaign_dir*."""
+        dirs = [p for p in campaign_dir.iterdir()
+                if p.is_dir() and (p / "project.db").exists()]
+        assert len(dirs) == 1
+        return dirs[0]
+
+    def _write_output(self, proj_dir, jobid, size=2048):
+        """Create a fake output file for *jobid* with *size* bytes."""
+        out = proj_dir / "output" / f"output_jobid{jobid:04d}.root"
+        out.write_bytes(b"x" * size)
+
+    # ------------------------------------------------------------------
+    # n_jobs at creation
+    # ------------------------------------------------------------------
+
+    def test_n_jobs_populated_at_creation(self, workspace):
+        """n_jobs in campaign.db must equal the number of rows in project.db
+        jobs table immediately after creation."""
+        campaign_dir = self._make_campaign(workspace, name="njobs", n_fake_samples=3)
+
+        conn = sqlite3.connect(str(campaign_dir / "campaign.db"))
+        curs = conn.cursor()
+        curs.execute("SELECT n_jobs FROM projects")
+        rows = curs.fetchall()
+        conn.close()
+
+        assert len(rows) == 1
+        assert rows[0][0] == 3
+
+    def test_n_completed_zero_at_creation(self, workspace):
+        campaign_dir = self._make_campaign(workspace, name="ncomp0")
+
+        conn = sqlite3.connect(str(campaign_dir / "campaign.db"))
+        curs = conn.cursor()
+        curs.execute("SELECT n_completed FROM projects")
+        (n_completed,) = curs.fetchone()
+        conn.close()
+
+        assert n_completed == 0
+
+    # ------------------------------------------------------------------
+    # _sync_project_status
+    # ------------------------------------------------------------------
+
+    def test_sync_returns_none_for_missing_db(self, tmp_path):
+        result = _sync_project_status(tmp_path / "nonexistent")
+        assert result is None
+
+    def test_sync_no_output_files(self, workspace):
+        campaign_dir = self._make_campaign(workspace, name="noout")
+        proj_dir = self._project_dir(campaign_dir)
+
+        result = _sync_project_status(proj_dir)
+
+        assert result["n_jobs"] == 1
+        assert result["n_completed"] == 0
+
+    def test_sync_one_complete(self, workspace):
+        campaign_dir = self._make_campaign(workspace, name="onecomp")
+        proj_dir = self._project_dir(campaign_dir)
+        self._write_output(proj_dir, 0)
+
+        result = _sync_project_status(proj_dir)
+
+        assert result["n_completed"] == 1
+        assert result["n_jobs"] == 1
+
+    def test_sync_stub_file_ignored(self, workspace):
+        """Output files smaller than 1 KB must not count as completed."""
+        campaign_dir = self._make_campaign(workspace, name="stub", n_fake_samples=2)
+        proj_dir = self._project_dir(campaign_dir)
+        self._write_output(proj_dir, 0, size=512)   # stub — too small
+        self._write_output(proj_dir, 1, size=2048)  # real
+
+        result = _sync_project_status(proj_dir)
+
+        assert result["n_completed"] == 1
+        assert result["n_jobs"] == 2
+
+    def test_sync_updates_project_db(self, workspace):
+        """project.db jobs table must be updated to 'completed' by _sync."""
+        campaign_dir = self._make_campaign(workspace, name="projdb")
+        proj_dir = self._project_dir(campaign_dir)
+        self._write_output(proj_dir, 0)
+
+        _sync_project_status(proj_dir)
+
+        conn = sqlite3.connect(str(proj_dir / "project.db"))
+        curs = conn.cursor()
+        curs.execute("SELECT status FROM jobs WHERE jobid = 0")
+        (status,) = curs.fetchone()
+        conn.close()
+        assert status == "completed"
+
+    # ------------------------------------------------------------------
+    # cmd_sync status transitions
+    # ------------------------------------------------------------------
+
+    def _db_row(self, campaign_dir, field):
+        conn = sqlite3.connect(str(campaign_dir / "campaign.db"))
+        curs = conn.cursor()
+        curs.execute(f"SELECT {field} FROM projects LIMIT 1")
+        val = curs.fetchone()[0]
+        conn.close()
+        return val
+
+    def test_cmd_sync_all_complete(self, workspace):
+        campaign_dir = self._make_campaign(workspace, name="allcomp")
+        proj_dir = self._project_dir(campaign_dir)
+        self._write_output(proj_dir, 0)
+
+        class _Args:
+            campaign = str(campaign_dir)
+
+        cmd_sync(_Args())
+
+        assert self._db_row(campaign_dir, "status") == "completed"
+        assert self._db_row(campaign_dir, "n_completed") == 1
+
+    def test_cmd_sync_partial(self, workspace):
+        campaign_dir = self._make_campaign(workspace, name="partial", n_fake_samples=2)
+        proj_dir = self._project_dir(campaign_dir)
+        self._write_output(proj_dir, 0)  # only job 0 done
+
+        class _Args:
+            campaign = str(campaign_dir)
+
+        cmd_sync(_Args())
+
+        assert self._db_row(campaign_dir, "status") == "partial"
+        assert self._db_row(campaign_dir, "n_completed") == 1
+
+    def test_cmd_sync_no_output_preserves_status(self, workspace):
+        campaign_dir = self._make_campaign(workspace, name="nostatus")
+
+        class _Args:
+            campaign = str(campaign_dir)
+
+        cmd_sync(_Args())
+
+        # Status must remain 'created' — no output files means no change.
+        assert self._db_row(campaign_dir, "status") == "created"

@@ -6,6 +6,7 @@ import sys
 import toml
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from glob import glob
 from pathlib import Path
 
 from auth import authenticate
@@ -37,6 +38,7 @@ class _A:
 _STATUS_COLOR = {
     'created':   _A.CYAN,
     'pending':   _A.YELLOW,
+    'partial':   _A.YELLOW,
     'submitted': _A.BLUE,
     'completed': _A.GREEN,
     'failed':    _A.RED,
@@ -140,6 +142,7 @@ CREATE TABLE IF NOT EXISTS projects (
     project_dir TEXT NOT NULL,
     batch_size INTEGER NOT NULL,
     n_jobs INTEGER DEFAULT 0,
+    n_completed INTEGER DEFAULT 0,
     status TEXT DEFAULT 'created',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     submitted_at TIMESTAMP,
@@ -156,6 +159,14 @@ def _open_db(campaign_dir):
         raise FileNotFoundError(f"Campaign database not found: {db_path}")
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
+    curs = conn.cursor()
+    # Migration: add n_completed column if this DB was created before Stage 5.
+    curs.execute("PRAGMA table_info(projects)")
+    if 'n_completed' not in {row[1] for row in curs.fetchall()}:
+        curs.execute(
+            "ALTER TABLE projects ADD COLUMN n_completed INTEGER DEFAULT 0"
+        )
+        conn.commit()
     return conn, conn.cursor()
 
 
@@ -318,16 +329,147 @@ def create_campaign(campaign_dir, project_units, catalog_path,
             enable_keys=u.enable_keys,
         )
 
+        # Read back the job count that create_new_project just wrote.
+        proj_conn = sqlite3.connect(proj_dir / 'project.db')
+        (n_jobs,) = proj_conn.execute("SELECT COUNT(*) FROM jobs").fetchone()
+        proj_conn.close()
+
         curs.execute(
             "INSERT INTO projects "
-            "(analysis, role, experiment, toml_file, project_dir, batch_size) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
+            "(analysis, role, experiment, toml_file, project_dir, batch_size, n_jobs) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
             (u.analysis, u.role, u.experiment,
-             u.toml_path, str(proj_dir), batch_size),
+             u.toml_path, str(proj_dir), batch_size, n_jobs),
         )
         conn.commit()
 
     conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Sync helpers
+# ---------------------------------------------------------------------------
+
+def _sync_project_status(project_dir):
+    """
+    Inspect output files for a single project, update its project.db, and
+    return completion counts.
+
+    A job is considered complete when its output file exists and is at least
+    1 KB — the same criterion used by utilities.check_project_status.
+
+    Parameters
+    ----------
+    project_dir : str | Path
+
+    Returns
+    -------
+    dict with keys ``n_jobs`` and ``n_completed``, or None if project.db
+    does not exist.
+    """
+    project_dir = Path(project_dir)
+    db_path = project_dir / 'project.db'
+    if not db_path.exists():
+        return None
+
+    output_files = glob(str(project_dir / 'output' / 'output_jobid*.root'))
+    completed_ids = [
+        int(Path(f).stem.split('jobid')[-1])
+        for f in output_files
+        if Path(f).stat().st_size >= 1024
+    ]
+
+    conn = sqlite3.connect(db_path)
+    curs = conn.cursor()
+    if completed_ids:
+        curs.executemany(
+            "UPDATE jobs SET status = 'completed' WHERE jobid = ?",
+            [(jid,) for jid in completed_ids],
+        )
+        conn.commit()
+    curs.execute("SELECT status, COUNT(*) FROM jobs GROUP BY status")
+    counts = dict(curs.fetchall())
+    conn.close()
+
+    return {
+        'n_jobs':      sum(counts.values()),
+        'n_completed': counts.get('completed', 0),
+    }
+
+
+# ---------------------------------------------------------------------------
+# `sync` subcommand
+# ---------------------------------------------------------------------------
+
+def cmd_sync(args):
+    """Sync per-project job status into the campaign database."""
+    campaign_dir = Path(args.campaign)
+    conn, curs = _open_db(campaign_dir)
+    curs.execute(
+        "SELECT project_id, analysis, role, experiment, project_dir, status "
+        "FROM projects ORDER BY analysis, role, experiment"
+    )
+    rows = list(curs.fetchall())
+    conn.close()
+
+    if not rows:
+        print("[SYNC] No projects in this campaign.")
+        return
+
+    W_AN, W_RO, W_EX, W_ST, W_JB = 28, 18, 10, 12, 10
+    _print_table(
+        ['Analysis', 'Role', 'Experiment', 'Status', 'Jobs'],
+        [W_AN, W_RO, W_EX, W_ST, W_JB],
+        [],
+    )
+
+    conn = sqlite3.connect(campaign_dir / 'campaign.db')
+    conn.row_factory = sqlite3.Row
+    curs = conn.cursor()
+    synced = 0
+
+    for row in rows:
+        result = _sync_project_status(Path(row['project_dir']))
+        if result is None:
+            continue
+
+        n_jobs      = result['n_jobs']
+        n_completed = result['n_completed']
+
+        if n_jobs == 0:
+            new_status = row['status']
+        elif n_completed == n_jobs:
+            new_status = 'completed'
+        elif n_completed > 0:
+            new_status = 'partial'
+        else:
+            new_status = row['status']
+
+        curs.execute(
+            "UPDATE projects "
+            "SET n_jobs = ?, n_completed = ?, status = ? "
+            "WHERE project_id = ?",
+            (n_jobs, n_completed, new_status, row['project_id']),
+        )
+        conn.commit()
+        synced += 1
+
+        job_str = f"{n_completed}/{n_jobs}" if n_jobs else '—'
+        job_color = (
+            _A.GREEN  if n_jobs and n_completed == n_jobs else
+            _A.YELLOW if n_completed > 0                  else
+            _A.RED    if n_jobs                           else None
+        )
+        print('  '.join([
+            _cell(row['analysis'],  W_AN, color=_A.MAGENTA),
+            _cell(row['role'],      W_RO),
+            _cell(row['experiment'],W_EX),
+            _cell(new_status,       W_ST, color=_STATUS_COLOR.get(new_status)),
+            _cell(job_str,          W_JB, color=job_color),
+        ]))
+
+    conn.close()
+    print(f"\n[SYNC] Synced {synced} project(s).")
 
 
 def _discover_meta_files():
@@ -480,17 +622,25 @@ def cmd_status(args):
         print("[CAMPAIGN] No projects registered in this campaign.")
         return
 
-    W_AN, W_RO, W_EX, W_ST = 28, 18, 10, 12
+    W_AN, W_RO, W_EX, W_ST, W_JB = 28, 18, 10, 12, 10
     _print_table(
-        ['Analysis', 'Role', 'Experiment', 'Status'],
-        [W_AN, W_RO, W_EX, W_ST],
+        ['Analysis', 'Role', 'Experiment', 'Status', 'Jobs'],
+        [W_AN, W_RO, W_EX, W_ST, W_JB],
         [
             [
-                _cell(row['analysis'], W_AN, color=_A.MAGENTA),
-                _cell(row['role'], W_RO),
+                _cell(row['analysis'],   W_AN, color=_A.MAGENTA),
+                _cell(row['role'],       W_RO),
                 _cell(row['experiment'], W_EX),
-                _cell(row['status'], W_ST,
-                      color=_STATUS_COLOR.get(row['status'])),
+                _cell(row['status'],     W_ST, color=_STATUS_COLOR.get(row['status'])),
+                _cell(
+                    f"{row['n_completed']}/{row['n_jobs']}" if row['n_jobs'] else '—',
+                    W_JB,
+                    color=(
+                        _A.GREEN  if row['n_jobs'] and row['n_completed'] == row['n_jobs'] else
+                        _A.YELLOW if row['n_completed']                                     else
+                        None
+                    ),
+                ),
             ]
             for row in rows
         ],
@@ -601,7 +751,27 @@ def cmd_launch(args):
         print("[CAMPAIGN] No projects ready for launch.")
         return
 
-    # Group by experiment.
+    # Show what will be launched and confirm once.
+    W_AN, W_RO, W_EX = 28, 18, 10
+    _print_table(
+        ['Analysis', 'Role', 'Experiment'],
+        [W_AN, W_RO, W_EX],
+        [
+            [
+                _cell(row['analysis'],   W_AN, color=_A.MAGENTA),
+                _cell(row['role'],       W_RO),
+                _cell(row['experiment'], W_EX),
+            ]
+            for row in rows
+        ],
+    )
+    print(f"\n[CAMPAIGN] {len(rows)} project(s) to launch.")
+    resp = input("\n[CAMPAIGN] Proceed with job submission? [Y/N] ")
+    if resp.strip().lower() != 'y':
+        print("[CAMPAIGN] Aborted.")
+        return
+
+    # Group by experiment so we authenticate once per experiment.
     by_exp = {}
     for row in rows:
         by_exp.setdefault(row['experiment'], []).append(row)
@@ -621,7 +791,7 @@ def cmd_launch(args):
             proj_dir = Path(row['project_dir'])
             print(f"[CAMPAIGN] Launching: {row['analysis']}/{row['role']}_{row['experiment']}")
             try:
-                launch_jobsub(proj_dir, exp=exp)
+                launch_jobsub(proj_dir, exp=exp, confirm=False)
                 curs.execute(
                     "UPDATE projects SET status = 'submitted', submitted_at = ? WHERE project_id = ?",
                     (datetime.now(timezone.utc).isoformat(), row['project_id']),
@@ -673,6 +843,11 @@ def main():
     p_status.add_argument('--campaign', metavar='PATH', required=True,
                           help='Path to the campaign directory')
 
+    # -- sync -----------------------------------------------------------------
+    p_sync = sub.add_parser('sync', help='Sync job completion status into campaign.db')
+    p_sync.add_argument('--campaign', metavar='PATH', required=True,
+                        help='Path to the campaign directory')
+
     # -- launch ---------------------------------------------------------------
     p_launch = sub.add_parser('launch', help='Launch pending campaign jobs')
     p_launch.add_argument('--campaign', metavar='PATH', required=True,
@@ -688,6 +863,8 @@ def main():
         cmd_create(args)
     elif args.command == 'status':
         cmd_status(args)
+    elif args.command == 'sync':
+        cmd_sync(args)
     elif args.command == 'launch':
         cmd_launch(args)
 
