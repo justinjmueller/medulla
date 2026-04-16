@@ -357,10 +357,11 @@ def launch_jobsub(
     project_dir : str,
     exp : str = 'sbnd',
     njobs : int = -1,
-    branch : str = 'develop',
+    tag : str = 'develop',
     memory : int = 1800,
     disk : Optional[int] = None,
     lifetime : str = '1h',
+    confirm : bool = True,
 ):
     """
     Launch jobs using jobsub for the given project directory. If njobs
@@ -374,7 +375,7 @@ def launch_jobsub(
         Experiment name (default: sbnd).
     njobs : int
         Number of jobs to launch. If None, launch all pending jobs.
-    branch : str
+    tag : str
         Branch to use for the medulla repository (defaults to develop).
     memory : int | None
         Amount of memory to request for each job in MB. If None, use default.
@@ -382,6 +383,10 @@ def launch_jobsub(
         Amount of disk to request for each job in GB. If None, use default.
     lifetime : str | None
         Expected lifetime of each job (e.g., '1h', '30m'). If None, use default.
+    confirm : bool
+        If True (default), prompt the user before submitting.  Pass
+        False when the caller has already obtained confirmation (e.g.
+        campaign launch confirms once for all projects).
 
     Returns
     -------
@@ -443,10 +448,11 @@ def launch_jobsub(
     print(f"[INFO] -- Launching {njobs} jobs with command: {' '.join(cmd)}")
 
     # Query the user to confirm that they want to launch the jobs.
-    resp = input("Confirm job launch? [Y/N] ")
-    if resp.lower() != 'y':
-        print("[INFO] -- User aborted job launch.")
-        return
+    if confirm:
+        resp = input("Confirm job launch? [Y/N] ")
+        if resp.lower() != 'y':
+            print("[INFO] -- User aborted job launch.")
+            return
 
     # Launch the jobs. If the command raises an "ExpiredSignatureError"
     # exception, it likely means that the user's token has expired and
