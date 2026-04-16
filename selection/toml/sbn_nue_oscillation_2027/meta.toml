@@ -1,7 +1,7 @@
 [meta]
 analysis = "sbn_nue_oscillation"
 description = "SBN nue appearance oscillation analysis"
-owners = ["mueller"]
+owners = ["noza", "jxia", "mueller"]
 experiments = ["sbnd", "icarus"]
 
 [defaults]
