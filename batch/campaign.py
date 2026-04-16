@@ -134,6 +134,49 @@ def discover_analyses(toml_root):
     return analyses
 
 
+def expand_campaign(analyses, catalog_path,
+                    experiment=None, roles=None, analysis_filter=None):
+    """
+    Expand a list of AnalysisMeta into one ProjectUnit per
+    (analysis, role, experiment) combination, filtered by the caller's
+    constraints.
+
+    Parameters
+    ----------
+    analyses : list[AnalysisMeta]
+    catalog_path : str | Path
+        Path to the sample catalog (passed through; used by create_campaign).
+    experiment : str | None
+        Keep only units for this experiment.
+    roles : list[str] | None
+        Keep only units whose role is in this list.
+    analysis_filter : list[str] | None
+        Keep only units whose analysis name is in this list.
+
+    Returns
+    -------
+    list[ProjectUnit]
+    """
+    units = []
+    for a in analyses:
+        if analysis_filter and a.analysis not in analysis_filter:
+            continue
+        for t in a.tomls:
+            if roles and t.role not in roles:
+                continue
+            for exp in t.experiments:
+                if experiment and exp != experiment:
+                    continue
+                units.append(ProjectUnit(
+                    analysis=a.analysis,
+                    role=t.role,
+                    experiment=exp,
+                    toml_path=t.file,
+                    enable_keys=t.enable.get(exp, []),
+                ))
+    return units
+
+
 def _discover_meta_files():
     """Return a list of all meta.toml paths under TOML_DIR."""
     return sorted(TOML_DIR.glob('*/meta.toml'))
@@ -186,19 +229,27 @@ def cmd_create(args):
     if args.manifest:
         manifest_override = toml.load(args.manifest)
 
-    filters_exp = set(args.experiment) if args.experiment else None
-    filters_roles = set(args.roles) if args.roles else None
-    filters_analyses = set(args.analyses) if args.analyses else None
+    filters_exp      = set(args.experiment) if args.experiment else None
+    filters_roles    = list(args.roles) if args.roles else None
+    filters_analyses = list(args.analyses) if args.analyses else None
 
     # Discover and expand all project units.
-    all_units = []
-    for meta_path in _discover_meta_files():
-        if filters_analyses:
-            meta = toml.load(meta_path)
-            if meta['meta']['analysis'] not in filters_analyses:
-                continue
-        units = _expand_projects(meta_path, filters_exp, filters_roles)
-        all_units.extend(units)
+    catalog_path = TOML_DIR / 'common' / 'samples.toml'
+    analyses     = discover_analyses(TOML_DIR)
+    # expand_campaign takes a single experiment string; handle multi-experiment
+    # filters by expanding without the filter then pruning the result.
+    single_exp = next(iter(filters_exp)) if filters_exp and len(filters_exp) == 1 else None
+    all_units  = expand_campaign(
+        analyses, catalog_path,
+        experiment=single_exp,
+        roles=filters_roles,
+        analysis_filter=filters_analyses,
+    )
+    if filters_exp and len(filters_exp) > 1:
+        all_units = [u for u in all_units if u.experiment in filters_exp]
+
+    # batch_size lives on AnalysisMeta, not ProjectUnit — build a lookup.
+    batch_size_map = {a.analysis: a.defaults.get('batch_size', 50) for a in analyses}
 
     if not all_units:
         print("[CAMPAIGN] No project units matched the given filters.")
@@ -206,11 +257,10 @@ def cmd_create(args):
 
     # Print summary table.
     col_w = [20, 18, 10]
-    header = f"{'Analysis':<{col_w[0]}} {'Role':<{col_w[1]}} {'Experiment':<{col_w[2]}}"
-    print(header)
+    print(f"{'Analysis':<{col_w[0]}} {'Role':<{col_w[1]}} {'Experiment':<{col_w[2]}}")
     print('-' * sum(col_w))
     for u in all_units:
-        print(f"{u['analysis']:<{col_w[0]}} {u['role']:<{col_w[1]}} {u['experiment']:<{col_w[2]}}")
+        print(f"{u.analysis:<{col_w[0]}} {u.role:<{col_w[1]}} {u.experiment:<{col_w[2]}}")
     print(f"\n[CAMPAIGN] Total: {len(all_units)} project unit(s).")
 
     if args.dry_run:
@@ -246,12 +296,13 @@ def cmd_create(args):
 
     created = []
     for u in all_units:
-        proj_dir = campaign_dir / u['analysis'] / f"{u['role']}_{u['experiment']}"
+        proj_dir  = campaign_dir / u.analysis / f"{u.role}_{u.experiment}"
+        batch_size = batch_size_map.get(u.analysis, 50)
         try:
             create_new_project(
                 project_dir=proj_dir,
-                tml=u['toml_file'],
-                batch_size=u['batch_size'],
+                tml=u.toml_path,
+                batch_size=batch_size,
             )
             status = 'created'
         except FileExistsError:
@@ -265,8 +316,8 @@ def cmd_create(args):
             "INSERT OR IGNORE INTO projects "
             "(analysis, role, experiment, toml_file, project_dir, batch_size, status) "
             "VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (u['analysis'], u['role'], u['experiment'],
-             u['toml_file'], str(proj_dir), u['batch_size'], status),
+            (u.analysis, u.role, u.experiment,
+             u.toml_path, str(proj_dir), batch_size, status),
         )
         conn.commit()
         created.append((u, str(proj_dir), status))
@@ -277,7 +328,9 @@ def cmd_create(args):
     manifest_snapshot = {
         'campaign': {'name': campaign_name, 'tag': tag, 'created_at': ts},
         'projects': [
-            {k: v for k, v in u.items() if k != 'enable_keys'}
+            {'analysis': u.analysis, 'role': u.role, 'experiment': u.experiment,
+             'toml_path': u.toml_path,
+             'batch_size': batch_size_map.get(u.analysis, 50)}
             for u in all_units
         ],
     }
@@ -321,16 +374,17 @@ def cmd_status(args):
 # ---------------------------------------------------------------------------
 
 def cmd_list(args):
-    """Discover and display all analyses found under the TOML root."""
-    toml_root = Path(args.toml_root) if args.toml_root else TOML_DIR
-    analyses = discover_analyses(toml_root)
+    """Discover and display all analyses and their expanded project units."""
+    toml_root    = Path(args.toml_root) if args.toml_root else TOML_DIR
+    catalog_path = TOML_DIR / 'common' / 'samples.toml'
+    analyses     = discover_analyses(toml_root)
 
     if not analyses:
         print(f"[LIST] No analyses found under {toml_root}")
         return
 
+    # ── Per-analysis summary ──────────────────────────────────────────────
     col_w = [24, 18, 30]
-    header = f"{'Analysis':<{col_w[0]}} {'Role':<{col_w[1]}} {'Experiments':<{col_w[2]}}"
     print(f"\nAnalyses under: {toml_root}")
     print('─' * sum(col_w))
     for a in analyses:
@@ -347,7 +401,15 @@ def cmd_list(args):
             ) or '(none)'
             print(f"  {t.role:<{col_w[1]}} {exps:<{col_w[2]}} {key_summary}")
 
-    print(f"\n[LIST] {len(analyses)} analysis/analyses discovered.")
+    # ── Full expansion table ──────────────────────────────────────────────
+    units = expand_campaign(analyses, catalog_path)
+    print(f"\n{'─' * sum(col_w)}")
+    print(f"  Full expansion: {len(units)} project unit(s)\n")
+    print(f"  {'Analysis':<{col_w[0]}} {'Role':<{col_w[1]}} {'Experiment'}")
+    print(f"  {'─'*col_w[0]} {'─'*col_w[1]} {'─'*10}")
+    for u in units:
+        print(f"  {u.analysis:<{col_w[0]}} {u.role:<{col_w[1]}} {u.experiment}")
+    print()
 
 
 # ---------------------------------------------------------------------------
