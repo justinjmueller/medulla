@@ -357,6 +357,7 @@ def launch_jobsub(
     project_dir : str,
     exp : str = 'sbnd',
     njobs : int = -1,
+    confirm : bool = True,
 ):
     """
     Launch jobs using jobsub for the given project directory. If njobs
@@ -370,6 +371,10 @@ def launch_jobsub(
         Experiment name (default: sbnd).
     njobs : int
         Number of jobs to launch. If None, launch all pending jobs.
+    confirm : bool
+        If True (default), prompt the user before submitting.  Pass
+        False when the caller has already obtained confirmation (e.g.
+        campaign launch confirms once for all projects).
 
     Returns
     -------
@@ -423,10 +428,11 @@ def launch_jobsub(
     print(f"[INFO] -- Launching {njobs} jobs with command: {' '.join(cmd)}")
 
     # Query the user to confirm that they want to launch the jobs.
-    resp = input("Confirm job launch? [Y/N] ")
-    if resp.lower() != 'y':
-        print("[INFO] -- User aborted job launch.")
-        return
+    if confirm:
+        resp = input("Confirm job launch? [Y/N] ")
+        if resp.lower() != 'y':
+            print("[INFO] -- User aborted job launch.")
+            return
 
     # Launch the jobs. If the command raises an "ExpiredSignatureError"
     # exception, it likely means that the user's token has expired and
