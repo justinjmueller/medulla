@@ -1,5 +1,6 @@
 """Campaign management CLI for medulla batch processing."""
 import argparse
+import re
 import sqlite3
 import sys
 import toml
@@ -14,6 +15,71 @@ from utilities import create_new_project, check_project_status, launch_jobsub
 # Repo root is two levels above this script (batch/ -> repo root).
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TOML_DIR = REPO_ROOT / 'selection' / 'toml'
+
+
+# ---------------------------------------------------------------------------
+# Terminal formatting helpers
+# ---------------------------------------------------------------------------
+
+class _A:
+    """ANSI escape codes (no third-party dependency needed on Linux)."""
+    RESET   = '\033[0m'
+    BOLD    = '\033[1m'
+    DIM     = '\033[2m'
+    CYAN    = '\033[96m'   # headers / created
+    GREEN   = '\033[92m'   # completed
+    YELLOW  = '\033[93m'   # pending
+    BLUE    = '\033[94m'   # submitted
+    RED     = '\033[91m'   # failed
+    MAGENTA = '\033[95m'   # analysis names
+    GREY    = '\033[90m'   # rules / dim chrome
+
+_STATUS_COLOR = {
+    'created':   _A.CYAN,
+    'pending':   _A.YELLOW,
+    'submitted': _A.BLUE,
+    'completed': _A.GREEN,
+    'failed':    _A.RED,
+}
+
+_ANSI_RE = re.compile(r'\033\[[0-9;]*m')
+
+
+def _trunc(s, width):
+    """Truncate *s* to *width* visible characters, appending '…' if needed."""
+    s = str(s)
+    return s if len(s) <= width else s[:width - 1] + '…'
+
+
+def _cell(s, width, align='<', color=None):
+    """Return a fixed-width, truncated cell, then optionally ANSI-colored."""
+    padded = f"{_trunc(str(s), width):{align}{width}}"
+    return f"{color}{padded}{_A.RESET}" if color else padded
+
+
+def _print_table(headers, widths, rows, sep='  '):
+    """
+    Print a fixed-width table with a bold header and a rule beneath it.
+
+    Parameters
+    ----------
+    headers : list[str]
+    widths  : list[int]
+    rows    : list[list]
+        Each cell may be a plain string or a pre-colored string produced by
+        _cell().  Pre-colored strings must already be padded to the correct
+        visible width.
+    sep : str
+        Column separator (default: two spaces).
+    """
+    rule = sep.join(_A.GREY + '─' * w + _A.RESET for w in widths)
+    header = sep.join(
+        f"{_A.BOLD}{_trunc(h, w):<{w}}{_A.RESET}" for h, w in zip(headers, widths)
+    )
+    print(header)
+    print(rule)
+    for row in rows:
+        print(sep.join(str(c) for c in row))
 
 
 # ---------------------------------------------------------------------------
@@ -337,12 +403,20 @@ def cmd_create(args):
         return
 
     # Print summary table.
-    col_w = [20, 18, 10]
-    print(f"{'Analysis':<{col_w[0]}} {'Role':<{col_w[1]}} {'Experiment':<{col_w[2]}}")
-    print('-' * sum(col_w))
-    for u in all_units:
-        print(f"{u.analysis:<{col_w[0]}} {u.role:<{col_w[1]}} {u.experiment:<{col_w[2]}}")
-    print(f"\n[CAMPAIGN] Total: {len(all_units)} project unit(s).")
+    W_AN, W_RO, W_EX = 28, 18, 10
+    _print_table(
+        ['Analysis', 'Role', 'Experiment'],
+        [W_AN, W_RO, W_EX],
+        [
+            [
+                _cell(u.analysis, W_AN, color=_A.MAGENTA),
+                _cell(u.role, W_RO),
+                _cell(u.experiment, W_EX),
+            ]
+            for u in all_units
+        ],
+    )
+    print(f"\n[CAMPAIGN] Total: {_A.CYAN}{len(all_units)}{_A.RESET} project unit(s).")
 
     if args.dry_run:
         print("[CAMPAIGN] Dry-run mode: no directories or databases created.")
@@ -406,16 +480,21 @@ def cmd_status(args):
         print("[CAMPAIGN] No projects registered in this campaign.")
         return
 
-    col_w = [20, 18, 10, 12]
-    header = (f"{'Analysis':<{col_w[0]}} {'Role':<{col_w[1]}} "
-              f"{'Experiment':<{col_w[2]}} {'Status':<{col_w[3]}}")
-    print(header)
-    print('-' * sum(col_w))
-    for row in rows:
-        print(
-            f"{row['analysis']:<{col_w[0]}} {row['role']:<{col_w[1]}} "
-            f"{row['experiment']:<{col_w[2]}} {row['status']:<{col_w[3]}}"
-        )
+    W_AN, W_RO, W_EX, W_ST = 28, 18, 10, 12
+    _print_table(
+        ['Analysis', 'Role', 'Experiment', 'Status'],
+        [W_AN, W_RO, W_EX, W_ST],
+        [
+            [
+                _cell(row['analysis'], W_AN, color=_A.MAGENTA),
+                _cell(row['role'], W_RO),
+                _cell(row['experiment'], W_EX),
+                _cell(row['status'], W_ST,
+                      color=_STATUS_COLOR.get(row['status'])),
+            ]
+            for row in rows
+        ],
+    )
     print(f"\n[CAMPAIGN] {len(rows)} project(s) total.")
 
 
@@ -433,32 +512,68 @@ def cmd_list(args):
         print(f"[LIST] No analyses found under {toml_root}")
         return
 
-    # ── Per-analysis summary ──────────────────────────────────────────────
-    col_w = [24, 18, 30]
-    print(f"\nAnalyses under: {toml_root}")
-    print('─' * sum(col_w))
+    # Column widths for the per-analysis role table.
+    W_ROLE = 18
+    W_EXPS = 16
+    W_KEYS = 50
+
+    # Column widths for the full expansion table.
+    W_AN = 28
+    W_RO = 18
+    W_EX = 10
+
+    rule_width = W_ROLE + W_EXPS + W_KEYS + 4  # +4 for two sep pairs
+    rule = _A.GREY + '─' * rule_width + _A.RESET
+
+    print(f"\n{_A.BOLD}Analyses under:{_A.RESET} {toml_root}")
+    print(rule)
+
     for a in analyses:
         owners = ', '.join(a.owners) if a.owners else '—'
         batch  = a.defaults.get('batch_size', '(default)')
-        print(f"\n  {a.analysis}  |  owners: {owners}  |  batch_size: {batch}")
-        print(f"  {'Role':<{col_w[1]}} {'Experiments':<{col_w[2]}} Enable keys")
-        print(f"  {'─'*col_w[1]} {'─'*col_w[2]}")
-        for t in a.tomls:
-            exps = ', '.join(t.experiments)
-            key_summary = '  '.join(
-                f"{exp}: [{', '.join(keys)}]"
-                for exp, keys in t.enable.items()
-            ) or '(none)'
-            print(f"  {t.role:<{col_w[1]}} {exps:<{col_w[2]}} {key_summary}")
+        print(
+            f"\n  {_A.MAGENTA}{_A.BOLD}{a.analysis}{_A.RESET}"
+            f"  {_A.DIM}owners: {owners}  batch_size: {batch}{_A.RESET}"
+        )
+        _print_table(
+            ['Role', 'Experiments', 'Enable keys'],
+            [W_ROLE, W_EXPS, W_KEYS],
+            [
+                [
+                    _cell(t.role, W_ROLE),
+                    _cell(', '.join(t.experiments), W_EXPS),
+                    _cell(
+                        '  '.join(
+                            f"{exp}: [{', '.join(keys)}]"
+                            for exp, keys in t.enable.items()
+                        ) or '(none)',
+                        W_KEYS,
+                    ),
+                ]
+                for t in a.tomls
+            ],
+            sep='  ',
+        )
 
     # ── Full expansion table ──────────────────────────────────────────────
     units = expand_campaign(analyses, catalog_path)
-    print(f"\n{'─' * sum(col_w)}")
-    print(f"  Full expansion: {len(units)} project unit(s)\n")
-    print(f"  {'Analysis':<{col_w[0]}} {'Role':<{col_w[1]}} {'Experiment'}")
-    print(f"  {'─'*col_w[0]} {'─'*col_w[1]} {'─'*10}")
-    for u in units:
-        print(f"  {u.analysis:<{col_w[0]}} {u.role:<{col_w[1]}} {u.experiment}")
+    print(f"\n{rule}")
+    print(
+        f"  {_A.BOLD}Full expansion:{_A.RESET} "
+        f"{_A.CYAN}{len(units)}{_A.RESET} project unit(s)\n"
+    )
+    _print_table(
+        ['Analysis', 'Role', 'Experiment'],
+        [W_AN, W_RO, W_EX],
+        [
+            [
+                _cell(u.analysis, W_AN, color=_A.MAGENTA),
+                _cell(u.role, W_RO),
+                _cell(u.experiment, W_EX),
+            ]
+            for u in units
+        ],
+    )
     print()
 
 
