@@ -74,18 +74,30 @@ import pytest
 
 
 # ---------------------------------------------------------------------------
-# Import the modules under test.  Entire test classes are skipped when the
-# target functions are not yet present.
+# Import the modules under test.  Each function is imported individually so
+# that test classes can be skipped at the granularity of the staged
+# implementation:
+#   Stage 1 — discover_analyses  → TestDiscovery
+#   Stage 2 — expand_campaign    → TestExpansionFilters
+#   Stage 3 — create_campaign    → everything else
 # ---------------------------------------------------------------------------
 try:
-    from campaign import (
-        discover_analyses,
-        expand_campaign,
-        create_campaign,
-    )
-    _CAMPAIGN_AVAILABLE = True
+    from campaign import discover_analyses
+    _DISCOVER_AVAILABLE = True
 except ImportError:
-    _CAMPAIGN_AVAILABLE = False
+    _DISCOVER_AVAILABLE = False
+
+try:
+    from campaign import expand_campaign
+    _EXPAND_AVAILABLE = True
+except ImportError:
+    _EXPAND_AVAILABLE = False
+
+try:
+    from campaign import create_campaign
+    _CREATE_AVAILABLE = True
+except ImportError:
+    _CREATE_AVAILABLE = False
 
 try:
     from auth import authenticate
@@ -93,8 +105,16 @@ try:
 except ImportError:
     _AUTH_AVAILABLE = False
 
+skip_discover = pytest.mark.skipif(
+    not _DISCOVER_AVAILABLE,
+    reason="discover_analyses not yet implemented in campaign.py",
+)
+skip_expand = pytest.mark.skipif(
+    not (_DISCOVER_AVAILABLE and _EXPAND_AVAILABLE),
+    reason="discover_analyses/expand_campaign not yet implemented in campaign.py",
+)
 skip_campaign = pytest.mark.skipif(
-    not _CAMPAIGN_AVAILABLE,
+    not (_DISCOVER_AVAILABLE and _EXPAND_AVAILABLE and _CREATE_AVAILABLE),
     reason="discover_analyses/expand_campaign/create_campaign not yet implemented in campaign.py",
 )
 skip_auth = pytest.mark.skipif(
@@ -107,7 +127,7 @@ skip_auth = pytest.mark.skipif(
 # T3.1 — meta.toml discovery
 # ===================================================================
 
-@skip_campaign
+@skip_discover
 class TestDiscovery:
     """discover_analyses() finds all directories with meta.toml."""
 
@@ -171,7 +191,7 @@ class TestDiscovery:
 # T3.2 — CLI filters in expand_campaign()
 # ===================================================================
 
-@skip_campaign
+@skip_expand
 class TestExpansionFilters:
     """expand_campaign() correctly filters by experiment, role, and analysis."""
 

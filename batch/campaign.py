@@ -3,6 +3,7 @@ import argparse
 import sqlite3
 import sys
 import toml
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -13,6 +14,42 @@ from utilities import create_new_project, check_project_status, launch_jobsub
 # Repo root is two levels above this script (batch/ -> repo root).
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TOML_DIR = REPO_ROOT / 'selection' / 'toml'
+
+
+# ---------------------------------------------------------------------------
+# Data model
+# ---------------------------------------------------------------------------
+
+@dataclass
+class TomlEntry:
+    """One [[toml]] block from a meta.toml: role, file path, experiments, and
+    per-experiment enable-key lists."""
+    role: str
+    file: str                    # absolute path to the selection TOML
+    experiments: list
+    enable: dict = field(default_factory=dict)  # {experiment: [key, ...]}
+
+
+@dataclass
+class AnalysisMeta:
+    """Parsed contents of one meta.toml file."""
+    analysis: str
+    description: str
+    owners: list
+    experiments: list
+    tomls: list                  # list[TomlEntry]
+    defaults: dict = field(default_factory=dict)
+
+
+@dataclass
+class ProjectUnit:
+    """One (analysis, role, experiment) combination ready for batch creation."""
+    analysis: str
+    role: str
+    experiment: str
+    toml_path: str
+    enable_keys: list = field(default_factory=list)
+
 
 # ---------------------------------------------------------------------------
 # Database helpers
@@ -57,6 +94,45 @@ def _open_db(campaign_dir):
 # ---------------------------------------------------------------------------
 # Discovery helpers
 # ---------------------------------------------------------------------------
+
+def discover_analyses(toml_root):
+    """
+    Walk toml_root/*/ looking for meta.toml files.
+    Return one AnalysisMeta per directory that has one.
+
+    Parameters
+    ----------
+    toml_root : str | Path
+        Root directory to search (e.g. selection/toml/).
+
+    Returns
+    -------
+    list[AnalysisMeta]
+    """
+    analyses = []
+    for meta_path in sorted(Path(toml_root).glob('*/meta.toml')):
+        meta = toml.load(meta_path)
+        top_experiments = meta['meta'].get('experiments', [])
+        tomls = []
+        for t in meta.get('toml', []):
+            enable_raw = t.get('enable', {})
+            enable = {exp: block.get('keys', []) for exp, block in enable_raw.items()}
+            tomls.append(TomlEntry(
+                role=t['role'],
+                file=str(meta_path.parent / t['file']),
+                experiments=t.get('experiments', top_experiments),
+                enable=enable,
+            ))
+        analyses.append(AnalysisMeta(
+            analysis=meta['meta']['analysis'],
+            description=meta['meta'].get('description', ''),
+            owners=meta['meta'].get('owners', []),
+            experiments=top_experiments,
+            tomls=tomls,
+            defaults=meta.get('defaults', {}),
+        ))
+    return analyses
+
 
 def _discover_meta_files():
     """Return a list of all meta.toml paths under TOML_DIR."""
@@ -241,6 +317,40 @@ def cmd_status(args):
 
 
 # ---------------------------------------------------------------------------
+# `list` subcommand
+# ---------------------------------------------------------------------------
+
+def cmd_list(args):
+    """Discover and display all analyses found under the TOML root."""
+    toml_root = Path(args.toml_root) if args.toml_root else TOML_DIR
+    analyses = discover_analyses(toml_root)
+
+    if not analyses:
+        print(f"[LIST] No analyses found under {toml_root}")
+        return
+
+    col_w = [24, 18, 30]
+    header = f"{'Analysis':<{col_w[0]}} {'Role':<{col_w[1]}} {'Experiments':<{col_w[2]}}"
+    print(f"\nAnalyses under: {toml_root}")
+    print('─' * sum(col_w))
+    for a in analyses:
+        owners = ', '.join(a.owners) if a.owners else '—'
+        batch  = a.defaults.get('batch_size', '(default)')
+        print(f"\n  {a.analysis}  |  owners: {owners}  |  batch_size: {batch}")
+        print(f"  {'Role':<{col_w[1]}} {'Experiments':<{col_w[2]}} Enable keys")
+        print(f"  {'─'*col_w[1]} {'─'*col_w[2]}")
+        for t in a.tomls:
+            exps = ', '.join(t.experiments)
+            key_summary = '  '.join(
+                f"{exp}: [{', '.join(keys)}]"
+                for exp, keys in t.enable.items()
+            ) or '(none)'
+            print(f"  {t.role:<{col_w[1]}} {exps:<{col_w[2]}} {key_summary}")
+
+    print(f"\n[LIST] {len(analyses)} analysis/analyses discovered.")
+
+
+# ---------------------------------------------------------------------------
 # `launch` subcommand
 # ---------------------------------------------------------------------------
 
@@ -326,6 +436,11 @@ def main():
     p_create.add_argument('--analyses', metavar='NAME', nargs='+',
                           help='Filter by analysis name')
 
+    # -- list -----------------------------------------------------------------
+    p_list = sub.add_parser('list', help='List discovered analyses and their project units')
+    p_list.add_argument('--toml-root', metavar='PATH', dest='toml_root', default=None,
+                        help=f'Root directory to search (default: {TOML_DIR})')
+
     # -- status ---------------------------------------------------------------
     p_status = sub.add_parser('status', help='Show campaign status')
     p_status.add_argument('--campaign', metavar='PATH', required=True,
@@ -340,7 +455,9 @@ def main():
 
     args = parser.parse_args()
 
-    if args.command == 'create':
+    if args.command == 'list':
+        cmd_list(args)
+    elif args.command == 'create':
         cmd_create(args)
     elif args.command == 'status':
         cmd_status(args)
