@@ -5,7 +5,7 @@ owners = ["mueller"]
 experiments = ["icarus"]
 
 [defaults]
-batch_size = 50
+batch_size = 1
 
 [[toml]]
 role = "primary"
