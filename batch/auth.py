@@ -22,8 +22,8 @@ def authenticate(experiment):
     htgettoken = shutil.which('htgettoken')
     if htgettoken is None:
         print(f"[AUTH] htgettoken not found. Please authenticate manually for {experiment}.")
-        input(f"[AUTH] Press Enter after authenticating for {experiment}...")
-        return True
+        resp = input(f"[AUTH] Authenticate manually then press Enter, or 'n' to skip {experiment}: ")
+        return resp.strip().lower() != 'n'
 
     cmd = [
         'htgettoken',
@@ -37,8 +37,7 @@ def authenticate(experiment):
 
     if result.returncode != 0:
         print(f"[AUTH] htgettoken failed for {experiment}: {result.stderr.strip()}")
-        resp = input(f"[AUTH] Authenticate manually and press Enter, or 'skip' to skip {experiment}: ")
-        return resp.strip().lower() != 'skip'
+        return False
 
     print(f"[AUTH] Successfully authenticated for {experiment}.")
     return True
