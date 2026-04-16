@@ -1,7 +1,7 @@
 [meta]
 analysis = "sbnd_postshutdown_numubar"
 description = "SBND post-shutdown numubar disappearance analysis"
-owners = ["mueller"]
+owners = ["noza"]
 experiments = ["sbnd"]
 
 [defaults]

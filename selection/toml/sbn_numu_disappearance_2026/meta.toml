@@ -1,7 +1,7 @@
 [meta]
 analysis = "sbn_numu_disappearance_2026"
 description = "SBN numu disappearance oscillation analysis"
-owners = ["mueller", "dtotani"]
+owners = ["mueller", "dtotani", "msiden"]
 experiments = ["sbnd", "icarus"]
 
 [defaults]
