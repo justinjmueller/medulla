@@ -1,5 +1,6 @@
 # Utilities for batch processing in medulla projects using jobsub
 import os
+import re
 import sqlite3
 import toml
 from catalog import resolve_samples
@@ -448,8 +449,22 @@ def launch_jobsub(
             print(f"[ERROR] -- Job submission failed with error: {output}")
         return False
 
+<<<<<<< HEAD
     stdout = out.stdout.strip()
     last_lines = '\n'.join(stdout.split('\n')[-4:])
     print(last_lines)
     print(f"[INFO] -- Launched {njobs} jobs.")
     return True
+=======
+    if confirm:
+        # Single-project workflow: show full output so the user can verify.
+        stdout = out.stdout.strip()
+        print('\n'.join(stdout.split('\n')[-4:]))
+        print(f"[INFO] -- Launched {njobs} jobs.")
+    else:
+        # Campaign workflow: one clean status line per project.
+        match = re.search(r'job id\s+(\S+)', out.stdout)
+        job_id = match.group(1) if match else 'unknown'
+        print(f"[INFO] -- Submitted {njobs} job(s). Job ID: {job_id}")
+    return True
+>>>>>>> 18afc57 (Enhance job submission output handling for single and campaign workflows)
