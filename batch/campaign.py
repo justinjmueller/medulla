@@ -769,16 +769,29 @@ def cmd_launch(args):
     """Authenticate per experiment and launch pending projects."""
     W_AN, W_RO, W_EX = 28, 18, 10
 
+    # Resolve how many jobs to submit per project.
+    if args.test:
+        njobs = 1
+        mode_label = " (test: 1 job per project)"
+    elif args.njobs is not None:
+        njobs = args.njobs
+        mode_label = f" (--njobs {njobs} per project)"
+    else:
+        njobs = -1  # launch_jobsub default: all pending
+        mode_label = ""
+
     with _open_db(args.campaign) as (conn, curs):
         # Build query (optionally filtered by experiment).
-        # Include 'partial' so projects with some failed/missing jobs can be relaunched.
+        # --relaunch also picks up 'submitted' projects (e.g. after an auth failure
+        # that caused jobsub to silently succeed on the campaign side but not the grid).
+        statuses = "('created', 'partial', 'submitted')" if args.relaunch else "('created', 'partial')"
         if args.experiment:
             curs.execute(
-                "SELECT * FROM projects WHERE experiment = ? AND status IN ('created', 'partial')",
+                f"SELECT * FROM projects WHERE experiment = ? AND status IN {statuses}",
                 (args.experiment,),
             )
         else:
-            curs.execute("SELECT * FROM projects WHERE status IN ('created', 'partial')")
+            curs.execute(f"SELECT * FROM projects WHERE status IN {statuses}")
 
         rows = list(curs.fetchall())
 
@@ -799,7 +812,7 @@ def cmd_launch(args):
                 for row in rows
             ],
         )
-        print(f"\n[CAMPAIGN] {len(rows)} project(s) to launch.")
+        print(f"\n[CAMPAIGN] {len(rows)} project(s) to launch{mode_label}.")
         resp = input("\n[CAMPAIGN] Proceed with job submission? [Y/N] ")
         if resp.strip().lower() != 'y':
             print("[CAMPAIGN] Aborted.")
@@ -821,14 +834,16 @@ def cmd_launch(args):
                 proj_dir = Path(row['project_dir'])
                 print(f"[CAMPAIGN] Launching: {row['analysis']}/{row['role']}_{row['experiment']}")
                 try:
-                    launch_jobsub(proj_dir, exp=exp, confirm=False)
+                    ok = launch_jobsub(proj_dir, exp=exp, njobs=njobs, confirm=False)
+                except Exception as e:
+                    print(f"[CAMPAIGN] Launch failed for {proj_dir}: {e}")
+                    ok = False
+                if ok:
                     curs.execute(
                         "UPDATE projects SET status = 'submitted', submitted_at = ? WHERE project_id = ?",
                         (datetime.now(timezone.utc).isoformat(), row['project_id']),
                     )
-                except Exception as e:
-                    print(f"[CAMPAIGN] Launch failed for {proj_dir}: {e}")
-                conn.commit()
+                    conn.commit()
 
     print("\n[CAMPAIGN] Launch complete.")
 
@@ -882,6 +897,13 @@ def main():
                           help='Path to the campaign directory')
     p_launch.add_argument('--experiment', metavar='EXP',
                           help='Restrict launch to one experiment')
+    p_launch.add_argument('--relaunch', action='store_true',
+                          help='Also relaunch projects already marked submitted')
+    launch_grp = p_launch.add_mutually_exclusive_group()
+    launch_grp.add_argument('--test', action='store_true',
+                            help='Submit one job per project to verify setup')
+    launch_grp.add_argument('--njobs', type=int, metavar='N',
+                            help='Submit at most N jobs per project')
 
     args = parser.parse_args()
 
@@ -898,4 +920,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n[CAMPAIGN] Interrupted.")
+        sys.exit(130)

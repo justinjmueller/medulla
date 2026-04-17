@@ -400,7 +400,7 @@ def launch_jobsub(
     # of the pending jobs.
     if len(pending_jobs) == 0:
         print("[INFO] -- No pending jobs to launch.")
-        return
+        return False
     else:
         print(f"[INFO] -- Found {len(pending_jobs)} pending jobs.")
     if njobs > len(pending_jobs):
@@ -432,7 +432,7 @@ def launch_jobsub(
         resp = input("Confirm job launch? [Y/N] ")
         if resp.lower() != 'y':
             print("[INFO] -- User aborted job launch.")
-            return
+            return False
 
     # Launch the jobs. If the command raises an "ExpiredSignatureError"
     # exception, it likely means that the user's token has expired and
@@ -446,9 +446,10 @@ def launch_jobsub(
             print("[ERROR] -- Job submission failed due to expired token. Please run `htgettoken` to refresh your token and try again.")
         else:
             print(f"[ERROR] -- Job submission failed with error: {output}")
-        return
-    
+        return False
+
     stdout = out.stdout.strip()
     last_lines = '\n'.join(stdout.split('\n')[-4:])
     print(last_lines)
     print(f"[INFO] -- Launched {njobs} jobs.")
+    return True
