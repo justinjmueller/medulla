@@ -362,6 +362,7 @@ def launch_jobsub(
     disk : Optional[int] = None,
     lifetime : str = '1h',
     confirm : bool = True,
+    tag : str = 'develop',
 ):
     """
     Launch jobs using jobsub for the given project directory. If njobs
@@ -387,6 +388,8 @@ def launch_jobsub(
         If True (default), prompt the user before submitting.  Pass
         False when the caller has already obtained confirmation (e.g.
         campaign launch confirms once for all projects).
+    tag : str
+        Git ref passed to submit.sh as --tag (default: develop).
 
     Returns
     -------
@@ -435,7 +438,7 @@ def launch_jobsub(
         f'file://{Path(__file__).resolve().parent / "submit.sh"}',
         '--',
         f'--project={project_dir.resolve()}',
-        f'--branch={branch}',
+        f'--tag={tag}',
     ]
 
     if disk is not None:
