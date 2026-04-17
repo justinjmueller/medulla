@@ -736,13 +736,14 @@ def cmd_launch(args):
     conn, curs = _open_db(args.campaign)
 
     # Build query (optionally filtered by experiment).
+    # Include 'partial' so projects with some failed/missing jobs can be relaunched.
     if args.experiment:
         curs.execute(
-            "SELECT * FROM projects WHERE experiment = ? AND status = 'created'",
+            "SELECT * FROM projects WHERE experiment = ? AND status IN ('created', 'partial')",
             (args.experiment,),
         )
     else:
-        curs.execute("SELECT * FROM projects WHERE status = 'created'")
+        curs.execute("SELECT * FROM projects WHERE status IN ('created', 'partial')")
 
     rows = list(curs.fetchall())
     conn.close()
