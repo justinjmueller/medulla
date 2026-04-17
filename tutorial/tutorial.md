@@ -512,16 +512,38 @@ python3 batch/campaign.py create \
 ```
 
 ### Step 3 — Launch
-Once valid grid credentials are in place (see `htgettoken` above), submit all projects with the `launch` subcommand:
+Once valid grid credentials are in place (see `htgettoken` above), submit jobs with the `launch` subcommand. Before submitting the full campaign it is **strongly recommended** to run a test job first:
 
 ```bash
+# Submit one job per project to verify the setup
+python3 batch/campaign.py launch \
+    --campaign /path/to/campaigns/campaign_v1.0_<ts> \
+    --test
+```
+
+The `--test` flag submits exactly one job per project. Inspect the output of those jobs before proceeding to the full submission:
+
+```bash
+# Submit all remaining pending jobs
 python3 batch/campaign.py launch \
     --campaign /path/to/campaigns/campaign_v1.0_<ts>
 ```
 
-The command groups projects by experiment, authenticates once per experiment via `htgettoken`, and then submits each project's pending jobs via `jobsub_submit`. A single confirmation prompt is shown before any jobs are submitted. After submission, each project's status is updated to `submitted` in `campaign.db`.
+If you want finer-grained control, `--njobs N` submits at most `N` jobs per project instead of all pending ones. `--test` and `--njobs` are mutually exclusive.
+
+In all cases the command groups projects by experiment, authenticates once per experiment via `htgettoken` (including the OIDC browser prompt if required), and submits via `jobsub_submit`. A single confirmation prompt is shown before any jobs are submitted. After submission each project's status is updated to `submitted` in `campaign.db`.
 
 An optional `--experiment` flag restricts the launch to one experiment, which is useful if authentication for one experiment fails or needs to be deferred.
+
+If a submission attempt fails (for example, due to an expired token), the project status is **not** advanced to `submitted` — only successful `jobsub_submit` calls update the database. If you need to relaunch projects that were previously marked `submitted` (e.g. after an authentication problem caused silent failures on the grid side), use `--relaunch`:
+
+```bash
+python3 batch/campaign.py launch \
+    --campaign /path/to/campaigns/campaign_v1.0_<ts> \
+    --relaunch --test
+```
+
+`--relaunch` expands the query to include projects with status `submitted` in addition to `created` and `partial`. It can be combined with `--test` or `--njobs`.
 
 ### Step 4 — Sync
 After the grid jobs run, use the `sync` subcommand to scan each project's output directory for completed files and update `campaign.db`:
