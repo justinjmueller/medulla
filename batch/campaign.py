@@ -181,6 +181,8 @@ def _open_db(campaign_dir):
         yield conn, curs
     finally:
         conn.close()
+        # /pnfs does not allow overwriting files in place; delete first.
+        db_path.unlink(missing_ok=True)
         shutil.copy2(tmp, db_path)
         tmp.unlink(missing_ok=True)
 
@@ -423,6 +425,8 @@ def _sync_project_status(project_dir):
         curs.execute("SELECT status, COUNT(*) FROM jobs GROUP BY status")
         counts = dict(curs.fetchall())
         conn.close()
+        # /pnfs does not allow overwriting files in place; delete first.
+        db_path.unlink(missing_ok=True)
         shutil.copy2(tmp, db_path)
     finally:
         tmp.unlink(missing_ok=True)
