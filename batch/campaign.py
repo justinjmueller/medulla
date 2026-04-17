@@ -781,6 +781,11 @@ def cmd_launch(args):
         mode_label = ""
 
     with _open_db(args.campaign) as (conn, curs):
+        # Read the tag recorded at campaign creation time.
+        curs.execute("SELECT tag FROM campaign_meta LIMIT 1")
+        row_meta = curs.fetchone()
+        tag = row_meta['tag'] if row_meta else 'develop'
+
         # Build query (optionally filtered by experiment).
         # --relaunch also picks up 'submitted' projects (e.g. after an auth failure
         # that caused jobsub to silently succeed on the campaign side but not the grid).
@@ -834,7 +839,7 @@ def cmd_launch(args):
                 proj_dir = Path(row['project_dir'])
                 print(f"[CAMPAIGN] Launching: {row['analysis']}/{row['role']}_{row['experiment']}")
                 try:
-                    ok = launch_jobsub(proj_dir, exp=exp, njobs=njobs, confirm=False)
+                    ok = launch_jobsub(proj_dir, exp=exp, njobs=njobs, confirm=False, tag=tag)
                 except Exception as e:
                     print(f"[CAMPAIGN] Launch failed for {proj_dir}: {e}")
                     ok = False
