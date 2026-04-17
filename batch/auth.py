@@ -33,10 +33,13 @@ def authenticate(experiment):
         '-i', experiment,
     ]
     print(f"[AUTH] Running: {' '.join(cmd)}")
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    # Do not capture output — htgettoken prints the OIDC URL the user must
+    # visit, and waits for a response in the browser.  Suppressing it would
+    # leave the process hanging with no visible prompt.
+    result = subprocess.run(cmd)
 
     if result.returncode != 0:
-        print(f"[AUTH] htgettoken failed for {experiment}: {result.stderr.strip()}")
+        print(f"[AUTH] htgettoken failed for {experiment} (exit {result.returncode}).")
         return False
 
     print(f"[AUTH] Successfully authenticated for {experiment}.")
