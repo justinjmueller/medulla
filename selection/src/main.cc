@@ -204,8 +204,8 @@ int main(int argc, char * argv[])
             std::unique_ptr<ana::SpectrumLoader> loader;
             try
             {
-                sample.get_string_field("path");
-                loader = std::make_unique<ana::SpectrumLoader>(sample.get_string_field("path"));
+                std::string path_str = sample.get_string_field("path");
+                loader = getLoader(&path_str);
             }
             catch(const cfg::ConfigurationError &)
             {

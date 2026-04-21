@@ -14,8 +14,10 @@
 #include <functional>
 #include <stdexcept>
 #include <type_traits>
+#include <memory>
 
 #include "sbnana/CAFAna/Core/MultiVar.h"
+#include "sbnana/CAFAna/Core/SpectrumLoader.h"
 #include "configuration.h"
 
 /**
@@ -370,5 +372,7 @@ ana::SpillMultiVar spill_multivar_helper(const CutFn<EventType> & cut, const Var
  * information for the given cuts.
  */
 std::vector<NamedSpillMultiVar> construct_exposure_vars(const std::vector<cfg::ConfigurationTable> & cuts);
+
+std::unique_ptr<ana::SpectrumLoader> getLoader(const std::string* file_path);
 
 #endif // FRAMEWORK_H

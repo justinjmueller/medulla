@@ -10,9 +10,11 @@
 #include <string>
 #include <functional>
 #include <stdexcept>
+#include <memory>
 
 #include "sbnana/CAFAna/Core/MultiVar.h"
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
+#include "sbnana/CAFAna/Core/SpectrumLoader.h"
 
 #include "framework.h"
 #include "configuration.h"
@@ -837,6 +839,15 @@ std::vector<NamedSpillMultiVar> construct_exposure_vars(const std::vector<cfg::C
     exposure_vars.push_back(std::make_pair("pot", spill_multivar_helper(cut, pot_var)));
 
     return exposure_vars;
+}
+
+std::unique_ptr<ana::SpectrumLoader> getLoader(const std::string *file_path)
+{
+    bool hasWildcards = (file_path->find("?") != std::string::npos ||
+                         file_path->find("*") != std::string::npos);
+
+    return hasWildcards ? std::make_unique<ana::SpectrumLoader>(*file_path)
+                        : std::make_unique<ana::SpectrumLoader>(std::vector<std::string>{*file_path});
 }
 
 // Explicitly instantiate Registry for the factory types we use:
