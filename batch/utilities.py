@@ -9,9 +9,9 @@ from pathlib import Path
 from typing import Optional
 
 # ANSI helpers (no third-party dependency)
-_RESET = '\033[0m'
-_INFO  = f'\033[1m\033[94m[INFO]\033[0m'   # bold blue
-_ERROR = f'\033[1m\033[91m[ERROR]\033[0m'  # bold red
+_INFO     = '\033[1m\033[94m[INFO]\033[0m'      # bold blue
+_ERROR    = '\033[1m\033[91m[ERROR]\033[0m'     # bold red
+_CAMPAIGN = '\033[1m\033[96m[CAMPAIGN]\033[0m'  # bold cyan
 
 # SQL schema for the configuration table for storing job configurations
 SCHEMA_CONFIGURATION = """
@@ -419,16 +419,18 @@ def launch_jobsub(
     # the user requested more jobs than are pending, just launch all
     # of the pending jobs.
     if len(pending_jobs) == 0:
-        print("[INFO] -- No pending jobs to launch.")
+        if confirm:
+            print(f"{_INFO} -- No pending jobs to launch.")
         return False
-    else:
-        print(f"[INFO] -- Found {len(pending_jobs)} pending jobs.")
     if njobs > len(pending_jobs):
         njobs = len(pending_jobs)
-        print(f"[INFO] -- Requested number of jobs exceeds pending jobs. Preparing {njobs} jobs instead.")
+        if confirm:
+            print(f"{_INFO} -- Requested number of jobs exceeds pending jobs. Preparing {njobs} jobs instead.")
     if njobs == -1:
         njobs = len(pending_jobs)
-        print(f"[INFO] -- No job count specified. Preparing all {njobs} pending jobs.")
+
+    if confirm:
+        print(f"{_INFO} -- Found {len(pending_jobs)} pending jobs.")
 
     # Form the jobsub command to launch the jobs.
     cmd = [
@@ -457,9 +459,10 @@ def launch_jobsub(
 
     # Query the user to confirm that they want to launch the jobs.
     if confirm:
+        print(f"{_INFO} -- Launching {njobs} jobs with command: {' '.join(cmd)}")
         resp = input("Confirm job launch? [Y/N] ")
         if resp.lower() != 'y':
-            print("[INFO] -- User aborted job launch.")
+            print(f"{_INFO} -- User aborted job launch.")
             return False
 
     # Launch the jobs. If the command raises an "ExpiredSignatureError"
@@ -471,17 +474,22 @@ def launch_jobsub(
         out = subprocess.run(cmd, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
         if 'ExpiredSignatureError' in (output := e.stderr.strip()):
-            print("[ERROR] -- Job submission failed due to expired token. Please run `htgettoken` to refresh your token and try again.")
+            print(f"{_ERROR} -- Job submission failed due to expired token. Please run `htgettoken` to refresh your token and try again.")
         else:
-            print(f"[ERROR] -- Job submission failed with error: {output}")
+            print(f"{_ERROR} -- Job submission failed with error: {output}")
         return False
 
-    stdout = out.stdout.strip()
-    last_lines = '\n'.join(stdout.split('\n')[-4:])
-    print(last_lines)
-    print(f"[INFO] -- Launched {njobs} jobs.")
+    if confirm:
+        # Single-project workflow: show full output so the user can verify.
+        stdout = out.stdout.strip()
+        print('\n'.join(stdout.split('\n')[-4:]))
+        print(f"{_INFO} -- Launched {njobs} jobs.")
+    else:
+        # Campaign workflow: one clean line per project.
+        match = re.search(r'job id\s+(\S+)', out.stdout)
+        job_id = match.group(1) if match else 'unknown'
+        print(f"{_CAMPAIGN} Submitted {njobs} job(s). Job ID: {job_id}")
     return True
-
 
 def check_git_branch(
     branch : str,
