@@ -460,13 +460,6 @@ def launch_jobsub(
             print(f"{_ERROR} -- Job submission failed with error: {output}")
         return False
 
-<<<<<<< HEAD
-    stdout = out.stdout.strip()
-    last_lines = '\n'.join(stdout.split('\n')[-4:])
-    print(last_lines)
-    print(f"[INFO] -- Launched {njobs} jobs.")
-    return True
-=======
     if confirm:
         # Single-project workflow: show full output so the user can verify.
         stdout = out.stdout.strip()
@@ -476,11 +469,5 @@ def launch_jobsub(
         # Campaign workflow: one clean line per project.
         match = re.search(r'job id\s+(\S+)', out.stdout)
         job_id = match.group(1) if match else 'unknown'
-<<<<<<< HEAD
-        print(f"[INFO] -- Submitted {njobs} job(s). Job ID: {job_id}")
-    return True
->>>>>>> 18afc57 (Enhance job submission output handling for single and campaign workflows)
-=======
         print(f"{_CAMPAIGN} Submitted {njobs} job(s). Job ID: {job_id}")
     return True
->>>>>>> 3b63296 (Enhance console output formatting for job submission and campaign launch)
