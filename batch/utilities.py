@@ -8,6 +8,11 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 
+# ANSI helpers (no third-party dependency)
+_RESET = '\033[0m'
+_INFO  = f'\033[1m\033[94m[INFO]\033[0m'   # bold blue
+_ERROR = f'\033[1m\033[91m[ERROR]\033[0m'  # bold red
+
 # SQL schema for the configuration table for storing job configurations
 SCHEMA_CONFIGURATION = """
 CREATE TABLE IF NOT EXISTS configuration (
