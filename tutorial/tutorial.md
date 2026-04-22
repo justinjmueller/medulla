@@ -503,7 +503,7 @@ Analyses whose selection TOMLs use inline `[[sample]]` blocks (no `[[include_sam
 
 ## The Campaign Workflow
 
-### Step 1 — Review
+### Step 0 — Review discovered analyses
 Before creating anything, use the `list` subcommand to inspect every discovered analysis and the full set of project units that would be created:
 
 ```bash
@@ -512,21 +512,25 @@ python3 batch/campaign.py list
 
 This shows each analysis with its roles, experiments, and configured sample keys, followed by the complete `(analysis, role, experiment)` expansion table. Use this to verify that the right samples are enabled before committing to a campaign.
 
-### Step 2 — Create
-Create a campaign directory with the `create` subcommand:
+### Step 1 — Create
+Create a campaign with the `create` subcommand. The `--name` flag assigns a short, memorable identifier that doubles as the campaign's directory name and is stored in a local registry (`~/.medulla/campaigns.toml`) so that every subsequent command can refer to it with `--name` instead of the full path:
 
 ```bash
 python3 batch/campaign.py create \
-    --tag <branch-or-tag> \
-    --output /path/to/campaigns
+    --name v1.0_apr22 \
+    --tag v1.0 \
+    --output /pnfs/icarus/scratch/users/$USER/campaigns
 ```
 
-The `--tag` value is the git branch or tag that will be checked out on the grid nodes. This must exist on the remote. The command will:
+The `--tag` value is the git branch or tag that will be checked out on the grid nodes — it must exist on the remote. The command will:
 1. Expand all discovered analyses into project units.
 2. Show the full project table and prompt for confirmation.
-3. Create a timestamped campaign directory (e.g. `campaign_v1.0_20260417T130000`) containing one sub-directory per project unit, each set up as a complete batch project (identical to `medulla.py --create-project`).
+3. Create the campaign directory (`campaigns/v1.0_apr22/`) containing one sub-directory per project unit, each set up as a complete batch project (identical to `medulla.py --create-project`).
 4. Write `campaign.db` tracking the status of every project.
 5. Write `campaign_manifest.toml` as a human-readable snapshot of what was created.
+6. Register the name locally so `--name v1.0_apr22` can be used in all subsequent commands.
+
+If `--name` is omitted, the directory is named with an auto-generated timestamp (`campaign_v1.0_20260417T130000`) and **no registry entry is created** — you will need to provide the full path with `--campaign` for all subsequent commands.
 
 Several optional flags are available:
 * `--dry-run` — print the expansion table without creating any directories or databases.
@@ -538,28 +542,35 @@ For example, to create only the SBND primary projects:
 
 ```bash
 python3 batch/campaign.py create \
+    --name v1.0_sbnd_primary \
     --tag v1.0 \
     --output /pnfs/sbnd/scratch/users/$USER/campaigns \
     --experiment sbnd \
     --roles primary
 ```
 
+### Step 2 — Manage registered campaigns
+At any time, list all campaigns that have been registered locally:
+
+```bash
+python3 batch/campaign.py campaigns
+```
+
+This shows the short name, full path, git tag, and creation date for each registered campaign, with missing paths highlighted in red. The registry lives at `~/.medulla/campaigns.toml` and can be edited by hand if a campaign is moved or should be removed.
+
 ### Step 3 — Launch
 Once valid grid credentials are in place (see `htgettoken` above), submit jobs with the `launch` subcommand. Before submitting the full campaign it is **strongly recommended** to run a test job first:
 
 ```bash
 # Submit one job per project to verify the setup
-python3 batch/campaign.py launch \
-    --campaign /path/to/campaigns/campaign_v1.0_<ts> \
-    --test
+python3 batch/campaign.py launch --name v1.0_apr22 --test
 ```
 
 The `--test` flag submits exactly one job per project. Inspect the output of those jobs before proceeding to the full submission:
 
 ```bash
 # Submit all remaining pending jobs
-python3 batch/campaign.py launch \
-    --campaign /path/to/campaigns/campaign_v1.0_<ts>
+python3 batch/campaign.py launch --name v1.0_apr22
 ```
 
 If you want finer-grained control, `--njobs N` submits at most `N` jobs per project instead of all pending ones. `--test` and `--njobs` are mutually exclusive.
@@ -571,9 +582,7 @@ An optional `--experiment` flag restricts the launch to one experiment, which is
 If a submission attempt fails (for example, due to an expired token), the project status is **not** advanced to `submitted` — only successful `jobsub_submit` calls update the database. If you need to relaunch projects that were previously marked `submitted` (e.g. after an authentication problem caused silent failures on the grid side), use `--relaunch`:
 
 ```bash
-python3 batch/campaign.py launch \
-    --campaign /path/to/campaigns/campaign_v1.0_<ts> \
-    --relaunch --test
+python3 batch/campaign.py launch --name v1.0_apr22 --relaunch --test
 ```
 
 `--relaunch` expands the query to include projects with status `submitted` in addition to `created` and `partial`. It can be combined with `--test` or `--njobs`.
@@ -582,8 +591,7 @@ python3 batch/campaign.py launch \
 After the grid jobs run, use the `sync` subcommand to scan each project's output directory for completed files and update `campaign.db`:
 
 ```bash
-python3 batch/campaign.py sync \
-    --campaign /path/to/campaigns/campaign_v1.0_<ts>
+python3 batch/campaign.py sync --name v1.0_apr22
 ```
 
 A job is considered complete when its output file (`output_jobid<N>.root`) exists and is at least 1 KB in size. The sync command updates each individual `project.db` and then writes completion counts and a new status back to `campaign.db`. The status transitions are:
@@ -596,8 +604,7 @@ Projects in a `partial` state are eligible for relaunch — running `launch` aga
 At any point, inspect the current state of the campaign with the `status` subcommand:
 
 ```bash
-python3 batch/campaign.py status \
-    --campaign /path/to/campaigns/campaign_v1.0_<ts>
+python3 batch/campaign.py status --name v1.0_apr22
 ```
 
 This prints the status and job completion counts for every project. The `Jobs` column shows `n_completed/n_total` and is color-coded: grey before any sync, red when no jobs have finished, yellow for a partial completion, and green when all jobs are done.
@@ -606,7 +613,9 @@ The typical monitoring loop is:
 
 ```bash
 # Run after jobs have had time to complete
-python3 batch/campaign.py sync   --campaign <dir>
-python3 batch/campaign.py status --campaign <dir>
+python3 batch/campaign.py sync   --name v1.0_apr22
+python3 batch/campaign.py status --name v1.0_apr22
 # Repeat until all projects show 'completed'
 ```
+
+All subcommands also accept `--campaign /full/path/to/campaign` in place of `--name`, which is useful for campaigns created without `--name` or when running on a different machine where the registry is not available.
