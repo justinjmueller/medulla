@@ -837,7 +837,7 @@ def cmd_launch(args):
 
             for row in projects:
                 proj_dir = Path(row['project_dir'])
-                print(f"[CAMPAIGN] Launching: {row['analysis']}/{row['role']}_{row['experiment']}")
+                print(f"\n[CAMPAIGN] Launching: {row['analysis']}/{row['role']}_{row['experiment']}")
                 try:
                     ok = launch_jobsub(proj_dir, exp=exp, njobs=njobs, confirm=False, tag=tag)
                 except Exception as e:
