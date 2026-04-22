@@ -20,6 +20,42 @@ from utilities import create_new_project, check_project_status, launch_jobsub
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TOML_DIR = REPO_ROOT / 'selection' / 'toml'
 
+# Local campaign registry: maps short names to campaign directory paths.
+REGISTRY_PATH = Path.home() / '.medulla' / 'campaigns.toml'
+_NAME_RE = re.compile(r'^[a-zA-Z0-9_.:-]+$')
+
+
+def _registry_load():
+    """Return the name→path mapping from the local registry (or {} if absent)."""
+    if not REGISTRY_PATH.exists():
+        return {}
+    return toml.load(REGISTRY_PATH).get('campaigns', {})
+
+
+def _registry_save(campaigns):
+    REGISTRY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(REGISTRY_PATH, 'w') as f:
+        toml.dump({'campaigns': campaigns}, f)
+
+
+def _registry_add(name, path):
+    campaigns = _registry_load()
+    campaigns[name] = str(path)
+    _registry_save(campaigns)
+
+
+def _resolve_campaign(args):
+    """Return a Path for the campaign directory from --name or --campaign."""
+    name = getattr(args, 'name', None)
+    if name:
+        reg = _registry_load()
+        if name not in reg:
+            print(f"{_TAG_CAMPAIGN} Unknown campaign name '{name}'. "
+                  f"Use --campaign PATH or run 'campaigns' to list known names.")
+            sys.exit(1)
+        return Path(reg[name])
+    return Path(args.campaign)
+
 
 # ---------------------------------------------------------------------------
 # Terminal formatting helpers
@@ -48,6 +84,11 @@ _STATUS_COLOR = {
 }
 
 _ANSI_RE = re.compile(r'\033\[[0-9;]*m')
+
+# Colored tag prefixes used in print statements.
+_TAG_CAMPAIGN = f"{_A.BOLD}{_A.CYAN}[CAMPAIGN]{_A.RESET}"
+_TAG_SYNC     = f"{_A.BOLD}{_A.CYAN}[SYNC]{_A.RESET}"
+_TAG_LIST     = f"{_A.BOLD}{_A.CYAN}[LIST]{_A.RESET}"
 
 
 def _trunc(s, width):
@@ -443,7 +484,7 @@ def _sync_project_status(project_dir):
 
 def cmd_sync(args):
     """Sync per-project job status into the campaign database."""
-    campaign_dir = Path(args.campaign)
+    campaign_dir = _resolve_campaign(args)
     W_AN, W_RO, W_EX, W_ST, W_JB = 28, 18, 10, 12, 10
     synced = 0
 
@@ -610,8 +651,14 @@ def cmd_create(args):
         return
 
     tag = args.tag
+    short_name = getattr(args, 'name', None)
+    if short_name and not _NAME_RE.match(short_name):
+        print(f"{_TAG_CAMPAIGN} Invalid campaign name '{short_name}'. "
+              "Only letters, digits, dots, dashes, colons, and underscores are allowed.")
+        sys.exit(1)
+
     ts = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')
-    campaign_name = f"campaign_{tag}_{ts}"
+    campaign_name = short_name if short_name else f"campaign_{tag}_{ts}"
     campaign_dir = output_base / campaign_name
 
     manifest_cfg = toml.load(args.manifest) if args.manifest else None
@@ -638,8 +685,14 @@ def cmd_create(args):
     with open(campaign_dir / 'campaign_manifest.toml', 'w') as f:
         toml.dump(manifest_snapshot, f)
 
-    print(f"\n[CAMPAIGN] Campaign '{campaign_name}' created at {campaign_dir}")
-    print(f"[CAMPAIGN] {len(all_units)} project(s) created.")
+    # Register the short name so future commands can use --name instead of --campaign.
+    if short_name:
+        _registry_add(short_name, campaign_dir)
+        print(f"\n{_TAG_CAMPAIGN} Campaign '{campaign_name}' created at {campaign_dir}")
+        print(f"{_TAG_CAMPAIGN} Registered as '{short_name}' — use --name {short_name} in future commands.")
+    else:
+        print(f"\n{_TAG_CAMPAIGN} Campaign '{campaign_name}' created at {campaign_dir}")
+    print(f"{_TAG_CAMPAIGN} {len(all_units)} project(s) created.")
 
 
 # ---------------------------------------------------------------------------
@@ -648,7 +701,7 @@ def cmd_create(args):
 
 def cmd_status(args):
     """Print aggregated status for all projects in the campaign."""
-    with _open_db(args.campaign) as (conn, curs):
+    with _open_db(_resolve_campaign(args)) as (conn, curs):
         curs.execute("SELECT * FROM projects ORDER BY analysis, role, experiment")
         rows = list(curs.fetchall())
 
@@ -780,7 +833,7 @@ def cmd_launch(args):
         njobs = -1  # launch_jobsub default: all pending
         mode_label = ""
 
-    with _open_db(args.campaign) as (conn, curs):
+    with _open_db(_resolve_campaign(args)) as (conn, curs):
         # Read the tag recorded at campaign creation time.
         curs.execute("SELECT tag FROM campaign_meta LIMIT 1")
         row_meta = curs.fetchone()
@@ -854,6 +907,52 @@ def cmd_launch(args):
 
 
 # ---------------------------------------------------------------------------
+# `campaigns` subcommand
+# ---------------------------------------------------------------------------
+
+def cmd_campaigns(args):
+    """List all campaigns registered in the local registry."""
+    reg = _registry_load()
+    if not reg:
+        print(f"{_TAG_CAMPAIGN} No campaigns registered. "
+              "Create one with 'campaign.py create --name <name>'.")
+        return
+
+    W_NAME, W_PATH, W_TAG, W_DATE = 24, 54, 12, 20
+    rows = []
+    for name, path in sorted(reg.items()):
+        p = Path(path)
+        exists = p.exists()
+        tag_val = '—'
+        date_val = '—'
+        if exists:
+            try:
+                with _open_db(p) as (_, curs):
+                    curs.execute("SELECT tag, created_at FROM campaign_meta LIMIT 1")
+                    row = curs.fetchone()
+                    if row:
+                        tag_val  = row['tag']
+                        date_val = row['created_at'][:16] if row['created_at'] else '—'
+            except Exception:
+                pass
+        path_color = None if exists else _A.RED
+        rows.append([
+            _cell(name,      W_NAME, color=_A.CYAN),
+            _cell(path,      W_PATH, color=path_color),
+            _cell(tag_val,   W_TAG),
+            _cell(date_val,  W_DATE),
+        ])
+
+    _print_table(
+        ['Name', 'Path', 'Tag', 'Created'],
+        [W_NAME, W_PATH, W_TAG, W_DATE],
+        rows,
+    )
+    print(f"\n{_TAG_CAMPAIGN} {len(reg)} registered campaign(s). "
+          f"Registry: {REGISTRY_PATH}")
+
+
+# ---------------------------------------------------------------------------
 # CLI entry point
 # ---------------------------------------------------------------------------
 
@@ -866,6 +965,9 @@ def main():
 
     # -- create ---------------------------------------------------------------
     p_create = sub.add_parser('create', help='Create a new campaign')
+    p_create.add_argument('--name', metavar='NAME',
+                          help='Short name for the campaign (used as directory name and '
+                               'registered locally so --name can be used in place of --campaign)')
     p_create.add_argument('--tag', default='develop',
                           help='Git ref for grid nodes (default: develop)')
     p_create.add_argument('--output', metavar='PATH',
@@ -886,20 +988,32 @@ def main():
     p_list.add_argument('--toml-root', metavar='PATH', dest='toml_root', default=None,
                         help=f'Root directory to search (default: {TOML_DIR})')
 
+    # -- campaigns ------------------------------------------------------------
+    sub.add_parser('campaigns', help='List all campaigns registered in the local registry')
+
     # -- status ---------------------------------------------------------------
     p_status = sub.add_parser('status', help='Show campaign status')
-    p_status.add_argument('--campaign', metavar='PATH', required=True,
-                          help='Path to the campaign directory')
+    tgt_status = p_status.add_mutually_exclusive_group(required=True)
+    tgt_status.add_argument('--campaign', metavar='PATH',
+                            help='Full path to the campaign directory')
+    tgt_status.add_argument('--name', metavar='NAME',
+                            help='Registered short name (see campaigns subcommand)')
 
     # -- sync -----------------------------------------------------------------
     p_sync = sub.add_parser('sync', help='Sync job completion status into campaign.db')
-    p_sync.add_argument('--campaign', metavar='PATH', required=True,
-                        help='Path to the campaign directory')
+    tgt_sync = p_sync.add_mutually_exclusive_group(required=True)
+    tgt_sync.add_argument('--campaign', metavar='PATH',
+                          help='Full path to the campaign directory')
+    tgt_sync.add_argument('--name', metavar='NAME',
+                          help='Registered short name (see campaigns subcommand)')
 
     # -- launch ---------------------------------------------------------------
     p_launch = sub.add_parser('launch', help='Launch pending campaign jobs')
-    p_launch.add_argument('--campaign', metavar='PATH', required=True,
-                          help='Path to the campaign directory')
+    tgt_launch = p_launch.add_mutually_exclusive_group(required=True)
+    tgt_launch.add_argument('--campaign', metavar='PATH',
+                            help='Full path to the campaign directory')
+    tgt_launch.add_argument('--name', metavar='NAME',
+                            help='Registered short name (see campaigns subcommand)')
     p_launch.add_argument('--experiment', metavar='EXP',
                           help='Restrict launch to one experiment')
     p_launch.add_argument('--relaunch', action='store_true',
@@ -916,6 +1030,8 @@ def main():
         cmd_list(args)
     elif args.command == 'create':
         cmd_create(args)
+    elif args.command == 'campaigns':
+        cmd_campaigns(args)
     elif args.command == 'status':
         cmd_status(args)
     elif args.command == 'sync':
