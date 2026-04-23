@@ -619,3 +619,111 @@ python3 batch/campaign.py status --name v1.0_apr22
 ```
 
 All subcommands also accept `--campaign /full/path/to/campaign` in place of `--name`, which is useful for campaigns created without `--name` or when running on a different machine where the registry is not available.
+
+# Testing and Validation
+`medulla` ships with two complementary test suites — a Python unit test suite covering the batch and campaign layer, and a C++ framework validation suite that exercises the core selection logic end-to-end. Both are managed through `pytest` and are invoked together with a single CMake target.
+
+## Running the Test Suite
+After building, run all tests with:
+
+```bash
+make pytest
+```
+
+This target does three things automatically:
+1. Ensures the `medulla` and `validate` executables are up to date (both are listed as `DEPENDS`).
+2. Sets the `MEDULLA_BUILD_DIR` environment variable to the location of the built binaries so that the framework tests can find them.
+3. Invokes `python3 -m pytest` from the repository root, picking up all tests declared in `pytest.ini`.
+
+A full passing run looks like:
+
+```
+==================== test session results ====================
+batch/test_catalog.py::...   PASSED
+batch/test_campaign.py::...  PASSED
+selection/test/test_framework.py::test_framework_group[sim_reco] PASSED
+...
+============= 14 framework + N batch passed in Xs =============
+```
+
+## Python Unit Tests
+The Python unit tests live in `batch/` and cover the batch and campaign layer in isolation using synthetic fixture data (no real ROOT files or grid credentials needed). They are split across two files:
+
+* `batch/test_catalog.py` — tests the sample catalog parser (`catalog.py`): loading, filtering by experiment and key, and error handling for malformed entries.
+* `batch/test_campaign.py` — tests the campaign layer (`campaign.py`): analysis discovery from mock `meta.toml` files, project-unit expansion, campaign creation, and `status`/`sync` transitions using an in-memory SQLite database.
+
+Shared fixtures (sample catalogs, workspace layouts) are defined in `batch/conftest.py`.
+
+## C++ Framework Validation Tests
+The framework validation tests verify that the `medulla` selection framework produces numerically correct output for a carefully constructed set of synthetic events. The workflow is driven by the `validate` binary (built alongside `medulla`) and orchestrated from Python.
+
+### The `validate` Binary
+`validate` operates in two modes, selected by a command-line flag:
+
+* `--generate` — creates two synthetic ROOT files in the current directory:
+  * `validation_simlike.root` — a structured CAF file mimicking simulation, with a mix of paired and unpaired reco/truth interactions, flash-matched and unmatched interactions, and MCTruth neutrino objects.
+  * `validation_datalike.root` — the equivalent for data-like events (no truth information).
+
+* `--validate` — opens `test.root` (the output of `medulla` run over the generated inputs) and checks a set of named conditions against the contents of each TTree. Each condition is a named assertion of the form "this event (Run, Subrun, Evt) should appear in tree X with variable Y equal to Z" or "this event should *not* appear." A `!`-prefixed condition name inverts the assertion. The binary prints a color-coded pass/fail line per condition and returns a non-zero exit code if any condition fails.
+
+An optional `--group <name>` flag restricts the run to a single validation group, which is how `pytest` isolates failures.
+
+### Validation Groups
+The 14 validation groups each correspond to one TTree read from `test.root`. They systematically cover every combination of tree mode, sample type, and cross-cut:
+
+| Group | What it tests |
+|---|---|
+| `sim_reco` | Sim-like events, `mode = "reco"`, no cross-cut |
+| `sim_reco_with_truth_cut` | Sim-like events, `mode = "reco"`, additional truth-level cut |
+| `sim_truth` | Sim-like events, `mode = "true"`, no cross-cut |
+| `sim_truth_with_reco_cut` | Sim-like events, `mode = "true"`, additional reco-level cut |
+| `data_reco` | Data-like events, `mode = "reco"` |
+| `sim_reco_particles` | Sim-like events, `mode = "reco"`, particle-level variables, no cross-cut |
+| `sim_reco_particles_with_truth_cut` | Sim-like events, `mode = "reco"`, particle-level variables, additional truth-level cut |
+| `sim_truth_particles` | Sim-like events, `mode = "true"`, particle-level variables, no cross-cut |
+| `sim_truth_particles_with_reco_cut` | Sim-like events, `mode = "true"`, particle-level variables, additional reco-level cut |
+| `data_reco_particles` | Data-like events, `mode = "reco"`, particle-level variables |
+| `sim_event` | Sim-like events, `mode = "event"` |
+| `sim_reco_event_cut` | Sim-like events, `mode = "reco"`, event-level cut |
+| `sim_reco_mctruth` | Sim-like events, `mode = "reco"`, MCTruth cut and variable |
+| `sim_truth_mctruth` | Sim-like events, `mode = "true"`, MCTruth cut and variable |
+
+### How `pytest` Drives the Validation
+The session-scoped `framework_env` fixture (defined in the root `conftest.py`) runs the three-step pipeline once per `pytest` session:
+
+1. Calls `validate --generate` in a temporary directory to produce `validation_simlike.root` and `validation_datalike.root`.
+2. Calls `medulla selection/test/test.toml` in the same directory to produce `test.root`.
+3. Makes the working directory and binary paths available to all framework tests.
+
+Each of the 14 parametrized tests in `selection/test/test_framework.py` then calls:
+
+```bash
+validate --validate --group <name>
+```
+
+and asserts that the exit code is zero. A failure in one group does not affect the others, so the pytest output immediately identifies which scenario broke.
+
+If `MEDULLA_BUILD_DIR` is not set (e.g. when running `pytest` directly outside of CMake), all 14 framework tests are skipped with a clear message rather than erroring.
+
+### Running Framework Tests Manually
+To run the framework tests outside of CMake — for example, after an iterative rebuild — set `MEDULLA_BUILD_DIR` to the `selection/` subdirectory of your build tree:
+
+```bash
+export MEDULLA_BUILD_DIR=/path/to/medulla/build/selection
+python3 -m pytest selection/test/ -v
+```
+
+To run only the batch tests (no build required):
+
+```bash
+python3 -m pytest batch/ -v
+```
+
+To run a single framework group interactively:
+
+```bash
+cd /tmp/some-workdir
+/path/to/build/selection/validate --generate
+/path/to/build/selection/medulla /path/to/medulla/selection/test/test.toml
+/path/to/build/selection/validate --validate --group sim_reco
+```
