@@ -73,6 +73,8 @@ branch = [
     { name = "baseline",              type = "mctruth" },
     { name = "cc",                    type = "mctruth" },
     { name = "pdg",                   type = "mctruth" },
+    { name = "interaction_mode",      type = "mctruth" },
+    { name = "interaction_type",      type = "mctruth" },
     { name = "off_axis_angle",        type = "mctruth" },
     { name = "off_axis_angle_sbnd",   type = "both"    },
     { name = "off_axis_angle_icarus", type = "both"    },
@@ -149,6 +151,8 @@ branch = [
     { name = "baseline",              type = "mctruth" },
     { name = "cc",                    type = "mctruth" },
     { name = "pdg",                   type = "mctruth" },
+    { name = "interaction_mode",      type = "mctruth" },
+    { name = "interaction_type",      type = "mctruth" },
     { name = "off_axis_angle",        type = "mctruth" },
     { name = "off_axis_angle_sbnd",   type = "both"    },
     { name = "off_axis_angle_icarus", type = "both"    },
@@ -187,6 +191,7 @@ branch = [
     { name = "muon_softmax",          type = "reco_particle", selector = "leading_muon" },
     { name = "pion_softmax",          type = "reco_particle", selector = "leading_muon" },
     { name = "proton_softmax",        type = "reco_particle", selector = "leading_muon" },
+    { name = "mip_softmax",           type = "reco_particle", selector = "leading_muon" },
 
     # Leading PROTON particle-level
     { name = "end_x",             type = "both_particle", selector = "leading_proton" },
@@ -262,7 +267,7 @@ cuts = [
     { name = "multiproton",       parameters = [ "@proton_threshold"   ] }
 ]
 
-[[category]] # 4 : Fiducial, contained, single muon, any protons, X > 0 protons
+[[category]] # 4 : Fiducial, contained, single muon, any protons, X > 0 pions
 cuts = [
     { name = "neutrino"         },
     { name = "fiducial_cut"     },
@@ -273,7 +278,7 @@ cuts = [
     { name = "single_muon",       parameters = [ "@muon_threshold"     ] }
 ]
 
-[[category]] # 5 : Fiducial, non-contained, single muon, any protons, X > 0 protons
+[[category]] # 5 : Fiducial, non-contained, single muon, any protons, X > 0 pions
 cuts = [
     { name = "neutrino"         },
     { name = "fiducial_cut"     },
