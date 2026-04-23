@@ -440,3 +440,182 @@ python3 medulla/batch/medulla.py -p <path_to_project> -e <experiment> --launch-j
 ```
 
 where `N` is some integer number of jobs to launch (e.g., `10` to launch 10 jobs). If no number is provided, all jobs will be launched. Each time this script is run, it will check for completed output files and only submit jobs that have not yet completed. This does not check for running jobs, so the user should be careful not to submit duplicate jobs.
+
+# Running a Campaign
+The single-project batch workflow described above works well for individual analyses, but a typical SBN physics analysis requires running the same selection over many different samples across two experiments (SBND and ICARUS), often with multiple selection roles (e.g., a primary MC selection, a data-blind-safe sample, and a data quality sample). The **campaign layer** automates this by coordinating all of those combinations in a single tracked operation.
+
+The key concepts are:
+
+* **Analysis** — a named physics analysis, described by a `meta.toml` file in `selection/toml/<analysis>/`.
+* **Role** — the purpose of a particular selection configuration within an analysis (e.g. `primary`, `data_blind_safe`, `data_quality`). Each role corresponds to one TOML file. The actual names used here are not important to the system, but the `primary` role is conventionally used to denote the main selection configuration for an analysis.
+* **Project unit** — one `(analysis, role, experiment)` triple. This is the atomic unit of batch work, identical to a single project created by `medulla.py`.
+* **Campaign** — a timestamped directory containing one project sub-directory per project unit, along with a `campaign.db` SQLite database that tracks the state of every project.
+
+## The `meta.toml` File
+Each analysis that participates in the campaign layer must provide a `meta.toml` file at `selection/toml/<analysis>/meta.toml`. This file declares the analysis name, the experiments it targets, and the selection roles it provides. A minimal example for a two-experiment analysis with two roles is shown below:
+
+```toml
+[meta]
+analysis = "sbn_numu_disappearance_2026"
+description = "SBN numu disappearance oscillation analysis"
+owners = ["mueller", "dtotani", "msiden"]
+experiments = ["sbnd", "icarus"]
+
+[defaults]
+batch_size = 1
+
+[[toml]]
+role = "primary"
+file = "selection.toml"
+
+  [toml.enable.sbnd]
+  keys = ["sbnd_mc5e18", "sbnd_mc1e20", "sbnd_offbeam"]
+
+  [toml.enable.icarus]
+  keys = ["icarus_nominal", "icarus_cvext", "icarus_offbeam"]
+
+[[toml]]
+role = "data_blind_safe"
+file = "data_blind_safe.toml"
+
+  [toml.enable.sbnd]
+  keys = ["sbnd_bnblight"]
+
+  [toml.enable.icarus]
+  keys = ["icarus_bnblight"]
+```
+
+The important fields are:
+
+* `[meta]` — top-level metadata.
+  * `analysis` — a unique identifier for the analysis used as a directory and database key.
+  * `experiments` — the list of experiments this analysis runs on. This is used as the default experiment list for every `[[toml]]` entry unless overridden.
+  * `owners` — a list of analysis contacts.
+* `[defaults]` — default settings for batch job creation.
+  * `batch_size` — the number of input files to process per grid job. Overridable at campaign creation time.
+* `[[toml]]` — one entry per selection role.
+  * `role` — the name of the role (e.g. `primary`). Must be unique within the analysis.
+  * `file` — the selection TOML file for this role, relative to the `meta.toml` directory.
+  * `experiments` — optional per-role override of the top-level experiment list.
+  * `[toml.enable.<experiment>]` — the sample catalog keys to activate for a given experiment. These are the keys defined in `selection/toml/common/samples.toml`. Samples whose keys are not in the `enable` list will have `disable = true` set automatically. If no `enable` block is provided for an experiment, the selection TOML is expected to contain inline `[[sample]]` blocks instead.
+
+Analyses whose selection TOMLs use inline `[[sample]]` blocks (no `[[include_samples]]`) are also fully supported — simply leave the `[toml.enable.*]` blocks empty or omit them entirely.
+
+## The Campaign Workflow
+
+### Step 0 — Review discovered analyses
+Before creating anything, use the `list` subcommand to inspect every discovered analysis and the full set of project units that would be created:
+
+```bash
+python3 batch/campaign.py list
+```
+
+This shows each analysis with its roles, experiments, and configured sample keys, followed by the complete `(analysis, role, experiment)` expansion table. Use this to verify that the right samples are enabled before committing to a campaign.
+
+### Step 1 — Create
+Create a campaign with the `create` subcommand. The `--name` flag assigns a short, memorable identifier that doubles as the campaign's directory name and is stored in a local registry (`~/.medulla/campaigns.toml`) so that every subsequent command can refer to it with `--name` instead of the full path:
+
+```bash
+python3 batch/campaign.py create \
+    --name v1.0_apr22 \
+    --tag v1.0 \
+    --output /pnfs/icarus/scratch/users/$USER/campaigns
+```
+
+The `--tag` value is the git branch or tag that will be checked out on the grid nodes — it must exist on the remote. The command will:
+1. Expand all discovered analyses into project units.
+2. Show the full project table and prompt for confirmation.
+3. Create the campaign directory (`campaigns/v1.0_apr22/`) containing one sub-directory per project unit, each set up as a complete batch project (identical to `medulla.py --create-project`).
+4. Write `campaign.db` tracking the status of every project.
+5. Write `campaign_manifest.toml` as a human-readable snapshot of what was created.
+6. Register the name locally so `--name v1.0_apr22` can be used in all subsequent commands.
+
+If `--name` is omitted, the directory is named with an auto-generated timestamp (`campaign_v1.0_20260417T130000`) and **no registry entry is created** — you will need to provide the full path with `--campaign` for all subsequent commands.
+
+Several optional flags are available:
+* `--dry-run` — print the expansion table without creating any directories or databases.
+* `--experiment <exp>` — restrict creation to one experiment (repeatable for multiple).
+* `--roles <role> [role ...]` — restrict creation to specific roles.
+* `--analyses <name> [name ...]` — restrict creation to specific analyses by name.
+
+For example, to create only the SBND primary projects:
+
+```bash
+python3 batch/campaign.py create \
+    --name v1.0_sbnd_primary \
+    --tag v1.0 \
+    --output /pnfs/sbnd/scratch/users/$USER/campaigns \
+    --experiment sbnd \
+    --roles primary
+```
+
+### Step 2 — Manage registered campaigns
+At any time, list all campaigns that have been registered locally:
+
+```bash
+python3 batch/campaign.py campaigns
+```
+
+This shows the short name, full path, git tag, and creation date for each registered campaign, with missing paths highlighted in red. The registry lives at `~/.medulla/campaigns.toml` and can be edited by hand if a campaign is moved or should be removed.
+
+### Step 3 — Launch
+Once valid grid credentials are in place (see `htgettoken` above), submit jobs with the `launch` subcommand. Before submitting the full campaign it is **strongly recommended** to run a test job first:
+
+```bash
+# Submit one job per project to verify the setup
+python3 batch/campaign.py launch --name v1.0_apr22 --test
+```
+
+The `--test` flag submits exactly one job per project. Inspect the output of those jobs before proceeding to the full submission:
+
+```bash
+# Submit all remaining pending jobs
+python3 batch/campaign.py launch --name v1.0_apr22
+```
+
+If you want finer-grained control, `--njobs N` submits at most `N` jobs per project instead of all pending ones. `--test` and `--njobs` are mutually exclusive.
+
+In all cases the command groups projects by experiment, authenticates once per experiment via `htgettoken` (including the OIDC browser prompt if required), and submits via `jobsub_submit`. A single confirmation prompt is shown before any jobs are submitted. After submission each project's status is updated to `submitted` in `campaign.db`.
+
+An optional `--experiment` flag restricts the launch to one experiment, which is useful if authentication for one experiment fails or needs to be deferred.
+
+If a submission attempt fails (for example, due to an expired token), the project status is **not** advanced to `submitted` — only successful `jobsub_submit` calls update the database. If you need to relaunch projects that were previously marked `submitted` (e.g. after an authentication problem caused silent failures on the grid side), use `--relaunch`:
+
+```bash
+python3 batch/campaign.py launch --name v1.0_apr22 --relaunch --test
+```
+
+`--relaunch` expands the query to include projects with status `submitted` in addition to `created` and `partial`. It can be combined with `--test` or `--njobs`.
+
+### Step 4 — Sync
+After the grid jobs run, use the `sync` subcommand to scan each project's output directory for completed files and update `campaign.db`:
+
+```bash
+python3 batch/campaign.py sync --name v1.0_apr22
+```
+
+A job is considered complete when its output file (`output_jobid<N>.root`) exists and is at least 1 KB in size. The sync command updates each individual `project.db` and then writes completion counts and a new status back to `campaign.db`. The status transitions are:
+* `submitted` → `completed` when all jobs in the project are done.
+* `submitted` → `partial` when some but not all jobs are done.
+
+Projects in a `partial` state are eligible for relaunch — running `launch` again will resubmit only their remaining pending jobs.
+
+### Step 5 — Monitor
+At any point, inspect the current state of the campaign with the `status` subcommand:
+
+```bash
+python3 batch/campaign.py status --name v1.0_apr22
+```
+
+This prints the status and job completion counts for every project. The `Jobs` column shows `n_completed/n_total` and is color-coded: grey before any sync, red when no jobs have finished, yellow for a partial completion, and green when all jobs are done.
+
+The typical monitoring loop is:
+
+```bash
+# Run after jobs have had time to complete
+python3 batch/campaign.py sync   --name v1.0_apr22
+python3 batch/campaign.py status --name v1.0_apr22
+# Repeat until all projects show 'completed'
+```
+
+All subcommands also accept `--campaign /full/path/to/campaign` in place of `--name`, which is useful for campaigns created without `--name` or when running on a different machine where the registry is not available.
