@@ -181,5 +181,5 @@ bool match_metadata(const row_t & row, const condition_t & condition);
  * @param rows The vector of row_t objects to check.
  * @param conditions The vector of condition_t objects to check against.
  */
-void match_conditions(const std::vector<row_t> & rows,
-                      const std::vector<condition_t> & conditions);
+int match_conditions(const std::vector<row_t> & rows,
+                     const std::vector<condition_t> & conditions);
