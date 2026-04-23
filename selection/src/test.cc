@@ -246,8 +246,9 @@ bool match_metadata(const row_t & row, const condition_t & condition)
 }
 
 // Match a set of row_t objects against a set of condition_t objects.
-void match_conditions(const std::vector<row_t> & rows, const std::vector<condition_t> & conditions)
+int match_conditions(const std::vector<row_t> & rows, const std::vector<condition_t> & conditions)
 {
+    int failures = 0;
     for(const auto & condition : conditions)
     {
         bool found = false;
@@ -281,14 +282,15 @@ void match_conditions(const std::vector<row_t> & rows, const std::vector<conditi
                     {
                         // If the condition starts with '!', it means we expect it to not match.
                         std::cout << "\033[31mValidation failed:\033[0m   " << condition.first.substr(1) << "." << std::endl;
+                        ++failures;
                         found = true;
                         break;
                     }
                 }
-                else if(found && !match)                
+                else if(found && !match)
                 {
                     std::cerr << "\033[33mValidation mismatch:\033[0m " << condition.first << "." << std::endl;
-                    
+
                     // Print the fields that are mismatched.
                     for(const auto & field : condition.second)
                     {
@@ -303,10 +305,14 @@ void match_conditions(const std::vector<row_t> & rows, const std::vector<conditi
             }
         }
         if(!found && condition.first.find('!') == std::string::npos)
+        {
             std::cout << "\033[31mValidation failed:\033[0m   " << condition.first << "." << std::endl;
+            ++failures;
+        }
         else if(!found && condition.first.find('!') != std::string::npos)
             std::cout << "\033[32mValidation passed:\033[0m   " << condition.first.substr(1) << "." << std::endl;
     }
+    return failures;
 }
 
 // Explicit template instantiations for the functions defined above.

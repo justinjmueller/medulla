@@ -26,7 +26,10 @@ add_subdirectory(systematics)
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if(Python3_FOUND)
     add_custom_target(pytest
-        COMMAND ${Python3_EXECUTABLE} -m pytest
+        COMMAND ${CMAKE_COMMAND} -E env
+            MEDULLA_BUILD_DIR=${CMAKE_BINARY_DIR}/selection
+            ${Python3_EXECUTABLE} -m pytest
+        DEPENDS medulla validate
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Running Python unit tests"
         VERBATIM
