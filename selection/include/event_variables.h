@@ -76,6 +76,44 @@ namespace evar
     REGISTER_VAR_SCOPE(RegistrationScope::Event, nreco, nreco);
 
     /**
+     * @brief Variable for the number of true SPINE particles in the event.
+     * @details This variable counts the number of true SPINE particles in the
+     * event by iterating over the true interactions and summing up the number
+     * of particles in each interaction.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the number of true SPINE particles in the event.
+     */
+    template<typename T>
+    double ntrue_particles(const T & sr)
+    {
+        size_t count = 0;
+        for(const auto & interaction : sr.dlp_true)
+            count += interaction.particles.size();
+        return count;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, ntrue_particles, ntrue_particles);
+
+    /**
+     * @brief Variable for the number of reco SPINE particles in the event.
+     * @details This variable counts the number of reco SPINE particles in the
+     * event by iterating over the reco interactions and summing up the number 
+     * of particles in each interaction.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the number of reco SPINE particles in the event.
+     */
+    template<typename T>
+    double nreco_particles(const T & sr)
+    {
+        size_t count = 0;
+        for(const auto & interaction : sr.dlp)
+            count += interaction.particles.size();
+        return count;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, nreco_particles, nreco_particles);
+
+    /**
      * @brief Variable for the multiplicity of neutrino interactions in the
      * event.
      * @details This variable counts the number of neutrino interactions in the

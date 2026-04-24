@@ -1,14 +1,16 @@
 #!/bin/bash
 
 #######################################################################
-# Usage: submit.sh [--project=PROJECT]
-# 
+# Usage: submit.sh [--project=PROJECT] [--tag=TAG]
+#
 # Arguments:
 #   --project=PROJECT   : Specify the project directory
+#   --tag=TAG           : Git ref to checkout on grid nodes (default: develop)
 #######################################################################
 
 # Initialize variables
 PROJECT=""
+TAG="develop"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -19,6 +21,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --project)
       PROJECT="$2"
+      shift 2
+      ;;
+    --tag=*)
+      TAG="${1#*=}"
+      shift
+      ;;
+    --tag)
+      TAG="$2"
       shift 2
       ;;
     -h|--help)
@@ -67,7 +77,7 @@ ups active
 # Build medulla
 git clone https://github.com/justinjmueller/medulla.git
 cd medulla
-git checkout develop
+git checkout ${TAG}
 mkdir build && cd build
 export CC=$(which gcc)
 export CXX=$(which g++)
@@ -85,6 +95,10 @@ ifdh cp $PROJECT/project.db project.db
 # process by checking against the list of not-yet-completed jobs in the project
 # database.
 JOBID=$(sqlite3 -noheader project.db "SELECT jobid FROM jobs WHERE status != 'completed' ORDER BY jobid LIMIT 1 OFFSET ${PROCESS};")
+if [[ -z "$JOBID" ]]; then
+    echo "Error: could not determine JOBID for PROCESS=${PROCESS}. The project database may be empty or corrupt." >&2
+    exit 1
+fi
 sqlite3 -noheader -cmd ".mode list" project.db "SELECT cfg FROM configuration WHERE jobid=${JOBID};" > job_config.toml
 
 # Copy the systematics TOML file

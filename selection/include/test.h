@@ -29,6 +29,9 @@
 // in particles falling below various thresholds in the framework.
 #define ENERGY_SCALE 200.0
 
+// Define a neutrino energy value used for the MCTruth variable tests.
+#define NEUTRINO_ENERGY 1.5
+
 // Define a type for multiplicity, which is used to define the number of
 // particles of each type in an interaction. This is a fixed-size array
 // of integers, where each element corresponds to a different particle type.
@@ -103,6 +106,14 @@ template<typename T, typename U>
 void pair(T & left, U & right);
 
 /**
+ * @brief Generate a neutrino truth object.
+ * @param iscc Whether the interaction is charged-current.
+ * @param E The neutrino energy in GeV (default: NEUTRINO_ENERGY).
+ * @return A SRTrueInteraction object with iscc and E set.
+ */
+caf::SRTrueInteraction generate_neutrino(bool iscc, double E = NEUTRINO_ENERGY);
+
+/**
  * @brief Mark the particles as contained.
  * @details This function marks all particles in the interaction as
  * contained, which is used to create a set of "passing" particles (w.r.t.
@@ -170,5 +181,5 @@ bool match_metadata(const row_t & row, const condition_t & condition);
  * @param rows The vector of row_t objects to check.
  * @param conditions The vector of condition_t objects to check against.
  */
-void match_conditions(const std::vector<row_t> & rows,
-                      const std::vector<condition_t> & conditions);
+int match_conditions(const std::vector<row_t> & rows,
+                     const std::vector<condition_t> & conditions);

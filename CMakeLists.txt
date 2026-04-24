@@ -18,6 +18,23 @@ add_subdirectory(shared)
 add_subdirectory(selection)
 add_subdirectory(systematics)
 
+# Python unit tests
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if(Python3_FOUND)
+    add_custom_target(pytest
+        COMMAND ${CMAKE_COMMAND} -E env
+            MEDULLA_BUILD_DIR=${CMAKE_BINARY_DIR}/selection
+            ${Python3_EXECUTABLE} -m pytest
+        DEPENDS medulla validate
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Running Python unit tests"
+        VERBATIM
+    )
+    message(STATUS "Python3 found (${Python3_EXECUTABLE}): 'make pytest' target enabled.")
+else()
+    message(WARNING "Python3 interpreter not found: 'make pytest' target disabled.")
+endif()
+
 # Docs (optional)
 option(BUILD_DOCS "Build documentation" OFF)
 
