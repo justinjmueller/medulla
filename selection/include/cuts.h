@@ -398,6 +398,20 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::Both, single_electron, single_electron);
 
   template<class T>
+    bool di_photon(const T & obj, std::vector<double> params={10.0,})
+    {
+      return particle_multiplicity(obj, 2, 0, params) == 2;
+    }
+  REGISTER_CUT_SCOPE(RegistrationScope::Both, di_photon, di_photon);
+
+  template<class T>
+    bool electron_gamma(const T & obj, std::vector<double> params={10.0,})
+    {
+      return particle_multiplicity(obj, 1, 0, params) + particle_multiplicity(obj, 1, 1, params) == 2;
+    }
+  REGISTER_CUT_SCOPE(RegistrationScope::Both, electron_gamma, electron_gamma);
+
+  template<class T>
     bool di_electron(const T & obj, std::vector<double> params={10.0,})
     {
       return particle_multiplicity(obj, 2, 1, params) == 2;

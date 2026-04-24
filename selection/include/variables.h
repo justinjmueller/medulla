@@ -936,5 +936,23 @@ namespace vars
         return utilities::magnitude(utilities::subtract(muon_start, vtx));
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, leading_muon_vertex_gap, leading_muon_vertex_gap);
+
+    template<class T>
+      double reconstructed_category(const T & obj)
+      {
+	if(cuts::single_photon(obj))
+	  return 0.5;
+	if(cuts::single_electron(obj))
+	  return 1.5;
+	if(cuts::electron_gamma(obj))
+	  return 2.5;
+	if(cuts::di_photon(obj))
+	  return 3.5;
+	if(cuts::di_electron(obj))
+	  return 4.5;
+	else
+	  return -0.5;
+      }
+    REGISTER_VAR_SCOPE(RegistrationScope::Reco, reconstructed_category, reconstructed_category);
 }
 #endif // VARIABLES_H
