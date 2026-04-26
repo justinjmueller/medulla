@@ -14,6 +14,7 @@
 #define MUON_MASS 105.6583745
 #define PION_MASS 139.57039
 #define PROTON_MASS 938.2720813
+#define NUCLEON_MASS 938.9187473
 
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
 #include "sbnanaobj/StandardRecord/SRInteractionDLP.h"
@@ -949,5 +950,67 @@ namespace vars
         return utilities::magnitude(utilities::subtract(muon_start, vtx));
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, leading_muon_vertex_gap, leading_muon_vertex_gap);
+
+    /**
+     * @brief Four-momentum transfer squared Q² in GeV².
+     * @details Q² = 2·Eν·(Eμ − pμ·cosθbeam) − mμ², where Eν is the visible
+     * energy, Eμ and pμ are the leading primary muon energy and momentum
+     * magnitude, and cosθbeam is computed from the momentum components.
+     * All quantities in GeV. Requires leading_primary_muon from stage 1.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return Q² in GeV², or PLACEHOLDERVALUE if no primary muon is found.
+     */
+    template<class T>
+    double Q2(const T & obj)
+    {
+        size_t mi = selectors::leading_primary_muon(obj);
+        if(mi == kNoMatch) return PLACEHOLDERVALUE;
+        const auto & m(obj.particles[mi]);
+        double pmod = std::sqrt(pvars::px(m)*pvars::px(m) + pvars::py(m)*pvars::py(m) + pvars::pz(m)*pvars::pz(m));
+        double beam_costheta = pvars::pz(m) / pmod;
+        return 2*visible_energy(obj)*((pvars::energy(m)/1000.0) - pvars::p(m)*beam_costheta)
+               - std::pow(MUON_MASS/1000.0, 2);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, Q2, Q2);
+
+    /**
+     * @brief Hadronic invariant mass W in GeV.
+     * @details W = sqrt(mN² + 2·mN·(Eν − Eμ) − Q²), where Eν is the visible
+     * energy and Eμ is the leading primary muon energy. Requires
+     * leading_primary_muon from stage 1.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return W in GeV, or PLACEHOLDERVALUE if no primary muon is found.
+     */
+    template<class T>
+    double W(const T & obj)
+    {
+        size_t mi = selectors::leading_primary_muon(obj);
+        if(mi == kNoMatch) return PLACEHOLDERVALUE;
+        const auto & m(obj.particles[mi]);
+        double mN = NUCLEON_MASS / 1000.0;
+        return std::sqrt(mN*mN + 2*mN*(visible_energy(obj) - pvars::energy(m)/1000.0) - Q2(obj));
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, W, W);
+
+    /**
+     * @brief Hadronic invariant mass W using calorimetric-substituted visible energy.
+     * @details Same as W but uses visible_energy_calosub for Eν. Requires
+     * leading_primary_muon from stage 1.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return W in GeV, or PLACEHOLDERVALUE if no primary muon is found.
+     */
+    template<class T>
+    double W_calosub(const T & obj)
+    {
+        size_t mi = selectors::leading_primary_muon(obj);
+        if(mi == kNoMatch) return PLACEHOLDERVALUE;
+        const auto & m(obj.particles[mi]);
+        double mN = NUCLEON_MASS / 1000.0;
+        return std::sqrt(mN*mN + 2*mN*(visible_energy_calosub(obj) - pvars::energy(m)/1000.0) - Q2(obj));
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, W_calosub, W_calosub);
 }
 #endif // VARIABLES_H

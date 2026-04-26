@@ -153,5 +153,25 @@ namespace mctruth
     }
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, off_axis_angle, off_axis_angle);
 
+    /**
+     * @brief True four-momentum transfer squared Q² in GeV².
+     * @tparam T the type of the object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return Q² from the generator record.
+     */
+    template<typename T>
+    double neutrino_Q2(const T & obj) { return obj.Q2; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, neutrino_Q2, neutrino_Q2);
+
+    /**
+     * @brief True hadronic invariant mass W in GeV.
+     * @tparam T the type of the object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return W from the generator record.
+     */
+    template<typename T>
+    double neutrino_W(const T & obj) { return obj.w; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, neutrino_W, neutrino_W);
+
 } // namespace mctruth
 #endif
