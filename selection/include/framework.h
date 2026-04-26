@@ -514,4 +514,29 @@ NamedSpillMultiVar construct_category(const std::vector<cfg::ConfigurationTable>
  */
 std::vector<NamedSpillMultiVar> construct_exposure_vars(const std::vector<cfg::ConfigurationTable> & cuts);
 
+/**
+ * @namespace context
+ * @brief Ambient interaction context for bivariable functions.
+ * @details Bivariables registered with REGISTER_BIVAR_SCOPE receive only two
+ * particle arguments per the BiVarFn contract. When a bivariable needs the
+ * parent interaction (e.g. for vertex coordinates), it reads the pointer set
+ * here. The framework sets these pointers in the bivar dispatch lambdas inside
+ * construct() before invoking bivar_fn, so they are valid for the duration of
+ * each bivar call.
+ */
+namespace context
+{
+    extern const TType * current_true;
+    extern const RType * current_reco;
+
+    template<class ParticleT>
+    auto * current()
+    {
+        if constexpr (std::is_same_v<ParticleT, TParticleType>)
+            return current_true;
+        else
+            return current_reco;
+    }
+}
+
 #endif // FRAMEWORK_H
