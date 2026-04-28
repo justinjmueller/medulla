@@ -130,5 +130,27 @@ namespace pvars
         return pid;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, lax_muon_pid, lax_muon_pid);
+
+    /**
+     * @brief Variable for assigning primary classification based on the
+     * particle's softmax scores.
+     * @details This variable assigns a primary classification based on the
+     * softmax scores of the particle. This function places a relaxed threshold
+     * on the proton primary softmax score to reduce observed inefficiencies in the
+     * proton primary classification.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the primary classification of the particle.
+     */
+    template<class T>
+    double lax_proton_primary_classification(const T & p)
+    {
+        if(default_pid(p) == pvars::kProton) 
+            return p.primary_scores[1] > 0.10 ? 1 : 0;
+        else 
+            return p.is_primary ? 1 : 0;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, lax_proton_primary_classification, lax_proton_primary_classification);
+
 } // namespace pvars
 #endif
