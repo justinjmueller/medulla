@@ -1,6 +1,6 @@
 [general]
 output = "sbn_nue_oscillation_2027"
-primfn = "lax_proton_primary_classification"
+primfn = "lax_primary_classification"
 pidfn = "default_pid"
 fsthresh = [
     "@photon_threshold",
