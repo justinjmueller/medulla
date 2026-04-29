@@ -733,6 +733,7 @@ namespace vars
     double opening_angle(const T & obj)
     {
         size_t mi = selectors::leading_electron(obj);
+        size_t pi = selectors::leading_proton(obj);
         if(mi == kNoMatch || pi == kNoMatch)
             return kNoMatchValue; // No leading electron or proton found.
         else
