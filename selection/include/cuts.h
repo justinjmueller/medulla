@@ -223,7 +223,25 @@ namespace cuts
         );
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut_tmp, fiducial_cut_tmp);
-    
+
+    /**
+     * @brief Veto interactions whose vertex falls in the ICARUS z-gap region.
+     * @details A region near |z| < 100 cm in ICARUS exhibits anomalously high
+     * rates of poorly-reconstructed interactions ("mystery z-gap"). This cut
+     * rejects any interaction whose vertex z-coordinate falls in the range
+     * (-100, 100) cm, which is applied on top of the standard fiducial cut
+     * when running the pi0 selection.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the vertex z-coordinate is outside (-100, 100) cm.
+     */
+    template<class T>
+    bool avoid_icarus_mystery_zgap(const T & obj)
+    {
+        return !(obj.vertex[2] > -100 && obj.vertex[2] < 100);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, avoid_icarus_mystery_zgap, avoid_icarus_mystery_zgap);
+
     /**
      * @brief Apply a containment cut on the entire interaction.
      * @details The containment cut is applied on the entire interaction. The
@@ -512,6 +530,24 @@ namespace cuts
         return particle_multiplicity(obj, 1, 0, params) == 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, single_photon, single_photon);
+
+    /**
+     * @brief Require exactly two above-threshold primary photons in the interaction.
+     * @details Counts primary photons whose kinetic energy meets or exceeds the
+     * supplied threshold and requires the total to be exactly two. Used as the
+     * primary pi0 topology cut to select CC&pi;0 interactions where both photon
+     * daughters are reconstructed above threshold. Defaults to 25 MeV.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @param params params[0] sets the photon KE threshold in MeV. Defaults to 25 MeV.
+     * @return true if the interaction contains exactly two primary photons above threshold.
+     */
+    template<class T>
+    bool two_photons(const T & obj, std::vector<double> params={25.0,})
+    {
+        return particle_multiplicity(obj, 2, 0, params) == 2;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, two_photons, two_photons);
 
     /**
      * @brief Binding for a single particle electron multiplicity cut.
