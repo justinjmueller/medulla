@@ -17,6 +17,8 @@
 #include "utilities.h"
 #include "framework.h"
 #include "selectors.h"
+#include "include/bivariables.h"
+#include "include/biselectors.h"
 
 /**
  * @namespace cuts
@@ -548,6 +550,36 @@ namespace cuts
         return particle_multiplicity(obj, 2, 0, params) == 2;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, two_photons, two_photons);
+
+    /**
+     * @brief Require the diphoton invariant mass to lie within a specified window.
+     * @details Selects the best photon pair using the pi0_photon_pair biselector,
+     * then computes the diphoton invariant mass as sqrt(2 ke0 ke1 (1 - cos theta)),
+     * where the opening angle is determined from the vertex-to-shower-start unit
+     * vectors for reconstructed particles and from momentum unit vectors for true
+     * particles. The interaction fails the cut if no valid photon pair exists or
+     * if the invariant mass falls outside [params[0], params[1]).
+     * The KE estimator respects the current pvars::calofn<T> setting.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @param params params[0] lower mass bound (MeV), params[1] upper mass bound (MeV).
+     *               Defaults to [60, 300) MeV.
+     * @return true if a valid photon pair exists and its invariant mass is in [params[0], params[1]).
+     */
+    template<class T>
+    bool valid_pi0_mass_cut(const T & obj, std::vector<double> params={60.0, 300.0})
+    {
+        auto [i0, i1] = biselectors::pi0_photon_pair(obj);
+        if(i0 == kNoMatch || i1 == kNoMatch) return false;
+        const auto & p0 = obj.particles[i0];
+        const auto & p1 = obj.particles[i1];
+        double vx = obj.vertex[0], vy = obj.vertex[1], vz = obj.vertex[2];
+        double ke0 = pvars::calo_ke(p0), ke1 = pvars::calo_ke(p1);
+        double ct   = bvars::pi0_opening_costheta_impl(p0, p1, vx, vy, vz);
+        double mass = std::sqrt(2.0 * ke0 * ke1 * (1.0 - ct));
+        return mass >= params[0] && mass < params[1];
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, valid_pi0_mass_cut, valid_pi0_mass_cut);
 
     /**
      * @brief Binding for a single particle electron multiplicity cut.

@@ -57,8 +57,7 @@ cut = [
     {name = "single_muon",               type = "reco", parameters = ["@reco_second_muon_threshold"]},
     {name = "no_charged_pions",          type = "reco", parameters = ["@reco_pion_threshold"]},
     {name = "two_photons",               type = "reco", parameters = ["@reco_photon_threshold"]},
-    # {name = "valid_pi0_mass_cut", type = "reco",            # NOT YET PORTED
-    #  parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+    {name = "valid_pi0_mass_cut",        type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
 ]
 branch = [
     {name = "neutrino_energy",      type = "mctruth"},
