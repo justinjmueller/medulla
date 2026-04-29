@@ -240,6 +240,11 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
         return std::all_of(event_cut_functions.begin(), event_cut_functions.end(), [&e](auto & f) { return f(e); });
     };
 
+    // Output name can be overridden via optional `title` in the TOML.
+    // We still use `name` for registry lookup so multiple entries can point
+    // at the same underlying function with different parameters.
+    const std::string display_base = var.has_field("title") ? var.get_string_field("title") : var.get_string_field("name");
+
     if(exec_mode == Mode::True)
     {
         /**
@@ -248,6 +253,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
          * configuration of the variable. The variable name is used to retrieve the
          * function from the registry.
          */
+        // `var_name` is used for registry lookup.
         std::string var_name = var.get_string_field("name");
         std::string var_type = (override_type.empty() ? var.get_string_field("type") : override_type);
         std::vector<double> varPars;
@@ -258,8 +264,8 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
         {
             if(var.has_field("selector"))
             {
-                // Full name for the variable.
-                std::string full_name = "true_" + var.get_string_field("selector") + "_" + var_name;
+                // Full output name for the variable.
+                std::string full_name = "true_" + var.get_string_field("selector") + "_" + display_base;
 
                 // Retrieve the selector function.
                 std::string selector_name = "true_" + var.get_string_field("selector");
@@ -289,10 +295,10 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             }
             else
             {
-                var_name = "true_" + var_name;
-                auto factory = VarFactoryRegistry<TType>::instance().get(var_name);
+                const std::string lookup_name = "true_" + var_name;
+                auto factory = VarFactoryRegistry<TType>::instance().get(lookup_name);
                 auto var_fn = factory(varPars);
-                return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, TType>(
+                return std::make_pair("true_" + display_base, spill_multivar_helper<TType, RType, TParticleType, TType>(
                     true_cut,
                     reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                     true_particle_cut,
@@ -307,7 +313,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             if(var.has_field("selector"))
             {
                 // Full name for the variable.
-                std::string full_name = "reco_" + var.get_string_field("selector") + "_" + var_name;
+                std::string full_name = "reco_" + var.get_string_field("selector") + "_" + display_base;
 
                 // Retrieve the selector function.
                 std::string selector_name = "reco_" + var.get_string_field("selector");
@@ -337,10 +343,10 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             }
             else
             {
-                var_name = "reco_" + var_name;
-                auto factory = VarFactoryRegistry<RType>::instance().get(var_name);
+                const std::string lookup_name = "reco_" + var_name;
+                auto factory = VarFactoryRegistry<RType>::instance().get(lookup_name);
                 auto var_fn = factory(varPars);
-                return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, RType>(
+                return std::make_pair("reco_" + display_base, spill_multivar_helper<TType, RType, TParticleType, RType>(
                     true_cut,
                     reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                     true_particle_cut,
@@ -351,10 +357,10 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
         }
         else if(var_type == "mctruth")
         {
-            var_name = "true_" + var_name;
-            auto factory = VarFactoryRegistry<MCTruth>::instance().get(var_name);
+            const std::string lookup_name = "true_" + var_name;
+            auto factory = VarFactoryRegistry<MCTruth>::instance().get(lookup_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, MCTruth>(
+            return std::make_pair("true_" + display_base, spill_multivar_helper<TType, RType, TParticleType, MCTruth>(
                 true_cut,
                 reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                 true_particle_cut,
@@ -364,10 +370,10 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
         }
         else if(var_type == "true_particle")
         {
-            var_name = "true_particle_" + var_name;
-            auto factory = VarFactoryRegistry<TParticleType>::instance().get(var_name);
+            const std::string lookup_name = "true_particle_" + var_name;
+            auto factory = VarFactoryRegistry<TParticleType>::instance().get(lookup_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, TParticleType>(
+            return std::make_pair("true_particle_" + display_base, spill_multivar_helper<TType, RType, TParticleType, TParticleType>(
                 true_cut,
                 reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                 true_particle_cut,
@@ -377,10 +383,10 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
         }
         else if(var_type == "reco_particle")
         {
-            var_name = "reco_particle_" + var_name;
-            auto factory = VarFactoryRegistry<RParticleType>::instance().get(var_name);
+            const std::string lookup_name = "reco_particle_" + var_name;
+            auto factory = VarFactoryRegistry<RParticleType>::instance().get(lookup_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, RParticleType>(
+            return std::make_pair("reco_particle_" + display_base, spill_multivar_helper<TType, RType, TParticleType, RParticleType>(
                 true_cut,
                 reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                 true_particle_cut,
@@ -401,6 +407,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
          * configuration of the variable. The variable name is used to retrieve the
          * function from the registry.
          */
+        // `var_name` is used for registry lookup.
         std::string var_name = var.get_string_field("name");
         std::string var_type = (override_type.empty() ? var.get_string_field("type") : override_type);
         std::vector<double> varPars;
@@ -412,7 +419,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             if(var.has_field("selector"))
             {
                 // Full name for the variable.
-                std::string full_name = "true_" + var.get_string_field("selector") + "_" + var_name;
+                std::string full_name = "true_" + var.get_string_field("selector") + "_" + display_base;
 
                 // Retrieve the selector function.
                 std::string selector_name = "true_" + var.get_string_field("selector");
@@ -420,8 +427,8 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 auto selector = selector_factory(std::vector<double>{});
                                 
                 // Retrieve the particle-level variable function.
-                var_name = "true_particle_" + var_name;
-                auto factory = VarFactoryRegistry<TParticleType>::instance().get(var_name);
+                const std::string lookup_name = "true_particle_" + var_name;
+                auto factory = VarFactoryRegistry<TParticleType>::instance().get(lookup_name);
                 auto var_fn = factory(varPars);
                 
                 VarFn<TType> var_fn_with_selector = [var_fn, selector](const TType & e) -> double
@@ -442,10 +449,10 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             }
             else
             {
-                var_name = "true_" + var_name;
-                auto factory = VarFactoryRegistry<TType>::instance().get(var_name);
+                const std::string lookup_name = "true_" + var_name;
+                auto factory = VarFactoryRegistry<TType>::instance().get(lookup_name);
                 auto var_fn = factory(varPars);
-                return std::make_pair(var_name, spill_multivar_helper<RType, TType, TParticleType, TType>(
+                return std::make_pair("true_" + display_base, spill_multivar_helper<RType, TType, TParticleType, TType>(
                     reco_cut,
                     true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                     true_particle_cut,
@@ -459,7 +466,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             if(var.has_field("selector"))
             {
                 // Full name for the variable.
-                std::string full_name = "reco_" + var.get_string_field("selector") + "_" + var_name;
+                std::string full_name = "reco_" + var.get_string_field("selector") + "_" + display_base;
 
                 // Retrieve the selector function.
                 std::string selector_name = "reco_" + var.get_string_field("selector");
@@ -467,8 +474,8 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 auto selector = selector_factory(std::vector<double>{});
 
                 // Retrieve the particle-level variable function.
-                var_name = "reco_particle_" + var_name;
-                auto factory = VarFactoryRegistry<RParticleType>::instance().get(var_name);
+                const std::string lookup_name = "reco_particle_" + var_name;
+                auto factory = VarFactoryRegistry<RParticleType>::instance().get(lookup_name);
                 auto var_fn = factory(varPars);
 
                 VarFn<RType> var_fn_with_selector = [var_fn, selector](const RType & e) -> double
@@ -489,10 +496,10 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             }
             else
             {
-                var_name = "reco_" + var_name;
-                auto factory = VarFactoryRegistry<RType>::instance().get(var_name);
+                const std::string lookup_name = "reco_" + var_name;
+                auto factory = VarFactoryRegistry<RType>::instance().get(lookup_name);
                 auto var_fn = factory(varPars);
-                return std::make_pair(var_name, spill_multivar_helper<RType, TType, TParticleType, RType>(
+                return std::make_pair("reco_" + display_base, spill_multivar_helper<RType, TType, TParticleType, RType>(
                     reco_cut,
                     true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                     true_particle_cut,
@@ -503,10 +510,10 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
         }
         else if(var_type == "mctruth")
         {
-            var_name = "true_" + var_name;
-            auto factory = VarFactoryRegistry<MCTruth>::instance().get(var_name);
+            const std::string lookup_name = "true_" + var_name;
+            auto factory = VarFactoryRegistry<MCTruth>::instance().get(lookup_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<RType, TType, TParticleType, MCTruth>(
+            return std::make_pair("true_" + display_base, spill_multivar_helper<RType, TType, TParticleType, MCTruth>(
                 reco_cut,
                 true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                 true_particle_cut,
@@ -516,10 +523,10 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
         }
         else if(var_type == "true_particle")
         {
-            var_name = "true_particle_" + var_name;
-            auto factory = VarFactoryRegistry<TParticleType>::instance().get(var_name);
+            const std::string lookup_name = "true_particle_" + var_name;
+            auto factory = VarFactoryRegistry<TParticleType>::instance().get(lookup_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<RType, TType, RParticleType, TParticleType>(
+            return std::make_pair("true_particle_" + display_base, spill_multivar_helper<RType, TType, RParticleType, TParticleType>(
                 reco_cut,
                 true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                 reco_particle_cut,
@@ -529,10 +536,10 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
         }
         else if(var_type == "reco_particle")
         {
-            var_name = "reco_particle_" + var_name;
-            auto factory = VarFactoryRegistry<RParticleType>::instance().get(var_name);
+            const std::string lookup_name = "reco_particle_" + var_name;
+            auto factory = VarFactoryRegistry<RParticleType>::instance().get(lookup_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<RType, TType, RParticleType, RParticleType>(
+            return std::make_pair("reco_particle_" + display_base, spill_multivar_helper<RType, TType, RParticleType, RParticleType>(
                 reco_cut,
                 true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                 reco_particle_cut,
@@ -553,6 +560,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
          * configuration of the variable. The variable name is used to retrieve the
          * function from the registry.
          */
+        // `var_name` is used for registry lookup.
         std::string var_name = var.get_string_field("name");
         std::string var_type = (override_type.empty() ? var.get_string_field("type") : override_type);
         std::vector<double> varPars;
@@ -561,10 +569,10 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
 
         if(var_type == "event")
         {
-            var_name = "event_" + var_name;
-            auto factory = VarFactoryRegistry<EventType>::instance().get(var_name);
+            const std::string lookup_name = "event_" + var_name;
+            auto factory = VarFactoryRegistry<EventType>::instance().get(lookup_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper(event_cut, var_fn));
+            return std::make_pair("event_" + display_base, spill_multivar_helper(event_cut, var_fn));
         }
         else
         {

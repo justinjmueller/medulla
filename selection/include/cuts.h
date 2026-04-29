@@ -581,36 +581,45 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::Both, single_michel, single_michel);
 
     /**
-    * @brief Apply a cut on particle multiplicity with configurable species and count.
-    * @details This function applies a cut based on the multiplicity of a specific
-    * particle species. The particle species and desired multiplicity are specified
-    * via the parameters vector. This allows for flexible multiplicity cuts without
-    * needing to define separate functions for each combination.
-    * @tparam T the type of interaction (true or reco).
-    * @param obj the interaction to select on.
-    * @param params the parameters for the cut:
-    *   - params[0]: desired multiplicity (converted to size_t)
-    *   - params[1]: particle species index (0=photon, 1=electron, 2=muon, 3=pion, 4=proton)
-    *   - params[2]: kinetic energy threshold in MeV (optional, defaults to 0.0)
-    * @return true if the interaction has exactly the specified multiplicity of the
-    * specified particle species above the energy threshold.
-    */
+     * @brief Apply a cut on particle multiplicity with configurable species, count and comparison direction.
+     * @details This function applies a cut based on the multiplicity of a specific
+     * particle species. The particle species, desired multiplicity, KE threshold,
+     * and comparison direction are specified via the parameters vector.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut:
+     *   - params[0]: desired multiplicity (converted to size_t)
+     *   - params[1]: particle species index (0=photon, 1=electron, 2=muon, 3=pion, 4=proton)
+     *   - params[2]: kinetic energy threshold in MeV (optional, defaults to 0.0)
+     *   - params[3]: comparison direction (optional, defaults to 0):
+     *       0 -> equal to desired multiplicity
+     *      -1 -> less than desired multiplicity
+     *       1 -> greater than desired multiplicity
+     * @return true if the comparison between the actual multiplicity and the desired
+     * multiplicity (using the requested direction) holds.
+     */
     template<class T>
-    bool has_particle_multiplicity(const T & obj, std::vector<double> params={1.0, 2.0, 0.0})
+    bool has_particle_multiplicity(const T & obj, std::vector<double> params={1.0, 2.0, 0.0, 0.0})
     {
         if(params.size() < 2)
-        {
-            throw std::runtime_error("has_particle_multiplicity requires at least 2 parameters: [multiplicity, particle_species, (optional) ke_threshold]");
-        }
-        
+            throw std::runtime_error("has_particle_multiplicity requires at least 2 parameters: [multiplicity, particle_species, (optional) ke_threshold, (optional) direction]");
+
         size_t desired_mult = static_cast<size_t>(params[0]);
         size_t particle_species = static_cast<size_t>(params[1]);
         double ke_threshold = (params.size() >= 3) ? params[2] : 0.0;
-        
+        int direction = (params.size() >= 4) ? static_cast<int>(params[3]) : 0;
+
         std::vector<double> threshold_params = {ke_threshold};
-        size_t actual_mult = particle_multiplicity(obj, desired_mult, particle_species, threshold_params);
-        
-        return actual_mult >= desired_mult;
+        // Request full count by passing a very large mult (static_cast<size_t>(-1) == max)
+        size_t actual_mult = particle_multiplicity(obj, static_cast<size_t>(-1), particle_species, threshold_params);
+
+        switch(direction)
+        {
+            case 0:  return actual_mult == desired_mult;
+            case -1: return actual_mult < desired_mult;
+            case 1:  return actual_mult > desired_mult;
+            default: throw std::invalid_argument("has_particle_multiplicity: direction must be -1, 0, or 1");
+        }
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, has_particle_multiplicity, has_particle_multiplicity);
 
