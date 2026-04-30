@@ -7,7 +7,7 @@ proton_threshold = 50.0
 trackLength_threshold = 190.0
 electron_dedx = 3.625
 flash_low_t = 0.0
-flash_high_t = 9.6
+flash_high_t = 1.6
 vertex_threshold = 3.25
 electron_softmax = 0.72
 primary_softmax = 0.97
@@ -63,8 +63,8 @@ branch = [
     { name = "is_data",             type = "reco" },
 
     { name = "visible_energy",            type = "reco"},
-    { name = "has_particle_multiplicity", title = "has_electron", type = "reco", parameters = [1, 1, 25.0, 0.0] },
-    { name = "has_particle_multiplicity", title = "has_proton", type = "reco", parameters = [1, 4, 25.0, 0.0] },    
+    { name = "has_particle_multiplicity", title = "has_electron", type = "reco", parameters = [1.0, 1.0, 25.0, 0.0] },
+    { name = "has_particle_multiplicity", title = "has_proton", type = "reco", parameters = [1.0, 4.0, 25.0, 0.0] },    
     { name = "no_cut",                    type = "reco" },
     { name = "electron_multiplicity",     type = "reco", parameters = [ 0 ] },
     { name = "photon_multiplicity",      type = "reco", parameters = [ 0 ] },
@@ -227,8 +227,8 @@ cut = [
     { name = "flash_cut",                 type = "reco", parameters = [ "@flash_low_t", "@flash_high_t" ] },
     { name = "containment_cut",           type = "reco" },
     { name = "vertex_distance_cut",       type = "reco", parameters = [ "@vertex_threshold" ] },
-    { name = "has_particle_multiplicity", title = "has_electron", type = "reco", parameters = [1, 1, 25.0, 0.0] },
-    { name = "has_particle_multiplicity", title = "has_proton", type = "reco", parameters = [1, 4, 25.0, 0.0] },
+    { name = "has_particle_multiplicity", title = "has_electron", type = "reco", parameters = [1.0, 1.0, 25.0, 0.0] },
+    { name = "has_particle_multiplicity", title = "has_proton", type = "reco", parameters = [1.0, 4.0, 25.0, 0.0] },
     { name = "no_muons",                  type = "reco", parameters = [ "@muon_threshold" ] },
     { name = "no_charged_pions",          type = "reco", parameters = [ "@pion_threshold" ] },
     #{ name = "electron_softmax_cut",      type = "reco", parameters = [ "@electron_softmax", "@greater_than" ] },
@@ -252,8 +252,8 @@ branch = [
     { name = "is_data",             type = "reco" },
 
     { name = "visible_energy",            type = "reco"},
-    { name = "has_particle_multiplicity", title = "has_electron", type = "reco", parameters = [1, 1, 25.0, 0.0] },
-    { name = "has_particle_multiplicity", title = "has_proton", type = "reco", parameters = [1, 4, 25.0, 0.0] },    
+    { name = "has_particle_multiplicity", title = "has_electron", type = "reco", parameters = [1.0, 1.0, 25.0, 0.0] },
+    { name = "has_particle_multiplicity", title = "has_proton", type = "reco", parameters = [1.0, 4.0, 25.0, 0.0] },    
     { name = "no_cut",                    type = "reco" },
     { name = "electron_multiplicity",     type = "reco", parameters = [ 0 ] },
     { name = "photon_multiplicity",      type = "reco", parameters = [ 0 ] },
@@ -414,8 +414,8 @@ cut = [
     { name = "fiducial_cut",    type = "true" },
     #{ name = "iscc",            type = "true" },
     #{ name = "neutrino_pdg",    type = "true",             parameters = [ 12.0, -12.0 ] },
-    { name = "has_particle_multiplicity",  title = "has_electron",  type = "true",  parameters = [ 1, 1, 25.0, 0.0 ] },
-    { name = "has_particle_multiplicity",  title = "has_proton",    type = "true",  parameters = [ 1, 4, 25.0, 0.0 ] },
+    { name = "has_particle_multiplicity",  title = "has_electron",  type = "true",  parameters = [ 1.0, 1.0, 25.0, 0.0 ] },
+    { name = "has_particle_multiplicity",  title = "has_proton",    type = "true",  parameters = [ 1.0, 4.0, 25.0, 0.0 ] },
     { name = "no_muons",                   type = "true",  parameters = [ "@muon_threshold" ] },
     { name = "no_charged_pions",           type = "true",  parameters = [ "@pion_threshold" ] },
     { name = "containment_cut",            type = "true"},
@@ -437,8 +437,8 @@ branch = [
     { name = "is_data",             type = "reco" },
 
     { name = "visible_energy",            type = "reco"},
-    { name = "has_particle_multiplicity", title = "has_electron", type = "reco", parameters = [1, 1, 25.0, 0.0] },
-    { name = "has_particle_multiplicity", title = "has_proton", type = "reco", parameters = [1, 4, 25.0, 0.0] },    
+    { name = "has_particle_multiplicity", title = "has_electron", type = "reco", parameters = [1.0, 1.0, 25.0, 0.0] },
+    { name = "has_particle_multiplicity", title = "has_proton", type = "reco", parameters = [1.0, 4.0, 25.0, 0.0] },    
     { name = "no_cut",                    type = "reco" },
     { name = "electron_multiplicity",     type = "reco", parameters = [ 0 ] },
     { name = "photon_multiplicity",      type = "reco", parameters = [ 0 ] },
@@ -609,8 +609,8 @@ cuts = [
     { name = "fiducial_cut"    },
     { name = "iscc"            },
     { name = "neutrino_pdg",              parameters = [ 12.0, -12.0 ] },
-    { name = "has_particle_multiplicity", title = "has_electron", parameters = [ 1, 1, 25.0, 0.0 ] },
-    { name = "has_particle_multiplicity", title = "has_proton", parameters = [ 1, 4, 25.0, 0.0 ] },
+    { name = "has_particle_multiplicity", title = "has_electron", parameters = [ 1.0, 1.0, 25.0, 0.0 ] },
+    { name = "has_particle_multiplicity", title = "has_proton", parameters = [ 1.0, 4.0, 25.0, 0.0 ] },
     { name = "no_muons",                  parameters = [ "@muon_threshold" ] },
     { name = "no_charged_pions",          parameters = [ "@pion_threshold" ] },
     { name = "containment_cut" },
@@ -623,7 +623,7 @@ cuts = [
     { name = "neutrino"        },
     { name = "iscc"            },
     { name = "neutrino_pdg",          parameters = [ 12.0, -12.0 ] },
-    { name = "has_particle_multiplicity", parameters = [ 1, 1 ] },
+    { name = "has_particle_multiplicity", parameters = [ 1.0, 1.0 ] },
 ]
 
 [[category]] # 2 : Muon neutrino CC events, fiducial and contained
