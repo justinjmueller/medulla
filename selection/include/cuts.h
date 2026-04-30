@@ -51,6 +51,44 @@ namespace cuts
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, valid_flashmatch, valid_flashmatch);
 
+
+/**                                                                                                                                                                                                    
+     * @brief Apply cut on the number of photons in interaction (exactly two).                                                                                                                             
+     * @details This functin applies a cut on the number of above-threshold photons                                                                                                                        
+     * in the interaction, requiring exactly two.                                                                                                                                                          
+     * @tparam T the type of interaction (true or reco).                                                                                                                                                   
+     * @param obj the interaction to select on.                                                                                                                                                            
+     * @return true if the interaction contains exactly two above-threshold photons.                                                                                                                       
+     */
+    template<class T>
+    bool two_photons(const T & obj, std::vector<double> params={})
+    {
+        size_t count(0);
+        for(const auto & p : obj.particles)
+        {
+            if(pvars::pid(p) == 0 && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
+              ++count;
+        }
+        return count == 2;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, two_photons, two_photons);
+    /**
+     * @brief Apply pi0 mass cut.
+     * @details This function applies a cut on the invariant diphoton mass
+     * of the interactions two most energetic photons.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the interaction passes the pi0 mass cut.
+     */
+    template<class T>
+    bool valid_pi0_mass_cut(const T & obj, std::vector<double> params = {})
+    {
+
+        pi0 s = utilities_pi0ana::pi0_info(obj);
+	return (s.mass >= params[0] && s.mass < params[1]);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, valid_pi0_mass_cut, valid_pi0_mass_cut);
+
     /**
      * @brief Apply no cut; all interactions passed.
      * @details This is a placeholder function for a cut which does not apply

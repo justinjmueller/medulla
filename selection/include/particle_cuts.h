@@ -47,7 +47,7 @@ namespace pcuts
         return pvars::primary_classification(p) == 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, is_primary, is_primary);
-
+ 
     /**
      * @brief Check if the particle is contained.
      * @details This function checks if the particle is contained. The

@@ -67,6 +67,31 @@ namespace vars
     REGISTER_VAR_SCOPE(RegistrationScope::True, neutrino_id, neutrino_id);
 
     /**
+     * @brief Variable for neutral pion momentum magnitude.
+     * @details Momentum is calculated upstream in SPINE reconstruction.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the momentum of the neutral pion in GeV.
+     */
+    template<class T>
+    double pi0_momentum(const T & obj)
+    {
+        pi0 s = utilities_pi0ana::pi0_info(obj);
+	      return s.momentum;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_momentum, pi0_momentum);
+
+
+    template<class T>
+    double pi0_mass(const T & obj)
+    {
+
+        pi0 s = utilities_pi0ana::pi0_info(obj);
+	      return s.mass;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_mass, pi0_mass);
+
+    /**
      * @brief Variable for the interaction ID.
      * @details This variable is intended to provide a unique identifier for
      * each interaction within the event record. This number is assigned

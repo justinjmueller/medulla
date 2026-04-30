@@ -50,8 +50,7 @@ namespace pvars
         else
             return (*primfn)(p);
     }
-    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, primary_classification, primary_classification);
-    
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, primary_classification, primary_classification);      
     /**
      * @brief Variable for the particle's PID.
      * @details This variable returns the PID of the particle. The PID is
