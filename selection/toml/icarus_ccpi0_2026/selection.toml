@@ -150,6 +150,8 @@ branch = [
     {name = "proton_softmax",    type = "reco_particle", selector = "leading_primary_pion"},
     {name = "mip_softmax",       type = "reco_particle", selector = "leading_primary_pion"},
     {name = "hadron_softmax",    type = "reco_particle", selector = "leading_primary_pion"},
+    {name = "id",                type = "both_particle", selector = "leading_primary_pion"},
+    {name = "match_id",          type = "both_particle", selector = "leading_primary_pion"},
 
     # Proton observables
     {name = "pid",               type = "both_particle", selector = "leading_proton"},
@@ -265,6 +267,8 @@ branch = [
     {name = "proton_softmax",    type = "reco_particle", selector = "leading_primary_pion"},
     {name = "mip_softmax",       type = "reco_particle", selector = "leading_primary_pion"},
     {name = "hadron_softmax",    type = "reco_particle", selector = "leading_primary_pion"},
+    {name = "id",                type = "both_particle", selector = "leading_primary_pion"},
+    {name = "match_id",          type = "both_particle", selector = "leading_primary_pion"},
 
     # Proton observables
     {name = "pid",               type = "both_particle", selector = "leading_proton"},

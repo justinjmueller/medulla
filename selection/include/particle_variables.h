@@ -110,6 +110,40 @@ namespace pvars
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, iou, iou);
 
     /**
+     * @brief Variable for the SPINE particle index within its parent interaction.
+     * @details The ID is assigned upstream in the SPINE reconstruction and is
+     * unique within a given interaction.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the particle index.
+     */
+    template<class T>
+    double id(const T & p)
+    {
+        return p.id;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, id, id);
+
+    /**
+     * @brief Variable for the best-match particle index in the counterpart collection.
+     * @details Returns the index of the highest-overlap matched particle
+     * (reco→true or true→reco) as assigned by the SPINE post-processor.
+     * Returns PLACEHOLDERVALUE when no match exists.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the matched particle index, or PLACEHOLDERVALUE.
+     */
+    template<class T>
+    double match_id(const T & p)
+    {
+        if(p.match_ids.size() > 0)
+            return p.match_ids[0];
+        else
+            return PLACEHOLDERVALUE;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, match_id, match_id);
+
+    /**
      * @brief Variable for the containment status of the particle.
      * @details The containment status is determined upstream in the SPINE
      * reconstruction and is based on the set of all points in the particle,
