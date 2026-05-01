@@ -1,6 +1,6 @@
 [general]
 output = "sbn_numu_disappearance_2026"
-primfn = "default_primary_classification"
+primfn = "lax_primary_classification"
 pidfn = "default_pid"
 fsthresh = [
     "@photon_threshold",
