@@ -1031,5 +1031,26 @@ namespace pvars
         return p.primary_scores[0];
     }
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, secondary_softmax, secondary_softmax);
+
+    /**
+     * @brief Variable for E * theta^2 of the particle.
+     * @details Computes the particle energy times the square of its polar angle
+     * with respect to the beam (z-axis).
+     * Useful for neutrino-electron scattering identification.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return E * theta^2 value.
+     */
+    template<class T>
+    double e_theta2(const T & p)
+    {
+        const double E = energy(p);          // <-- use built-in
+        const double theta = polar_angle(p);
+
+        return E * theta * theta;
+    }
+
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, e_theta2, e_theta2);
+
 }
 #endif // PARTICLE_VARIABLES_H
