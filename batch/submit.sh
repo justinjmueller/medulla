@@ -10,7 +10,7 @@
 
 # Initialize variables
 PROJECT=""
-TAG="develop"
+TAG="feature/lupis_nuEES"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do

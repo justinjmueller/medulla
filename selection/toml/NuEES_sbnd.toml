@@ -20,8 +20,8 @@ fsthresh = [
 
 [[sample]]
 name = "simulation"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input000-reweighted.flat.caf.root"
-#path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input00*-reweighted.flat.caf.root"
+#path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input000-reweighted.flat.caf.root"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input*-reweighted.flat.caf.root"
 ismc = true
 
 [[tree]]
