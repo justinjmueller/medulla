@@ -1,6 +1,6 @@
 [general]
 output = "sbn_nue_oscillation_2027"
-primfn = "default_primary_classification"
+primfn = "lax_primary_classification"
 pidfn = "default_pid"
 fsthresh = [
     "@photon_threshold",
@@ -12,7 +12,7 @@ fsthresh = [
 
 [parameters]
 photon_threshold = 25.0
-electron_threshold = 50.0
+electron_threshold = 60.0
 muon_threshold = 25.0
 pion_threshold = 25.0
 proton_threshold = 40.0
