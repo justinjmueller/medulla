@@ -7,7 +7,7 @@ proton_threshold = 25.0
 
 
 [general]
-output = "NuEES_variables"
+output = "output"
 primfn = "default_primary_classification"
 pidfn = "default_pid"
 fsthresh = [
