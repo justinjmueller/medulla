@@ -743,23 +743,23 @@ namespace cuts
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Reco, good_electron, good_electron);
 
-    bool checkSoftmax(double softmax_value, double threshold, double direction)
+    bool checkThreshold(double value, double threshold, double direction)
     {
         if (direction == -1.0)
         {
-            return softmax_value < threshold;
+            return value < threshold;
         }
         else if (direction == 1.0)
         {
-            return softmax_value > threshold;
+            return value > threshold;
         }
         else if (direction == 0.0)
         {
-            return softmax_value == threshold;
+            return value == threshold;
         }
         else
         {
-            throw std::invalid_argument("checkSoftmax requires the direction parameter to be -1.0, 0.0, or 1.0 to specify the direction of the cut.");
+            throw std::invalid_argument("checkThreshold requires the direction parameter to be -1.0, 0.0, or 1.0 to specify the direction of the cut.");
         }
     }
 
@@ -780,7 +780,7 @@ namespace cuts
         {
             return false; // or true, depending on how you want to handle NaN values
         }
-        return (pvars::electron_softmax(p) > softmax_threshold); //checkSoftmax(pvars::electron_softmax(p), softmax_threshold, direction);
+        return (pvars::electron_softmax(p) > softmax_threshold); //checkThreshold(pvars::electron_softmax(p), softmax_threshold, direction);
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Reco, electron_softmax_cut, electron_softmax_cut);
 
@@ -801,9 +801,51 @@ namespace cuts
         {
             return false; // or true, depending on how you want to handle NaN values
         }
-        return checkSoftmax(pvars::primary_softmax(p), softmax_threshold, direction);
+        return checkThreshold(pvars::primary_softmax(p), softmax_threshold, direction);
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Reco, primary_softmax_cut, primary_softmax_cut);
+
+    template<class T>
+    bool leading_electron_axial_cut(const T & obj, std::vector<double> params={0.5, 1.0})
+    {
+        if(params.size() != 2)
+            throw std::invalid_argument("leading_electron_axial_cut requires exactly two parameters: the axial threshold and the direction of the cut.");
+
+        size_t i = selectors::leading_electron(obj);
+        if (i == kNoMatch) return false;
+        const auto & p = obj.particles[i];
+    
+        double axial_threshold = params[0];
+        double direction = params[1];
+        
+        if (std::isnan(pvars::axial_spread(p)))
+        {
+            return false; // or true, depending on how you want to handle NaN values
+        }
+        return checkThreshold(pvars::axial_spread(p), axial_threshold, direction);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, leading_electron_axial_cut, leading_electron_axial_cut);
+
+    template<class T>
+    bool proton_softmax_cut(const T & obj, std::vector<double> params={0.5, 1.0})
+    {
+        if(params.size() != 2)
+            throw std::invalid_argument("proton_softmax_cut requires exactly two parameters: the softmax threshold and the direction of the cut.");
+
+        size_t i = selectors::leading_proton(obj);
+        if (i == kNoMatch) return false;
+        const auto & p = obj.particles[i];
+
+        double softmax_threshold = params[0];
+        double direction = params[1];
+
+        if (std::isnan(pvars::proton_softmax(p)))
+        {
+            return false; // or true, depending on how you want to handle NaN values
+        }
+        return (pvars::proton_softmax(p) > softmax_threshold); //checkThreshold(pvars::proton_softmax(p), softmax_threshold, direction);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, proton_softmax_cut, proton_softmax_cut);
 
     template<class T>
     double ele_beam_open_angle(const T & obj)
