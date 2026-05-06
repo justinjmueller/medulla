@@ -29,10 +29,15 @@ branches = ["reco_fiducial_cut",
             "true_hadronic_invariant_mass",
             "true_momentum_transfer",
             "reco_flash_time",
+            "reco_leading_proton_proton_softmax",
+            "reco_leading_electron_axial_spread",
+            "reco_leading_photon_energy",
+            "reco_leading_electron_p",
+            "reco_leading_proton_p",
             ]
 
 #precompute = {"reco_leading_electron_electron_softmax_cut" = "reco_leading_electron_electron_softmax > 0.72", "reco_leading_electron_primary_softmax_cut" = "reco_leading_electron_primary_softmax > 0.97"}
-precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)"}
+precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_leading_proton_proton_softmax_cut" = "reco_leading_proton_proton_softmax > 0.75", "reco_leading_electron_axial_spread_cut" = "reco_leading_electron_axial_spread > 0.1", "reco_leading_photon_energy_cut" = "np.where((reco_leading_photon_energy < 50) | np.isnan(reco_leading_photon_energy), True, False)", "reco_leading_electron_momentum_cut" = "reco_leading_electron_p > 300", "reco_leading_proton_momentum_cut" = "reco_leading_proton_p > 300"}
 
 # Output directory for plots
 [output]
@@ -44,7 +49,7 @@ ordinate_sample = 'signal'
 category_branch = 'true_category'
 category_assignment = [
     [0], # CC nue
-    [1, 2, 3, 4], 
+    [1, 2, 3, 4, 5], 
 ]
 category_labels = ['Signal', 'Background']
 
@@ -122,6 +127,13 @@ reco_has_electron = '>=1 Electron-like Particle'
 reco_has_proton = '>=1 Proton-like Particle'
 reco_no_muons = 'No Muon-like Particles'
 reco_no_charged_pions = 'No Charged Pion-like Particles'
+reco_primary_softmax_cut = 'Electron Primary Softmax > 0.97'
+reco_electron_softmax_cut = 'Leading Electron Softmax > 0.72'
+reco_leading_proton_proton_softmax_cut = 'Proton Softmax > 0.75'
+reco_leading_electron_axial_spread_cut = 'Electron Axial Spread > 0.1'
+reco_leading_photon_energy_cut = 'Leading Photon Energy < 50 MeV'
+reco_leading_electron_momentum_cut = 'Leading Electron Momentum > 300 MeV'
+reco_leading_proton_momentum_cut = 'Leading Proton Momentum > 300 MeV'
 
 [figure.artists.draw_kwargs]
 show_option = 'table'
@@ -154,6 +166,13 @@ reco_has_electron = '>=1 Electron-like Particle'
 reco_has_proton = '>=1 Proton-like Particle'
 reco_no_muons = 'No Muon-like Particles'
 reco_no_charged_pions = 'No Charged Pion-like Particles'
+reco_primary_softmax_cut = 'Electron Primary Softmax > 0.97'
+reco_electron_softmax_cut = 'Leading Electron Softmax > 0.72'
+reco_leading_proton_proton_softmax_cut = 'Proton Softmax > 0.75'
+reco_leading_electron_axial_spread_cut = 'Electron Axial Spread > 0.1'
+reco_leading_photon_energy_cut = 'Leading Photon Energy < 50 MeV'
+reco_leading_electron_momentum_cut = 'Leading Electron Momentum > 300 MeV'
+reco_leading_proton_momentum_cut = 'Leading Proton Momentum > 300 MeV'
 
 [figure.artists.draw_kwargs]
 show_option = 'differential'  # KEY: This makes it a plot vs energy!
@@ -184,6 +203,13 @@ reco_has_electron = '>=1 Electron-like Particle'
 reco_has_proton = '>=1 Proton-like Particle'
 reco_no_muons = 'No Muon-like Particles'
 reco_no_charged_pions = 'No Charged Pion-like Particles'
+reco_primary_softmax_cut = 'Electron Primary Softmax > 0.97'
+reco_electron_softmax_cut = 'Leading Electron Softmax > 0.72'
+reco_leading_proton_proton_softmax_cut = 'Proton Softmax > 0.75'
+reco_leading_electron_axial_spread_cut = 'Electron Axial Spread > 0.1'
+reco_leading_photon_energy_cut = 'Leading Photon Energy < 50 MeV'
+reco_leading_electron_momentum_cut = 'Leading Electron Momentum > 300 MeV'
+reco_leading_proton_momentum_cut = 'Leading Proton Momentum > 300 MeV'
 
 [figure.artists.draw_kwargs]
 show_option = 'differential'  # KEY: This makes it a plot vs energy!
@@ -213,6 +239,13 @@ reco_has_electron = '>=1 Electron-like Particle'
 reco_has_proton = '>=1 Proton-like Particle'
 reco_no_muons = 'No Muon-like Particles'
 reco_no_charged_pions = 'No Charged Pion-like Particles'
+reco_primary_softmax_cut = 'Electron Primary Softmax > 0.97'
+reco_electron_softmax_cut = 'Leading Electron Softmax > 0.72'
+reco_leading_proton_proton_softmax_cut = 'Proton Softmax > 0.75'
+reco_leading_electron_axial_spread_cut = 'Electron Axial Spread > 0.1'
+reco_leading_photon_energy_cut = 'Leading Photon Energy < 50 MeV'
+reco_leading_electron_momentum_cut = 'Leading Electron Momentum > 300 MeV'
+reco_leading_proton_momentum_cut = 'Leading Proton Momentum > 300 MeV'
 
 [figure.artists.draw_kwargs]
 show_option = 'differential'  # KEY: This makes it a plot vs energy!
@@ -242,6 +275,13 @@ reco_has_electron = '>=1 Electron-like Particle'
 reco_has_proton = '>=1 Proton-like Particle'
 reco_no_muons = 'No Muon-like Particles'
 reco_no_charged_pions = 'No Charged Pion-like Particles'
+reco_primary_softmax_cut = 'Electron Primary Softmax > 0.97'
+reco_electron_softmax_cut = 'Leading Electron Softmax > 0.72'
+reco_leading_proton_proton_softmax_cut = 'Proton Softmax > 0.75'
+reco_leading_electron_axial_spread_cut = 'Electron Axial Spread > 0.1'
+reco_leading_photon_energy_cut = 'Leading Photon Energy < 50 MeV'
+reco_leading_electron_momentum_cut = 'Leading Electron Momentum > 300 MeV'
+reco_leading_proton_momentum_cut = 'Leading Proton Momentum > 300 MeV'
 
 [figure.artists.draw_kwargs]
 show_option = 'differential'  # KEY: This makes it a plot vs energy!
@@ -271,6 +311,13 @@ reco_has_electron = '>=1 Electron-like Particle'
 reco_has_proton = '>=1 Proton-like Particle'
 reco_no_muons = 'No Muon-like Particles'
 reco_no_charged_pions = 'No Charged Pion-like Particles'
+reco_primary_softmax_cut = 'Electron Primary Softmax > 0.97'
+reco_electron_softmax_cut = 'Leading Electron Softmax > 0.72'
+reco_leading_proton_proton_softmax_cut = 'Proton Softmax > 0.75'
+reco_leading_electron_axial_spread_cut = 'Electron Axial Spread > 0.1'
+reco_leading_photon_energy_cut = 'Leading Photon Energy < 50 MeV'
+reco_leading_electron_momentum_cut = 'Leading Electron Momentum > 300 MeV'
+reco_leading_proton_momentum_cut = 'Leading Proton Momentum > 300 MeV'
 
 [figure.artists.draw_kwargs]
 show_option = 'differential'  # KEY: This makes it a plot vs energy!
@@ -300,6 +347,13 @@ reco_has_electron = '>=1 Electron-like Particle'
 reco_has_proton = '>=1 Proton-like Particle'
 reco_no_muons = 'No Muon-like Particles'
 reco_no_charged_pions = 'No Charged Pion-like Particles'
+reco_primary_softmax_cut = 'Electron Primary Softmax > 0.97'
+reco_electron_softmax_cut = 'Leading Electron Softmax > 0.72'
+reco_leading_proton_proton_softmax_cut = 'Proton Softmax > 0.75'
+reco_leading_electron_axial_spread_cut = 'Electron Axial Spread > 0.1'
+reco_leading_photon_energy_cut = 'Leading Photon Energy < 50 MeV'
+reco_leading_electron_momentum_cut = 'Leading Electron Momentum > 300 MeV'
+reco_leading_proton_momentum_cut = 'Leading Proton Momentum > 300 MeV'
 
 [figure.artists.draw_kwargs]
 show_option = 'differential'  # KEY: This makes it a plot vs energy!

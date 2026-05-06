@@ -17,6 +17,8 @@ def main(
     memory : int = 1800,
     disk : Optional[int] = None,
     lifetime : str = '1h',
+    reprocess : bool = False,
+    reprocess_sys : bool = False,
 ):
     """
     Main function to run the medulla script.
@@ -49,6 +51,11 @@ def main(
         Amount of disk to request for each job in GB. If None, use default.
     lifetime : str
         Expected lifetime of each job (e.g., '1h', '30m'). 
+    reprocess : bool
+        Whether to reprocess systematic and zombie files. If True, these files
+        will be treated as incomplete and will be reprocessed.
+    reprocess_sys: bool
+        Whether to reprocess systematic files. If True, these files will be treated as incomplete and will be reprocessed.
 
     Returns
     -------
@@ -72,7 +79,7 @@ def main(
 
     # If the project exists, do a check of the project status.
     if project_exists:
-        check_project_status(project_dir)
+        check_project_status(project_dir, reprocess=reprocess, reprocess_sys=reprocess_sys)
 
     # If the user requested a test job, run a single job to test the
     # configuration.
@@ -162,6 +169,16 @@ if __name__ == '__main__':
         help="Expected lifetime of each job (e.g., '1h', '30m') (default: '1h')."
     )
 
+    p.add_argument(
+        '--reprocess', '-r', action='store_true',
+        help='Whether to reprocess systematic and zombie files. If True, these files will be treated as incomplete and will be reprocessed.'
+    )
+
+    p.add_argument(
+        '--reprocess_sys', '-R', action='store_true',
+        help='Whether to reprocess systematic files. If True, these files will be treated as incomplete and will be reprocessed.'
+    )
+
     args = p.parse_args()
 
     # Requirement: the experiment must be sbnd or icarus.
@@ -199,4 +216,6 @@ if __name__ == '__main__':
         memory=args.memory,
         disk=args.disk,
         lifetime=args.lifetime,
+        reprocess=args.reprocess,
+        reprocess_sys=args.reprocess_sys,
     )

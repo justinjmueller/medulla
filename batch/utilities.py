@@ -6,6 +6,8 @@ from glob import glob
 import subprocess
 from pathlib import Path
 from typing import Optional
+import numpy as np
+from ROOT import TFile
 
 # SQL schema for the configuration table for storing job configurations
 SCHEMA_CONFIGURATION = """
@@ -278,6 +280,8 @@ def create_new_project(
 
 def check_project_status(
     project_dir : str,
+    reprocess : bool = False,
+    reprocess_sys : bool = False,
 ):
     """
     Check the status of the project by inspecting the job output in the
@@ -287,6 +291,10 @@ def check_project_status(
     ----------
     project_dir : str
         Path to the base directory for the job directory.
+    reprocess : bool
+        Whether to reprocess zombie files. If True, these files will be treated as incomplete and will be reprocessed.
+    reprocess_sys : bool
+        Whether to reprocess systematic files. If True, these files will be treated as incomplete and will be reprocessed.
 
     Returns
     -------
@@ -301,25 +309,64 @@ def check_project_status(
     conn = sqlite3.connect('./project.db')
     curs = conn.cursor()
 
+    # Get the list of all jobs tracked by this project.
+    command(curs, "SELECT jobid FROM jobs")
+    all_jobids = {row[0] for row in curs.fetchall()}
+
     # Get the list of job outputs in the output directory. We require
     # that the output file be at least 1 KB in size to be considered
     # complete. This helps avoid marking jobs as complete if they
     # failed and produced an empty output file.
     output_files = glob(str(project_dir / 'output' / 'output_jobid*.root'))
-    completed_jobs = [
-        int(Path(f).stem.split('jobid')[-1])
-        for f in output_files if Path(f).stat().st_size >= 1024
-    ]
-    ins = [('completed', jid) for jid in completed_jobs]
-    command(curs, "UPDATE jobs SET status = ? WHERE jobid = ?", ins)
+    syst_files = glob(str(project_dir / 'output' / 'output_systematics_jobid*.root'))
+
+    # If we're reprocessing systematics, we also want to reprocess the main output files.
+    reprocess = reprocess or reprocess_sys
+
+    output_by_jobid = {
+        int(Path(f).stem.split('jobid')[-1]): f
+        for f in output_files
+    }
+    syst_by_jobid = {
+        int(Path(f).stem.split('jobid')[-1]): f
+        for f in syst_files
+    }
+
+    main_good = {
+        jid for jid, f in output_by_jobid.items()
+        if check_good_output(f, reprocess)
+    }
+
+    # If systematics are requested, require the systematic output file to exist and be good.
+    if reprocess_sys:
+        syst_good = {
+            jid for jid, f in syst_by_jobid.items()
+            if check_good_output(f, reprocess)
+        }
+        completed_jobs = sorted(main_good & syst_good)
+    else:
+        completed_jobs = sorted(main_good)
+
+    incomplete_jobs = sorted(all_jobids - set(completed_jobs))
+
+    # Always keep the DB consistent with the filesystem: jobs with missing/bad outputs
+    # should be pending so they can be reprocessed.
+    if completed_jobs:
+        ins_completed = [('completed', jid) for jid in completed_jobs]
+        command(curs, "UPDATE jobs SET status = ? WHERE jobid = ?", ins_completed)
+    if incomplete_jobs:
+        ins_pending = [('pending', jid) for jid in incomplete_jobs]
+        command(curs, "UPDATE jobs SET status = ? WHERE jobid = ?", ins_pending)
     conn.commit()
     conn.close()
 
-    stub_jobs = [
-        int(Path(f).stem.split("jobid")[-1])
-        for f in output_files
+    files_to_check_for_stubs = output_files + (syst_files if reprocess_sys else [])
+    stub_jobs = sorted({
+        int(Path(f).stem.split('jobid')[-1])
+        for f in files_to_check_for_stubs
         if Path(f).stat().st_size < 1024
-    ]
+    })
+
     if stub_jobs:
         resp = input(
             f"[INFO] -- Found {len(stub_jobs)} stub output file(s) <"
@@ -334,8 +381,11 @@ def check_project_status(
         else:
             for jid in stub_jobs:
                 stub_file = project_dir / 'output' / f'output_jobid{jid:04d}.root'
+                stub_syst_file = project_dir / 'output' / f'output_systematics_jobid{jid:04d}.root'
                 if stub_file.exists():
                     stub_file.unlink()
+                if stub_syst_file.exists():
+                    stub_syst_file.unlink()
             print(f"[INFO] -- Deleted {len(stub_jobs)} stub output file(s).")
 
     # Replace the project database copy with the updated version.
@@ -479,3 +529,28 @@ def check_git_branch(
         stderr=subprocess.DEVNULL,
     )
     return result.returncode == 0
+
+def check_good_output(fin, reprocess=False):
+    goodFile = Path(fin).stat().st_size >= 1024
+    if not goodFile:
+        print(f"[WARNING] -- Found stub output file {fin} with size < 1024 bytes.")
+        return False
+
+    if reprocess:
+        tf = TFile.Open(fin, "READ")
+        if not tf or tf.IsZombie():
+            print(f"[WARNING] -- Found zombie output file {fin}.")
+            try:
+                if tf:
+                    tf.Close()
+            finally:
+                return False
+
+        if tf.TestBit(TFile.kRecovered):
+            print("file was recovered (not clean)")
+            tf.Close()
+            return False
+        tf.Close()
+
+    return True
+    

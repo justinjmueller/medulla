@@ -13,9 +13,10 @@ electron_softmax = 0.72
 primary_softmax = 0.97
 electron_id = 1.0
 greater_than = 1.0
+null_threshold = 0.0
 
 [general]
-output = "output_nueCCNp"
+output = "output_nueCCNp_v2"
 primfn = "default_primary_classification"
 pidfn = "default_pid"
 fsthresh = [
@@ -30,13 +31,15 @@ fsthresh = [
     "@flash_low_t",
     "@flash_high_t",
     "@greater_than",
+    "@null_threshold"
 ]
 
 # ICARUS MC NuMI Neutrino + Cosmics CV
 [[sample]]
 name = "signal"
-# path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input00[0-13-9].flat.root" #5e18 sample
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/*.flat.*root" #1e20 sample
+#path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input00[0-13-9].flat.root" #5e18 sample
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input00[0].flat.root" #5e18 sample
+# path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/*.flat.*root" #1e20 sample
 ismc = true
 disable = false # Optional: default = false
 
@@ -49,7 +52,7 @@ mode = "reco"
 cut = []
 branch = [
     { name = "fiducial_cut",            type = "reco"    },
-    { name = "flash_cut",               type = "reco", parameters = [ 0.0, 9.6 ] },
+    { name = "flash_cut",               type = "reco", parameters = [ "@flash_low_t", "@flash_high_t" ] },
     { name = "valid_flashmatch",        type = "reco"    },
     { name = "containment_cut",         type = "reco" },    
     { name = "vertex_distance_cut",     type = "reco", parameters = [ "@vertex_threshold" ] },
@@ -227,8 +230,8 @@ cut = [
     { name = "flash_cut",                 type = "reco", parameters = [ "@flash_low_t", "@flash_high_t" ] },
     { name = "containment_cut",           type = "reco" },
     { name = "vertex_distance_cut",       type = "reco", parameters = [ "@vertex_threshold" ] },
-    { name = "has_particle_multiplicity", title = "has_electron", type = "reco", parameters = [1.0, 1.0, 25.0, 0.0] },
-    { name = "has_particle_multiplicity", title = "has_proton", type = "reco", parameters = [1.0, 4.0, 25.0, 0.0] },
+    { name = "has_particle_multiplicity", title = "has_electron", type = "reco", parameters = [1.0, 1.0, 25.0, 2.0] },
+    { name = "has_particle_multiplicity", title = "has_proton", type = "reco", parameters = [1.0, 4.0, 25.0, 2.0] },
     { name = "no_muons",                  type = "reco", parameters = [ "@muon_threshold" ] },
     { name = "no_charged_pions",          type = "reco", parameters = [ "@pion_threshold" ] },
     #{ name = "electron_softmax_cut",      type = "reco", parameters = [ "@electron_softmax", "@greater_than" ] },
@@ -238,7 +241,7 @@ cut = [
 ]
 branch = [
     { name = "fiducial_cut",            type = "reco"    },
-    { name = "flash_cut",               type = "reco", parameters = [ 0.0, 9.6 ] },
+    { name = "flash_cut",               type = "reco", parameters = [ "@flash_low_t", "@flash_high_t" ] },
     { name = "valid_flashmatch",        type = "reco"    },
     { name = "containment_cut",         type = "reco" },    
     { name = "vertex_distance_cut",     type = "reco", parameters = [ "@vertex_threshold" ] },
@@ -252,8 +255,8 @@ branch = [
     { name = "is_data",             type = "reco" },
 
     { name = "visible_energy",            type = "reco"},
-    { name = "has_particle_multiplicity", title = "has_electron", type = "reco", parameters = [1.0, 1.0, 25.0, 0.0] },
-    { name = "has_particle_multiplicity", title = "has_proton", type = "reco", parameters = [1.0, 4.0, 25.0, 0.0] },    
+    { name = "has_particle_multiplicity", title = "has_electron", type = "reco", parameters = [1.0, 1.0, 25.0, 2.0] },
+    { name = "has_particle_multiplicity", title = "has_proton", type = "reco", parameters = [1.0, 4.0, 25.0, 2.0] },    
     { name = "no_cut",                    type = "reco" },
     { name = "electron_multiplicity",     type = "reco", parameters = [ 0 ] },
     { name = "photon_multiplicity",      type = "reco", parameters = [ 0 ] },
@@ -423,7 +426,7 @@ cut = [
 ]
 branch = [
     { name = "fiducial_cut",            type = "reco"    },
-    { name = "flash_cut",               type = "reco", parameters = [ 0.0, 9.6 ] },
+    { name = "flash_cut",               type = "reco", parameters = [ "@flash_low_t", "@flash_high_t" ] },
     { name = "valid_flashmatch",        type = "reco"    },
     { name = "containment_cut",         type = "reco" },    
     { name = "vertex_distance_cut",     type = "reco", parameters = [ "@vertex_threshold" ] },
@@ -603,54 +606,99 @@ branch = [
     { name = "nnu_e",         type = "event"    },
 ]
 
-[[category]] # 0 : Signal, fiducial electron neutrino CC events, w/ electron
+[[category]] # 0 : Signal, fiducial electron neutrino CC events, >= 1 electron, >= 2 protons
 cuts = [
     { name = "neutrino"        },
     { name = "fiducial_cut"    },
     { name = "iscc"            },
     { name = "neutrino_pdg",              parameters = [ 12.0, -12.0 ] },
-    { name = "has_particle_multiplicity", title = "has_electron", parameters = [ 1.0, 1.0, 25.0, 0.0 ] },
-    { name = "has_particle_multiplicity", title = "has_proton", parameters = [ 1.0, 4.0, 25.0, 0.0 ] },
+    { name = "has_particle_multiplicity", title = "has_electron", parameters = [ 1.0, 1.0, 25.0, 2.0 ] },
+    { name = "has_particle_multiplicity", title = "has_proton", parameters = [ 2.0, 4.0, 25.0, 2.0 ] },
     { name = "no_muons",                  parameters = [ "@muon_threshold" ] },
     { name = "no_charged_pions",          parameters = [ "@pion_threshold" ] },
-    { name = "containment_cut" },
-    #{ name = "leading_ele_energy_cut",    parameters = [ "@electron_threshold" ] },
-
 ]
 
-[[category]] # 1 : electron neutrino CC events, w/ electron, but non-fiducial or non-contained
-cuts = [
-    { name = "neutrino"        },
-    { name = "iscc"            },
-    { name = "neutrino_pdg",          parameters = [ 12.0, -12.0 ] },
-    { name = "has_particle_multiplicity", parameters = [ 1.0, 1.0 ] },
-]
-
-[[category]] # 2 : Muon neutrino CC events, fiducial and contained
+[[category]] # 1 : Signal, fiducial electron neutrino CC events, >= 1 electron, ==1 proton
 cuts = [
     { name = "neutrino"        },
     { name = "fiducial_cut"    },
     { name = "iscc"            },
-    { name = "neutrino_pdg",          parameters = [ 14.0, -14.0 ] },
-    { name = "containment_cut" },
+    { name = "neutrino_pdg",              parameters = [ 12.0, -12.0 ] },
+    { name = "has_particle_multiplicity", title = "has_electron", parameters = [ 1.0, 1.0, 25.0, 2.0 ] },
+    { name = "has_particle_multiplicity", title = "has_proton", parameters = [ 1.0, 4.0, 25.0, 0.0 ] },
+    { name = "no_muons",                  parameters = [ "@muon_threshold" ] },
+    { name = "no_charged_pions",          parameters = [ "@pion_threshold" ] },
 ]
 
-[[category]] # 3 : Out of fiducial volume and uncontained neutrino events
+[[category]] # 2 : Signal, OOFV
 cuts = [
     { name = "neutrino"        },
-    { name = "iscc"}
+    { name = "iscc"            },
+    { name = "neutrino_pdg",              parameters = [ 12.0, -12.0 ] },
+    { name = "has_particle_multiplicity", title = "has_electron", parameters = [ 1.0, 1.0, 25.0, 2.0 ] },
+    { name = "has_particle_multiplicity", title = "has_proton", parameters = [ 1.0, 4.0, 25.0, 2.0 ] },
+    { name = "no_muons",                  parameters = [ "@muon_threshold" ] },
+    { name = "no_charged_pions",          parameters = [ "@pion_threshold" ] },
 ]
 
-[[category]] # 4 : Neutral current events, fiducial and contained
+[[category]] # 3 : Signal, OOPS 
+cuts = [
+    { name = "neutrino"        },
+    { name = "iscc"            },
+    { name = "neutrino_pdg",              parameters = [ 12.0, -12.0 ] },
+    { name = "has_particle_multiplicity", title = "has_electron", parameters = [ 1.0, 1.0, 0.0, 2.0 ] },
+    { name = "has_particle_multiplicity", title = "has_proton", parameters = [ 1.0, 4.0, 0.0, 2.0 ] },
+    { name = "no_muons",                  parameters = [ "@muon_threshold" ] },
+    { name = "no_charged_pions",          parameters = [ "@pion_threshold" ] },
+]
+
+[[category]] # 4 : Signal, N pion
+cuts = [
+    { name = "neutrino"        },
+    { name = "iscc"            },
+    { name = "neutrino_pdg",              parameters = [ 12.0, -12.0 ] },
+    { name = "has_particle_multiplicity", title = "has_electron", parameters = [ 1.0, 1.0, 25.0, 2.0 ] },
+    { name = "has_particle_multiplicity", title = "has_proton", parameters = [ 1.0, 4.0, 25.0, 2.0 ] },
+    { name = "no_muons",                  parameters = [ "@muon_threshold" ] },
+]
+
+[[category]] # 5 : Signal, N muon
+cuts = [
+    { name = "neutrino"        },
+    { name = "iscc"            },
+    { name = "neutrino_pdg",              parameters = [ 12.0, -12.0 ] },
+    { name = "has_particle_multiplicity", title = "has_electron", parameters = [ 1.0, 1.0, 25.0, 2.0 ] },
+    { name = "has_particle_multiplicity", title = "has_proton", parameters = [ 1.0, 4.0, 25.0, 2.0 ] },
+    { name = "no_charged_pions",          parameters = [ "@pion_threshold" ] },
+]
+
+[[category]] # 6 : other nue CC
+cuts = [
+    { name = "neutrino"        },
+    { name = "iscc"            },
+    { name = "neutrino_pdg",          parameters = [ 12.0, -12.0 ] },
+]
+
+[[category]] # 7 : Muon neutrino CC events, fiducial and contained
+cuts = [
+    { name = "neutrino"        },
+    { name = "iscc"            },
+    { name = "neutrino_pdg",          parameters = [ 14.0, -14.0 ] },
+]
+
+[[category]] # 8 : Neutral current events, fiducial and contained
 cuts = [
     { name = "neutrino"        },
     { name = "!iscc"            },
 ]
 
-[[category]] # 5 : Cosmic events
+[[category]] # 9 : Cosmic events
 cuts = [
     { name = "!neutrino"        },
 ]
+
+[[category]] # 10 : Other
+cuts = []
 
 
 # [[category]] # 0 : Fiducial, contained, electron neutrino CC signal (Used for comparing efficiency to Pandora)

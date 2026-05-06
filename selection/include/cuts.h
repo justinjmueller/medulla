@@ -595,6 +595,8 @@ namespace cuts
      *       0 -> equal to desired multiplicity
      *      -1 -> less than desired multiplicity
      *       1 -> greater than desired multiplicity
+            -2 -> less than or equal to desired multiplicity
+             2 -> greater than or equal to desired multiplicity
      * @return true if the comparison between the actual multiplicity and the desired
      * multiplicity (using the requested direction) holds.
      */
@@ -618,7 +620,9 @@ namespace cuts
             case 0:  return actual_mult == desired_mult;
             case -1: return actual_mult < desired_mult;
             case 1:  return actual_mult > desired_mult;
-            default: throw std::invalid_argument("has_particle_multiplicity: direction must be -1, 0, or 1");
+            case -2: return actual_mult <= desired_mult;
+            case 2:  return actual_mult >= desired_mult;
+            default: throw std::invalid_argument("has_particle_multiplicity: direction must be -2, -1, 0, 1, or 2");
         }
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, has_particle_multiplicity, has_particle_multiplicity);

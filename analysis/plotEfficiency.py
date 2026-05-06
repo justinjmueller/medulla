@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from memory_profiler import profile
 import pickle
 
-sys.path.append('/nashome/m/micarrig/icarus/nuESpine/medulla/spineplot/')
+sys.path.append('/nashome/m/micarrig/sbnd/nueCCNp/medulla/spineplot/')
 
 from efficiency import SpineEfficiency
 from analysis import Analysis
