@@ -23,16 +23,14 @@ while [[ $# -gt 0 ]]; do
       PROJECT="$2"
       shift 2
       ;;
-'''
-    --tag=*)
-      TAG="${1#*=}"
-      shift
-      ;;
-    --tag)
-      TAG="$2"
-      shift 2
-      ;;
-'''
+#    --tag=*)
+#      TAG="${1#*=}"
+#      shift
+#      ;;
+#    --tag)
+#      TAG="$2"
+#      shift 2
+#      ;;
     -h|--help)
       usage
       ;;
