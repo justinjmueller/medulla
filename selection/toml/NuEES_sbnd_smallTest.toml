@@ -1,0 +1,62 @@
+[parameters]
+photon_threshold = 25.0
+electron_threshold = 70.0
+muon_threshold = 25
+pion_threshold = 25.0
+proton_threshold = 25.0
+
+
+[general]
+output = "output_smallTest"
+primfn = "default_primary_classification"
+pidfn = "default_pid"
+fsthresh = [
+    "@photon_threshold",
+    "@electron_threshold",
+    "@muon_threshold",
+    "@pion_threshold",
+    "@proton_threshold",
+]
+
+[[sample]]
+name = "simulation"
+#path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input000-reweighted.flat.caf.root"
+#path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input0*-reweighted.flat.caf.root"
+#path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input*-reweighted.flat.caf.root"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/input000-reweighted.flat.caf.root"
+ismc = true
+
+[[tree]]
+name = "events"
+sim_only = false
+mode = "event"
+cut = [
+    {name = "no_cut", type = "event"},
+]
+branch = [
+    {name = "nnu", type = "event"},
+    {name = "nintime", type = "event", parameters = [0.0, 1.6]},
+]
+
+[[category]] # 0 : Signal, fiducial neutrino events
+cuts = [
+    { name = "neutrino"        },
+    { name = "fiducial_cut"    },
+]
+
+[[category]] # 4 : Neutral current events, fiducial and contained
+cuts = [
+    { name = "neutrino"        },
+    { name = "!iscc"            },
+]
+
+[[category]] # 5 : Cosmic events
+cuts = [
+    { name = "!neutrino"        },
+]
+
+
+
+
+
+
