@@ -976,5 +976,20 @@ namespace cuts
     }
 
     REGISTER_CUT_SCOPE(RegistrationScope::Reco, michel_attached_muon, michel_attached_muon);    
+
+    template<class T>
+    bool single_tpc_contained(const T & obj, std::vector<double> params={25.0, 5.0})
+    {
+        if (obj.is_cathode_crosser) return false; // Reject interactions that cross the cathode, as they cannot be contained in a single TPC
+        if (std::abs(obj.cathode_offset) < params[1]) return false; // Reject interactions that are too close to the cathode, as they may not be reliably contained in a single TPC
+        for(const auto & p : obj.particles)
+        {
+            if (pvars::ke(p) < params[0]) continue; // Only consider particles above the KE threshold
+            if (p.is_cathode_crosser) return false; // Reject interactions with any cathode-crossing particles, as they cannot be contained in a single TPC
+            if (std::abs(p.cathode_offset) < params[1]) return false; // Reject interactions with any particles too close to the cathode, as they may not be reliably contained in a single TPC
+        }
+        return true; // All tracks are in the same TPC (or no tracks found)
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, single_tpc_contained, single_tpc_contained);
 }
 #endif

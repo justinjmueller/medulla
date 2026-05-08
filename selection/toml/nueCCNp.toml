@@ -1,14 +1,14 @@
 [parameters]
+trackLength_threshold = 190
 photon_threshold = 25.0
-electron_threshold = 225.0
+electron_threshold = 75.0
 muon_threshold = 25.0
 pion_threshold = 25.0
-proton_threshold = 50.0
-trackLength_threshold = 190.0
-electron_dedx = 3.625
+proton_threshold = 40.0
+electron_dedx = 4.0
 flash_low_t = 0.0
 flash_high_t = 1.6
-vertex_threshold = 3.25
+vertex_threshold = 3.5
 electron_softmax = 0.90
 primary_softmax = 0.99
 proton_softmax = 0.75
@@ -16,12 +16,15 @@ axial_spread = 0.1
 electron_id = 1.0
 greater_than = 1.0
 null_threshold = 0.0
+cathode_ke_threshold = 25.0
+cathode_offset_threshold = 5.0
 
 [general]
-output = "output_nueCCNp_v2"
+output = "output_nueCCNp_dev"
 primfn = "default_primary_classification"
 pidfn = "default_pid"
 fsthresh = [
+    "@trackLength_threshold",
     "@photon_threshold",
     "@electron_threshold",
     "@muon_threshold",
@@ -35,15 +38,18 @@ fsthresh = [
     "@greater_than",
     "@null_threshold",
     "@proton_softmax",
-    "@axial_spread"
+    "@axial_spread",
+    "@cathode_ke_threshold",
+    "@cathode_offset_threshold"
 ]
 
 # ICARUS MC NuMI Neutrino + Cosmics CV
 [[sample]]
 name = "signal"
 # path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input00[0-13-9].flat.root" #5e18 sample
-# path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input00[0-23-4].flat.root" #5e18 sample
+#path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input00[0-2].flat.root" #5e18 sample
 path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/*.flat.*root" #1e20 sample
+# path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/devsample/*.flat.root" #dev data sample
 ismc = true
 disable = false # Optional: default = false
 
@@ -64,14 +70,15 @@ branch = [
     { name = "containment_cut",         type = "reco_particle", selector = "leading_electron"},
     { name = "particle_dedx",           type = "reco", parameters = [ "@electron_dedx" ] },
     { name = "flash_time",              type = "reco"},
+    { name = "single_tpc_contained",    type = "reco", parameters = [ "@cathode_ke_threshold", "@cathode_offset_threshold" ] },
 
     { name= "cut_type",             type = "reco" },
     { name = "is_nu",               type = "reco" },
     { name = "is_data",             type = "reco" },
 
     { name = "visible_energy",            type = "reco"},
-    { name = "has_particle_multiplicity", title = "has_electron", type = "reco", parameters = [1.0, 1.0, 25.0, 0.0] },
-    { name = "has_particle_multiplicity", title = "has_proton", type = "reco", parameters = [1.0, 4.0, 25.0, 0.0] },    
+    { name = "has_particle_multiplicity", title = "has_electron", type = "reco", parameters = [1.0, 1.0, 25.0, 2.0] },
+    { name = "has_particle_multiplicity", title = "has_proton", type = "reco", parameters = [1.0, 4.0, 25.0, 2.0] },    
     { name = "no_cut",                    type = "reco" },
     { name = "electron_multiplicity",     type = "reco", parameters = [ 0 ] },
     { name = "photon_multiplicity",      type = "reco", parameters = [ 0 ] },
@@ -234,17 +241,18 @@ add_systematics = true
 cut = [
     { name = "no_cut",                    type = "reco" },
     { name = "fiducial_cut",              type = "reco" },
-    { name = "flash_cut",                 type = "reco", parameters = [ "@flash_low_t", "@flash_high_t" ] },
+    { name = "valid_flashmatch",          type = "reco"},
     { name = "containment_cut",           type = "reco" },
-    # { name = "vertex_distance_cut",       type = "reco", parameters = [ "@vertex_threshold" ] },
-    { name = "has_particle_multiplicity", title = "has_electron", type = "reco", parameters = [1.0, 1.0, 25.0, 2.0] },
-    { name = "has_particle_multiplicity", title = "has_proton", type = "reco", parameters = [1.0, 4.0, 25.0, 2.0] },
     { name = "no_muons",                  type = "reco", parameters = [ "@muon_threshold" ] },
     { name = "no_charged_pions",          type = "reco", parameters = [ "@pion_threshold" ] },
+    { name = "has_particle_multiplicity", title = "has_proton", type = "reco", parameters = [1.0, 4.0, 25.0, 2.0] },
+    { name = "has_particle_multiplicity", title = "has_electron", type = "reco", parameters = [1.0, 1.0, 25.0, 2.0] },
     { name = "electron_softmax_cut",      type = "reco", parameters = [ "@electron_softmax", "@greater_than" ] },
     { name = "primary_softmax_cut",       type = "reco", parameters = [ "@primary_softmax", "@greater_than" ] },
     { name = "proton_softmax_cut",        type = "reco", parameters = [ "@proton_softmax", "@greater_than" ] },
-    { name = "leading_electron_axial_cut",        type = "reco", parameters = [ "@axial_spread", "@greater_than" ] },
+    { name = "vertex_distance_cut",       type = "reco", parameters = [ "@vertex_threshold" ] },
+    { name = "particle_dedx",             type = "reco", parameters = [ "@electron_dedx" ] },
+    # { name = "single_tpc_contained",    type = "reco", parameters = [ "@cathode_ke_threshold", "@cathode_offset_threshold" ] },
 ]
 branch = [
     { name = "fiducial_cut",            type = "reco"    },
@@ -256,6 +264,7 @@ branch = [
     { name = "containment_cut",         type = "reco_particle", selector = "leading_electron"},
     { name = "particle_dedx",           type = "reco", parameters = [ "@electron_dedx" ] },
     { name = "flash_time",              type = "reco"},
+    { name = "single_tpc_contained",    type = "reco", parameters = [ "@cathode_ke_threshold", "@cathode_offset_threshold" ] },
 
     { name= "cut_type",             type = "reco" },
     { name = "is_nu",               type = "reco" },
@@ -423,10 +432,10 @@ isdata = false
 mode = "true"
 add_systematics = true
 cut = [
-    #{ name = "neutrino",        type = "true" },
+    { name = "neutrino",        type = "true" },
     { name = "fiducial_cut",    type = "true" },
-    #{ name = "iscc",            type = "true" },
-    #{ name = "neutrino_pdg",    type = "true",             parameters = [ 12.0, -12.0 ] },
+    { name = "iscc",            type = "true" },
+    { name = "neutrino_pdg",    type = "true",             parameters = [ 12.0, -12.0 ] },
     { name = "has_particle_multiplicity",  title = "has_electron",  type = "true",  parameters = [ 1.0, 1.0, 25.0, 2.0 ] },
     { name = "has_particle_multiplicity",  title = "has_proton",    type = "true",  parameters = [ 1.0, 4.0, 25.0, 2.0 ] },
     { name = "no_muons",                   type = "true",  parameters = [ "@muon_threshold" ] },
@@ -444,6 +453,7 @@ branch = [
     { name = "containment_cut",         type = "reco_particle", selector = "leading_electron"},
     { name = "particle_dedx",           type = "reco", parameters = [ "@electron_dedx" ] },
     { name = "flash_time",              type = "reco"},
+    { name = "single_tpc_contained",    type = "reco", parameters = [ "@cathode_ke_threshold", "@cathode_offset_threshold" ] },
 
     { name= "cut_type",             type = "reco" },
     { name = "is_nu",               type = "reco" },

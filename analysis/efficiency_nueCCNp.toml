@@ -34,10 +34,22 @@ branches = ["reco_fiducial_cut",
             "reco_leading_photon_energy",
             "reco_leading_electron_p",
             "reco_leading_proton_p",
+            "reco_valid_flashmatch",
+            "reco_leading_muon_p",
+            "reco_leading_pion_p",
+            "reco_leading_electron_start_dedx",
+            "reco_leading_electron_electron_softmax",
+            "reco_leading_electron_primary_softmax",
+            "reco_leading_proton_primary_softmax",
+            "reco_leading_electron_vertex_distance",
+            "reco_dalphaT",
+            "reco_dpT",
+            "reco_leading_electron_polar_angle",
+            "reco_opening_angle"
             ]
 
 #precompute = {"reco_leading_electron_electron_softmax_cut" = "reco_leading_electron_electron_softmax > 0.72", "reco_leading_electron_primary_softmax_cut" = "reco_leading_electron_primary_softmax > 0.97"}
-precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_leading_proton_proton_softmax_cut" = "reco_leading_proton_proton_softmax > 0.75", "reco_leading_electron_axial_spread_cut" = "reco_leading_electron_axial_spread > 0.1", "reco_leading_photon_energy_cut" = "np.where((reco_leading_photon_energy < 50) | np.isnan(reco_leading_photon_energy), True, False)", "reco_leading_electron_momentum_cut" = "reco_leading_electron_p > 300", "reco_leading_proton_momentum_cut" = "reco_leading_proton_p > 300"}
+precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_leading_proton_proton_softmax_cut" = "reco_leading_proton_proton_softmax > 0.75", "reco_leading_electron_axial_spread_cut" = "reco_leading_electron_axial_spread > 0.1", "reco_leading_photon_energy_cut" = "np.where((reco_leading_photon_energy < 50) | np.isnan(reco_leading_photon_energy), True, False)", "reco_leading_electron_momentum_cut" = "reco_leading_electron_p > 300", "reco_leading_proton_momentum_cut" = "reco_leading_proton_p > 40", "reco_leading_muon_cut" = "np.where((reco_leading_muon_p < 25) | np.isnan(reco_leading_muon_p), True, False)", "reco_leading_pion_cut" = "np.where((reco_leading_pion_p < 25) | np.isnan(reco_leading_pion_p), True, False)", "reco_leading_electron_cut" = "reco_leading_electron_p > 75", "electron_softmax_cut" = "reco_leading_electron_electron_softmax > 0.90", "electron_primary_softmax_cut" = "reco_leading_electron_primary_softmax > 0.99", "proton_softmax_cut" = "reco_leading_proton_proton_softmax > 0.75", "vertex_distance_cut" = "reco_leading_electron_vertex_distance < 3.5", "dedx_cut" = "reco_leading_electron_start_dedx < 4", "reco_leading_proton_cut" = "reco_leading_proton_p > 40"}
 
 # Output directory for plots
 [output]
@@ -48,13 +60,14 @@ path = 'plots/'
 ordinate_sample = 'signal'
 category_branch = 'true_category'
 category_assignment = [
-    [0], # CC nue
-    [1, 2, 3, 4, 5], 
+    [0, 1], # CC nue
+    [2, 3, 4, 5, 6, 7, 8, 9, 10], 
 ]
 category_labels = ['Signal', 'Background']
 
-category_colors = ['C0', 'C1', 'C2', 'C3', 'C4']
-category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram']
+category_colors = ['C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10']
+category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram']
+# category_colors = ['#001261', '#033E7D', '#1E6F9D', '#71A8C4', '#C9DDE7', '#EACEBD', '#D39774', '#BE6533', '#8B2706', '#590008', '#000000'] #vik
 
 # Define your variables (if not already in included variables.toml)
 [variables]
@@ -106,11 +119,35 @@ nbins = 30
 range = [-20, 10]
 xlabel = 'Reco Flash Time [us]'
 
+[variables.reco_dalphaT]
+key = 'reco_dalphaT'
+nbins = 33
+range = [0.0, 3.3]
+xlabel = 'Reco dalphaT'
+
+[variables.reco_dpT]
+key = 'reco_dpT'
+nbins = 25
+range = [0, 1250]
+xlabel = 'Reco dpT'
+
+[variables.reco_leading_electron_polar_angle]
+key = 'reco_leading_electron_polar_angle'
+nbins = 32
+range = [0.0, 3.2]
+xlabel = 'Reco Leading Electron Polar Angle'
+
+[variables.reco_opening_angle]
+key = 'reco_opening_angle'
+nbins = 32
+range = [0.0, 3.2]
+xlabel = 'Reco Opening Angle between Leading Electron and Leading Proton'
+
 # Create efficiency plot figures
 [[figure]]
 name = 'selection_efficiency_table'
 type = 'SimpleFigure'
-style = 'basic_icarus'  # This references a style defined in the included styles.toml
+style = 'basic_sbnd'  # This references a style defined in the included styles.toml
 title = 'Signal Selection Efficiency'
 
 [[figure.artists]]
@@ -122,32 +159,34 @@ groups = ['Signal', 'Background']
 reco_fiducial_cut = 'Fiducial Volume'
 reco_flash_cut = 'Flash Cut'
 reco_containment_cut = 'Interaction Containment Cut'
-reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
-reco_has_electron = '>=1 Electron-like Particle'
-reco_has_proton = '>=1 Proton-like Particle'
-reco_no_muons = 'No Muon-like Particles'
-reco_no_charged_pions = 'No Charged Pion-like Particles'
-reco_primary_softmax_cut = 'Electron Primary Softmax > 0.97'
-reco_electron_softmax_cut = 'Leading Electron Softmax > 0.72'
-reco_leading_proton_proton_softmax_cut = 'Proton Softmax > 0.75'
-reco_leading_electron_axial_spread_cut = 'Electron Axial Spread > 0.1'
-reco_leading_photon_energy_cut = 'Leading Photon Energy < 50 MeV'
-reco_leading_electron_momentum_cut = 'Leading Electron Momentum > 300 MeV'
-reco_leading_proton_momentum_cut = 'Leading Proton Momentum > 300 MeV'
+reco_leading_muon_cut = 'No Muon-like Particles > 25 MeV'
+reco_leading_pion_cut = 'No Charged Pion-like Particles > 25 MeV'
+reco_leading_proton_cut = '>= 1 40 MeV Proton-like Particle'
+reco_leading_electron_cut = '>= 1 75 MeV Electron-like Particle'
+electron_primary_softmax_cut = 'Electron Primary Softmax > 0.99'
+electron_softmax_cut = 'Leading Electron Softmax > 0.90'
+proton_softmax_cut = 'Leading Proton Softmax > 0.75'
+vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+dedx_cut = "Leading Electron dE/dx < 4 MeV/cm"
+
+# reco_leading_electron_axial_spread_cut = 'Electron Axial Spread > 0.1'
+# reco_leading_photon_energy_cut = 'Leading Photon Energy < 50 MeV'
+# reco_leading_electron_momentum_cut = 'Leading Electron Momentum > 300 MeV'
+# reco_leading_proton_momentum_cut = 'Leading Proton Momentum > 300 MeV'
 
 [figure.artists.draw_kwargs]
 show_option = 'table'
 percentage = true
 show_seqeff = true
 show_unseqeff = true
-show_purity = true
+show_purity = false
 show_counts = true
 
 # FIGURE 2: Efficiency vs Neutrino Energy Plot 
 [[figure]]
 name = 'efficiency_vs_energy'
 type = 'SimpleFigure'
-style = 'basic_icarus'
+style = 'basic_sbnd'
 title = 'Selection Efficiency vs True Neutrino Energy'
 
 [[figure.artists]]
@@ -161,18 +200,15 @@ xtitle = 'True Neutrino Energy [GeV]'
 reco_fiducial_cut = 'Fiducial Volume'
 reco_flash_cut = 'Flash Cut'
 reco_containment_cut = 'Interaction Containment Cut'
-reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
-reco_has_electron = '>=1 Electron-like Particle'
-reco_has_proton = '>=1 Proton-like Particle'
-reco_no_muons = 'No Muon-like Particles'
-reco_no_charged_pions = 'No Charged Pion-like Particles'
-reco_primary_softmax_cut = 'Electron Primary Softmax > 0.97'
-reco_electron_softmax_cut = 'Leading Electron Softmax > 0.72'
-reco_leading_proton_proton_softmax_cut = 'Proton Softmax > 0.75'
-reco_leading_electron_axial_spread_cut = 'Electron Axial Spread > 0.1'
-reco_leading_photon_energy_cut = 'Leading Photon Energy < 50 MeV'
-reco_leading_electron_momentum_cut = 'Leading Electron Momentum > 300 MeV'
-reco_leading_proton_momentum_cut = 'Leading Proton Momentum > 300 MeV'
+reco_leading_muon_cut = 'No Muon-like Particles > 25 MeV'
+reco_leading_pion_cut = 'No Charged Pion-like Particles > 25 MeV'
+reco_leading_proton_cut = '>= 1 40 MeV Proton-like Particle'
+reco_leading_electron_cut = '>= 1 75 MeV Electron-like Particle'
+electron_primary_softmax_cut = 'Electron Primary Softmax > 0.99'
+electron_softmax_cut = 'Leading Electron Softmax > 0.90'
+proton_softmax_cut = 'Leading Proton Softmax > 0.75'
+vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+dedx_cut = "Leading Electron dE/dx < 4 MeV/cm"
 
 [figure.artists.draw_kwargs]
 show_option = 'differential'  # KEY: This makes it a plot vs energy!
@@ -184,7 +220,7 @@ show_unseqeff = false  # Don't show individual cut curves
 [[figure]]
 name = 'efficiency_vs_electronEnergy'
 type = 'SimpleFigure'
-style = 'basic_icarus'
+style = 'basic_sbnd'
 title = 'Selection Efficiency vs Reco Electron Energy'
 
 [[figure.artists]]
@@ -198,18 +234,15 @@ xtitle = 'Reco Electron Energy [MeV]'
 reco_fiducial_cut = 'Fiducial Volume'
 reco_flash_cut = 'Flash Cut'
 reco_containment_cut = 'Interaction Containment Cut'
-reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
-reco_has_electron = '>=1 Electron-like Particle'
-reco_has_proton = '>=1 Proton-like Particle'
-reco_no_muons = 'No Muon-like Particles'
-reco_no_charged_pions = 'No Charged Pion-like Particles'
-reco_primary_softmax_cut = 'Electron Primary Softmax > 0.97'
-reco_electron_softmax_cut = 'Leading Electron Softmax > 0.72'
-reco_leading_proton_proton_softmax_cut = 'Proton Softmax > 0.75'
-reco_leading_electron_axial_spread_cut = 'Electron Axial Spread > 0.1'
-reco_leading_photon_energy_cut = 'Leading Photon Energy < 50 MeV'
-reco_leading_electron_momentum_cut = 'Leading Electron Momentum > 300 MeV'
-reco_leading_proton_momentum_cut = 'Leading Proton Momentum > 300 MeV'
+reco_leading_muon_cut = 'No Muon-like Particles > 25 MeV'
+reco_leading_pion_cut = 'No Charged Pion-like Particles > 25 MeV'
+reco_leading_proton_cut = '>= 1 40 MeV Proton-like Particle'
+reco_leading_electron_cut = '>= 1 75 MeV Electron-like Particle'
+electron_primary_softmax_cut = 'Electron Primary Softmax > 0.99'
+electron_softmax_cut = 'Leading Electron Softmax > 0.90'
+proton_softmax_cut = 'Leading Proton Softmax > 0.75'
+vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+dedx_cut = "Leading Electron dE/dx < 4 MeV/cm"
 
 [figure.artists.draw_kwargs]
 show_option = 'differential'  # KEY: This makes it a plot vs energy!
@@ -221,7 +254,7 @@ show_unseqeff = false  # Don't show individual cut curves
 [[figure]]
 name = 'efficiency_vs_electronAngle'
 type = 'SimpleFigure'
-style = 'basic_icarus'
+style = 'basic_sbnd'
 title = 'Selection Efficiency vs Reco Electron $\cos(\theta_{NUMI})$'
 
 [[figure.artists]]
@@ -234,18 +267,15 @@ xtitle = 'Reco Electron $\cos(\theta_{NUMI})$'
 reco_fiducial_cut = 'Fiducial Volume'
 reco_flash_cut = 'Flash Cut'
 reco_containment_cut = 'Interaction Containment Cut'
-reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
-reco_has_electron = '>=1 Electron-like Particle'
-reco_has_proton = '>=1 Proton-like Particle'
-reco_no_muons = 'No Muon-like Particles'
-reco_no_charged_pions = 'No Charged Pion-like Particles'
-reco_primary_softmax_cut = 'Electron Primary Softmax > 0.97'
-reco_electron_softmax_cut = 'Leading Electron Softmax > 0.72'
-reco_leading_proton_proton_softmax_cut = 'Proton Softmax > 0.75'
-reco_leading_electron_axial_spread_cut = 'Electron Axial Spread > 0.1'
-reco_leading_photon_energy_cut = 'Leading Photon Energy < 50 MeV'
-reco_leading_electron_momentum_cut = 'Leading Electron Momentum > 300 MeV'
-reco_leading_proton_momentum_cut = 'Leading Proton Momentum > 300 MeV'
+reco_leading_muon_cut = 'No Muon-like Particles > 25 MeV'
+reco_leading_pion_cut = 'No Charged Pion-like Particles > 25 MeV'
+reco_leading_proton_cut = '>= 1 40 MeV Proton-like Particle'
+reco_leading_electron_cut = '>= 1 75 MeV Electron-like Particle'
+electron_primary_softmax_cut = 'Electron Primary Softmax > 0.99'
+electron_softmax_cut = 'Leading Electron Softmax > 0.90'
+proton_softmax_cut = 'Leading Proton Softmax > 0.75'
+vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+dedx_cut = "Leading Electron dE/dx < 4 MeV/cm"
 
 [figure.artists.draw_kwargs]
 show_option = 'differential'  # KEY: This makes it a plot vs energy!
@@ -257,7 +287,7 @@ show_unseqeff = false  # Don't show individual cut curves
 [[figure]]
 name = 'efficiency_vs_trueInvariantMass'
 type = 'SimpleFigure'
-style = 'basic_icarus'
+style = 'basic_sbnd'
 title = 'Selection Efficiency vs True Hadronic Invariant Mass (W)'
 
 [[figure.artists]]
@@ -270,18 +300,15 @@ xtitle = 'True Hadronic Invariant Mass (W) [GeV]'
 reco_fiducial_cut = 'Fiducial Volume'
 reco_flash_cut = 'Flash Cut'
 reco_containment_cut = 'Interaction Containment Cut'
-reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
-reco_has_electron = '>=1 Electron-like Particle'
-reco_has_proton = '>=1 Proton-like Particle'
-reco_no_muons = 'No Muon-like Particles'
-reco_no_charged_pions = 'No Charged Pion-like Particles'
-reco_primary_softmax_cut = 'Electron Primary Softmax > 0.97'
-reco_electron_softmax_cut = 'Leading Electron Softmax > 0.72'
-reco_leading_proton_proton_softmax_cut = 'Proton Softmax > 0.75'
-reco_leading_electron_axial_spread_cut = 'Electron Axial Spread > 0.1'
-reco_leading_photon_energy_cut = 'Leading Photon Energy < 50 MeV'
-reco_leading_electron_momentum_cut = 'Leading Electron Momentum > 300 MeV'
-reco_leading_proton_momentum_cut = 'Leading Proton Momentum > 300 MeV'
+reco_leading_muon_cut = 'No Muon-like Particles > 25 MeV'
+reco_leading_pion_cut = 'No Charged Pion-like Particles > 25 MeV'
+reco_leading_proton_cut = '>= 1 40 MeV Proton-like Particle'
+reco_leading_electron_cut = '>= 1 75 MeV Electron-like Particle'
+electron_primary_softmax_cut = 'Electron Primary Softmax > 0.99'
+electron_softmax_cut = 'Leading Electron Softmax > 0.90'
+proton_softmax_cut = 'Leading Proton Softmax > 0.75'
+vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+dedx_cut = "Leading Electron dE/dx < 4 MeV/cm"
 
 [figure.artists.draw_kwargs]
 show_option = 'differential'  # KEY: This makes it a plot vs energy!
@@ -293,7 +320,7 @@ show_unseqeff = false  # Don't show individual cut curves
 [[figure]]
 name = 'efficiency_vs_trueMomentumTransfer'
 type = 'SimpleFigure'
-style = 'basic_icarus'
+style = 'basic_sbnd'
 title = 'Selection Efficiency vs True Momentum Transfer (Q^2) [GeV$^{2}$]'
 
 [[figure.artists]]
@@ -306,18 +333,15 @@ xtitle = 'True Momentum Transfer ($Q^{2}$) [GeV$^{2}$]'
 reco_fiducial_cut = 'Fiducial Volume'
 reco_flash_cut = 'Flash Cut'
 reco_containment_cut = 'Interaction Containment Cut'
-reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
-reco_has_electron = '>=1 Electron-like Particle'
-reco_has_proton = '>=1 Proton-like Particle'
-reco_no_muons = 'No Muon-like Particles'
-reco_no_charged_pions = 'No Charged Pion-like Particles'
-reco_primary_softmax_cut = 'Electron Primary Softmax > 0.97'
-reco_electron_softmax_cut = 'Leading Electron Softmax > 0.72'
-reco_leading_proton_proton_softmax_cut = 'Proton Softmax > 0.75'
-reco_leading_electron_axial_spread_cut = 'Electron Axial Spread > 0.1'
-reco_leading_photon_energy_cut = 'Leading Photon Energy < 50 MeV'
-reco_leading_electron_momentum_cut = 'Leading Electron Momentum > 300 MeV'
-reco_leading_proton_momentum_cut = 'Leading Proton Momentum > 300 MeV'
+reco_leading_muon_cut = 'No Muon-like Particles > 25 MeV'
+reco_leading_pion_cut = 'No Charged Pion-like Particles > 25 MeV'
+reco_leading_proton_cut = '>= 1 40 MeV Proton-like Particle'
+reco_leading_electron_cut = '>= 1 75 MeV Electron-like Particle'
+electron_primary_softmax_cut = 'Electron Primary Softmax > 0.99'
+electron_softmax_cut = 'Leading Electron Softmax > 0.90'
+proton_softmax_cut = 'Leading Proton Softmax > 0.75'
+vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+dedx_cut = "Leading Electron dE/dx < 4 MeV/cm"
 
 [figure.artists.draw_kwargs]
 show_option = 'differential'  # KEY: This makes it a plot vs energy!
@@ -329,7 +353,7 @@ show_unseqeff = false  # Don't show individual cut curves
 [[figure]]
 name = 'efficiency_vs_recoFlashTime'
 type = 'SimpleFigure'
-style = 'basic_icarus'
+style = 'basic_sbnd'
 title = 'Selection Efficiency vs Reco Flash Time [us]'
 
 [[figure.artists]]
@@ -342,18 +366,147 @@ xtitle = 'Reco Flash Time [us]'
 reco_fiducial_cut = 'Fiducial Volume'
 reco_flash_cut = 'Flash Cut'
 reco_containment_cut = 'Interaction Containment Cut'
-reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
-reco_has_electron = '>=1 Electron-like Particle'
-reco_has_proton = '>=1 Proton-like Particle'
-reco_no_muons = 'No Muon-like Particles'
-reco_no_charged_pions = 'No Charged Pion-like Particles'
-reco_primary_softmax_cut = 'Electron Primary Softmax > 0.97'
-reco_electron_softmax_cut = 'Leading Electron Softmax > 0.72'
-reco_leading_proton_proton_softmax_cut = 'Proton Softmax > 0.75'
-reco_leading_electron_axial_spread_cut = 'Electron Axial Spread > 0.1'
-reco_leading_photon_energy_cut = 'Leading Photon Energy < 50 MeV'
-reco_leading_electron_momentum_cut = 'Leading Electron Momentum > 300 MeV'
-reco_leading_proton_momentum_cut = 'Leading Proton Momentum > 300 MeV'
+reco_leading_muon_cut = 'No Muon-like Particles > 25 MeV'
+reco_leading_pion_cut = 'No Charged Pion-like Particles > 25 MeV'
+reco_leading_proton_cut = '>= 1 40 MeV Proton-like Particle'
+reco_leading_electron_cut = '>= 1 75 MeV Electron-like Particle'
+electron_primary_softmax_cut = 'Electron Primary Softmax > 0.99'
+electron_softmax_cut = 'Leading Electron Softmax > 0.90'
+proton_softmax_cut = 'Leading Proton Softmax > 0.75'
+vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+dedx_cut = "Leading Electron dE/dx < 4 MeV/cm"
+
+[figure.artists.draw_kwargs]
+show_option = 'differential'  # KEY: This makes it a plot vs energy!
+percentage = true
+show_seqeff = true     # Show cumulative efficiency curve
+show_unseqeff = false  # Don't show individual cut curves
+
+# FIGURE 8: Efficiency vs dpT
+[[figure]]
+name = 'efficiency_vs_recoDPT'
+type = 'SimpleFigure'
+style = 'basic_sbnd'
+title = 'Selection Efficiency vs Reco dP_T [MeV]'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'reco_dpT'
+groups = ['Signal']  # Can show both: ['Signal', 'Backgrounds']
+xtitle = 'Reco dP_T [MeV]'
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_leading_muon_cut = 'No Muon-like Particles > 25 MeV'
+reco_leading_pion_cut = 'No Charged Pion-like Particles > 25 MeV'
+reco_leading_proton_cut = '>= 1 40 MeV Proton-like Particle'
+reco_leading_electron_cut = '>= 1 75 MeV Electron-like Particle'
+electron_primary_softmax_cut = 'Electron Primary Softmax > 0.99'
+electron_softmax_cut = 'Leading Electron Softmax > 0.90'
+proton_softmax_cut = 'Leading Proton Softmax > 0.75'
+vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+dedx_cut = "Leading Electron dE/dx < 4 MeV/cm"
+
+[figure.artists.draw_kwargs]
+show_option = 'differential'  # KEY: This makes it a plot vs energy!
+percentage = true
+show_seqeff = true     # Show cumulative efficiency curve
+show_unseqeff = false  # Don't show individual cut curves
+
+# FIGURE 8: Efficiency vs dalpha_T
+[[figure]]
+name = 'efficiency_vs_recoDalphaT'
+type = 'SimpleFigure'
+style = 'basic_sbnd'
+title = 'Selection Efficiency vs Reco dalpha_T [MeV]'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'reco_dalphaT'
+groups = ['Signal']  # Can show both: ['Signal', 'Backgrounds']
+xtitle = 'Reco dalpha_T [MeV]'
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_leading_muon_cut = 'No Muon-like Particles > 25 MeV'
+reco_leading_pion_cut = 'No Charged Pion-like Particles > 25 MeV'
+reco_leading_proton_cut = '>= 1 40 MeV Proton-like Particle'
+reco_leading_electron_cut = '>= 1 75 MeV Electron-like Particle'
+electron_primary_softmax_cut = 'Electron Primary Softmax > 0.99'
+electron_softmax_cut = 'Leading Electron Softmax > 0.90'
+proton_softmax_cut = 'Leading Proton Softmax > 0.75'
+vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+dedx_cut = "Leading Electron dE/dx < 4 MeV/cm"
+
+[figure.artists.draw_kwargs]
+show_option = 'differential'  # KEY: This makes it a plot vs energy!
+percentage = true
+show_seqeff = true     # Show cumulative efficiency curve
+show_unseqeff = false  # Don't show individual cut curves
+
+# FIGURE 9: Efficiency vs electron opening angle wrt beam
+[[figure]]
+name = 'efficiency_vs_recoElectronPolarAngle'
+type = 'SimpleFigure'
+style = 'basic_sbnd'
+title = 'Selection Efficiency vs Reco Leading Electron Polar Angle'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'reco_leading_electron_polar_angle'
+groups = ['Signal']  # Can show both: ['Signal', 'Backgrounds']
+xtitle = 'Reco Leading Electron Polar Angle'
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_leading_muon_cut = 'No Muon-like Particles > 25 MeV'
+reco_leading_pion_cut = 'No Charged Pion-like Particles > 25 MeV'
+reco_leading_proton_cut = '>= 1 40 MeV Proton-like Particle'
+reco_leading_electron_cut = '>= 1 75 MeV Electron-like Particle'
+electron_primary_softmax_cut = 'Electron Primary Softmax > 0.99'
+electron_softmax_cut = 'Leading Electron Softmax > 0.90'
+proton_softmax_cut = 'Leading Proton Softmax > 0.75'
+vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+dedx_cut = "Leading Electron dE/dx < 4 MeV/cm"
+
+[figure.artists.draw_kwargs]
+show_option = 'differential'  # KEY: This makes it a plot vs energy!
+percentage = true
+show_seqeff = true     # Show cumulative efficiency curve
+show_unseqeff = false  # Don't show individual cut curves
+
+# FIGURE 10: Efficiency vs electron opening angle electron/proton
+[[figure]]
+name = 'efficiency_vs_recoElectronOpeningAngle'
+type = 'SimpleFigure'
+style = 'basic_sbnd'
+title = 'Selection Efficiency vs Reco Electron/Proton Opening Angle'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'reco_opening_angle'
+groups = ['Signal']  # Can show both: ['Signal', 'Backgrounds']
+xtitle = 'Reco Electron/Proton Opening Angle'
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_leading_muon_cut = 'No Muon-like Particles > 25 MeV'
+reco_leading_pion_cut = 'No Charged Pion-like Particles > 25 MeV'
+reco_leading_proton_cut = '>= 1 40 MeV Proton-like Particle'
+reco_leading_electron_cut = '>= 1 75 MeV Electron-like Particle'
+electron_primary_softmax_cut = 'Electron Primary Softmax > 0.99'
+electron_softmax_cut = 'Leading Electron Softmax > 0.90'
+proton_softmax_cut = 'Leading Proton Softmax > 0.75'
+vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+dedx_cut = "Leading Electron dE/dx < 4 MeV/cm"
 
 [figure.artists.draw_kwargs]
 show_option = 'differential'  # KEY: This makes it a plot vs energy!

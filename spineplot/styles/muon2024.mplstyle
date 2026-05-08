@@ -53,7 +53,8 @@ lines.linewidth: 2
 
 ## COLORS
 #                                Greenish   Vermilion   Black     Blue      Orange  Purplish  Sky Blue  
-axes.prop_cycle: cycler('color', ['009E73', 'D55E00', '000000', '0072B2', 'E69F00', 'CC79A7', '56B4E9', 'F0E442',])
+#axes.prop_cycle: cycler('color', ['009E73', 'D55E00', '000000', '0072B2', 'E69F00', 'CC79A7', '56B4E9', 'F0E442', ])
+axes.prop_cycle: cycler('color', ["8B0000", "FF0000", "FF7F00", "FFFF00", "A2D000", "00FF00", "00FF7F", "00FFFF", "007FFF", "0000FF", "4B0082", "9400D3", "6A0040"])
 
 # Cividis is Colo(u)r Vision Deficiency friendly
 image.cmap: Blues
