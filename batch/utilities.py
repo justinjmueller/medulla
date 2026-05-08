@@ -364,8 +364,8 @@ def launch_jobsub(
     exp : str = 'sbnd',
     njobs : int = -1,
     confirm : bool = True,
-    #tag : str = 'develop',
-    tag : str = 'feature/lupis_nuEES',
+    tag : str = 'develop',
+    #tag : str = 'feature/lupis_nuEES',
 ):
     """
     Launch jobs using jobsub for the given project directory. If njobs
