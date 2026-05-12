@@ -43,14 +43,20 @@ fsthresh = [
     "@cathode_offset_threshold"
 ]
 
-# ICARUS MC NuMI Neutrino + Cosmics CV
+# SBND Data Sample
 [[sample]]
 name = "signal"
 # path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input00[0-13-9].flat.root" #5e18 sample
-#path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input00[0-2].flat.root" #5e18 sample
+# path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input000.flat.root" #5e18 sample
 path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/*.flat.*root" #1e20 sample
-# path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/devsample/*.flat.root" #dev data sample
 ismc = true
+disable = false # Optional: default = false
+
+# SBND Dev Data Sample
+[[sample]]
+name = "data"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/devsample/*.flat.root" #dev data sample
+ismc = false
 disable = false # Optional: default = false
 
 [[tree]]
@@ -71,6 +77,7 @@ branch = [
     { name = "particle_dedx",           type = "reco", parameters = [ "@electron_dedx" ] },
     { name = "flash_time",              type = "reco"},
     { name = "single_tpc_contained",    type = "reco", parameters = [ "@cathode_ke_threshold", "@cathode_offset_threshold" ] },
+    { name = "nonelectron_containment_cut", type = "both" },
 
     { name= "cut_type",             type = "reco" },
     { name = "is_nu",               type = "reco" },
@@ -265,6 +272,7 @@ branch = [
     { name = "particle_dedx",           type = "reco", parameters = [ "@electron_dedx" ] },
     { name = "flash_time",              type = "reco"},
     { name = "single_tpc_contained",    type = "reco", parameters = [ "@cathode_ke_threshold", "@cathode_offset_threshold" ] },
+    { name = "nonelectron_containment_cut", type = "both" },
 
     { name= "cut_type",             type = "reco" },
     { name = "is_nu",               type = "reco" },
@@ -454,6 +462,7 @@ branch = [
     { name = "particle_dedx",           type = "reco", parameters = [ "@electron_dedx" ] },
     { name = "flash_time",              type = "reco"},
     { name = "single_tpc_contained",    type = "reco", parameters = [ "@cathode_ke_threshold", "@cathode_offset_threshold" ] },
+    { name = "nonelectron_containment_cut", type = "both" },
 
     { name= "cut_type",             type = "reco" },
     { name = "is_nu",               type = "reco" },

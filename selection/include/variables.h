@@ -944,10 +944,19 @@ namespace vars
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, leading_muon_vertex_gap, leading_muon_vertex_gap);
 
+    /**
+     * @brief Variable for the distance from the selected leading particle to the interaction vertex.
+     * @details This function calculates the distance from the leading particle start point to the interaction vertex.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @param params the parameters for the cut. In this case, this sets the pvars enum of the leading particle to use for the distance calculation, defaults to 0=photon
+     * @return the distance from the leading particle of selected type start point to the interaction vertex.
+     */
     template<class T>
-    double vertex_distance(const T & obj, std::vector<double> params={0.0,})
+    double vertex_distance(const T & obj, std::vector<double> params={0.0})
     {   
-        size_t i = selectors::leading_electron(obj);
+        int particle_type = static_cast<int>(params[0]);
+        size_t i = utilities::leading_particle_type(obj, particle_type);
         if (i == kNoMatch) return false;
         const auto & p = obj.particles[i];
         return p.vertex_distance >= 0 ? (double)p.vertex_distance : PLACEHOLDERVALUE;
