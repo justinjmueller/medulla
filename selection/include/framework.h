@@ -40,6 +40,27 @@ using NamedSpillMultiVar = std::pair<std::string, ana::SpillMultiVar>;
 constexpr size_t kNoMatch = std::numeric_limits<size_t>::max();
 constexpr double kNoMatchValue = std::numeric_limits<double>::quiet_NaN();
 
+/**
+ * @brief Composite view presenting a reco interaction alongside its matched
+ * true interaction.
+ * @details MatchedInteraction is the argument type passed to cuts registered
+ * with RegistrationScope::Matched.  The @c reco member is always a valid
+ * reference.  The @c truth pointer is non-null only when a SPINE-level
+ * reco-truth match exists; cut implementations should return @c false
+ * (or an appropriate default) when @c truth is @c nullptr.
+ *
+ * In @c mode="reco" the primary object is the reconstructed interaction and
+ * @c truth points at the matched true interaction (if any).  In
+ * @c mode="true" the roles are mirrored: @c reco holds the matched
+ * reconstructed interaction and @c truth points at the looped true
+ * interaction.
+ */
+struct MatchedInteraction
+{
+    const RType & reco;   ///< reconstructed interaction (always valid)
+    const TType * truth;  ///< matched true interaction, or nullptr if unmatched
+};
+
 //-----------------------------------------------------------------------------
 // 1) Generic registry template
 //-----------------------------------------------------------------------------
@@ -252,7 +273,7 @@ inline BiVarFn<ParticleT> bind_bivar(const std::vector<double>& pars)
  */
 enum class RegistrationScope { True, Reco, Both, MCTruth,
                                TrueParticle, RecoParticle, BothParticle,
-                               Event, Spill };
+                               Event, Spill, Matched };
 
 // Register a cut with scope, auto‐detecting its signature
 #define REGISTER_CUT_SCOPE(scope, name, fn)                                                \
@@ -282,6 +303,10 @@ namespace                                                                       
         if constexpr((scope)==RegistrationScope::Spill)                                    \
             CutFactoryRegistry<SpillType>::instance().register_fn(                         \
                 "spill_" #name, bind<+fn<SpillType>, SpillType, bool>                      \
+            );                                                                             \
+        if constexpr((scope)==RegistrationScope::Matched)                                  \
+            CutFactoryRegistry<MatchedInteraction>::instance().register_fn(                \
+                "matched_" #name, bind<+fn<MatchedInteraction>, MatchedInteraction, bool>  \
             );                                                                             \
         return true;                                                                       \
     }();                                                                                   \
@@ -439,6 +464,9 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
  *        index exists. Allows MCTruth-scoped cuts to be composed alongside
  *        SPINE truth-level cuts. This is wrapped by std::optional to allow for
  *        the case where no GENIE cuts are applied or when running on data.
+ * @param matched_cut An optional cut applied to a @ref MatchedInteraction that
+ *        bundles both the reco and its matched true interaction.  Non-null only
+ *        when the TOML configuration contains @c type="matched" cuts.
  * @return A SpillMultiVar object that applies the cuts and computes the variable.
  */
 template<typename CutsOn, typename CompsOn, typename PCutsOn, typename VarOn>
@@ -449,7 +477,8 @@ ana::SpillMultiVar spill_multivar_helper(
     const VarFn<VarOn> & var,
     const CutFn<EventType> & event_cut,
     const std::optional<CutFn<MCTruth>> & mctruth_cut,
-    const bool ismc = true
+    const bool ismc = true,
+    const std::optional<CutFn<MatchedInteraction>> & matched_cut = std::nullopt
 );
 
 /**

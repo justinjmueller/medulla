@@ -221,6 +221,28 @@ Each entry in the `cut` list defines a condition on an object passing the select
     * `true` - the cut is applied at the true interaction level. Interaction-level cuts are defined in `cuts.h`. This cut is only applicable for `reco` and `true` tree modes. If used in `reco` mode, the cut will be applied to the true interaction that is matched to the reconstructed interaction (failing to find a match will result in the cut failing).
     * `reco_particle` - the cut is applied at the reconstructed particle level. Particle-level cuts are defined in `particle_cuts.h`. This cut is only applicable for `reco` or `true` tree modes with particle-level branches. If used in `true` mode, the cut will be applied to the reconstructed particles in the reconstructed interaction that is matched to the true interaction (failing to find a match will result in the cut failing).
     * `true_particle` - the cut is applied at the true particle level. Particle-level cuts are defined in `particle_cuts.h`. This cut is only applicable for `reco` or `true` tree modes with particle-level branches. If used in `reco` mode, the cut will be applied to the true particles in the true interaction that is matched to the reconstructed interaction (failing to find a match will result in the cut failing).
+    * `matched` - the cut receives a `MatchedInteraction` object that bundles both the reconstructed interaction and a pointer to the matched true interaction simultaneously. This is applicable for both `reco` and `true` tree modes. The `reco` member is always a valid reference; the `truth` member is a pointer that may be `nullptr` when no SPINE-level match exists (or when running on data). Matched cuts are registered with `RegistrationScope::Matched` and are defined in `cuts.h` (or any user file). Because both views are available at the same time, this cut type is well-suited for conditions that span reconstruction and truth simultaneously, for example requiring high IoU match quality or cross-checking that a reconstructed topology agrees with the true topology. Example:
+        ```c++
+        /**
+         * @brief Require a minimum IoU between the reco and matched true interaction.
+         * @tparam T MatchedInteraction.
+         * @param obj the paired reco/truth interaction.
+         * @param params minimum IoU threshold, defaults to 0.1.
+         * @return true if the best-match IoU is at or above the threshold.
+         */
+        template<class T>
+        bool min_iou(const T & obj, std::vector<double> params={0.1,})
+        {
+            if(!obj.truth) return false;
+            if(obj.reco.match_ids.empty()) return false;
+            return obj.reco.match_overlaps[0] >= params[0];
+        }
+        REGISTER_CUT_SCOPE(RegistrationScope::Matched, min_iou, min_iou);
+        ```
+        Used in a TOML configuration as:
+        ```toml
+        { name = "min_iou", type = "matched", parameters = [0.1] }
+        ```
 * `parameters` - an optional list of parameters to pass to the cut function. This allows the user to configure cuts with different thresholds or settings without needing to define a new function for each variation. The parameters must be either a float (castable to `double`) or some reference to a parameter defined in the `parameters` block (e.g., `"@muon_threshold"`). The order of parameters must match the order expected by the cut function. See the implementation of each cut function for details.
 
 Cuts can also be inverted by prefixing the cut name with `!`. For example, the cut definition:

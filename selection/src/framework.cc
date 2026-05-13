@@ -87,6 +87,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
     std::vector<CutFn<RParticleType>> reco_particle_cut_functions;
     std::vector<CutFn<EventType>> event_cut_functions;
     std::vector<CutFn<MCTruth>> mctruth_cut_functions;
+    std::vector<CutFn<MatchedInteraction>> matched_cut_functions;
     for(const auto & cut : cuts)
     {
         // Retrieve the cut name and check for negation.
@@ -229,6 +230,21 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 // Otherwise, we just add the function as is.
                 event_cut_functions.push_back(fn);
         }
+        else if(cut.get_string_field("type") == "matched")
+        {
+            std::string cut_name = "matched_" + name;
+            std::vector<double> params;
+            if(cut.has_field("parameters"))
+                params = cut.get_double_vector("parameters");
+            auto factory = CutFactoryRegistry<MatchedInteraction>::instance().get(cut_name);
+            if(invert)
+            {
+                auto fn = factory(params);
+                matched_cut_functions.push_back([fn](const MatchedInteraction & m) { return !fn(m); });
+            }
+            else
+                matched_cut_functions.push_back(factory(params));
+        }
         else
         {
             throw std::runtime_error("Illegal cut type '" + cut.get_string_field("type") + "' for cut " + cut.get_string_field("name"));
@@ -260,6 +276,12 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
         ? std::optional<CutFn<MCTruth>>(std::nullopt)
         : std::optional<CutFn<MCTruth>>([mctruth_cut_functions](const MCTruth & m) -> bool {
             return std::all_of(mctruth_cut_functions.begin(), mctruth_cut_functions.end(),
+                               [&m](auto & f) { return f(m); });
+        });
+    auto matched_cut = matched_cut_functions.empty()
+        ? std::optional<CutFn<MatchedInteraction>>(std::nullopt)
+        : std::optional<CutFn<MatchedInteraction>>([matched_cut_functions](const MatchedInteraction & m) -> bool {
+            return std::all_of(matched_cut_functions.begin(), matched_cut_functions.end(),
                                [&m](auto & f) { return f(m); });
         });
 
@@ -297,7 +319,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 return std::make_pair(full_name, spill_multivar_helper<TType, RType, TParticleType, TType>(
                     true_cut,
                     reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
-                    true_particle_cut, var_fn_composed, event_cut, mctruth_cut, ismc));
+                    true_particle_cut, var_fn_composed, event_cut, mctruth_cut, ismc, matched_cut));
             }
             else if(var.has_field("selector"))
             {
@@ -329,7 +351,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     var_fn_with_selector,
                     event_cut,
                     mctruth_cut,
-                    ismc));
+                    ismc, matched_cut));
             }
             else
             {
@@ -343,7 +365,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     var_fn,
                     event_cut,
                     mctruth_cut,
-                    ismc));
+                    ismc, matched_cut));
             }
         }
         
@@ -367,7 +389,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 return std::make_pair(full_name, spill_multivar_helper<TType, RType, TParticleType, RType>(
                     true_cut,
                     reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
-                    true_particle_cut, var_fn_composed, event_cut, mctruth_cut, ismc));
+                    true_particle_cut, var_fn_composed, event_cut, mctruth_cut, ismc, matched_cut));
             }
             else if(var.has_field("selector"))
             {
@@ -399,7 +421,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     var_fn_with_selector,
                     event_cut,
                     mctruth_cut,
-                    ismc));
+                    ismc, matched_cut));
             }
             else
             {
@@ -413,7 +435,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     var_fn,
                     event_cut,
                     mctruth_cut,
-                    ismc));
+                    ismc, matched_cut));
             }
         }
         else if(var_type == "mctruth")
@@ -428,7 +450,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 var_fn,
                 event_cut,
                 mctruth_cut,
-                ismc));
+                ismc, matched_cut));
         }
         else if(var_type == "true_particle")
         {
@@ -442,7 +464,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 var_fn,
                 event_cut,
                 mctruth_cut,
-                ismc));
+                ismc, matched_cut));
         }
         else if(var_type == "reco_particle")
         {
@@ -456,7 +478,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 var_fn,
                 event_cut,
                 mctruth_cut,
-                ismc));
+                ismc, matched_cut));
         }
         else
         {
@@ -497,7 +519,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 return std::make_pair(full_name, spill_multivar_helper<RType, TType, TParticleType, TType>(
                     reco_cut,
                     true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
-                    true_particle_cut, var_fn_composed, event_cut, mctruth_cut, ismc));
+                    true_particle_cut, var_fn_composed, event_cut, mctruth_cut, ismc, matched_cut));
             }
             else if(var.has_field("selector"))
             {
@@ -529,7 +551,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     var_fn_with_selector,
                     event_cut,
                     mctruth_cut,
-                    ismc));
+                    ismc, matched_cut));
             }
             else
             {
@@ -543,7 +565,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     var_fn,
                     event_cut,
                     mctruth_cut,
-                    ismc));
+                    ismc, matched_cut));
             }
         }
         else if(var_type == "reco" || (var.has_field("selector") && var_type == "reco_particle") || (var.has_field("biselector") && var_type == "reco_bivar"))
@@ -566,7 +588,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 return std::make_pair(full_name, spill_multivar_helper<RType, TType, RParticleType, RType>(
                     reco_cut,
                     true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
-                    reco_particle_cut, var_fn_composed, event_cut, mctruth_cut, ismc));
+                    reco_particle_cut, var_fn_composed, event_cut, mctruth_cut, ismc, matched_cut));
             }
             else if(var.has_field("selector"))
             {
@@ -598,7 +620,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     var_fn_with_selector,
                     event_cut,
                     mctruth_cut,
-                    ismc));
+                    ismc, matched_cut));
             }
             else
             {
@@ -612,7 +634,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     var_fn,
                     event_cut,
                     mctruth_cut,
-                    ismc));
+                    ismc, matched_cut));
             }
         }
         else if(var_type == "mctruth")
@@ -627,7 +649,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 var_fn,
                 event_cut,
                 mctruth_cut,
-                ismc));
+                ismc, matched_cut));
         }
         else if(var_type == "true_particle")
         {
@@ -641,7 +663,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 var_fn,
                 event_cut,
                 mctruth_cut,
-                ismc));
+                ismc, matched_cut));
         }
         else if(var_type == "reco_particle")
         {
@@ -655,7 +677,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 var_fn,
                 event_cut,
                 mctruth_cut,
-                ismc));
+                ismc, matched_cut));
         }
         else
         {
@@ -694,6 +716,9 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
 // mctruth_cut is applied per-interaction using sr->mc.nu[i.nu_id] when
 // a valid neutrino index exists. It allows GENIE generator-level cuts
 // to be applied alongside SPINE truth-level cuts.
+// matched_cut (optional) receives a MatchedInteraction bundling both the
+// primary interaction and its matched partner, enabling cuts that inspect
+// both reco and truth simultaneously.
 template<typename CutsOn, typename CompsOn, typename PCutsOn, typename VarOn>
 ana::SpillMultiVar spill_multivar_helper(
     const CutFn<CutsOn> & cuts,
@@ -702,10 +727,11 @@ ana::SpillMultiVar spill_multivar_helper(
     const VarFn<VarOn> & var,
     const CutFn<EventType> & event_cut,
     const std::optional<CutFn<MCTruth>> & mctruth_cut,
-    const bool ismc
+    const bool ismc,
+    const std::optional<CutFn<MatchedInteraction>> & matched_cut
 )
 {
-    return ana::SpillMultiVar([comps, cuts, pcuts, var, ismc, event_cut, mctruth_cut](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
+    return ana::SpillMultiVar([comps, cuts, pcuts, var, ismc, event_cut, mctruth_cut, matched_cut](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
     {
         std::vector<double> values;
 
@@ -739,21 +765,26 @@ ana::SpillMultiVar spill_multivar_helper(
                 if constexpr(std::is_same_v<VarOn, RType>)
                 {
                     if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id])))
-                       && (!mctruth_cut || (i.nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[i.nu_id]))))
+                       && (!mctruth_cut || (i.nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[i.nu_id])))
+                       && (!matched_cut || (match_id != kNoMatch && (*matched_cut)(MatchedInteraction{sr->dlp[match_id], &i}))))
                     {
                         values.push_back(match_id != kNoMatch ? var(sr->dlp[match_id]) : kNoMatchValue);
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, TType>)
                 {
-                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))) && (!mctruth_cut || (i.nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[i.nu_id]))))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id])))
+                       && (!mctruth_cut || (i.nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[i.nu_id])))
+                       && (!matched_cut || (match_id != kNoMatch && (*matched_cut)(MatchedInteraction{sr->dlp[match_id], &i}))))
                     {
                         values.push_back(var(i));
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, MCTruth>)
                 {
-                    if(cuts(i) && (!comps || (match_id != kNoMatch && match_id < sr->dlp.size() && (*comps)(sr->dlp[match_id]))) && (!mctruth_cut || (i.nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[i.nu_id]))))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && match_id < sr->dlp.size() && (*comps)(sr->dlp[match_id])))
+                       && (!mctruth_cut || (i.nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[i.nu_id])))
+                       && (!matched_cut || (match_id != kNoMatch && (*matched_cut)(MatchedInteraction{sr->dlp[match_id], &i}))))
                     {
                         if(i.nu_id >= 0)
                             values.push_back(var(sr->mc.nu[i.nu_id]));
@@ -763,7 +794,9 @@ ana::SpillMultiVar spill_multivar_helper(
                 }
                 else if constexpr(std::is_same_v<VarOn, TParticleType> || std::is_same_v<VarOn, RParticleType>)
                 {
-                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))) && (!mctruth_cut || (i.nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[i.nu_id]))))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id])))
+                       && (!mctruth_cut || (i.nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[i.nu_id])))
+                       && (!matched_cut || (match_id != kNoMatch && (*matched_cut)(MatchedInteraction{sr->dlp[match_id], &i}))))
                     {
                         for(auto const & j : i.particles)
                         {
@@ -812,7 +845,8 @@ ana::SpillMultiVar spill_multivar_helper(
                 if constexpr(std::is_same_v<VarOn, TType>)
                 {
                     if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])) || !ismc)
-                        && (match_id == kNoMatch || (!mctruth_cut || (sr->dlp_true[match_id].nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[sr->dlp_true[match_id].nu_id])))))
+                        && (match_id == kNoMatch || (!mctruth_cut || (sr->dlp_true[match_id].nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[sr->dlp_true[match_id].nu_id]))))
+                        && (!matched_cut || (*matched_cut)(MatchedInteraction{i, ismc && match_id != kNoMatch ? &sr->dlp_true[match_id] : nullptr})))
                     {
                         values.push_back(ismc && match_id != kNoMatch ? var(sr->dlp_true[match_id]) : kNoMatchValue);
                     }
@@ -820,7 +854,8 @@ ana::SpillMultiVar spill_multivar_helper(
                 else if constexpr(std::is_same_v<VarOn, RType>)
                 {
                     if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])) || !ismc)
-                        && (match_id == kNoMatch || (!mctruth_cut || (sr->dlp_true[match_id].nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[sr->dlp_true[match_id].nu_id])))))
+                        && (match_id == kNoMatch || (!mctruth_cut || (sr->dlp_true[match_id].nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[sr->dlp_true[match_id].nu_id]))))
+                        && (!matched_cut || (*matched_cut)(MatchedInteraction{i, ismc && match_id != kNoMatch ? &sr->dlp_true[match_id] : nullptr})))
                     {
                         values.push_back(var(i));
                     }
@@ -828,7 +863,8 @@ ana::SpillMultiVar spill_multivar_helper(
                 else if constexpr(std::is_same_v<VarOn, MCTruth>)
                 {
                     if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])))
-                        && (match_id == kNoMatch || (!mctruth_cut || (sr->dlp_true[match_id].nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[sr->dlp_true[match_id].nu_id])))))
+                        && (match_id == kNoMatch || (!mctruth_cut || (sr->dlp_true[match_id].nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[sr->dlp_true[match_id].nu_id]))))
+                        && (!matched_cut || (*matched_cut)(MatchedInteraction{i, ismc && match_id != kNoMatch ? &sr->dlp_true[match_id] : nullptr})))
                     {
                         if(!ismc || match_id == kNoMatch)
                         {
@@ -843,7 +879,8 @@ ana::SpillMultiVar spill_multivar_helper(
                 }
                 else if constexpr(std::is_same_v<VarOn, TParticleType> || std::is_same_v<VarOn, RParticleType>)
                 {
-                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id]))))
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])))
+                        && (!matched_cut || (*matched_cut)(MatchedInteraction{i, ismc && match_id != kNoMatch ? &sr->dlp_true[match_id] : nullptr})))
                     {
                         for(auto const & j : i.particles)
                         {
@@ -1106,6 +1143,7 @@ template class Registry<CutFactory<RParticleType>>;
 template class Registry<CutFactory<EventType>>;
 template class Registry<CutFactory<MCTruth>>;
 template class Registry<CutFactory<SpillType>>;
+template class Registry<CutFactory<MatchedInteraction>>;
 
 // Var Registry
 template class Registry<VarFactory<TType>>;
