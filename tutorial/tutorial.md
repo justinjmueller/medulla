@@ -231,7 +231,7 @@ Each entry in the `cut` list defines a condition on an object passing the select
          * @return true if the best-match IoU is at or above the threshold.
          */
         template<class T>
-        bool min_iou(const T & obj, std::vector<double> params={0.1,})
+        bool min_iou(const T & obj, std::vector<double> params={0.1})
         {
             if(!obj.truth) return false;
             if(obj.reco.match_ids.empty()) return false;
