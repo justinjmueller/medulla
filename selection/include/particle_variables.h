@@ -33,6 +33,13 @@
  */
 namespace pvars
 {
+    template<class T>
+        double particle_pdg_code(const T & p)
+        {
+            return p.pdg_code;
+        }
+        REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, particle_pdg_code, particle_pdg_code);
+
     /**
      * @brief Variable for the particle's primary classification.
      * @details This variable returns the primary classification of the particle.
