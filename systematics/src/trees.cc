@@ -324,6 +324,8 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
 
     std::cout << "Configured " << systematics.size() << " systematics." << std::endl;
 
+    std::cout << "Total events in input tree: " << input_tree->GetEntries() << std::endl;
+
     sys::WeightReader reader(config.get_string_field("input.weights"));
     std::vector<index_t> saved_indices;
     double nominal_count(0);
@@ -367,6 +369,12 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
                  * @details This block stores the universe weights in the
                  * output TTree for each of the configured systematics.  
                  */
+
+                // Print progress every 100 matched events
+                if ((size_t)nominal_count % 100 == 0 && nominal_count > 0) {
+                    std::cout << "Processed " << (size_t)nominal_count << " events..." << std::endl;
+                }
+                
                 for(auto & [key, value] : systematics)
                 {
                     value->get_weights()->clear();

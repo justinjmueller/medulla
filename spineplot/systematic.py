@@ -454,8 +454,22 @@ class Systematic:
         -------
         None.
         """
-        for kvar, vvar in self._variables.items():
-            self._covariances[f'{self._name}_{kvar}'] *= weight**2
+        # Guard against calls before covariances are available.
+        if not hasattr(self, '_covariances') or self._covariances is None:
+            return
+
+        # Keep an unscaled snapshot and always scale from that baseline so
+        # repeated set_weight calls are idempotent.
+        if (not hasattr(self, '_covariances_unscaled')
+                or self._covariances_unscaled is None
+                or set(self._covariances_unscaled.keys()) != set(self._covariances.keys())):
+            self._covariances_unscaled = {
+                k: np.array(v, copy=True) for k, v in self._covariances.items()
+            }
+
+        w2 = float(weight) ** 2
+        for key, base_cov in self._covariances_unscaled.items():
+            self._covariances[key] = w2 * base_cov
 
     @staticmethod
     def combine(systematics, name, label) -> 'Systematic':

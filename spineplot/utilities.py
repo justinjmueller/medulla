@@ -53,21 +53,29 @@ def mark_preliminary(ax, label, vadj=0, hadj=0) -> None:
         The label to add to the plot to indicate that the plot is
         preliminary.
     vadj : float, optional
-        The vertical adjustment to use when adding the label. The
+        The vertical adjustment in axes coordinates. The
         default is 0.
     hadj : float, optional
-        The horizontal adjustment to use when adding the label. The
+        The horizontal adjustment in axes coordinates. The
         default is 0.
 
     Returns
     -------
     None.
     """
-    yrange = ax.get_ylim()
-    usey = yrange[1] + 0.01*(yrange[1] - yrange[0]) + vadj*(yrange[1] - yrange[0])
-    xrange = ax.get_xlim()
-    usex = xrange[0] + 0.025*(xrange[1] - xrange[0]) + hadj*(xrange[1] - xrange[0])
-    ax.text(x=usex, y=usey, s=label, fontsize=14, color='#d67a11')
+    usex = 0.025 + hadj
+    usey = 1.01 + vadj
+    ax.text(
+        x=usex,
+        y=usey,
+        s=label,
+        fontsize=14,
+        color='#d67a11',
+        transform=ax.transAxes,
+        horizontalalignment='left',
+        verticalalignment='bottom',
+        clip_on=False,
+    )
 
 def draw_error_boxes(ax, x, y, xerr, yerr, **kwargs):
     """

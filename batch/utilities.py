@@ -306,6 +306,24 @@ def check_project_status(
     # complete. This helps avoid marking jobs as complete if they
     # failed and produced an empty output file.
     output_files = glob(str(project_dir / 'output' / 'output_jobid*.root'))
+    output_jobids = {
+        int(Path(f).stem.split('jobid')[-1])
+        for f in output_files
+    }
+
+    # Find jobs tracked in project.db that do not have a corresponding
+    # output file in output/.
+    command(curs, "SELECT jobid, status FROM jobs")
+    db_rows = curs.fetchall()
+    db_jobids = {row[0] for row in db_rows}
+    status_by_jobid = {row[0]: row[1] for row in db_rows}
+
+    missing_output_jobs = sorted(db_jobids - output_jobids)
+    missing_output_nonpending = [
+        jid for jid in missing_output_jobs
+        if status_by_jobid.get(jid) != 'pending'
+    ]
+
     completed_jobs = [
         int(Path(f).stem.split('jobid')[-1])
         for f in output_files if Path(f).stat().st_size >= 1024
@@ -313,7 +331,6 @@ def check_project_status(
     ins = [('completed', jid) for jid in completed_jobs]
     command(curs, "UPDATE jobs SET status = ? WHERE jobid = ?", ins)
     conn.commit()
-    conn.close()
 
     stub_jobs = [
         int(Path(f).stem.split("jobid")[-1])
@@ -338,6 +355,24 @@ def check_project_status(
                     stub_file.unlink()
             print(f"[INFO] -- Deleted {len(stub_jobs)} stub output file(s).")
 
+    if missing_output_jobs:
+        print(
+            f"[INFO] -- Found {len(missing_output_jobs)} job(s) present in project.db"
+            " but missing output files in output/."
+        )
+        print(f"[INFO] -- Missing output job IDs: {missing_output_jobs}")
+    else:
+        print("[INFO] -- No jobs are missing output files (project.db and output/ are in sync).")
+
+    if missing_output_nonpending:
+        print(
+            f"[WARN] -- {len(missing_output_nonpending)} missing-output job(s) are"
+            " not pending; these may need investigation/resubmission."
+        )
+        print(f"[WARN] -- Non-pending missing output job IDs: {missing_output_nonpending}")
+
+    conn.close()
+
     # Replace the project database copy with the updated version.
     subprocess.run(['mv', './project.db', project_dir / 'project.db'], check=True)
 
@@ -350,6 +385,7 @@ def launch_jobsub(
     memory : int = 1800,
     disk : Optional[int] = None,
     lifetime : str = '1h',
+    relaunch_missing : bool = False,
 ):
     """
     Launch jobs using jobsub for the given project directory. If njobs
@@ -371,6 +407,9 @@ def launch_jobsub(
         Amount of disk to request for each job in GB. If None, use default.
     lifetime : str | None
         Expected lifetime of each job (e.g., '1h', '30m'). If None, use default.
+    relaunch_missing : bool
+        If True, jobs found in project.db but missing output files in output/
+        are reset to 'pending' so they can be relaunched.
 
     Returns
     -------
@@ -385,10 +424,38 @@ def launch_jobsub(
     conn = sqlite3.connect('./project.db')
     curs = conn.cursor()
 
-    # Get the list of pending jobs.
-    command(curs, "SELECT jobid FROM jobs WHERE status = 'pending'")
-    pending_jobs = [row[0] for row in curs.fetchall()]
+    # Get the list of jobs from the DB and derive pending jobs.
+    command(curs, "SELECT jobid, status FROM jobs")
+    db_rows = curs.fetchall()
+    db_jobids = {row[0] for row in db_rows}
+    status_by_jobid = {row[0]: row[1] for row in db_rows}
+    pending_jobs = [jid for jid, status in db_rows if status == 'pending']
+
+    # Optionally relaunch jobs tracked in project.db but missing output files.
+    if relaunch_missing:
+        output_files = glob(str(project_dir / 'output' / 'output_jobid*.root'))
+        output_jobids = {
+            int(Path(f).stem.split('jobid')[-1])
+            for f in output_files
+        }
+        missing_output_jobs = sorted(db_jobids - output_jobids)
+        relaunch_jobs = [
+            jid for jid in missing_output_jobs
+            if status_by_jobid.get(jid) != 'pending'
+        ]
+        if relaunch_jobs:
+            ins = [('pending', jid) for jid in relaunch_jobs]
+            command(curs, "UPDATE jobs SET status = ? WHERE jobid = ?", ins)
+            conn.commit()
+            pending_jobs = sorted(set(pending_jobs).union(relaunch_jobs))
+            print(
+                f"[INFO] -- Marked {len(relaunch_jobs)} missing-output job(s) as pending for relaunch: {relaunch_jobs}"
+            )
+        else:
+            print("[INFO] -- No additional missing-output jobs needed relaunch.")
+
     conn.close()
+    subprocess.run(['mv', './project.db', project_dir / 'project.db'], check=True)
 
     # Do some checking that the request is sane. Naturally, if there
     # are no pending jobs, there is nothing to launch. Similarly, if

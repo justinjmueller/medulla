@@ -13,6 +13,10 @@ from math import nan
 #file_nu = input("Enter path to medulla file")
 #file_flux = input("Enter path to NuMI flux file")
 file_name = sys.argv[1]
+treeName = 'selected'
+if len(sys.argv) > 2:
+    treeName = sys.argv[2]
+
 if not file_name.endswith('.root'):
     print("Please provide a valid root file")
     sys.exit(1)
@@ -26,7 +30,7 @@ flux_g4numi = file_flux[f'g4numi_reweight_v03_01-->v03_02;1/{horn_current};1']
 flux_beam_focus = file_flux[f'beam_focusing_uncertainties;1/{horn_current};1']
 flux_pca = file_flux['pca;1/principal_components;1']
 
-nu_df = file_nu['events/NuMIFull/selected;1']
+nu_df = file_nu[f'events/NuMIFull/{treeName};1']
 nu_df=nu_df.arrays(library='pd')
 
 hysyst_beam_horn_2kA = []
@@ -562,7 +566,7 @@ for k in keys_1d:
 tdir = ensure_dir(f, "events/NuMIFull")
 tdir.cd()
 
-t = ROOT.TTree("selected_NuMIfluxsimTree", "per-entry vectors (len=7) plus scalars")
+t = ROOT.TTree(f"{treeName}_NuMIfluxsimTree", "per-entry vectors (len=7) plus scalars")
 branch_order = list(spec.keys())
 tdir.WriteObject(ROOT.TObjString(json.dumps(branch_order)), "branch_labels_json")
 

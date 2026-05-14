@@ -17,18 +17,18 @@ r.gStyle.SetOptStat(0)
 
 def main():
     # Load the analysis
-    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_analysis.toml', '/nashome/m/micarrig/icarus/nuESpine/gundam_nueCCInclusive_trueSignal2.root')
-    # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_recoIntDebug.toml', '/nashome/m/micarrig/icarus/nuESpine/gundam_nueCCInclusive_trueSignal2.root')
+    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_analysis.toml', '/exp/icarus/data/users/micarrig/merged_outputAll.root')
+    # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_recoInt.toml', '/exp/icarus/data/users/micarrig/merged_outputAll.root')
     #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/efficiency_analysis.toml', '/nashome/m/micarrig/icarus/nuESpine/output_nueCCInclusive2.root')
 
-    output_dir = 'plots/efficiency_with_error/'
+    output_dir = 'plots/efficiency_neutrino_interaction_trueTree/'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    # table = ana.run_interactively('selection_efficiency_table')
-    # plt.savefig(f'{output_dir}/selection_efficiency_table.png', dpi=300)
-    # with open(f'{output_dir}/selection_efficiency_table.pkl', 'wb') as f:
-    #     pickle.dump(table, f)
+    table = ana.run_interactively('selection_efficiency_table')
+    plt.savefig(f'{output_dir}/selection_efficiency_table.png', dpi=300)
+    with open(f'{output_dir}/selection_efficiency_table.pkl', 'wb') as f:
+        pickle.dump(table, f)
 
     # eff_nuE = ana.run_interactively('efficiency_vs_energy')
     # plt.savefig(f'{output_dir}/efficiency_vs_energy.png', dpi=300)
@@ -55,10 +55,10 @@ def main():
     # with open(f'{output_dir}/efficiency_vs_trueInvMass.pkl', 'wb') as f:
     #     pickle.dump(eff_invMass, f)
 
-    eff_tEleEle = ana.run_interactively('efficiency_vs_trueLeadingElectronEnergy')
-    plt.savefig(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy_total.png', dpi=300)
-    with open(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy_total.pkl', 'wb') as f:
-        pickle.dump(eff_tEleEle, f) 
+    # eff_tEleEle = ana.run_interactively('efficiency_vs_trueLeadingElectronEnergy')
+    # plt.savefig(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy.png', dpi=300)
+    # with open(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy.pkl', 'wb') as f:
+    #     pickle.dump(eff_tEleEle, f) 
 
     # eff_tEleAngle = ana.run_interactively('efficiency_vs_trueLeadingElectronCosTheta')
     # plt.savefig(f'{output_dir}/efficiency_vs_trueLeadingElectronAngle.png', dpi=300)
@@ -69,6 +69,11 @@ def main():
     # plt.savefig('plots/efficiency_vs_recoFlashTime.png', dpi=300)
     # with open('plots/efficiency_vs_recoFlashTime.pkl', 'wb') as f:
     #     pickle.dump(eff_flashTime, f)
+
+    eff_nu = ana.run_interactively('efficiency_vs_trueNu')
+    plt.savefig(f'{output_dir}/efficiency_vs_trueNu.png', dpi=300)
+    with open(f'{output_dir}/efficiency_vs_trueNu.pkl', 'wb') as f:
+        pickle.dump(eff_nu, f)
 
 
 if __name__ == "__main__":
