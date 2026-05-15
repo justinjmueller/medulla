@@ -70,10 +70,8 @@ configure_file(
 )
 
 # Make it executable
-file(CHMOD ${CMAKE_BINARY_DIR}/setup_medulla.sh
-    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                GROUP_READ GROUP_EXECUTE
-                WORLD_READ WORLD_EXECUTE
+execute_process(
+    COMMAND chmod 755 ${CMAKE_BINARY_DIR}/setup_medulla.sh
 )
 
 message(STATUS "Setup script generated: ${CMAKE_BINARY_DIR}/setup_medulla.sh")
