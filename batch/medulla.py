@@ -182,8 +182,8 @@ if __name__ == '__main__':
 
     if args.tag != 'develop':
         print(f"[INFO] -- Using tag '{args.tag}' for medulla repository.")
-        if not check_git_branch(args.tag):
-            p.error(f"Tag '{args.tag}' does not exist in the medulla repository.")
+    if not check_git_branch(args.tag):
+        p.error(f"Tag '{args.tag}' does not exist in the medulla repository.")
 
     # Run the main function.
     main(
