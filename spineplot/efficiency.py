@@ -417,8 +417,9 @@ class SpineEfficiency(SpineArtist):
         # posterior distribution.
         efficiencies = np.linspace(0.0, 1, self._npts)
 
-        # Initialize the selected counts dictionary if it does not already
-        self._selected_counts = dict()
+        # `_selected_counts` is initialized in `__init__` and must be
+        # preserved across calls so purity-related quantities accumulate
+        # consistently with `_posteriors`, `_totals`, and `_successes`.
 
         # Get the data for the binning variable and the configured
         # cuts. The data is returned as a dictionary with the key
