@@ -13,7 +13,7 @@ def main(
     tml : str = None,
     batch_size : int = None,
     systematic : str = None,
-    branch : str = 'develop',
+    tag : str = 'develop',
     memory : int = 1800,
     disk : Optional[int] = None,
     lifetime : str = '1h',
@@ -41,8 +41,8 @@ def main(
     systematic : str
         Path to the systematic template file to use. If None, use the
         default template file in the batch directory.
-    branch : str
-        Branch to use for the medulla repository (defaults to develop).
+    tag : str
+        Tag to use for the medulla repository (defaults to develop).
     memory : int
         Amount of memory to request for each job in MB. 
     disk : int | None
@@ -79,13 +79,13 @@ def main(
     if test_job:
         if not project_exists:
             raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
-        launch_jobsub(project_dir, experiment, njobs=1, branch=branch, memory=memory, disk=disk, lifetime=lifetime)
+        launch_jobsub(project_dir, experiment, njobs=1, tag=tag, memory=memory, disk=disk, lifetime=lifetime)
 
     # If the user requested to launch jobs, do so.
     if launch_jobs is not None:
         if not project_exists:
             raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
-        launch_jobsub(project_dir, experiment, njobs=launch_jobs, branch=branch, memory=memory, disk=disk, lifetime=lifetime)
+        launch_jobsub(project_dir, experiment, njobs=launch_jobs, tag=tag, memory=memory, disk=disk, lifetime=lifetime)
 
 if __name__ == '__main__':
     p = ArgumentParser(description='Run medulla.')
@@ -143,8 +143,8 @@ if __name__ == '__main__':
     )
 
     p.add_argument(
-        '--branch', '-B', type=str, default='develop',
-        help='Branch to use for the medulla repository (defaults to develop).'
+        '--tag', '-t', type=str, default='develop',
+        help='Tag to use for the medulla repository (defaults to develop).'
     )
 
     p.add_argument(
@@ -180,10 +180,10 @@ if __name__ == '__main__':
     if args.test_job and args.launch_jobs is not None:
         p.error('--test-job and --launch-jobs are mutually exclusive.')
 
-    if args.branch != 'develop':
-        print(f"[INFO] -- Using branch '{args.branch}' for medulla repository.")
-        if not check_git_branch(args.branch):
-            p.error(f"Branch '{args.branch}' does not exist in the medulla repository.")
+    if args.tag != 'develop':
+        print(f"[INFO] -- Using tag '{args.tag}' for medulla repository.")
+        if not check_git_tag(args.tag):
+            p.error(f"Tag '{args.tag}' does not exist in the medulla repository.")
 
     # Run the main function.
     main(
@@ -195,7 +195,7 @@ if __name__ == '__main__':
         tml=args.toml,
         batch_size=args.batch_size,
         systematic=args.systematic,
-        branch=args.branch,
+        tag=args.tag,
         memory=args.memory,
         disk=args.disk,
         lifetime=args.lifetime,
