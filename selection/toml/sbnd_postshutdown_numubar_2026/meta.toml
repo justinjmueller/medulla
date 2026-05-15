@@ -1,0 +1,15 @@
+[meta]
+analysis = "sbnd_postshutdown_numubar"
+description = "SBND post-shutdown numubar disappearance analysis"
+owners = ["noza"]
+experiments = ["sbnd"]
+
+[defaults]
+batch_size = 50
+
+[[toml]]
+role = "primary"
+file = "selection.toml"
+
+  [toml.enable.sbnd]
+  keys = []

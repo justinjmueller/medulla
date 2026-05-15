@@ -1,11 +1,18 @@
 # Utilities for batch processing in medulla projects using jobsub
 import os
+import re
 import sqlite3
 import toml
+from catalog import resolve_samples
 from glob import glob
 import subprocess
 from pathlib import Path
 from typing import Optional
+
+# ANSI helpers (no third-party dependency)
+_INFO     = '\033[1m\033[94m[INFO]\033[0m'      # bold blue
+_ERROR    = '\033[1m\033[91m[ERROR]\033[0m'     # bold red
+_CAMPAIGN = '\033[1m\033[96m[CAMPAIGN]\033[0m'  # bold cyan
 
 # SQL schema for the configuration table for storing job configurations
 SCHEMA_CONFIGURATION = """
@@ -58,7 +65,9 @@ def command(
 
 def get_samples(
     tml : str,
-    batch_size : int
+    batch_size : int,
+    catalog_path = None,
+    enable_keys = None,
 ):
     """
     Get the list of samples from the TOML file after filtering the list
@@ -73,6 +82,10 @@ def get_samples(
     batch_size : int
         Number of files to include in each batch. If <= 0, no batching
         is performed.
+    catalog_path : str | Path | None
+        Path to the sample catalog.  Passed to resolve_samples.
+    enable_keys : list[str] | None
+        Sample keys to enable.  Passed to resolve_samples.
 
     Returns
     -------
@@ -82,6 +95,7 @@ def get_samples(
     # Get the initial list of samples from the TOML file that have not
     # been disabled.
     cfg = toml.load(tml)
+    cfg = resolve_samples(cfg, catalog_path=catalog_path, enable_keys=enable_keys)
     samples = cfg.get('sample', [])
     enabled_samples = [s for s in samples if not s.get('disable', False)]
 
@@ -200,6 +214,8 @@ def create_new_project(
     tml : str,
     batch_size : int,
     sys : str = None,
+    catalog_path = None,
+    enable_keys = None,
 ):
     """
     Create a new project directory with the necessary subdirectories
@@ -243,7 +259,8 @@ def create_new_project(
 
     # Load the TOML file and get the samples.
     cfg = toml.load(tml)
-    samples = get_samples(tml, batch_size)
+    cfg = resolve_samples(cfg, catalog_path=catalog_path, enable_keys=enable_keys)
+    samples = get_samples(tml, batch_size, catalog_path=catalog_path, enable_keys=enable_keys)
 
     # Create a systematics configuration based on the selection
     # configuration. This will be used by each job to run systematics
@@ -386,6 +403,7 @@ def launch_jobsub(
     disk : Optional[int] = None,
     lifetime : str = '1h',
     relaunch_missing : bool = False,
+    confirm : bool = True,
 ):
     """
     Launch jobs using jobsub for the given project directory. If njobs
@@ -410,6 +428,10 @@ def launch_jobsub(
     relaunch_missing : bool
         If True, jobs found in project.db but missing output files in output/
         are reset to 'pending' so they can be relaunched.
+    confirm : bool
+        If True (default), prompt the user before submitting.  Pass
+        False when the caller has already obtained confirmation (e.g.
+        campaign launch confirms once for all projects).
 
     Returns
     -------
@@ -462,16 +484,18 @@ def launch_jobsub(
     # the user requested more jobs than are pending, just launch all
     # of the pending jobs.
     if len(pending_jobs) == 0:
-        print("[INFO] -- No pending jobs to launch.")
-        return
-    else:
-        print(f"[INFO] -- Found {len(pending_jobs)} pending jobs.")
+        if confirm:
+            print(f"{_INFO} -- No pending jobs to launch.")
+        return False
     if njobs > len(pending_jobs):
         njobs = len(pending_jobs)
-        print(f"[INFO] -- Requested number of jobs exceeds pending jobs. Preparing {njobs} jobs instead.")
+        if confirm:
+            print(f"{_INFO} -- Requested number of jobs exceeds pending jobs. Preparing {njobs} jobs instead.")
     if njobs == -1:
         njobs = len(pending_jobs)
-        print(f"[INFO] -- No job count specified. Preparing all {njobs} pending jobs.")
+
+    if confirm:
+        print(f"{_INFO} -- Found {len(pending_jobs)} pending jobs.")
 
     disk_size = '10GB' if exp == 'sbnd' else '25GB'
     if disk is not None:
@@ -497,10 +521,12 @@ def launch_jobsub(
     print(f"[INFO] -- Launching {njobs} jobs with command: {' '.join(cmd)}")
 
     # Query the user to confirm that they want to launch the jobs.
-    resp = input("Confirm job launch? [Y/N] ")
-    if resp.lower() != 'y':
-        print("[INFO] -- User aborted job launch.")
-        return
+    if confirm:
+        print(f"{_INFO} -- Launching {njobs} jobs with command: {' '.join(cmd)}")
+        resp = input("Confirm job launch? [Y/N] ")
+        if resp.lower() != 'y':
+            print(f"{_INFO} -- User aborted job launch.")
+            return False
 
     # Launch the jobs. If the command raises an "ExpiredSignatureError"
     # exception, it likely means that the user's token has expired and
@@ -511,15 +537,22 @@ def launch_jobsub(
         out = subprocess.run(cmd, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
         if 'ExpiredSignatureError' in (output := e.stderr.strip()):
-            print("[ERROR] -- Job submission failed due to expired token. Please run `htgettoken` to refresh your token and try again.")
+            print(f"{_ERROR} -- Job submission failed due to expired token. Please run `htgettoken` to refresh your token and try again.")
         else:
             print(f"[ERROR] -- Job submission failed with error: {output}")
-        return
-    
-    stdout = out.stdout.strip()
-    last_lines = '\n'.join(stdout.split('\n')[-4:])
-    print(last_lines)
-    print(f"[INFO] -- Launched {njobs} jobs.")
+        return False
+
+    if confirm:
+        # Single-project workflow: show full output so the user can verify.
+        stdout = out.stdout.strip()
+        print('\n'.join(stdout.split('\n')[-4:]))
+        print(f"{_INFO} -- Launched {njobs} jobs.")
+    else:
+        # Campaign workflow: one clean line per project.
+        match = re.search(r'job id\s+(\S+)', out.stdout)
+        job_id = match.group(1) if match else 'unknown'
+        print(f"{_CAMPAIGN} Submitted {njobs} job(s). Job ID: {job_id}")
+    return True
 
 def check_git_branch(
     branch : str,

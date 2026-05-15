@@ -5,6 +5,7 @@
  * framework. The framework is designed to be modular and extensible, allowing
  * for easy integration and applications of cuts and variables.
  * @author mueller@fnal.gov
+ * @author rvizarr@fnal.gov
  */
 #ifndef FRAMEWORK_H
 #define FRAMEWORK_H
@@ -15,6 +16,7 @@
 #include <stdexcept>
 #include <type_traits>
 #include <memory>
+#include <utility>
 
 #include "sbnana/CAFAna/Core/MultiVar.h"
 #include "sbnana/CAFAna/Core/SpectrumLoader.h"
@@ -39,6 +41,27 @@ using NamedSpillMultiVar = std::pair<std::string, ana::SpillMultiVar>;
 // Set a sensible default for a no-match scenario.
 constexpr size_t kNoMatch = std::numeric_limits<size_t>::max();
 constexpr double kNoMatchValue = std::numeric_limits<double>::quiet_NaN();
+
+/**
+ * @brief Composite view presenting a reco interaction alongside its matched
+ * true interaction.
+ * @details MatchedInteraction is the argument type passed to cuts registered
+ * with RegistrationScope::Matched.  The @c reco member is always a valid
+ * reference.  The @c truth pointer is non-null only when a SPINE-level
+ * reco-truth match exists; cut implementations should return @c false
+ * (or an appropriate default) when @c truth is @c nullptr.
+ *
+ * In @c mode="reco" the primary object is the reconstructed interaction and
+ * @c truth points at the matched true interaction (if any).  In
+ * @c mode="true" the roles are mirrored: @c reco holds the matched
+ * reconstructed interaction and @c truth points at the looped true
+ * interaction.
+ */
+struct MatchedInteraction
+{
+    const RType & reco;   ///< reconstructed interaction (always valid)
+    const TType * truth;  ///< matched true interaction, or nullptr if unmatched
+};
 
 //-----------------------------------------------------------------------------
 // 1) Generic registry template
@@ -128,6 +151,14 @@ using VarFn = std::function<double(const EventT&)>;
 template<typename EventT>
 using SelectorFn = std::function<size_t(const EventT&)>;
 
+/**
+ * @brief Ordered list of category definitions.
+ * @details Each entry pairs a true-level cut (applied to TType) with an
+ * MCTruth-level cut. Categories are tested in order and the index of the
+ * first match is emitted as the branch value.
+ */
+using CategoryFns = std::vector<std::pair<CutFn<TType>, CutFn<MCTruth>>>;
+
 //-----------------------------------------------------------------------------
 // 3) Factory function registries
 //-----------------------------------------------------------------------------
@@ -158,6 +189,41 @@ using SelectorFactory = std::function<SelectorFn<EventT>(const std::vector<doubl
 template<typename EventT>
 using SelectorFactoryRegistry = Registry<SelectorFactory<EventT>>;
 
+//-----------------------------------------------------------------------------
+// 4) Biselector and Bivariable function registries
+//-----------------------------------------------------------------------------
+/**
+ * @brief Alias for BiSelector functions with signature
+ * std::pair<size_t, size_t>(const EventT&).
+ */
+template<typename EventT>
+using BiSelectorFn = std::function<std::pair<size_t, size_t>(const EventT&)>;
+
+/**
+ * @brief A factory function: given params, returns a BiSelectorFn<EventT>
+ */
+template<typename EventT>
+using BiSelectorFactory = std::function<BiSelectorFn<EventT>(const std::vector<double>&)>;
+
+template<typename EventT>
+using BiSelectorFactoryRegistry = Registry<BiSelectorFactory<EventT>>;
+
+/**
+ * @brief Alias for BiVariable functions with signature
+ * double(const ParticleT&, const ParticleT&).
+ */
+template<typename ParticleT>
+using BiVarFn = std::function<double(const ParticleT&, const ParticleT&)>;
+
+/**
+ * @brief A factory function: given params, returns a BiVarFn<ParticleT>
+ */
+template<typename ParticleT>
+using BiVarFactory = std::function<BiVarFn<ParticleT>(const std::vector<double>&)>;
+
+template<typename ParticleT>
+using BiVarFactoryRegistry = Registry<BiVarFactory<ParticleT>>;
+
 /**
  * @brief Bind a function to a specific parameter set.
  * @details This function binds a function to a specific parameter set. It uses
@@ -182,6 +248,25 @@ inline std::function<ValueT(const EventT&)> bind(const std::vector<double>& pars
 }
 
 /**
+ * @brief Bind a bivariable function to a specific parameter set.
+ * @details This function binds a bivariable function (which takes two particles)
+ * to a specific parameter set. It uses std::is_invocable_v to check if the
+ * function can accept a vector of parameters.
+ * @tparam F The function to bind.
+ * @tparam ParticleT The type of particle.
+ * @param pars The parameters to bind to the function.
+ * @return A BiVarFn<ParticleT> that applies the bivariable to a pair of particles.
+ */
+template<auto F, typename ParticleT>
+inline BiVarFn<ParticleT> bind_bivar(const std::vector<double>& pars)
+{
+    if constexpr(std::is_invocable_v<decltype(F), const ParticleT&, const ParticleT&, const std::vector<double>&>)
+        return [pars](const ParticleT& a, const ParticleT& b){ return F(a, b, pars); };
+    else
+        return [=](const ParticleT& a, const ParticleT& b){ return F(a, b); };
+}
+
+/**
  * @brief Scope for registration macros
  * @details This enum class defines the scope of registration for cuts and
  * variables. It can be either "true", "reco," "both," "mctruth," or "event".
@@ -190,7 +275,7 @@ inline std::function<ValueT(const EventT&)> bind(const std::vector<double>& pars
  */
 enum class RegistrationScope { True, Reco, Both, MCTruth,
                                TrueParticle, RecoParticle, BothParticle,
-                               Event, Spill };
+                               Event, Spill, Matched };
 
 // Register a cut with scope, auto‐detecting its signature
 #define REGISTER_CUT_SCOPE(scope, name, fn)                                                \
@@ -220,6 +305,10 @@ namespace                                                                       
         if constexpr((scope)==RegistrationScope::Spill)                                    \
             CutFactoryRegistry<SpillType>::instance().register_fn(                         \
                 "spill_" #name, bind<+fn<SpillType>, SpillType, bool>                      \
+            );                                                                             \
+        if constexpr((scope)==RegistrationScope::Matched)                                  \
+            CutFactoryRegistry<MatchedInteraction>::instance().register_fn(                \
+                "matched_" #name, bind<+fn<MatchedInteraction>, MatchedInteraction, bool>  \
             );                                                                             \
         return true;                                                                       \
     }();                                                                                   \
@@ -255,6 +344,10 @@ namespace                                                                       
             VarFactoryRegistry<EventType>::instance().register_fn(                         \
                 "event_" #name, bind<fn<EventType>, EventType, double>                     \
             );                                                                             \
+        if constexpr((scope)==RegistrationScope::Matched)                                  \
+            VarFactoryRegistry<MatchedInteraction>::instance().register_fn(                \
+                "matched_" #name, bind<fn<MatchedInteraction>, MatchedInteraction, double> \
+            );                                                                             \
         return true;                                                                       \
     }();                                                                                   \
 }
@@ -271,6 +364,39 @@ namespace                                                                       
         SelectorFactoryRegistry<RType>::instance().register_fn(                            \
             "reco_" #name, bind<fn<RType>, RType, size_t>                                  \
         );                                                                                 \
+        return true;                                                                       \
+    }();                                                                                   \
+}
+
+// Register a biselector for use in selecting a pair of particles within an
+// interaction.
+#define REGISTER_BISELECTOR(name, fn)                                                      \
+namespace                                                                                  \
+{                                                                                          \
+    const bool _reg_biselector_##name = []{                                                \
+        BiSelectorFactoryRegistry<TType>::instance().register_fn(                          \
+            "true_biselector_" #name, bind<fn<TType>, TType, std::pair<size_t, size_t>>    \
+        );                                                                                 \
+        BiSelectorFactoryRegistry<RType>::instance().register_fn(                          \
+            "reco_biselector_" #name, bind<fn<RType>, RType, std::pair<size_t, size_t>>    \
+        );                                                                                 \
+        return true;                                                                       \
+    }();                                                                                   \
+}
+
+// Register a bivariable with scope.
+#define REGISTER_BIVAR_SCOPE(scope, name, fn)                                              \
+namespace                                                                                  \
+{                                                                                          \
+    const bool _reg_bivar_##name = []{                                                     \
+        if constexpr((scope)==RegistrationScope::TrueParticle || (scope)==RegistrationScope::BothParticle) \
+            BiVarFactoryRegistry<TParticleType>::instance().register_fn(                   \
+                "true_bivar_" #name, bind_bivar<fn<TParticleType>, TParticleType>          \
+            );                                                                             \
+        if constexpr((scope)==RegistrationScope::RecoParticle || (scope)==RegistrationScope::BothParticle) \
+            BiVarFactoryRegistry<RParticleType>::instance().register_fn(                   \
+                "reco_bivar_" #name, bind_bivar<fn<RParticleType>, RParticleType>          \
+            );                                                                             \
         return true;                                                                       \
     }();                                                                                   \
 }
@@ -335,6 +461,14 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
  * @param var The callable that implements the variable on the selected branch.
  * @param event_cut The callable that implements the event cut.
  * @param ismc A boolean indicating whether the data is MC (true) or not (false).
+ * @param mctruth_cut The callable that implements GENIE generator-level cuts,
+ *        applied per-interaction via sr->mc.nu[i.nu_id] when a valid neutrino
+ *        index exists. Allows MCTruth-scoped cuts to be composed alongside
+ *        SPINE truth-level cuts. This is wrapped by std::optional to allow for
+ *        the case where no GENIE cuts are applied or when running on data.
+ * @param matched_cut An optional cut applied to a @ref MatchedInteraction that
+ *        bundles both the reco and its matched true interaction.  Non-null only
+ *        when the TOML configuration contains @c type="matched" cuts.
  * @return A SpillMultiVar object that applies the cuts and computes the variable.
  */
 template<typename CutsOn, typename CompsOn, typename PCutsOn, typename VarOn>
@@ -344,7 +478,9 @@ ana::SpillMultiVar spill_multivar_helper(
     const CutFn<PCutsOn> & pcuts,
     const VarFn<VarOn> & var,
     const CutFn<EventType> & event_cut,
-    const bool ismc = true
+    const std::optional<CutFn<MCTruth>> & mctruth_cut,
+    const bool ismc = true,
+    const std::optional<CutFn<MatchedInteraction>> & matched_cut = std::nullopt
 );
 
 /**
@@ -359,6 +495,26 @@ ana::SpillMultiVar spill_multivar_helper(
  * variable.
  */
 ana::SpillMultiVar spill_multivar_helper(const CutFn<EventType> & cut, const VarFn<EventType> & var);
+
+/**
+ * @brief Construct the "true_category" SpillMultiVar for a given tree.
+ * @details Parses @p cuts into per-type cut functions, then builds a
+ * SpillMultiVar that iterates over interactions in the given @p mode,
+ * applies all tree-level cuts, and assigns each surviving interaction the
+ * index of the first matching entry in @p categories (or NaN if none match).
+ * Supports cut types: "true", "reco", "mctruth", "event".
+ * @param cuts  Vector of [[tree.cut]] subtables.
+ * @param categories  Ordered list of (TType cut, MCTruth cut) pairs built
+ *        from the [[category]] configuration.
+ * @param mode  Iteration mode: "true" loops over dlp_true, "reco" over dlp.
+ * @param ismc  Whether this sample is MC; gates application of true-level
+ *        complementary cuts in reco mode.
+ * @return A NamedSpillMultiVar with name "true_category".
+ */
+NamedSpillMultiVar construct_category(const std::vector<cfg::ConfigurationTable> & cuts,
+                                      const CategoryFns & categories,
+                                      const std::string & mode,
+                                      bool ismc);
 
 /**
  * @brief Helper method for constructing a set of SpillMultiVar objects that

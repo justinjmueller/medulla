@@ -1,6 +1,6 @@
 [general]
 output = "sbn_nue_oscillation_2027"
-primfn = "default_primary_classification"
+primfn = "lax_primary_classification"
 pidfn = "default_pid"
 fsthresh = [
     "@photon_threshold",
@@ -12,48 +12,19 @@ fsthresh = [
 
 [parameters]
 photon_threshold = 25.0
-electron_threshold = 50.0
+electron_threshold = 60.0
 muon_threshold = 25.0
 pion_threshold = 25.0
 proton_threshold = 40.0
 nonprimary_shower_threshold = 10.0
 michel_threshold = 10                 # number of depositions (as opposed to MeV)
 
-[[sample]]
-name = "sbnd"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/*-reweighted.flat.caf.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "sbnd"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/*-reweighted.flat.caf.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "sbnd_offbeam"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/offbeamlight/*.flat.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "icarus"
-path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/*.flat.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "icarus"
-path = "/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/*.flat.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "icarus_offbeam"
-path = "/pnfs/icarus/persistent/users/mueller/production/data/offbeam/*.flat.root"
-ismc = true
-disable = true
+[[include_samples]]
+file = "common/samples.toml"
+keys = [
+    "sbnd_mc5e18", "sbnd_mc1e20", "sbnd_offbeam",
+    "icarus_nominal", "icarus_cvext", "icarus_offbeam",
+]
 
 [[tree]]
 name = "selected"
@@ -164,6 +135,10 @@ branch = [
     { name = "baseline",                       type = "mctruth" },
     { name = "cc",                             type = "mctruth" },
     { name = "pdg",                            type = "mctruth" },
+    { name = "interaction_mode",               type = "mctruth" },
+    { name = "interaction_type",               type = "mctruth" },
+    { name = "interaction_mode",               type = "mctruth" },
+    { name = "interaction_type",               type = "mctruth" },
     { name = "off_axis_angle",                 type = "mctruth" },
     { name = "off_axis_angle_sbnd",            type = "both"    },
     { name = "off_axis_angle_icarus",          type = "both"    },
@@ -182,11 +157,7 @@ branch = [
     { name = "pion_multiplicity",              type = "both",  parameters = [ "@pion_threshold"              ] },
     { name = "muon_multiplicity",              type = "both",  parameters = [ "@muon_threshold"              ] },
     { name = "proton_multiplicity",            type = "both",  parameters = [ "@proton_threshold"            ] },
-<<<<<<< HEAD
     { name = "nonprimary_shower_multiplicity", type = "both",  parameters = [ "@nonprimary_shower_threshold" ] },
-=======
-    { name = "nonprimary_shower_multiplicity", type = "reco",  parameters = [ "@nonprimary_shower_threshold" ] },
->>>>>>> a43518e (add single_michel cut to toml, add size req for michel cut)
     { name = "single_michel",                  type = "both",  parameters = [ "@michel_threshold"            ] },
 
     # Leading ELECTRON interaction-level

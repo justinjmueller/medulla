@@ -9,6 +9,8 @@
  * library.
  * @author mueller@fnal.gov
  */
+#include <filesystem>
+#include <set>
 #include <string>
 
 #include "configuration.h"
@@ -30,10 +32,148 @@ namespace cfg
             throw ConfigurationError("Failed to parse configuration file: " + std::string(e.what()));
         }
 
+        // Resolve any [[include_samples]] blocks by substituting them with
+        // the corresponding [[sample]] entries from the centralized catalog.
+        resolve_sample_includes(path);
+
         // We need to store the parsed table as the root, and set the scope to
         // the root initially as well.
         root = &doc;
         scope = toml::node_view<const toml::node>(*root);
+    }
+
+    // Resolve [[include_samples]] blocks by loading matching entries from the
+    // centralized sample catalog located at common/samples.toml in the parent
+    // of the configuration file's directory.
+    void ConfigurationTable::resolve_sample_includes(const std::string & config_path)
+    {
+        // If there are no [[include_samples]] entries, there is nothing to do.
+        if (!doc.contains("include_samples"))
+            return;
+
+        // Determine the catalog path: look for common/samples.toml in the
+        // parent of the directory containing the configuration file.
+        std::filesystem::path cfg(config_path);
+        std::filesystem::path catalog_path =
+            cfg.parent_path().parent_path() / "common" / "samples.toml";
+
+        if (!std::filesystem::exists(catalog_path))
+            throw ConfigurationError(
+                "Sample catalog not found at: " + catalog_path.string() +
+                ". The catalog (common/samples.toml) must be located in the "
+                "parent directory of the configuration file's directory.");
+
+        // Parse the catalog.
+        toml::table catalog;
+        try
+        {
+            catalog = toml::parse_file(catalog_path.string());
+        }
+        catch (const std::exception & e)
+        {
+            throw ConfigurationError(
+                "Failed to parse sample catalog: " + std::string(e.what()));
+        }
+
+        // Get the catalog's [[sample]] array.
+        const toml::array * catalog_samples = catalog["sample"].as_array();
+        if (!catalog_samples)
+            throw ConfigurationError(
+                "No [[sample]] entries found in the sample catalog.");
+
+        // Get the [[include_samples]] array from the parsed document.
+        const toml::array * include_arr = doc["include_samples"].as_array();
+        if (!include_arr)
+            throw ConfigurationError(
+                "[[include_samples]] is not an array of tables.");
+
+        // Ensure the document has a [[sample]] array to append to.
+        if (!doc.contains("sample"))
+            doc.insert("sample", toml::array{});
+
+        toml::array * sample_arr = doc["sample"].as_array();
+        if (!sample_arr)
+            throw ConfigurationError(
+                "'sample' key in the configuration is not an array.");
+
+        // Process each [[include_samples]] block independently, preserving
+        // its own 'keys' filter and 'enable' list.
+        for (const auto & entry : *include_arr)
+        {
+            const toml::table * entry_tbl = entry.as_table();
+            if (!entry_tbl) continue;
+
+            // Collect the requested keys for this include block.
+            std::set<std::string> requested_keys;
+            const toml::array * keys_arr = (*entry_tbl)["keys"].as_array();
+            if (keys_arr)
+            {
+                for (const auto & k : *keys_arr)
+                {
+                    auto key = k.value<std::string>();
+                    if (key) requested_keys.insert(*key);
+                }
+            }
+
+            // Collect the enabled keys for this include block.  If no
+            // 'enable' array is present, the set remains empty, meaning all
+            // resolved samples default to disable = true.
+            std::set<std::string> enabled_keys;
+            const toml::array * enable_arr = (*entry_tbl)["enable"].as_array();
+            if (enable_arr)
+            {
+                for (const auto & k : *enable_arr)
+                {
+                    auto key = k.value<std::string>();
+                    if (key) enabled_keys.insert(*key);
+                }
+            }
+
+            // Walk the catalog and append matching entries with the
+            // appropriate disable flag.
+            for (const auto & cat_sample : *catalog_samples)
+            {
+                const toml::table * sample_tbl = cat_sample.as_table();
+                if (!sample_tbl) continue;
+
+                auto sample_key = (*sample_tbl)["key"].value<std::string>();
+                if (!sample_key) continue;
+
+                // Skip entries not in the requested-keys filter (if any).
+                if (!requested_keys.empty() &&
+                    requested_keys.find(*sample_key) == requested_keys.end())
+                    continue;
+
+                // Copy the catalog entry and set the disable flag.
+                // A sample is enabled only when the 'enable' list is non-empty
+                // and the sample's key appears in it; otherwise it is disabled.
+                bool in_enabled_list = enabled_keys.find(*sample_key) != enabled_keys.end();
+                bool should_disable = enabled_keys.empty() || !in_enabled_list;
+                toml::table new_sample = *sample_tbl;
+                new_sample.insert_or_assign("disable", should_disable);
+                sample_arr->push_back(std::move(new_sample));
+            }
+
+            // Verify that all explicitly requested keys were found.
+            for (const auto & key : requested_keys)
+            {
+                bool found = false;
+                for (const auto & cat_sample : *catalog_samples)
+                {
+                    const toml::table * sample_tbl = cat_sample.as_table();
+                    if (!sample_tbl) continue;
+                    auto sample_key = (*sample_tbl)["key"].value<std::string>();
+                    if (sample_key && *sample_key == key) { found = true; break; }
+                }
+                if (!found)
+                    throw ConfigurationError(
+                        "Sample key '" + key + "' not found in the sample catalog.");
+            }
+        }
+
+        // Remove the [[include_samples]] key from the document so that
+        // downstream code sees only [[sample]] blocks.
+        doc.erase("include_samples");
     }
 
     // Check that the requested field is present in the configuration file.

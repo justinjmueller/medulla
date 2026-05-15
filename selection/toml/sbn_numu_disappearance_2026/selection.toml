@@ -1,6 +1,6 @@
 [general]
 output = "sbn_numu_disappearance_2026"
-primfn = "default_primary_classification"
+primfn = "lax_primary_classification"
 pidfn = "default_pid"
 fsthresh = [
     "@photon_threshold",
@@ -17,41 +17,14 @@ muon_threshold = 25.0
 pion_threshold = 25.0
 proton_threshold = 50.0
 
-[[sample]]
-name = "sbnd"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/*-reweighted.flat.caf.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "sbnd"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/*-reweighted.flat.caf.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "sbnd_offbeam"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/offbeamlight/*.flat.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "icarus"
-path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/*.flat.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "icarus"
-path = "/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/*.flat.root"
-ismc = true
-disable = true
-
-[[sample]]
-name = "icarus_offbeam"
-path = "/pnfs/icarus/persistent/users/mueller/production/data/offbeam/*.flat.root"
-ismc = true
-disable = true
+[[include_samples]]
+file = "common/samples.toml"
+keys = [
+    "sbnd_mc5e18", "sbnd_mc1e20", "sbnd_offbeam",
+    "icarus_nominal", "icarus_cvext", "icarus_offbeam",
+]
+# For interactive debugging, uncomment:
+# enable = ["sbnd_mc5e18"]
 
 [[tree]]
 name = "selected"
@@ -73,6 +46,8 @@ branch = [
     { name = "baseline",              type = "mctruth" },
     { name = "cc",                    type = "mctruth" },
     { name = "pdg",                   type = "mctruth" },
+    { name = "interaction_mode",      type = "mctruth" },
+    { name = "interaction_type",      type = "mctruth" },
     { name = "off_axis_angle",        type = "mctruth" },
     { name = "off_axis_angle_sbnd",   type = "both"    },
     { name = "off_axis_angle_icarus", type = "both"    },
@@ -149,6 +124,8 @@ branch = [
     { name = "baseline",              type = "mctruth" },
     { name = "cc",                    type = "mctruth" },
     { name = "pdg",                   type = "mctruth" },
+    { name = "interaction_mode",      type = "mctruth" },
+    { name = "interaction_type",      type = "mctruth" },
     { name = "off_axis_angle",        type = "mctruth" },
     { name = "off_axis_angle_sbnd",   type = "both"    },
     { name = "off_axis_angle_icarus", type = "both"    },
@@ -187,6 +164,7 @@ branch = [
     { name = "muon_softmax",          type = "reco_particle", selector = "leading_muon" },
     { name = "pion_softmax",          type = "reco_particle", selector = "leading_muon" },
     { name = "proton_softmax",        type = "reco_particle", selector = "leading_muon" },
+    { name = "mip_softmax",           type = "reco_particle", selector = "leading_muon" },
 
     # Leading PROTON particle-level
     { name = "end_x",             type = "both_particle", selector = "leading_proton" },
@@ -262,7 +240,7 @@ cuts = [
     { name = "multiproton",       parameters = [ "@proton_threshold"   ] }
 ]
 
-[[category]] # 4 : Fiducial, contained, single muon, any protons, X > 0 protons
+[[category]] # 4 : Fiducial, contained, single muon, any protons, X > 0 pions
 cuts = [
     { name = "neutrino"         },
     { name = "fiducial_cut"     },
@@ -273,7 +251,7 @@ cuts = [
     { name = "single_muon",       parameters = [ "@muon_threshold"     ] }
 ]
 
-[[category]] # 5 : Fiducial, non-contained, single muon, any protons, X > 0 protons
+[[category]] # 5 : Fiducial, non-contained, single muon, any protons, X > 0 pions
 cuts = [
     { name = "neutrino"         },
     { name = "fiducial_cut"     },

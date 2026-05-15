@@ -36,8 +36,8 @@ fsthresh = [
 [[sample]]
 name = "NuMIFull"
 #path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/*.root" # 500k sample 
-path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p02_2/*.flat.root" # extended sample
-#path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
+# path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p02_2/*.flat.root" # extended sample
+path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
 ismc = true
 disable = false # Optional: default = false
 
@@ -208,6 +208,8 @@ branch = [
     { name = "length",                   type = "true_particle", selector = "leading_electron" },
     { name = "p",                        type = "true_particle", selector = "leading_electron" },
     { name = "energy",                   type = "true_particle", selector = "leading_pion"},
+
+    { name = "true_pdg_from_reco",       type = "matched"}
 ]
 
 [[tree]]
