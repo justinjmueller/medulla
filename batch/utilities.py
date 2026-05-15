@@ -359,6 +359,7 @@ def check_project_status(
     subprocess.run(['mv', './project.db', project_dir / 'project.db'], check=True)
 
     print(f"[INFO] -- Found {len(completed_jobs)} completed jobs.")
+
 def launch_jobsub(
     project_dir : str,
     exp : str = 'sbnd',
@@ -387,11 +388,11 @@ def launch_jobsub(
         campaign launch confirms once for all projects).
     tag : str
         Git ref passed to submit.sh as --tag (default: develop).
-    memory : int | None
+    memory : int
         Amount of memory to request for each job in MB. If None, use default.
-    disk : int | None
+    disk : int
         Amount of disk to request for each job in GB. If None, use default.
-    lifetime : str | None
+    lifetime : str
         Expected lifetime of each job (e.g., '1h', '30m'). If None, use default.
 
     Returns
@@ -453,8 +454,6 @@ def launch_jobsub(
     else:
         cmd.append(f'--disk=25GB')
 
-    print(f"[INFO] -- Launching {njobs} jobs with command: {' '.join(cmd)}")
-
     # Query the user to confirm that they want to launch the jobs.
     if confirm:
         print(f"{_INFO} -- Launching {njobs} jobs with command: {' '.join(cmd)}")
@@ -494,22 +493,33 @@ def check_git_branch(
     repo_url : str = 'https://github.com/justinjmueller/medulla',
 ):
     """
-    Check out the specified branch in the given Git repository
-    directory.
+    Check if the specified branch or tag exists in the given Git 
+    repository. First checks for branches, then tags if not found.
 
     Parameters
     ----------
     branch : str
-        Branch to check for existence.
+        Branch or tag name to check for existence.
     repo_url : str
         URL to the Git repository.
 
     Returns
     -------
     bool
+        True if the branch or tag exists, False otherwise.
     """
+    # Check if it exists as a branch
     result = subprocess.run(
         ["git", "ls-remote", "--exit-code", "--heads", repo_url, branch],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    if result.returncode == 0:
+        return True
+    
+    # If not a branch, check if it exists as a tag
+    result = subprocess.run(
+        ["git", "ls-remote", "--exit-code", "--tags", repo_url, branch],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )

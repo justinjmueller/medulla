@@ -664,7 +664,7 @@ namespace cuts
     * @tparam T the type of interaction (true or reco).
     * @param obj the interaction to select on.
     * @param params the parameters for the cut:
-    *   - params[0]: desired multiplicity (converted to size_t)
+    *   - params[0]: minimum desired multiplicity (converted to size_t)
     *   - params[1]: particle species index (0=photon, 1=electron, 2=muon, 3=pion, 4=proton)
     *   - params[2]: kinetic energy threshold in MeV (optional, defaults to 0.0)
     * @return true if the interaction has exactly the specified multiplicity of the
@@ -700,6 +700,12 @@ namespace cuts
     template<class T>
     bool track_length(const T & obj, std::vector<double> params={25.0})
     {
+
+        if(params.size() < 1)
+        {
+            throw std::runtime_error("track_length requires at least 1 parameter: [threshold]");
+        }
+
         float maxLen = -1;
         size_t longest_track_idx = kNoMatch;
         for (size_t i = 0; i < obj.particles.size(); ++i) {

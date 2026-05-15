@@ -67,8 +67,10 @@ class Style:
         -------
         None
         """
+        medulla_plot_dir = environ.get("MEDULLA_PLOT_DIR", "")
+
         self._name = name
-        self._style = f'{environ.get("MEDULLA_PLOT_DIR", "")}/{style_sheet}'
+        self._style = f'{medulla_plot_dir}/{style_sheet}' if medulla_plot_dir else style_sheet
         self._markers = markers
         self._default_figsize = default_figsize
         self._title = None if title == 'none' else title

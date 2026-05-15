@@ -386,9 +386,7 @@ class SpineEfficiency(SpineArtist):
             pos /= np.sum(pos)
         else:
             pos /= np.sum(pos, axis=-1)[:, np.newaxis]
-        
-        index = np.argmax(pos)
-        
+                
         return pos
 
     def calculate(self, sample, significance=0.6827):
@@ -418,6 +416,9 @@ class SpineEfficiency(SpineArtist):
         # Create a linear space of efficiencies to calculate the
         # posterior distribution.
         efficiencies = np.linspace(0.0, 1, self._npts)
+
+        # Initialize the selected counts dictionary if it does not already
+        self._selected_counts = dict()
 
         # Get the data for the binning variable and the configured
         # cuts. The data is returned as a dictionary with the key
@@ -611,6 +612,7 @@ class SpineEfficiency(SpineArtist):
         """
 
         if group not in self._selected_counts:
+            print(f"Warning: Group '{group}' not found in selected counts. Returning empty purity results.")
             return {}, {}, {}, {}
 
         cv = {}
