@@ -683,7 +683,7 @@ namespace cuts
         double ke_threshold = (params.size() >= 3) ? params[2] : 0.0;
         
         std::vector<double> threshold_params = {ke_threshold};
-        size_t actual_mult = particle_multiplicity(obj, desired_mult, particle_species, threshold_params);
+        size_t actual_mult = particle_multiplicity(obj, 1, particle_species, threshold_params);
         
         return actual_mult >= desired_mult;
     }
