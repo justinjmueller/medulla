@@ -1052,12 +1052,14 @@ namespace vars
 
 
     template<class T>
-    double true_pdg_from_reco(const T & obj){
+    double true_pdg_from_reco(const T & obj, std::vector<double> params={}){
         // This variable is intended for MatchedInteraction only. When used with
         // MatchedInteraction we look up the leading electron in the reco
         // interaction and follow its particle->match_ids to the true particle.
         if constexpr(std::is_same_v<T, MatchedInteraction>) {
-            size_t i = selectors::leading_electron(obj.reco);
+
+
+            size_t i = utilities::leading_particle_type(obj, static_cast<int>(params[0]));
             if (i == kNoMatch) return kNoMatchValue;
             if (!(obj.truth)) return kNoMatchValue;
 
