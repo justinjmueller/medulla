@@ -287,6 +287,14 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                                [&m](auto & f) { return f(m); });
         });
 
+    // Helper lambda to get the final branch name, checking for optional title override
+    auto get_branch_name = [&var](const std::string & computed_name) -> std::string {
+        if(var.has_field("title")) {
+            return var.get_string_field("title");
+        }
+        return computed_name;
+    };
+
     if(exec_mode == Mode::True)
     {
         /**
@@ -318,7 +326,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     if(first_idx == kNoMatch || second_idx == kNoMatch) return kNoMatchValue;
                     return bivar_fn(e.particles[first_idx], e.particles[second_idx]);
                 };
-                return std::make_pair(full_name, spill_multivar_helper<TType, RType, TParticleType, TType>(
+                return std::make_pair(get_branch_name(full_name), spill_multivar_helper<TType, RType, TParticleType, TType>(
                     true_cut,
                     reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                     true_particle_cut, var_fn_composed, event_cut, mctruth_cut, ismc, matched_cut));
@@ -346,7 +354,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     // Apply the variable function to the selected particle.
                     return var_fn(e.particles[idx]);
                 };
-                return std::make_pair(full_name, spill_multivar_helper<TType, RType, TParticleType, TType>(
+                return std::make_pair(get_branch_name(full_name), spill_multivar_helper<TType, RType, TParticleType, TType>(
                     true_cut,
                     reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                     true_particle_cut,
@@ -360,7 +368,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 var_name = "true_" + var_name;
                 auto factory = VarFactoryRegistry<TType>::instance().get(var_name);
                 auto var_fn = factory(varPars);
-                return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, TType>(
+                return std::make_pair(get_branch_name(var_name), spill_multivar_helper<TType, RType, TParticleType, TType>(
                     true_cut,
                     reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                     true_particle_cut,
@@ -388,7 +396,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     if(first_idx == kNoMatch || second_idx == kNoMatch) return kNoMatchValue;
                     return bivar_fn(e.particles[first_idx], e.particles[second_idx]);
                 };
-                return std::make_pair(full_name, spill_multivar_helper<TType, RType, TParticleType, RType>(
+                return std::make_pair(get_branch_name(full_name), spill_multivar_helper<TType, RType, TParticleType, RType>(
                     true_cut,
                     reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                     true_particle_cut, var_fn_composed, event_cut, mctruth_cut, ismc, matched_cut));
@@ -416,7 +424,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     // Apply the variable function to the selected particle.
                     return var_fn(e.particles[idx]);
                 };
-                return std::make_pair(full_name, spill_multivar_helper<TType, RType, TParticleType, RType>(
+                return std::make_pair(get_branch_name(full_name), spill_multivar_helper<TType, RType, TParticleType, RType>(
                     true_cut,
                     reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                     true_particle_cut,
@@ -430,7 +438,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 var_name = "reco_" + var_name;
                 auto factory = VarFactoryRegistry<RType>::instance().get(var_name);
                 auto var_fn = factory(varPars);
-                return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, RType>(
+                return std::make_pair(get_branch_name(var_name), spill_multivar_helper<TType, RType, TParticleType, RType>(
                     true_cut,
                     reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                     true_particle_cut,
@@ -445,7 +453,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             var_name = "true_" + var_name;
             auto factory = VarFactoryRegistry<MCTruth>::instance().get(var_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, MCTruth>(
+            return std::make_pair(get_branch_name(var_name), spill_multivar_helper<TType, RType, TParticleType, MCTruth>(
                 true_cut,
                 reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                 true_particle_cut,
@@ -459,7 +467,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             var_name = "true_particle_" + var_name;
             auto factory = VarFactoryRegistry<TParticleType>::instance().get(var_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, TParticleType>(
+            return std::make_pair(get_branch_name(var_name), spill_multivar_helper<TType, RType, TParticleType, TParticleType>(
                 true_cut,
                 reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                 true_particle_cut,
@@ -473,7 +481,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             var_name = "reco_particle_" + var_name;
             auto factory = VarFactoryRegistry<RParticleType>::instance().get(var_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, RParticleType>(
+            return std::make_pair(get_branch_name(var_name), spill_multivar_helper<TType, RType, TParticleType, RParticleType>(
                 true_cut,
                 reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
                 true_particle_cut,
@@ -525,7 +533,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 return values;
             });
             
-            return std::make_pair(var_name, matched_multivar);
+            return std::make_pair(get_branch_name(var_name), matched_multivar);
         }
         else
         {
@@ -563,7 +571,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     if(first_idx == kNoMatch || second_idx == kNoMatch) return kNoMatchValue;
                     return bivar_fn(e.particles[first_idx], e.particles[second_idx]);
                 };
-                return std::make_pair(full_name, spill_multivar_helper<RType, TType, TParticleType, TType>(
+                return std::make_pair(get_branch_name(full_name), spill_multivar_helper<RType, TType, TParticleType, TType>(
                     reco_cut,
                     true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                     true_particle_cut, var_fn_composed, event_cut, mctruth_cut, ismc, matched_cut));
@@ -591,7 +599,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     // Apply the variable function to the selected particle.
                     return var_fn(e.particles[idx]);
                 };
-                return std::make_pair(full_name, spill_multivar_helper<RType, TType, TParticleType, TType>(
+                return std::make_pair(get_branch_name(full_name), spill_multivar_helper<RType, TType, TParticleType, TType>(
                     reco_cut,
                     true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                     true_particle_cut,
@@ -605,7 +613,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 var_name = "true_" + var_name;
                 auto factory = VarFactoryRegistry<TType>::instance().get(var_name);
                 auto var_fn = factory(varPars);
-                return std::make_pair(var_name, spill_multivar_helper<RType, TType, TParticleType, TType>(
+                return std::make_pair(get_branch_name(var_name), spill_multivar_helper<RType, TType, TParticleType, TType>(
                     reco_cut,
                     true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                     true_particle_cut,
@@ -632,7 +640,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     if(first_idx == kNoMatch || second_idx == kNoMatch) return kNoMatchValue;
                     return bivar_fn(e.particles[first_idx], e.particles[second_idx]);
                 };
-                return std::make_pair(full_name, spill_multivar_helper<RType, TType, RParticleType, RType>(
+                return std::make_pair(get_branch_name(full_name), spill_multivar_helper<RType, TType, RParticleType, RType>(
                     reco_cut,
                     true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                     reco_particle_cut, var_fn_composed, event_cut, mctruth_cut, ismc, matched_cut));
@@ -660,7 +668,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                     // Apply the variable function to the selected particle.
                     return var_fn(e.particles[idx]);
                 };
-                return std::make_pair(full_name, spill_multivar_helper<RType, TType, RParticleType, RType>(
+                return std::make_pair(get_branch_name(full_name), spill_multivar_helper<RType, TType, RParticleType, RType>(
                     reco_cut,
                     true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                     reco_particle_cut,
@@ -674,7 +682,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 var_name = "reco_" + var_name;
                 auto factory = VarFactoryRegistry<RType>::instance().get(var_name);
                 auto var_fn = factory(varPars);
-                return std::make_pair(var_name, spill_multivar_helper<RType, TType, TParticleType, RType>(
+                return std::make_pair(get_branch_name(var_name), spill_multivar_helper<RType, TType, TParticleType, RType>(
                     reco_cut,
                     true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                     true_particle_cut,
@@ -689,7 +697,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             var_name = "true_" + var_name;
             auto factory = VarFactoryRegistry<MCTruth>::instance().get(var_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<RType, TType, TParticleType, MCTruth>(
+            return std::make_pair(get_branch_name(var_name), spill_multivar_helper<RType, TType, TParticleType, MCTruth>(
                 reco_cut,
                 true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                 true_particle_cut,
@@ -703,7 +711,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             var_name = "true_particle_" + var_name;
             auto factory = VarFactoryRegistry<TParticleType>::instance().get(var_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<RType, TType, RParticleType, TParticleType>(
+            return std::make_pair(get_branch_name(var_name), spill_multivar_helper<RType, TType, RParticleType, TParticleType>(
                 reco_cut,
                 true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                 reco_particle_cut,
@@ -717,7 +725,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             var_name = "reco_particle_" + var_name;
             auto factory = VarFactoryRegistry<RParticleType>::instance().get(var_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper<RType, TType, RParticleType, RParticleType>(
+            return std::make_pair(get_branch_name(var_name), spill_multivar_helper<RType, TType, RParticleType, RParticleType>(
                 reco_cut,
                 true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
                 reco_particle_cut,
@@ -769,7 +777,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 return values;
             });
             
-            return std::make_pair(var_name, matched_multivar);
+            return std::make_pair(get_branch_name(var_name), matched_multivar);
         }
         else
         {
@@ -795,7 +803,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             var_name = "event_" + var_name;
             auto factory = VarFactoryRegistry<EventType>::instance().get(var_name);
             auto var_fn = factory(varPars);
-            return std::make_pair(var_name, spill_multivar_helper(event_cut, var_fn));
+            return std::make_pair(get_branch_name(var_name), spill_multivar_helper(event_cut, var_fn));
         }
         else
         {

@@ -1059,7 +1059,7 @@ namespace vars
         if constexpr(std::is_same_v<T, MatchedInteraction>) {
 
 
-            size_t i = utilities::leading_particle_type(obj, static_cast<int>(params[0]));
+            size_t i = utilities::leading_particle_type(obj.reco, static_cast<int>(params[0]));
             if (i == kNoMatch) return kNoMatchValue;
             if (!(obj.truth)) return kNoMatchValue;
 
