@@ -18,6 +18,7 @@
 #include <utility>
 
 #include "sbnana/CAFAna/Core/MultiVar.h"
+#include "sbnanaobj/StandardRecord/SREnums.h"
 #include "configuration.h"
 
 /**
@@ -39,6 +40,21 @@ using NamedSpillMultiVar = std::pair<std::string, ana::SpillMultiVar>;
 // Set a sensible default for a no-match scenario.
 constexpr size_t kNoMatch = std::numeric_limits<size_t>::max();
 constexpr double kNoMatchValue = std::numeric_limits<double>::quiet_NaN();
+
+/**
+ * @namespace context
+ * @brief Namespace for storing the current event context.
+ * @details This namespace is intended to be used for storing the current event
+ * context, which includes pointers to the current true and reco interactions
+ * and the current detector. This allows for cuts and variables to access the
+ * current event context without needing to pass it explicitly as an argument.
+ */
+namespace context
+{
+    const TType * current_true = nullptr;
+    const RType * current_reco = nullptr;
+    caf::Det_t current_detector = caf::Det_t::kUNKNOWN;
+}
 
 //-----------------------------------------------------------------------------
 // 1) Generic registry template
