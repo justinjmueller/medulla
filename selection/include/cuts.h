@@ -242,6 +242,139 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::Both, containment_cut, containment_cut);
 
     /**
+     * @brief Apply a cut to select cathode-crossing interactions.
+     * @details This cut is intended to be used in analyses that wish to select
+     * (or deselect) interactions that cross the cathode. The cathode-crossing 
+     * status is determined by checking the sign of the product of particle
+     * extrema x-positions for all particles in the interaction.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the interaction crosses the cathode.
+    */
+    template<class T>
+    bool cathode_crosser(const T & obj)
+    {
+        for(const auto & p : obj.particles)
+        {
+            if(!std::isnan(pvars::start_x(p)) && !std::isnan(pvars::end_x(p)))
+            {
+                if(context::current_detector == caf::Det_t::kSBND)
+                {
+                    if(pvars::start_x(p) * pvars::end_x(p) < 0)
+                        return true;
+                }
+                else if(context::current_detector == caf::Det_t::kICARUS)
+                {
+                    if((pvars::start_x(p) < 0 && (pvars::start_x(p) + 210.215) * (pvars::end_x(p) + 210.215) < 0)
+                    || (pvars::start_x(p) > 0 && (pvars::start_x(p) - 210.215) * (pvars::end_x(p) - 210.215) < 0))
+                        return true;
+                }
+            }
+        }
+        return false;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, cathode_crosser, cathode_crosser);
+
+    /**
+     * @brief Apply a cut to fiducialize the region around the cathode.
+     * @details This cut is intended to be used in analyses that wish to select
+     * (or deselect) interactions that occur near the cathode. The
+     * fiducialization is applied by checking the x-position of the interaction
+     * vertex relative to the cathode position.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the interaction is fiducialized.
+     */
+    template<class T>
+    bool fiducialize_cathode(const T & obj)
+    {
+        if(context::current_detector == caf::Det_t::kSBND)
+        {
+            // Apply a cut to fiducialize 5 cm around the cathode of SBND.
+            return std::abs(obj.vertex[0]) > 5.0;
+        }
+        else if(context::current_detector == caf::Det_t::kICARUS)
+        {
+            // Apply a cut to fiducialize 5 cm around the cathode of ICARUS.
+            return std::abs(std::abs(obj.vertex[0]) - 210.215) > 5.0;
+        }
+        else
+        {
+            // If the detector is not recognized, do not apply any cut.
+            return true;
+        }
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducialize_cathode, fiducialize_cathode);
+
+    /**
+     * @brief Apply a cut to veto the high-y, high-z region of SBND.
+     * @details This cut is intended to be used in analyses that wish to veto
+     * the high-y, high-z region of SBND. The high-y, high-z region is the
+     * region in positive x where y > 100 cm and z > 250 cm. This region is the
+     * subject of some unusual detector effect that hasn't been fully diagnosed
+     * at the current date. We apply a cut to veto any activity (has any
+     * particle terminating in this region) in this region to mitigate the
+     * impact of this effect on analyses.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if no particles in the interaction start or end in the
+     * high-y, high-z region.
+    */
+    template<class T>
+    bool veto_sbnd_highy_highz(const T & obj)
+    {
+        if(context::current_detector == caf::Det_t::kSBND)
+        {
+            // Apply a cut to veto the high-y, high-z region of SBND.
+            bool in_veto_region = false;
+            for(const auto & p : obj.particles)
+            {
+                if((pvars::start_y(p) > 100 && pvars::start_z(p) > 250 && pvars::start_x(p) > 0)
+                    || (pvars::end_y(p) > 100 && pvars::end_z(p) > 250 && pvars::end_x(p) > 0))
+                {
+                    in_veto_region = true;
+                    break;
+                }
+            }
+            return !in_veto_region;
+        }
+        else
+        {
+            // If the detector is not recognized, do not apply any cut.
+            return true;
+        }
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, veto_sbnd_highy_highz, veto_sbnd_highy_highz);
+
+    template<class T>
+    bool neutrino2026_veto(const T & obj)
+    {
+        if(context::current_detector == caf::Det_t::kSBND)
+        {
+            // For SBND, we apply the fiducialize_cathode cut, the
+            // veto_sbnd_highy_highz cut, and the cathode-crossing cut to veto
+            // the regions of the detector that are not well-modeled and not
+            // covered by a validated systematic uncertainty. This is intended
+            // to be used for Neutrino 2026.
+            return fiducialize_cathode(obj) && veto_sbnd_highy_highz(obj) && !cathode_crosser(obj);
+        }
+        else if(context::current_detector == caf::Det_t::kICARUS)
+        {
+            // For ICARUS, we apply the fiducialize_cathode cut to veto the
+            // region around the cathode that is not well-modeled and not
+            // covered by a validated systematic uncertainty. This is intended
+            // to be used for Neutrino 2026.
+            return fiducialize_cathode(obj);
+        }
+        else
+        {
+            // If the detector is not recognized, do not apply any cut.
+            return true;
+        }
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, neutrino2026_veto, neutrino2026_veto);
+
+    /**
      * @brief Apply a cut to reject events that have a non-electron particle that
      * is not contained.
      * @details This cut is intended to be used in analyses that select electrons
