@@ -49,6 +49,13 @@ branch = [
     { name = "muon_multiplicity",     type = "both",  parameters = [ "@muon_threshold"     ] },
     { name = "proton_multiplicity",   type = "both",  parameters = [ "@proton_threshold"   ] },
 
+    # Information for Neutrino 2026
+    { name = "cathode_crosser",       type = "both"    },
+    { name = "fiducialize_cathode",   type = "both"    },
+    { name = "veto_sbnd_highy_highz", type = "both"    },
+    { name = "neutrino2026_veto",     type = "both"    },
+    { name = "detector",              type = "reco"    },
+
     # Leading MUON interaction-level
     { name = "start_x",               type = "both_particle", selector = "leading_muon" },
     { name = "start_y",               type = "both_particle", selector = "leading_muon" },
