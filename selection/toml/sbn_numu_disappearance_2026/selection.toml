@@ -13,7 +13,7 @@ fsthresh = [
 [parameters]
 photon_threshold = 25.0
 electron_threshold = 25.0
-muon_threshold = 25.0
+muon_threshold = 143.425
 pion_threshold = 25.0
 proton_threshold = 50.0
 
