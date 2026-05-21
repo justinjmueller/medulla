@@ -54,39 +54,6 @@ inline bool g_issignal = false;
 namespace vars
 {
 
-	template<class T>
-    double true_pdg_from_reco(const T & obj){
-        // This variable is intended for MatchedInteraction only. When used with
-        // MatchedInteraction we look up the leading electron in the reco
-        // interaction and follow its particle->match_ids to the true particle.
-        if constexpr(std::is_same_v<T, MatchedInteraction>) {
-            size_t i = selectors::leading_electron(obj.reco);
-            if (i == kNoMatch) return kNoMatchValue;
-            if (!(obj.truth)) return kNoMatchValue;
-
-            const auto & reco_particle = obj.reco.particles[i];
-            if (reco_particle.match_ids.empty()) return kNoMatchValue;
-
-            // Particle match_ids are identifiers (ids), not indices into the
-            // truth particle vector. Find the truth particle whose `.id`
-            // matches the reported match id.
-
-            //std::cout << "looking for match id " << reco_particle.match_ids[0] << " among truth particles..." << std::endl;
-            auto target_id = reco_particle.match_ids[0];
-            for (const auto & tp : obj.truth->particles) {
-                //std::cout << "\t" << "truth particle id: " << tp.id << ", pdg_code: " << tp.pdg_code << std::endl;
-                if (tp.id == target_id) {
-                    //std::cout << "\t\tfound match! pdg code: " << tp.pdg_code << std::endl;
-                    return static_cast<double>(tp.pdg_code);
-                }
-            }
-            // No matching truth particle found for this id.
-            return kNoMatchValue;
-        }
-        // Not supported for non-matched interaction types; return NaN marker.
-        return kNoMatchValue;
-    }
-    REGISTER_VAR_SCOPE(RegistrationScope::Matched, true_pdg_from_reco, true_pdg_from_reco);
     /**
      * @brief Variable for the neutrino ID of the interaction.
      * @details This variable is intended to provide a unique identifier for
