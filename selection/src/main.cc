@@ -5,6 +5,7 @@
  * framework. The main function is responsible for loading the configuration
  * file, initializing the analysis framework, and running the analysis.
  * @author mueller@fnal.gov
+ * @author rvizarr@fnal.gov
  */
 #define PLACEHOLDERVALUE std::numeric_limits<double>::quiet_NaN()
 #define PROTON_BINDING_ENERGY 30.9 // MeV
@@ -22,11 +23,14 @@
 #include "scorers.h"
 #include "cuts.h"
 #include "variables.h"
-#include "mctruth.h"
+#include "mctruth_variables.h"
+#include "mctruth_cuts.h"
+#include "bivariables.h"
 #include "event_cuts.h"
 #include "event_variables.h"
 #include "spill_cuts.h"
 #include "selectors.h"
+#include "biselectors.h"
 #include "analysis.h"
 
 std::shared_ptr<VarFn<RParticleType>> pvars::primfn = std::make_shared<VarFn<RParticleType>>(pvars::default_primary_classification<RParticleType>);
@@ -111,76 +115,81 @@ int main(int argc, char * argv[])
             pcuts::final_state_signal_thresholds = fsthresh;
         }
 
+        // Each category is a (TType cut, MCTruth cut) pair; the vector index
+        // is the value emitted for interactions that match that category.
+        CategoryFns category_cut_functions;
+
         // Construct the category function.
         if(config.has_field("category"))
         {
-            // Map of category enumeration to cut functions.
-            std::map<double, CutFn<TType>> category_cut_functions;
-
             // Iterate over the categories and construct the cut functions.
             std::vector<cfg::ConfigurationTable> categories(config.get_subtables("category"));
             for(const auto & category : categories)
             {
                 std::vector<CutFn<TType>> true_cut_functions;
+                std::vector<CutFn<MCTruth>> mctruth_cut_functions;
                 std::vector<cfg::ConfigurationTable> cuts = category.get_subtables("cuts");
                 for(const auto & cut : cuts)
                 {
-                    // Retrieve the cut name and check for negation.
+                    // Cuts with type = "mctruth" are prefixed with "mctruth_"
+                    // and looked up in CutFactoryRegistry<MCTruth>
                     std::string name = cut.get_string_field("name");
                     bool invert = false;
                     if(name.at(0) == '!')
                     {
                         invert = true;
-                        name = name.substr(1); // Remove the negation character.
+                        name = name.substr(1);
                     }
-                    name = "true_" + name;
 
-                    // Load parameters (if any) for the cut.
                     std::vector<double> params;
                     if(cut.has_field("parameters"))
                         params = cut.get_double_vector("parameters");
 
-                    auto factory = CutFactoryRegistry<TType>::instance().get(name);
-                    if(invert)
+                    std::string type = cut.get_string_field("type", "true");
+
+                    if(type == "true")
                     {
-                        // If the cut is inverted, we need to negate the function.
-                        auto fn = factory(params);
-                        true_cut_functions.push_back([fn](const TType & e) { return !fn(e); });
+                        std::string cut_name = "true_" + name;
+                        auto factory = CutFactoryRegistry<TType>::instance().get(cut_name);
+                        if(invert)
+                        {
+                            auto fn = factory(params);
+                            true_cut_functions.push_back([fn](const TType & e) { return !fn(e); });
+                        }
+                        else
+                            true_cut_functions.push_back(factory(params));
                     }
                     else
-                        // Otherwise, we just add the function as is.
-                        true_cut_functions.push_back(factory(params));
+                    {
+                        std::string cut_name = "mctruth_" + name;
+                        auto factory = CutFactoryRegistry<MCTruth>::instance().get(cut_name);
+                        if(invert)
+                        {
+                            auto fn = factory(params);
+                            mctruth_cut_functions.push_back([fn](const MCTruth & m) { return !fn(m); });
+                        }
+                        else
+                            mctruth_cut_functions.push_back(factory(params));
+                    }
                 }
-                // Compose a common cut function for the category.
-                auto category_cut = [true_cut_functions](const TType & e) -> bool {
+
+                // Compose the category cut functions. The true_cut function is
+                // applied to the true interaction to determine if it passes
+                // the category definition, while the mctruth_cut function is
+                // applied to the corresponding MCTruth instance.
+                auto true_cut = [true_cut_functions](const TType & e) -> bool {
                     return std::all_of(true_cut_functions.begin(), true_cut_functions.end(), [&e](auto & f) { return f(e); });
                 };
-                category_cut_functions.try_emplace(
-                    category_cut_functions.size(),
-                    category_cut
-                );
-            }
+                auto mctruth_cut = [mctruth_cut_functions](const MCTruth & m) -> bool {
+                    return std::all_of(mctruth_cut_functions.begin(), mctruth_cut_functions.end(), [&m](auto & f) { return f(m); });
+                };
+                category_cut_functions.push_back({true_cut, mctruth_cut});
 
-            // Create the category function.
-            auto category_fn = [category_cut_functions](const TType & e) -> double
-            {
-                // Iterate over the category cut functions and return the first
-                // one that returns true.
-                for(const auto & [category, cut_fn] : category_cut_functions)
-                {
-                    if(cut_fn(e))
-                        return category; // Return the category number.
-                }
-                return PLACEHOLDERVALUE; // No category matched.
-            };
-            // Register the category function.
-            VarFactoryRegistry<TType>::instance().register_fn(
-                "true_category",
-                [category_fn](const std::vector<double>&) -> VarFn<TType> { return category_fn; }
-            );
+            }
         }
 
-        // SpectrumLoader
+        // Initialize the analysis framework with the output file name 
+        // specified in the configuration.
         ana::Analysis analysis(config.get_string_field("general.output"));
 
         // Set the PID functions.
@@ -193,14 +202,13 @@ int main(int argc, char * argv[])
         loaders.reserve(samples.size());
         for(const auto & sample : samples)
         {
-            // Check if the sample has the "disable" flag set to true
             if(sample.get_bool_field("disable", false))
             {
                 std::cout << "Sample '" << sample.get_string_field("name") << "' is disabled, skipping." << std::endl;
                 continue;
             }
 
-            // Create a SpectrumLoader for each sample
+            bool ismc = sample.get_bool_field("ismc", false);
             std::unique_ptr<ana::SpectrumLoader> loader;
             try
             {
@@ -211,7 +219,7 @@ int main(int argc, char * argv[])
             {
                 loader = std::make_unique<ana::SpectrumLoader>(sample.get_string_vector("path"));
             }
-            analysis.AddLoader(sample.get_string_field("name"), loader.get(), sample.get_bool_field("ismc"));
+            analysis.AddLoader(sample.get_string_field("name"), loader.get(), ismc);
             loaders.push_back(std::move(loader));
 
             // Main loop over the trees defined in the configuration
@@ -221,39 +229,60 @@ int main(int argc, char * argv[])
                 std::vector<cfg::ConfigurationTable> cuts = tree.get_subtables("cut");
                 std::vector<cfg::ConfigurationTable> vars = tree.get_subtables("branch");
                 std::string mode = tree.get_string_field("mode");
-                
+
                 std::map<std::string, ana::SpillMultiVar> vars_map;
                 for(const auto & var : vars)
                 {
+                    const std::string var_type = var.get_string_field("type");
+                    
                     // If the variable type is "both", we need to construct two
                     // variables: one for "true" and one for "reco".
-                    if(var.get_string_field("type") == "both")
+                    if(var_type == "both")
                     {
-                        NamedSpillMultiVar thisvar_true = construct(cuts, var, mode, "true", sample.get_bool_field("ismc"));
-                        NamedSpillMultiVar thisvar_reco = construct(cuts, var, mode, "reco", sample.get_bool_field("ismc"));
+                        NamedSpillMultiVar thisvar_true = construct(cuts, var, mode, "true", ismc);
+                        NamedSpillMultiVar thisvar_reco = construct(cuts, var, mode, "reco", ismc);
                         vars_map.try_emplace(thisvar_true.first, thisvar_true.second);
                         vars_map.try_emplace(thisvar_reco.first, thisvar_reco.second);
                     }
-                    else if(var.get_string_field("type") == "both_particle")
+                    else if(var_type == "both_particle")
                     {
-                        NamedSpillMultiVar thisvar_true = construct(cuts, var, mode, "true_particle", sample.get_bool_field("ismc"));
-                        NamedSpillMultiVar thisvar_reco = construct(cuts, var, mode, "reco_particle", sample.get_bool_field("ismc"));
+                        NamedSpillMultiVar thisvar_true = construct(cuts, var, mode, "true_particle", ismc);
+                        NamedSpillMultiVar thisvar_reco = construct(cuts, var, mode, "reco_particle", ismc);
                         vars_map.try_emplace(thisvar_true.first, thisvar_true.second);
                         vars_map.try_emplace(thisvar_reco.first, thisvar_reco.second);
                     }
-                    else if(var.get_string_field("type") == "true"
-                            || var.get_string_field("type") == "reco"
-                            || var.get_string_field("type") == "mctruth"
-                            || var.get_string_field("type") == "true_particle"
-                            || var.get_string_field("type") == "reco_particle"
-                            || var.get_string_field("type") == "event")
+                    else if(var_type == "both_bivar")
                     {
-                        NamedSpillMultiVar thisvar = construct(cuts, var, mode, var.get_string_field("type"), sample.get_bool_field("ismc"));
-                        vars_map.try_emplace(thisvar.first, thisvar.second);
+                        NamedSpillMultiVar thisvar_true = construct(cuts, var, mode, "true_bivar", ismc);
+                        NamedSpillMultiVar thisvar_reco = construct(cuts, var, mode, "reco_bivar", ismc);
+                        vars_map.try_emplace(thisvar_true.first, thisvar_true.second);
+                        vars_map.try_emplace(thisvar_reco.first, thisvar_reco.second);
                     }
+                    else if(var_type == "true"
+                            || var_type == "reco"
+                            || var_type == "mctruth"
+                            || var_type == "true_particle"
+                            || var_type == "reco_particle"
+                            || var_type == "true_bivar"
+                            || var_type == "reco_bivar"
+                            || var_type == "event"
+                            || var_type == "matched")
+                    {
+                        if(var.get_string_field("name") == "category" && var_type == "true")
+                        {
+                            NamedSpillMultiVar thisvar = construct_category(cuts, category_cut_functions, mode, ismc);
+                            vars_map.try_emplace(thisvar.first, thisvar.second);
+                        }
+                        else
+                        {
+                            NamedSpillMultiVar thisvar = construct(cuts, var, mode, var_type, ismc);
+                            vars_map.try_emplace(thisvar.first, thisvar.second);
+                        }
+                    }
+
                     else
                     {
-                        throw std::runtime_error("Illegal variable type '" + var.get_string_field("type") + "' for branch " + tree.get_string_field("name") +  ":" + var.get_string_field("name"));
+                        throw std::runtime_error("Illegal variable type '" + var_type + "' for branch " + tree.get_string_field("name") + ":" + var.get_string_field("name"));
                     }
                 }
                 // Set tree-level globals so interaction-level variable functions

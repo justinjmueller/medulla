@@ -4,7 +4,7 @@ import sys
 import pickle
 os.environ['MEDULLA_PLOT_DIR'] =  '/nashome/m/micarrig/icarus/nuESpine/medulla/spineplot/'
 sys.path.append('/nashome/m/micarrig/icarus/nuESpine/medulla/spineplot/')
-from efficiency import SpineEfficiency
+# from efficiency import SpineEfficiency
 from analysis import Analysis
 
 # Make the plot based on the provided variable, and save in dir
@@ -25,13 +25,14 @@ def makePlot(var, dir):
 if __name__ == "__main__":
 
     #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/nue_plots.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine16/merged_output.root')
-    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/nue_plots.toml', '/nashome/m/micarrig/icarus/nuESpine/gundam_nueCCInclusive2.root')
+    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/nue_plots.toml', '/exp/icarus/data/users/micarrig/merged_outputAll.root')
+    # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/nue_plots_reco.toml', '/exp/icarus/data/users/micarrig/merged_outputAll.root')
+    # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/cutflow_plots.toml', '/exp/icarus/data/users/micarrig/merged_outputAll.root')
 
-    plot_category = 'debug2'
+    plot_category = 'neutrino_type'
 
     plotVars = [
-        # 'true_neutrino_energy',
-        'reco_leading_electron_energy',
+        # 'reco_leading_electron_energy',
         # 'reco_ele_beam_cosTheta',
         # 'reco_leading_electron_start_dedx',
         # 'reco_leading_electron_axial_spread',
@@ -56,6 +57,8 @@ if __name__ == "__main__":
         # 'reco_pion_multiplicity',
         # 'reco_proton_multiplicity',
         # 'reco_electron_multiplicity',
+        # 'reco_nu',
+        # 'true_neutrino_energy',
         # 'true_leading_electron_energy',
         # 'true_ele_beam_cosTheta',
         # 'true_leading_electron_start_x',
@@ -71,12 +74,18 @@ if __name__ == "__main__":
         # 'true_electron_multiplicity',
         # 'true_momentum_transfer',
         # 'true_hadronic_invariant_mass',
+        # 'true_nu',
+        'nu_diff',
         # 'true_vs_reco_leading_electron_energy',
         # 'true_vs_reco_leading_electron_angle',
+        # 'true_vs_reco_nu',
+
         # 'reco_flash_time_mod_cutflow',
         # 'true_neutrino_energy_cutflow',
         # 'reco_leading_electron_energy_cutflow',
         # 'reco_ele_beam_cosTheta_cutflow',
+        # 'true_leading_electron_energy_cutflow',
+        # 'true_ele_beam_cosTheta_cutflow',
     ]
 
     outputDir = f'/nashome/m/micarrig/icarus/nuESpine/plots/{plot_category}/'

@@ -227,7 +227,7 @@ class Sample:
         None.
         """
         if target is None:
-            self._data['weight'] = 1
+            scale = 1.0
         elif self._exposure_type == 'pot':
             scale = target._exposure_pot / self._exposure_pot
         else:

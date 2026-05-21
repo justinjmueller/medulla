@@ -129,3 +129,29 @@ cut = [
 branch = [
     {name = "ke", type = "both_particle"},
 ]
+
+[[tree]]
+name = "test_reco_with_mctruth_cut"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "valid_flashmatch", type = "reco"},
+    {name = "iscc", type = "mctruth"}
+]
+branch = [
+    {name = "vertex_x", type = "both"},
+    {name = "neutrino_energy", type = "mctruth"},
+]
+
+[[tree]]
+name = "test_truth_with_mctruth_cut"
+sim_only = true
+mode = "true"
+cut = [
+    {name = "valid_flashmatch", type = "true"},
+    {name = "iscc", type = "mctruth"}
+]
+branch = [
+    {name = "vertex_x", type = "both"},
+    {name = "neutrino_energy", type = "mctruth"},
+]

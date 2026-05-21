@@ -33,7 +33,7 @@ int main(int argc, char * argv[])
   /// Syst trees
   /// To-do: Automate this
   TTree* multisigma_tree = (TTree*)input->Get("events/NuMIFull/selected_multisigmaTree");
-  TTree* variation_tree = (TTree*)input->Get("events/NuMIFull/selected_variationTree");
+  //TTree* variation_tree = (TTree*)input->Get("events/NuMIFull/selected_variationTree");
   TTree* multisim_tree = (TTree*)input->Get("events/NuMIFull/selected_multisimTree"); // TEST...delete if anything breaks
   TTree* NuMIflux_tree = (TTree*)input->Get("events/NuMIFull/selected_NuMIfluxsimTree");
 
@@ -47,6 +47,8 @@ int main(int argc, char * argv[])
   /////////////////////////////////////////////////////////////
   for(cfg::ConfigurationTable & table : tables)
     {
+
+      //This tries to get all trees in toml file, but data will have no systematics, need to add a check for that in the future
       // Grab input TTree
       TTree* in_tree = (TTree*)input->Get(table.get_string_field("origin").c_str());                                                                                                  
       
@@ -69,7 +71,7 @@ int main(int argc, char * argv[])
         {
           copy_with_syst(config, table, out_tree, in_tree, multisigma_tree, "multisigma");
           std::cout<<"10"<<std::endl;
-          copy_with_syst(config, table, out_tree, in_tree, variation_tree, "variation");
+          //copy_with_syst(config, table, out_tree, in_tree, variation_tree, "variation");
           std::cout<<"11"<<std::endl;
 	        copy_with_syst(config, table, out_tree, in_tree, NuMIflux_tree, "NuMIfluxsim"); 
           std::cout<<"12"<<std::endl;
@@ -216,9 +218,8 @@ void copy_with_syst(cfg::ConfigurationTable config, cfg::ConfigurationTable tabl
  	  branch_addresses_nsigmas[branch_name.Data()] = vec1;
 	  syst_in_tree->SetBranchAddress(branch_name_nsigma, &(branch_addresses_nsigmas[branch_name.Data()]));
 
-	  std::cout << branch_name_nsigma << " " << branch_name << std::endl;
 	
-          arrSyst[sysIdx] = new TClonesArray("TGraph", 1);
+    arrSyst[sysIdx] = new TClonesArray("TGraph", 1);
 	  out_tree->Branch(branch_name, &arrSyst[sysIdx], 32000, -1);
           sysIdx++;
         }
@@ -242,7 +243,6 @@ void copy_with_syst(cfg::ConfigurationTable config, cfg::ConfigurationTable tabl
     for (auto const& [name, y_vec_ptr] : branch_addresses_weights)
       {
 
-      std::cout << "Processing systematic parameter: " << name << ", with type: " << syst_type.c_str() << std::endl;
 	std::vector<Float_t>* x_vec_ptr = branch_addresses_nsigmas.at(name);
 	std::vector<Float_t> nsigmas;
   std::vector<Float_t> weights;
@@ -254,7 +254,6 @@ void copy_with_syst(cfg::ConfigurationTable config, cfg::ConfigurationTable tabl
 	if (is_morph)
 	{
 
-    std::cout << "Identified as morph dial: " << name << std::endl;
     // Build 5-point symmetric spline for morph dials
     Float_t w1 = (y_vec_ptr && !y_vec_ptr->empty()) ? y_vec_ptr->front() : 1.f;
     if (!std::isfinite(w1)) w1 = 1.f;

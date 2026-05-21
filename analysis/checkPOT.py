@@ -86,6 +86,7 @@ def getPOT(dataDir):
 
 if __name__ == "__main__":
     
-    dataDir = '/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_data_flat_cafs_2/' #beam on
+    #dataDir = '/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_data_flat_cafs_2/' #beam on
+    dataDir = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p02_2/" #beam on, CV ext
     #dataDir = '/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_offbeam_data_flat_cafs/' #beam off
     getPOT(dataDir)

@@ -17,6 +17,7 @@
 #include "framework.h"
 #include "include/particle_variables.h"
 #include "include/particle_cuts.h"
+#include "include/selectors.h"
 
 /**
  * @namespace utilities
@@ -164,6 +165,36 @@ namespace utilities
             }
         }
         return first_flash_index;
+    }
+
+    /**
+     * @brief Finds the index corresponding to the leading particle of a specified type.
+     * @details This function finds the index of the leading particle of a specified type in the interaction.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @param params the parameters for the selector. In this case, this sets the particle type to search for.
+     * @return the index of the leading particle of the specified type.
+     */
+    template<class T>
+    size_t leading_particle_type(const T & obj, const int & particle_type)
+    {
+        uint16_t pid = static_cast<uint16_t>(particle_type);
+
+        switch(pid)
+        {
+            case pvars::kPhoton:
+                return selectors::leading_photon(obj);
+            case pvars::kElectron:
+                return selectors::leading_electron(obj);
+            case pvars::kMuon:
+                return selectors::leading_muon(obj);
+            case pvars::kPion:
+                return selectors::leading_pion(obj);
+            case pvars::kProton:
+                return selectors::leading_proton(obj);
+            default:
+                return kNoMatch;
+        }
     }
 }
 #endif // UTILITIES_H

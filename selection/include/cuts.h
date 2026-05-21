@@ -147,6 +147,25 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::True, iscc, iscc);
 
     /**
+     * @brief Apply a cut on the neutrino pdg.
+     * @details This function applies a cut to select interactions based on
+     * the neutrino pdg
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this is a vector
+     * of neutrino pdg codes accepted
+     * @return true if the neutrino pdg is one of the specified pdgs.
+     */
+    template<class T>
+    bool is_neutrino_pdg(const T & obj, std::vector<double> params={})
+    {
+        if(params.empty())
+            return true; // No cut applied if no parameters are given.
+        return std::find(params.begin(), params.end(), obj.pdg_code) != params.end();
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::True, is_neutrino_pdg, is_neutrino_pdg);
+  
+    /**
      * @brief Apply a cut on the interaction mode.
      * @details This function applies a cut to select interactions based on
      * the interaction mode. The interaction mode is stored by Genie as an
@@ -946,19 +965,14 @@ namespace cuts
             params[2] = 10.0;    // Distance threshold between Michel and muon start/end points
         }
 
-        bool is_michel = false;
-        bool is_attached = false;
-
         for(const auto & p : obj.particles)
         {
-            if(pvars::semantic_type(p) != 2 && p.size > params[0])
+            if(pvars::semantic_type(p) != 2 || p.size < params[0])
                 continue; // Not target Michel
-
-            is_michel = true;
 
             for(const auto & p2 : obj.particles)
             {
-                if(pvars::pid(p2) != 2 && pvars::primary_classification(p2) && pvars::ke(p2) >= params[1])
+                if(pvars::pid(p2) != 2 || !pvars::primary_classification(p2) || pvars::ke(p2) < params[1])
                     continue; // Not target muon
 
                 float dx = pvars::start_x(p) - pvars::end_x(p2);

@@ -11,7 +11,7 @@ file = '/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/systematic_recipes.
 key = "NuMIFull"
 exposure_type = "pot"
 trees = ['true_signal']
-systematics = ['true_signal_multisigmaTree', 'true_signal_NuMIfluxsimTree']
+systematics = []
 branches = ["reco_fiducial_cut",
             "reco_flash_cut",
             "true_category",
@@ -32,38 +32,42 @@ branches = ["reco_fiducial_cut",
             "true_momentum_transfer",
             "reco_flash_time",
             "true_leading_electron_energy",
-            "true_ele_beam_open_angle"
+            "true_ele_beam_open_angle",
+            "reco_visible_energy",
+            "true_visible_energy"
             ]
-precompute = {"reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "true_ele_beam_cosTheta" = "np.where(true_ele_beam_open_angle != 10, np.cos(true_ele_beam_open_angle), -10)"}
+precompute = {"reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "true_ele_beam_cosTheta" = "np.where(true_ele_beam_open_angle != 10, np.cos(true_ele_beam_open_angle), -10)", "reco_nu" = "reco_visible_energy - reco_leading_electron_energy/1000", "true_nu" = "true_visible_energy - true_leading_electron_energy/1000"}
 
-# [samples.NuMIFullNonSel]
-# key = "NuMIFull"
-# exposure_type = "pot"
-# trees = ['true_signal']
-# systematics = []
-# branches = ["reco_fiducial_cut",
-#             "reco_flash_cut",
-#             "true_category",
-#             "true_neutrino_energy",
-#             "reco_leading_electron_ke",
-#             "reco_ele_beam_open_angle",
-#             "reco_leading_electron_energy",
-#             "reco_containment_cut",
-#             "reco_has_particle_multiplicity",
-#             "reco_no_muons",
-#             "reco_vertex_distance_cut",
-#             "reco_track_length",
-#             "reco_electron_softmax_cut",
-#             "reco_primary_softmax_cut",
-#             "reco_leading_ele_energy_cut",
-#             "reco_reco_interaction_type",
-#             "true_hadronic_invariant_mass",
-#             "true_momentum_transfer",
-#             "reco_flash_time",
-#             "true_leading_electron_energy",
-#             "true_ele_beam_open_angle"
-#             ]
-# precompute = {"reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "true_ele_beam_cosTheta" = "np.where(true_ele_beam_open_angle != 10, np.cos(true_ele_beam_open_angle), -10)"}
+[samples.NuMIFullNonSel]
+key = "NuMIFull"
+exposure_type = "pot"
+trees = ['true_signal']
+systematics = []
+branches = ["reco_fiducial_cut",
+            "reco_flash_cut",
+            "true_category",
+            "true_neutrino_energy",
+            "reco_leading_electron_ke",
+            "reco_ele_beam_open_angle",
+            "reco_leading_electron_energy",
+            "reco_containment_cut",
+            "reco_has_particle_multiplicity",
+            "reco_no_muons",
+            "reco_vertex_distance_cut",
+            "reco_track_length",
+            "reco_electron_softmax_cut",
+            "reco_primary_softmax_cut",
+            "reco_leading_ele_energy_cut",
+            "reco_reco_interaction_type",
+            "true_hadronic_invariant_mass",
+            "true_momentum_transfer",
+            "reco_flash_time",
+            "true_leading_electron_energy",
+            "true_ele_beam_open_angle",
+            "reco_visible_energy",
+            "true_visible_energy"
+            ]
+precompute = {"reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "true_ele_beam_cosTheta" = "np.where(true_ele_beam_open_angle != 10, np.cos(true_ele_beam_open_angle), -10)", "reco_nu" = "reco_visible_energy - reco_leading_electron_energy/1000", "true_nu" = "true_visible_energy - true_leading_electron_energy/1000"}
 
 # Output directory for plots
 [output]
@@ -148,6 +152,18 @@ custom_bins = [-1.0, -0.4, 0.0, 0.2, 0.35, 0.5, 0.625, 0.725, 0.8, 0.85, 0.9, 0.
 range = [-1.0, 1.0]
 xlabel = "True Leading Electron $cos{\theta_{NUMI}}$"
 
+[variables.reco_nu]
+key = 'reco_nu'
+nbins = 24
+range = [-1, 5]
+xlabel = 'Reco Neutrino Energy [GeV]'
+
+[variables.true_nu]
+key = 'true_nu'
+nbins = 24
+range = [-1, 5]
+xlabel = 'True Neutrino Energy [GeV]'
+
 # Create efficiency plot figures
 [[figure]]
 name = 'selection_efficiency_table'
@@ -178,7 +194,6 @@ show_seqeff = true
 show_unseqeff = true
 show_purity = true
 show_counts = true
-draw_error = 'total'
 
 # FIGURE 2: Efficiency vs Neutrino Energy Plot 
 [[figure]]
@@ -387,11 +402,10 @@ reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
 reco_leading_ele_energy_cut = 'Leading Electron Energy > 225 MeV'
 
 [figure.artists.draw_kwargs]
-show_option = 'final_only'  # KEY: This makes it a plot vs energy!
+show_option = 'differential'  # KEY: This makes it a plot vs energy!
 percentage = true
 show_seqeff = true     # Show cumulative efficiency curve
 show_unseqeff = false  # Don't show individual cut curves
-draw_error = 'total'
 
 # FIGURE 9: Efficiency vs true leading electron cosTheta Numi
 [[figure]]
@@ -405,6 +419,36 @@ type = 'SpineEfficiency'
 variable = 'true_ele_beam_cosTheta'
 groups = ['Signal']  # Can show both: ['Signal', 'Backgrounds']
 xtitle = 'True Leading Electron $cos{\theta_{NUMI}}$'
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_has_particle_multiplicity = '>=1 Electron-like Particle'
+reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.72'
+reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
+reco_no_muons = 'No Muon-like Particles'
+reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
+reco_leading_ele_energy_cut = 'Leading Electron Energy > 225 MeV'
+
+[figure.artists.draw_kwargs]
+show_option = 'differential'  # KEY: This makes it a plot vs energy!
+percentage = true
+show_seqeff = true     # Show cumulative efficiency curve
+show_unseqeff = false  # Don't show individual cut curves
+
+# FIGURE 10: Efficiency vs true nu (visible energy - leading electron energy)
+[[figure]]
+name = 'efficiency_vs_trueNu'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+title = 'Selection Efficiency vs True $\nu$ [GeV]'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'true_nu'
+groups = ['Signal']  # Can show both: ['Signal', 'Backgrounds']
+xtitle = 'True $\nu$ (Visible Energy - Leading Electron Energy) [GeV]'
 
 [figure.artists.cuts]
 reco_fiducial_cut = 'Fiducial Volume'

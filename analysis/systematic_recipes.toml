@@ -590,4 +590,4 @@ pattern = "statistical"
 [[systematic_recipe]]
 name = "total"
 label = "Total Uncertainty"
-pattern = "^(total_stat|xsec_total|statistical|flux)$"
+pattern = "^(xsec_total|flux)$"

@@ -1,0 +1,129 @@
+# ═══════════════════════════════════════════════════════════════════
+# Centralized sample catalog for medulla selection configurations.
+#
+# Each [[sample]] block has two layers of fields:
+#   (1) Operational fields: consumed by the C++ selection code and
+#       the Python batch system (name, path, ismc, disable).
+#   (2) Metadata fields: provenance and bookkeeping information
+#       ignored by the C++ code but used by the campaign system
+#       and stored for reproducibility.
+#
+# The 'key' and 'experiment' fields are metadata for the Python
+# campaign tooling and are ignored by the C++ selection executable.
+# ═══════════════════════════════════════════════════════════════════
+
+# ─── MC Samples: SBND ────────────────────────────────────────────
+[[sample]]
+key = "sbnd_mc5e18"
+name = "sbnd"
+experiment = "sbnd"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/*-reweighted.flat.caf.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND central value MC of sufficient statistics to accompany a 5e18 POT dataset"
+  parent_production = "MCP2025B"
+  production_version = "v10_06_00_02"
+  spine_production = "null"
+  spine_config = "null"
+
+[[sample]]
+key = "sbnd_mc1e20"
+name = "sbnd"
+experiment = "sbnd"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/*-reweighted.flat.caf.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND central value MC, larger stats sample"
+  parent_production = "MCP2025B"
+  production_version = "v10_06_00_02"
+  spine_production = "null"
+  spine_config = "null"
+
+# ─── MC Samples: ICARUS ──────────────────────────────────────────
+[[sample]]
+key = "icarus_nominal"
+name = "icarus"
+experiment = "icarus"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/*.flat.root"
+ismc = true
+
+  [sample.metadata]
+  description = "ICARUS nominal central value MC for detector variations"
+  parent_production = "MCP2024A"
+  production_version = "v09_89_01_02p01"
+  spine_production = "null"
+  spine_config = "null"
+
+[[sample]]
+key = "icarus_cvext"
+name = "icarus"
+experiment = "icarus"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/*.flat.root"
+ismc = true
+
+  [sample.metadata]
+  description = "ICARUS CV extension MC (higher statistics)"
+  parent_production = "MCP2024A"
+  production_version = "v09_89_01_02p01"
+  spine_production = "null"
+  spine_config = "null"
+
+# ─── Data Samples: SBND ──────────────────────────────────────────
+[[sample]]
+key = "sbnd_offbeam"
+name = "sbnd_offbeam"
+experiment = "sbnd"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/offbeamlight/*.flat.root"
+ismc = false
+
+  [sample.metadata]
+  description = "SBND BNB off-beam+light"
+  parent_production = "MCP2025B"
+  production_version = "v10_06_00_02"
+  spine_production = "null"
+  spine_config = "null"
+
+[[sample]]
+key = "sbnd_bnblight"
+name = "sbnd_bnblight"
+experiment = "sbnd"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/devsample/*.flat.root"
+ismc = false
+
+  [sample.metadata]
+  description = "SBND BNB on-beam+light fixed development sample"
+  parent_production = "MCP2025B"
+  production_version = "v10_06_00_02"
+  spine_production = "null"
+  spine_config = "null"
+
+# ─── Data Samples: ICARUS ────────────────────────────────────────
+[[sample]]
+key = "icarus_offbeam"
+name = "icarus_offbeam"
+experiment = "icarus"
+path = "/pnfs/icarus/persistent/users/mueller/production/data/offbeam/*.flat.root"
+ismc = false
+
+  [sample.metadata]
+  description = "ICARUS off-beam Majority"
+  parent_production = "MCP2024A"
+  production_version = "v09_89_01_02p01"
+  spine_production = "null"
+  spine_config = "null"
+
+[[sample]]
+key = "icarus_bnblight"
+name = "icarus_bnblight"
+experiment = "icarus"
+path = "/pnfs/icarus/persistent/users/mueller/production/data/onbeam/*.flat.root"
+ismc = false
+
+  [sample.metadata]
+  description = "ICARUS BNB on-beam Majority"
+  parent_production = "MCP2024A"
+  production_version = "v09_89_01_02p01"
+  spine_production = "null"
+  spine_config = "null"

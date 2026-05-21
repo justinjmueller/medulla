@@ -190,7 +190,7 @@ class SpineSpectra1D(SpineSpectra):
     def draw(self, ax, style, show_component_number=False,
              show_component_percentage=False, invert_stack_order=False,
              fit_type=None, logx=False, logy=False, normalize=False,
-             draw_error=None, make_ratio_plot=False, ratio_scatter_label='Data', ratio_ylim=(0.5, 1.5), ratio_ylabel='Data/MC', scatter_from_ordinate_only=True,
+             draw_error=None, make_ratio_plot=False, ratio_scatter_label='Data', ratio_ylim=None, ratio_ylabel='Data/MC', scatter_from_ordinate_only=True,
              area_error_apply_sample_weights=False, debug_area_error_scale=False) -> None:
         """
         Plots the data for the SpineSpectra1D object.
@@ -258,7 +258,8 @@ class SpineSpectra1D(SpineSpectra):
             plt.setp(ax.get_xticklabels(), visible=False)
             ax.set_xlabel('')
             ratio_ax.set_ylabel(ratio_ylabel)
-            ratio_ax.set_ylim(*ratio_ylim)
+            if ratio_ylim is not None:
+                ratio_ax.set_ylim(*ratio_ylim)
             ratio_ax.grid(True, axis='y', alpha=0.3)
             ratio_ax.set_xlabel(self._variable._xlabel if self._xtitle is None else self._xtitle)
 
@@ -421,6 +422,7 @@ class SpineSpectra1D(SpineSpectra):
                 scaled_plotdata = {k: np.zeros(self._variable._nbins) for k in self._plotdata.keys()}
                 for sname, cat_hists in getattr(self, '_sample_plotdata', {}).items():
                     sf = area_scales.get(sname, 1.0)
+                    print(f"[SpineSpectra1D] area scaling sample '{sname}' by factor {sf:.6g}")
                     for cat, hvals in cat_hists.items():
                         if cat in scaled_plotdata:
                             scaled_plotdata[cat] += sf * hvals
@@ -585,6 +587,23 @@ class SpineSpectra1D(SpineSpectra):
 
                 x = bincenters[si0]
                 ratio_ax.errorbar(x, ratio, yerr=ratio_err, fmt='o', color=colors[si0], markersize=4)
+
+                # Auto-scale ratio panel from plotted points when explicit limits are not provided.
+                if ratio_ylim is None:
+                    finite_ratio = ratio[np.isfinite(ratio)]
+                    finite_err = ratio_err[np.isfinite(ratio_err)]
+                    if finite_ratio.size > 0:
+                        if finite_err.size == finite_ratio.size:
+                            y_low = np.nanmin(finite_ratio - finite_err)
+                            y_high = np.nanmax(finite_ratio + finite_err)
+                        else:
+                            y_low = np.nanmin(finite_ratio)
+                            y_high = np.nanmax(finite_ratio)
+                        span = max(y_high - y_low, 1e-6)
+                        pad = 0.1 * span
+                        ratio_ax.set_ylim(y_low - pad, y_high + pad)
+                    else:
+                        ratio_ax.set_ylim(0.5, 1.5)
 
                 # Optional MC uncertainty band in ratio (if available from draw_error).
                 if total_yerr is not None:

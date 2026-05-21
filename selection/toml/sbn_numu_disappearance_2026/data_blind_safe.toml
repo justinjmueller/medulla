@@ -1,6 +1,6 @@
 [general]
 output = "sbn_numu_disappearance_2026"
-primfn = "default_primary_classification"
+primfn = "lax_primary_classification"
 pidfn = "default_pid"
 fsthresh = [
     "@photon_threshold",
@@ -17,17 +17,9 @@ muon_threshold = 25.0
 pion_threshold = 25.0
 proton_threshold = 50.0
 
-[[sample]]
-name = "sbnd_bnblight"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/devsample/*.flat.root"
-ismc = false
-disable = true
-
-[[sample]]
-name = "icarus_bnblight"
-path = "/pnfs/icarus/persistent/users/mueller/production/data/onbeam/*.flat.root"
-ismc = false
-disable = true
+[[include_samples]]
+file = "common/samples.toml"
+keys = ["sbnd_bnblight", "icarus_bnblight"]
 
 [[tree]]
 name = "selected"
