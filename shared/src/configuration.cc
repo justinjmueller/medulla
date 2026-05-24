@@ -339,6 +339,38 @@ namespace cfg
         return values;
     }
 
+    std::vector<std::vector<double>> cfg::ConfigurationTable::get_double_matrix(const std::string & field) const
+    {
+        const toml::node_view<const toml::node> nv = scope.at_path(field);
+        if(!nv)
+            throw ConfigurationError("Field " + field + " (double[][]) not found in the configuration file.");
+
+        const toml::array * outer = nv.as_array();
+        if(!outer)
+            throw ConfigurationError("Field " + field + " is not an array.");
+
+        std::vector<std::vector<double>> values;
+        values.reserve(outer->size());
+        for(const auto & row_node : *outer)
+        {
+            toml::node_view<const toml::node> row_nv(row_node);
+            const toml::array * row = row_nv.as_array();
+            if(!row)
+                throw ConfigurationError("Field " + field + " must be an array of arrays.");
+
+            std::vector<double> row_values;
+            row_values.reserve(row->size());
+            for(const auto & element : *row)
+            {
+                toml::node_view<const toml::node> element_nv(element);
+                row_values.push_back(resolve_numeric_node(element_nv));
+            }
+            values.push_back(std::move(row_values));
+        }
+
+        return values;
+    }
+
     // Get a list of all subtables matching the requested table name.
     std::vector<ConfigurationTable> ConfigurationTable::get_subtables(const std::string & table) const
     {

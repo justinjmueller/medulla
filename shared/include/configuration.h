@@ -206,6 +206,17 @@ namespace cfg
         std::vector<double> get_double_vector(const std::string & field) const;
 
         /**
+         * @brief Get a matrix of doubles from a nested array field.
+         * @details This function gets a nested list of doubles matching the
+         * requested field name. Each element must be an array of numeric
+         * values (or numeric references).
+         * @param field The field that is requested.
+         * @return A vector of double vectors.
+         * @throw ConfigurationError
+         */
+        std::vector<std::vector<double>> get_double_matrix(const std::string & field) const;
+
+        /**
          * @brief Get a list of all subtables matching the requested table name.
          * @details This function gets a list of all subtables matching the
          * requested table name. The function returns a vector of ConfigurationTable

@@ -403,7 +403,7 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
                         for(double & z : calc.get_zscores(key))
                             value->get_weights()->push_back(calc.get_weight(key, brs[calc.get_variable()], z));
                         for(SysVariable & sv : sysvariables)
-                            calc.add_value(sv.name, brs[sv.name], key, brs[calc.get_variable()]);
+                            calc.add_value(sv.name, brs[sv.name], key, brs);
                     }
                 } // End of loop over the configured systematics.
 

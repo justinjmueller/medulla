@@ -1086,5 +1086,30 @@ namespace vars
         return kNoMatchValue;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Matched, true_pdg_from_reco, true_pdg_from_reco);
+
+    template<class T>
+    double ele_beam_open_angle(const T & obj)
+    {
+        size_t i = selectors::leading_electron(obj);
+        if (i == kNoMatch) return PLACEHOLDERVALUE;
+        const auto & p = obj.particles[i];
+
+        utilities::three_vector p_dir = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+        utilities::three_vector vtx = {obj.vertex[0], obj.vertex[1], obj.vertex[2]};
+
+        p_dir = utilities::normalize(p_dir);
+        utilities::three_vector unit;
+        if constexpr(!BEAM_IS_NUMI)
+            unit = std::make_tuple(0, 0, 1);
+        else
+        {
+            utilities::three_vector beam = std::make_tuple(315.120380 + std::get<0>(vtx), 33.644912 + std::get<1>(vtx), 733.632532 + std::get<2>(vtx));
+            unit = utilities::normalize(beam);
+        }
+        double open_angle = std::get<0>(p_dir) * std::get<0>(unit) + std::get<1>(p_dir) * std::get<1>(unit) + std::get<2>(p_dir) * std::get<2>(unit);
+        return open_angle;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, ele_beam_open_angle, ele_beam_open_angle);
+    
 }
 #endif // VARIABLES_H
