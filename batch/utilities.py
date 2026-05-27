@@ -7,6 +7,7 @@ from catalog import resolve_samples
 from glob import glob
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 # ANSI helpers (no third-party dependency)
 _INFO     = '\033[1m\033[94m[INFO]\033[0m'      # bold blue
@@ -365,6 +366,9 @@ def launch_jobsub(
     njobs : int = -1,
     confirm : bool = True,
     tag : str = 'develop',
+    memory : int = 1800,
+    disk : Optional[int] = None,
+    lifetime : str = '1h',
 ):
     """
     Launch jobs using jobsub for the given project directory. If njobs
@@ -384,6 +388,12 @@ def launch_jobsub(
         campaign launch confirms once for all projects).
     tag : str
         Git ref passed to submit.sh as --tag (default: develop).
+    memory : int
+        Amount of memory to request for each job in MB. If None, use default.
+    disk : int
+        Amount of disk to request for each job in GB. If None, use default.
+    lifetime : str
+        Expected lifetime of each job (e.g., '1h', '30m'). If None, use default.
 
     Returns
     -------
@@ -426,9 +436,8 @@ def launch_jobsub(
         'jobsub_submit',
         '-G', exp,
         '-N', str(njobs),
-        '--memory=1800MB',
-        f'--disk={"10GB" if exp == "sbnd" else "25GB"}',
-        '--expected-lifetime=1h',
+        f'--memory={memory}MB',
+        f'--expected-lifetime={lifetime}',
         '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE',
         "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
         '--singularity-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest',
@@ -437,6 +446,13 @@ def launch_jobsub(
         f'--project={project_dir.resolve()}',
         f'--tag={tag}',
     ]
+
+    if disk is not None:
+        cmd.append(f'--disk={disk}GB')
+    elif exp == 'sbnd':
+        cmd.append(f'--disk=10GB')
+    else:
+        cmd.append(f'--disk=25GB')
 
     # Query the user to confirm that they want to launch the jobs.
     if confirm:
@@ -471,3 +487,40 @@ def launch_jobsub(
         job_id = match.group(1) if match else 'unknown'
         print(f"{_CAMPAIGN} Submitted {njobs} job(s). Job ID: {job_id}")
     return True
+
+def check_git_branch(
+    branch : str,
+    repo_url : str = 'https://github.com/justinjmueller/medulla',
+):
+    """
+    Check if the specified branch or tag exists in the given Git 
+    repository. First checks for branches, then tags if not found.
+
+    Parameters
+    ----------
+    branch : str
+        Branch or tag name to check for existence.
+    repo_url : str
+        URL to the Git repository.
+
+    Returns
+    -------
+    bool
+        True if the branch or tag exists, False otherwise.
+    """
+    # Check if it exists as a branch
+    result = subprocess.run(
+        ["git", "ls-remote", "--exit-code", "--heads", repo_url, branch],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    if result.returncode == 0:
+        return True
+    
+    # If not a branch, check if it exists as a tag
+    result = subprocess.run(
+        ["git", "ls-remote", "--exit-code", "--tags", repo_url, branch],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    return result.returncode == 0
