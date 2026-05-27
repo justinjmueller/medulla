@@ -24,7 +24,7 @@ keys = [
     "icarus_nominal", "icarus_cvext", "icarus_offbeam",
 ]
 # For interactive debugging, uncomment:
-enable = ["sbnd_mc5e18"]
+# enable = ["sbnd_mc5e18"]
 
 [[tree]]
 name = "selected"
