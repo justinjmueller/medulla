@@ -272,7 +272,7 @@ namespace pvars
 
     /**
      * @brief Variable for the difference between the mcs and csda kinetic
-     * energies of the particle.
+     * energies of the particle normalized by the csda kinetic energy.
      * @details This variable primarily exists to be used for studies of the
      * performance (and systematic coverage) of the MCS energy reconstruction
      * method without needing to save sensitive quantities. This variable is
@@ -281,18 +281,18 @@ namespace pvars
      * @tparam T the type of particle (true or reco).
      * @param p the particle to apply the variable on.
      * @return the difference between the MCS and CSDA kinetic energies of the
-     * particle.
+     * particle normalized by the CSDA kinetic energy.
      */
     template<class T>
     double mcs_csda_diff(const T & p)
     {
-        return mcs_ke(p) - csda_ke(p);
+        return (mcs_ke(p) - csda_ke(p)) / csda_ke(p);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, mcs_csda_diff, mcs_csda_diff);
 
     /**
      * @brief Variable for the difference between the calorimetric and CSDA
-     * kinetic energies of the particle.
+     * kinetic energies of the particle normalized by the CSDA kinetic energy.
      * @details This variable primarily exists to be used for studies of the
      * performance (and systematic coverage) of the calorimetric energy
      * reconstruction method without needing to save sensitive quantities. This
@@ -302,12 +302,12 @@ namespace pvars
      * @tparam T the type of particle (true or reco).
      * @param p the particle to apply the variable on.
      * @return the difference between the calorimetric and CSDA kinetic
-     * energies of the particle.
+     * energies of the particle normalized by the CSDA kinetic energy.
      */
     template<class T>
     double calo_csda_diff(const T & p)
     {
-        return calo_ke(p) - csda_ke(p);
+        return (calo_ke(p) - csda_ke(p)) / csda_ke(p);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, calo_csda_diff, calo_csda_diff);
 
