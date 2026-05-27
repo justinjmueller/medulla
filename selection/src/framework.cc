@@ -709,6 +709,8 @@ ana::SpillMultiVar spill_multivar_helper(
     {
         std::vector<double> values;
 
+        context::current_detector = sr->hdr.det;
+
         // Check if this event passes the event cut.
         if(!event_cut(*sr)) return values;
 

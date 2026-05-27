@@ -1,14 +1,5 @@
-[parameters]
-photon_threshold = 25.0
-electron_threshold = 0.0
-muon_threshold = 143.425
-pion_threshold = 25.0
-proton_threshold = 50.0
-trackLength_threshold = 190.0
-electron_dedx = 3.625
-
 [general]
-output = "output_nueCCInclusive"
+output = "icarus_nueCC_inclusive_2026"
 primfn = "default_primary_classification"
 pidfn = "default_pid"
 fsthresh = [
@@ -18,6 +9,15 @@ fsthresh = [
     "@pion_threshold",
     "@proton_threshold",
 ]
+
+[parameters]
+photon_threshold = 25.0
+electron_threshold = 0.0
+muon_threshold = 143.425
+pion_threshold = 25.0
+proton_threshold = 50.0
+trackLength_threshold = 190.0
+electron_dedx = 3.625
 
 # ICARUS MC NuMI Neutrino + Cosmics CV
 [[sample]]

@@ -45,6 +45,19 @@
 namespace vars
 {
     /**
+     * @brief Variable for the detector of the interaction.
+     * @details The detector is set in the header of the parent
+     * StandardRecord. A value of 1 corresponds to SBND, 2 to ICARUS,
+     * 0 to unknown.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the detector of the interaction.
+     */
+    template<class T>
+    double detector(const T & obj) { return context::current_detector; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, detector, detector);
+
+    /**
      * @brief Variable for the neutrino ID of the interaction.
      * @details This variable is intended to provide a unique identifier for
      * each parent neutrino within the event record. This number is assigned

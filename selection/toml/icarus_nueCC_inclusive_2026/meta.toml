@@ -1,6 +1,6 @@
 [meta]
 analysis = "icarus_nueCC_inclusive_2026"
-description = "Icarus nue CC inclusive cross section analysis"
+description = "ICARUS nue CC inclusive cross section analysis"
 owners = ["micarrig"]
 experiments = ["icarus"]
 
