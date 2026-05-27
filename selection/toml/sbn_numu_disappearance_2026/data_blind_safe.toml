@@ -35,6 +35,7 @@ cut = [
 ]
 branch = [
     # Interaction-level branches
+    { name = "containment_cut",       type = "both"    },
     { name = "dpT",                   type = "both"    },
     { name = "dalphaT",               type = "both"    },
     { name = "dphiT",                 type = "both"    },
