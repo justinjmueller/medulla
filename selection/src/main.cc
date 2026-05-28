@@ -9,7 +9,7 @@
  */
 #define PLACEHOLDERVALUE std::numeric_limits<double>::quiet_NaN()
 #define PROTON_BINDING_ENERGY 30.9 // MeV
-#define BEAM_IS_NUMI true
+#define BEAM_IS_NUMI false
 
 #include <iostream>
 #include <string>

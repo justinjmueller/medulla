@@ -15,7 +15,6 @@
 #include <algorithm>
 
 #include "utilities.h"
-#include "utilities_pi0ana.h" //from dan's analysis
 #include "framework.h"
 #include "selectors.h"
 
@@ -1050,15 +1049,6 @@ namespace cuts
         return pvars::energy(p) > energy_threshold;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, leading_ele_energy_cut, leading_ele_energy_cut);
-
-    // Dan's cuts
-    template<class T>
-    bool at_least_one_pi0(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params = {0.0,})
-    {
-        double num_primary_pi0s = utilities_pi0ana::true_primary_pi0_multiplicity(obj, params);
-        return num_primary_pi0s >= 1;
-    }
-    REGISTER_CUT_SCOPE(RegistrationScope::True, at_least_one_pi0, at_least_one_pi0);
 
     template<class T>
     bool track_containment_cut(const T & obj) {
