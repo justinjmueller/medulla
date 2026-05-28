@@ -1,8 +1,7 @@
 #!/bin/bash
 
 #######################################################################
-# Usage: submit.sh [--project=PROJECT] [--tag=TAG]
-#
+# Usage: submit.sh [--project=PROJECT] [--tag=TAG]# 
 # Arguments:
 #   --project=PROJECT   : Specify the project directory
 #   --tag=TAG           : Git ref to checkout on grid nodes (default: develop)
@@ -88,7 +87,7 @@ ups active
 # Build medulla
 git clone https://github.com/justinjmueller/medulla.git
 cd medulla
-git checkout ${TAG}
+git checkout "${TAG}"
 mkdir build && cd build
 export CC=$(which gcc)
 export CXX=$(which g++)
