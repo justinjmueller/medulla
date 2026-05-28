@@ -97,7 +97,7 @@ class SpineEfficiency(SpineArtist):
         self._seed = 12345
 
     def draw(self, ax, show_option, percentage=True, show_seqeff=True,
-             show_unseqeff=True, show_purity=False, yrange=None, npts=100, style=None,
+             show_unseqeff=True, show_purity=False, yrange=None, npts=1e6, style=None,
              logx=False, logy=False, colors=None,
              draw_error=None, show_syst_band=True, syst_alpha=0.25,
              syst_color='gray', syst_label=None, show_legend=True):
@@ -550,6 +550,10 @@ class SpineEfficiency(SpineArtist):
         # posterior distribution.
         efficiencies = np.linspace(0.0, 1, self._npts, dtype=np.float32)
 
+        # `_selected_counts` is initialized in `__init__` and must be
+        # preserved across calls so purity-related quantities accumulate
+        # consistently with `_posteriors`, `_totals`, and `_successes`.
+
         # Get the data for the binning variable and the configured
         # cuts. The data is returned as a dictionary with the key
         # being the category and the value consisting of the variable
@@ -747,6 +751,7 @@ class SpineEfficiency(SpineArtist):
         """
 
         if group not in self._selected_counts:
+            print(f"Warning: Group '{group}' not found in selected counts. Returning empty purity results.")
             return {}, {}, {}, {}
 
         cv = {}

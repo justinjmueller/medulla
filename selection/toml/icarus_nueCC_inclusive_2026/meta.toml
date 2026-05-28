@@ -1,0 +1,16 @@
+[meta]
+analysis = "icarus_nueCC_inclusive_2026"
+description = "ICARUS nue CC inclusive cross section analysis"
+owners = ["micarrig"]
+experiments = ["icarus"]
+
+[defaults]
+batch_size = 20
+
+[[toml]]
+role = "primary"
+file = "selection.toml"
+
+  [toml.enable.icarus]
+  keys = ["icarus_nominal", "icarus_cvext", "icarus_offbeam"]
+

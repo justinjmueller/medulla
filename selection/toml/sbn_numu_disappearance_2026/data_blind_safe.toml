@@ -13,7 +13,7 @@ fsthresh = [
 [parameters]
 photon_threshold = 25.0
 electron_threshold = 25.0
-muon_threshold = 25.0
+muon_threshold = 143.425
 pion_threshold = 25.0
 proton_threshold = 50.0
 
@@ -35,6 +35,7 @@ cut = [
 ]
 branch = [
     # Interaction-level branches
+    { name = "containment_cut",       type = "both"    },
     { name = "dpT",                   type = "both"    },
     { name = "dalphaT",               type = "both"    },
     { name = "dphiT",                 type = "both"    },
@@ -49,6 +50,13 @@ branch = [
     { name = "muon_multiplicity",     type = "both",  parameters = [ "@muon_threshold"     ] },
     { name = "proton_multiplicity",   type = "both",  parameters = [ "@proton_threshold"   ] },
 
+    # Information for Neutrino 2026
+    { name = "cathode_crosser",       type = "both"    },
+    { name = "fiducialize_cathode",   type = "both"    },
+    { name = "veto_sbnd_highy_highz", type = "both"    },
+    { name = "neutrino2026_veto",     type = "both"    },
+    { name = "detector",              type = "reco"    },
+
     # Leading MUON interaction-level
     { name = "start_x",               type = "both_particle", selector = "leading_muon" },
     { name = "start_y",               type = "both_particle", selector = "leading_muon" },
@@ -56,7 +64,8 @@ branch = [
     { name = "end_x",                 type = "both_particle", selector = "leading_muon" },
     { name = "end_y",                 type = "both_particle", selector = "leading_muon" },
     { name = "end_z",                 type = "both_particle", selector = "leading_muon" },
-    { name = "length",                type = "reco_particle", selector = "leading_muon" },
+    #{ name = "mcs_csda_diff",         type = "reco_particle", selector = "leading_muon" },
+    #{ name = "calo_csda_diff",        type = "reco_particle", selector = "leading_muon" },
     { name = "azimuthal_angle",       type = "both_particle", selector = "leading_muon" },
     { name = "primary_softmax",       type = "reco_particle", selector = "leading_muon" },
     { name = "muon_softmax",          type = "reco_particle", selector = "leading_muon" },
@@ -68,6 +77,7 @@ branch = [
     { name = "end_y",             type = "both_particle", selector = "leading_proton" },
     { name = "end_z",             type = "both_particle", selector = "leading_proton" },
     { name = "ke",                type = "both_particle", selector = "leading_proton" },
+    { name = "calo_csda_diff",    type = "reco_particle", selector = "leading_proton" },
     { name = "length",            type = "both_particle", selector = "leading_proton" },
     { name = "dpT",               type = "both_particle", selector = "leading_proton" },
     { name = "polar_angle",       type = "both_particle", selector = "leading_proton" },

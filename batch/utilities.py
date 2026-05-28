@@ -398,7 +398,7 @@ def launch_jobsub(
     project_dir : str,
     exp : str = 'sbnd',
     njobs : int = -1,
-    branch : str = 'develop',
+    tag : str = 'develop',
     memory : int = 1800,
     disk : Optional[int] = None,
     lifetime : str = '1h',
@@ -417,8 +417,8 @@ def launch_jobsub(
         Experiment name (default: sbnd).
     njobs : int
         Number of jobs to launch. If None, launch all pending jobs.
-    branch : str
-        Branch to use for the medulla repository (defaults to develop).
+    tag : str
+        Git ref passed to submit.sh as --tag (default: develop).
     memory : int | None
         Amount of memory to request for each job in MB. If None, use default.
     disk : int | None
@@ -507,7 +507,6 @@ def launch_jobsub(
         '-G', exp,
         '-N', str(njobs),
         f'--memory={memory}MB',
-        f'--disk={disk_size}',
         f'--expected-lifetime={lifetime}',
         '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE',
         "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
@@ -518,7 +517,12 @@ def launch_jobsub(
         f'--branch={branch}',
     ]
 
-    print(f"[INFO] -- Launching {njobs} jobs with command: {' '.join(cmd)}")
+    if disk is not None:
+        cmd.append(f'--disk={disk}GB')
+    elif exp == 'sbnd':
+        cmd.append(f'--disk=10GB')
+    else:
+        cmd.append(f'--disk=25GB')
 
     # Query the user to confirm that they want to launch the jobs.
     if confirm:
@@ -559,22 +563,33 @@ def check_git_branch(
     repo_url : str = 'https://github.com/justinjmueller/medulla',
 ):
     """
-    Check out the specified branch in the given Git repository
-    directory.
+    Check if the specified branch or tag exists in the given Git 
+    repository. First checks for branches, then tags if not found.
 
     Parameters
     ----------
     branch : str
-        Branch to check for existence.
+        Branch or tag name to check for existence.
     repo_url : str
         URL to the Git repository.
 
     Returns
     -------
     bool
+        True if the branch or tag exists, False otherwise.
     """
+    # Check if it exists as a branch
     result = subprocess.run(
         ["git", "ls-remote", "--exit-code", "--heads", repo_url, branch],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    if result.returncode == 0:
+        return True
+    
+    # If not a branch, check if it exists as a tag
+    result = subprocess.run(
+        ["git", "ls-remote", "--exit-code", "--tags", repo_url, branch],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
