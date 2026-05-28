@@ -359,6 +359,7 @@ def check_project_status(
     subprocess.run(['mv', './project.db', project_dir / 'project.db'], check=True)
 
     print(f"[INFO] -- Found {len(completed_jobs)} completed jobs.")
+
 def launch_jobsub(
     project_dir : str,
     exp : str = 'sbnd',
@@ -430,17 +431,12 @@ def launch_jobsub(
     if confirm:
         print(f"{_INFO} -- Found {len(pending_jobs)} pending jobs.")
 
-    disk_size = '10GB' if exp == 'sbnd' else '25GB'
-    if disk is not None:
-        disk_size = f'{disk}GB'
-
     # Form the jobsub command to launch the jobs.
     cmd = [
         'jobsub_submit',
         '-G', exp,
         '-N', str(njobs),
         f'--memory={memory}MB',
-        f'--disk={disk_size}',
         f'--expected-lifetime={lifetime}',
         '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE',
         "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
