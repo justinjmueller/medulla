@@ -613,6 +613,103 @@ namespace evar
     REGISTER_VAR_SCOPE(RegistrationScope::Event, unfolded_nnumi, unfolded_nnumi);
 
     /**
+     * @brief Variable for the raw DAQ header timestamp of the event.
+     * @details This variable returns the timestamp when the event is built by
+     * the event builder at DAQ-level, recorded in the SBND timing info.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the raw DAQ header timestamp.
+     */
+    template<typename T>
+    double raw_daq_header_timestamp(const T & sr) { return sr.sbnd_timings.rawDAQHeaderTimestamp; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, raw_daq_header_timestamp, raw_daq_header_timestamp);
+
+    /**
+     * @brief Variable for the SPEC-TDC timestamp of the BNB stream CRT T1 Reset.
+     * @details This variable returns the timestamp of the BNB stream CRT T1
+     * Reset recorded by the SPEC-TDC.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the SPEC-TDC CRT T1 Reset timestamp.
+     */
+    template<typename T>
+    double tdc_crtt1(const T & sr) { return sr.sbnd_timings.tdcCrtt1; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, tdc_crtt1, tdc_crtt1);
+
+    /**
+     * @brief Variable for the SPEC-TDC timestamp of the BES signal.
+     * @details This variable returns the timestamp of the BES signal sent by
+     * MFTU, recorded by the SPEC-TDC.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the SPEC-TDC BES timestamp.
+     */
+    template<typename T>
+    double tdc_bes(const T & sr) { return sr.sbnd_timings.tdcBes; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, tdc_bes, tdc_bes);
+
+    /**
+     * @brief Variable for the SPEC-TDC timestamp of the RWM signal.
+     * @details This variable returns the timestamp of the RWM signal recorded
+     * by the SPEC-TDC.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the SPEC-TDC RWM timestamp.
+     */
+    template<typename T>
+    double tdc_rwm(const T & sr) { return sr.sbnd_timings.tdcRwm; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, tdc_rwm, tdc_rwm);
+
+    /**
+     * @brief Variable for the SPEC-TDC timestamp of the Event Trigger (ETRIG).
+     * @details This variable returns the timestamp of the Event Trigger (ETRIG)
+     * sent by the PTB, recorded by the SPEC-TDC.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the SPEC-TDC ETRIG timestamp.
+     */
+    template<typename T>
+    double tdc_etrig(const T & sr) { return sr.sbnd_timings.tdcEtrig; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, tdc_etrig, tdc_etrig);
+
+    /**
+     * @brief Variable for the PTB HLT timestamp of the BNB and Offbeam stream
+     * CRT T1 Reset.
+     * @details This variable returns the timestamp of the BNB and Offbeam
+     * stream CRT T1 Reset High Level Trigger (HLT) created by the PTB.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the PTB HLT CRT T1 Reset timestamp.
+     */
+    template<typename T>
+    double hlt_crtt1(const T & sr) { return sr.sbnd_timings.hltCrtt1; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, hlt_crtt1, hlt_crtt1);
+
+    /**
+     * @brief Variable for the PTB HLT timestamp of the ETRIG.
+     * @details This variable returns the timestamp of the ETRIG High Level
+     * Trigger (HLT) created by the PTB.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the PTB HLT ETRIG timestamp.
+     */
+    template<typename T>
+    double hlt_etrig(const T & sr) { return sr.sbnd_timings.hltEtrig; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, hlt_etrig, hlt_etrig);
+
+    /**
+     * @brief Variable for the PTB HLT timestamp of the Beam Gate Acceptance.
+     * @details This variable returns the timestamp of the Beam Gate Acceptance
+     * High Level Trigger (HLT) created by the PTB.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the PTB HLT Beam Gate Acceptance timestamp.
+     */
+    template<typename T>
+    double hlt_beam_gate(const T & sr) { return sr.sbnd_timings.hltBeamGate; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, hlt_beam_gate, hlt_beam_gate);
+
+    /**
      * @brief Variable for the time of the trigger in the beam reference frame.
      * @details This variable returns the time of the trigger in the beam 
      * reference frame. Beam-related activity should appear as a "top hat"
