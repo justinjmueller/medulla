@@ -3,15 +3,28 @@ output = "sbnd_bnb"
 
 [[sample]]
 name = "onbeam"
-path = "/pnfs/sbn/data_add/sbn_nd/poms_production/data/MCP2025C/v10_06_00_09/Spring25_reprocess_Dev1e20_bnblight/flatcaf/bnblight/00/*.root"
+path = "/pnfs/sbn/data_add/sbn_nd/poms_production/data/MCP2025C/v10_06_00_09/Spring25_reprocess_Dev1e20_bnblight/flatcaf/bnblight/*/*.root"
+#path = "/pnfs/sbn/data_add/sbn_nd/poms_production/data/SBND2026A/v10_14_02_02/gen2_BNB-Run1/flatcaf/bnblight/7c/*.flat.caf.root"
+ismc = false
+disable = false
+
+[[sample]]
+name = "onbeamii"
+path = "/pnfs/sbn/data_add/sbn_nd/poms_production/data/SBND2026A/v10_14_02_02/gen2_BNB-Run1/flatcaf/bnblight/*/*.flat.caf.root"
 ismc = false
 disable = false
 
 [[sample]]
 name = "offbeam"
-path = "/pnfs/sbn/data/sbn_fd/poms_production/data/Reproc_Run2_SBN_2/reconstructed/icaruscode_v10_06_00_06p03/offbeambnbmajority/flatcaf_unblind/*/*/*.root"
+path = "/pnfs/sbn/data_add/sbn_nd/poms_production/data/MCP2025C/v10_06_00_09/Spring25_reprocess_Intime_offbeamlight/flatcaf/offbeamlight/*/*.root"
 ismc = false
-disable = true
+disable = false
+
+[[sample]]
+name = "offbeamii"
+path = "/pnfs/sbn/data_add/sbn_nd/poms_production/data/SBND2026A/v10_14_02_02/gen2_InTime-Run1/flatcaf/offbeamlight/*/*.root"
+ismc = false
+disable = false
 
 [[tree]]
 name = "events"
@@ -28,6 +41,7 @@ branch = [
     { name = "unfolded_nbnb",           type = "event" },
     { name = "global_trigger_time",     type = "event" },
     { name = "trigger_within_gate",     type = "event" },
+    { name = "beam_time",               type = "event" },
 ]
 
 [[tree]]
@@ -39,6 +53,8 @@ cut = [
 ]
 branch = [
     { name = "event",  type = "bnb_spill" },
+    { name = "fom",    type = "bnb_spill" },
+    { name = "tor860", type = "bnb_spill" },
     { name = "tor875", type = "bnb_spill" },
     { name = "thcurr", type = "bnb_spill" },
     { name = "hp875",  type = "bnb_spill" },
@@ -46,4 +62,17 @@ branch = [
     { name = "lm875a", type = "bnb_spill" },
     { name = "lm875b", type = "bnb_spill" },
     { name = "lm875c", type = "bnb_spill" },
+    { name = "hp873",  type = "bnb_spill" },
+    { name = "vp873",  type = "bnb_spill" },
+    { name = "hp875",  type = "bnb_spill" },
+    { name = "vp875",  type = "bnb_spill" },
+    { name = "m875hs", type = "bnb_spill" },
+    { name = "m875vs", type = "bnb_spill" },
+    { name = "m876hs", type = "bnb_spill" },
+    { name = "m876vs", type = "bnb_spill" },
+    { name = "hptg1",  type = "bnb_spill" },
+    { name = "vptg1",  type = "bnb_spill" },
+    { name = "hptg2",  type = "bnb_spill" },
+    { name = "vptg2",  type = "bnb_spill" },
+    { name = "btjt2",  type = "bnb_spill" }
 ]

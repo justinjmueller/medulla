@@ -2,14 +2,26 @@
 output = "icarus_bnb"
 
 [[sample]]
-name = "onbeam"
-path = "/pnfs/sbn/data/sbn_fd/poms_production/data/Reproc_Run2_SBN_2/reconstructed/icaruscode_v10_06_00_06p03/bnbmajority/flatcaf_unblind/00*/*/*.root"
+name = "onbeam_run2"
+path = "/pnfs/sbn/data/sbn_fd/poms_production/data/Reproc_Run2_SBN_2/reconstructed/icaruscode_v10_06_00_06p03/bnbmajority/flatcaf_unblind/*/*/*.root"
 ismc = false
-disable = false
+disable = true
 
 [[sample]]
-name = "offbeam"
+name = "onbeam_run4"
+#path = "/pnfs/sbn/data/sbn_fd/aurora/data/mueller_stride10_2025_wcdnn_production_Run4_SBN_v10_06_00_01p05_fstrmBNBMAJORITY_reprocess/caf/*/*/*Unblind*.flat.caf.root"
+path = "/pnfs/sbn/data/sbn_fd/aurora/data/mueller_stride10_2025_wcdnn_production_Run4_SBN_v10_06_00_01p05_fstrmBNBMAJORITY_reprocess/caf/*0/*0/*Unblind*.flat.caf.root"
+ismc = false
+
+[[sample]]
+name = "offbeam_run2"
 path = "/pnfs/sbn/data/sbn_fd/poms_production/data/Reproc_Run2_SBN_2/reconstructed/icaruscode_v10_06_00_06p03/offbeambnbmajority/flatcaf_unblind/*/*/*.root"
+ismc = false
+disable = true
+
+[[sample]]
+name = "offbeam_run4"
+path = "/pnfs/sbn/data/sbn_fd/polaris/run4/offbeam/caf/000000/*Unblind*.flat.caf.root"
 ismc = false
 disable = true
 
@@ -31,21 +43,35 @@ branch = [
     { name = "trigger_within_gate",     type = "event" },
 ]
 
-#[[tree]]
-#name = "spills"
-#sim_only = false
-#mode = "event"
-#cut = [
-#    { name = "no_cut", type = "event" },
-#]
-#branch = [
-#    { name = "event",        type = "bnb_spill" },
-#    { name = "fom",          type = "bnb_spill" },
-#    { name = "tor875",       type = "bnb_spill" },
-#    { name = "thcurr",       type = "bnb_spill" },
-#    { name = "hp875",        type = "bnb_spill" },
-#    { name = "vp875",        type = "bnb_spill" },
-#    { name = "lm875a",       type = "bnb_spill" },
-#    { name = "lm875b",       type = "bnb_spill" },
-#    { name = "lm875c",       type = "bnb_spill" },
-#]
+[[tree]]
+name = "spills"
+sim_only = false
+mode = "event"
+cut = [
+    { name = "no_cut", type = "event" },
+]
+branch = [
+    { name = "event",  type = "bnb_spill" },
+    { name = "fom",    type = "bnb_spill" },
+    { name = "tor860", type = "bnb_spill" },
+    { name = "tor875", type = "bnb_spill" },
+    { name = "thcurr", type = "bnb_spill" },
+    { name = "hp875",  type = "bnb_spill" },
+    { name = "vp875",  type = "bnb_spill" },
+    { name = "lm875a", type = "bnb_spill" },
+    { name = "lm875b", type = "bnb_spill" },
+    { name = "lm875c", type = "bnb_spill" },
+    { name = "hp873",  type = "bnb_spill" },
+    { name = "vp873",  type = "bnb_spill" },
+    { name = "hp875",  type = "bnb_spill" },
+    { name = "vp875",  type = "bnb_spill" },
+    { name = "m875hs", type = "bnb_spill" },
+    { name = "m875vs", type = "bnb_spill" },
+    { name = "m876hs", type = "bnb_spill" },
+    { name = "m876vs", type = "bnb_spill" },
+    { name = "hptg1",  type = "bnb_spill" },
+    { name = "vptg1",  type = "bnb_spill" },
+    { name = "hptg2",  type = "bnb_spill" },
+    { name = "vptg2",  type = "bnb_spill" },
+    { name = "btjt2",  type = "bnb_spill" }
+]
