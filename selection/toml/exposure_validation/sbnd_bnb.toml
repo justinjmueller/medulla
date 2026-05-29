@@ -2,26 +2,25 @@
 output = "sbnd_bnb"
 
 [[sample]]
-name = "onbeam"
+name = "onbeam_run1"
 path = "/pnfs/sbn/data_add/sbn_nd/poms_production/data/MCP2025C/v10_06_00_09/Spring25_reprocess_Dev1e20_bnblight/flatcaf/bnblight/*/*.root"
-#path = "/pnfs/sbn/data_add/sbn_nd/poms_production/data/SBND2026A/v10_14_02_02/gen2_BNB-Run1/flatcaf/bnblight/7c/*.flat.caf.root"
 ismc = false
 disable = false
 
 [[sample]]
-name = "onbeamii"
+name = "onbeam_run1_gen2"
 path = "/pnfs/sbn/data_add/sbn_nd/poms_production/data/SBND2026A/v10_14_02_02/gen2_BNB-Run1/flatcaf/bnblight/*/*.flat.caf.root"
 ismc = false
 disable = false
 
 [[sample]]
-name = "offbeam"
+name = "offbeam_run1"
 path = "/pnfs/sbn/data_add/sbn_nd/poms_production/data/MCP2025C/v10_06_00_09/Spring25_reprocess_Intime_offbeamlight/flatcaf/offbeamlight/*/*.root"
 ismc = false
 disable = false
 
 [[sample]]
-name = "offbeamii"
+name = "offbeam_run1_gen2"
 path = "/pnfs/sbn/data_add/sbn_nd/poms_production/data/SBND2026A/v10_14_02_02/gen2_InTime-Run1/flatcaf/offbeamlight/*/*.root"
 ismc = false
 disable = false
@@ -36,6 +35,7 @@ cut = [
 branch = [
     { name = "is_first_in_subrun",      type = "event" },
     { name = "nbnb",                    type = "event" },
+    { name = "bnb_fom",                 type = "event" },
     { name = "noffbeambnb",             type = "event" },
     { name = "unfolded_pot_bnb",        type = "event" },
     { name = "unfolded_nbnb",           type = "event" },
