@@ -91,6 +91,19 @@ namespace svar
     REGISTER_VAR_SCOPE(RegistrationScope::BNBSpill, spill_time_sec, spill_time_sec);
 
     /**
+     * @brief Variable for the spill readout time in nanoseconds (spill_time_nsec).
+     * @details The Unix timestamp of the spill readout in nanoseconds. Used as
+     * an input to the BNB Figure of Merit calculation to account for
+     * time-dependent beam conditions with higher precision.
+     * @tparam T the BNB spill container type.
+     * @param spill the BNB spill info object to apply the variable on.
+     * @return the spill readout time in nanoseconds.
+     */
+    template<typename T>
+    double spill_time_nsec(const T & spill) { SAFE_SPILL_VAR(spill.spill_time_nsec); }
+    REGISTER_VAR_SCOPE(RegistrationScope::BNBSpill, spill_time_nsec, spill_time_nsec);
+
+    /**
      * @brief Variable for the horizontal beam-width sigma at MWP 875 (M875HS).
      * @details M875HS is the horizontal beam-profile sigma measured by the
      * multi-wire profile monitor at station 875, in millimetres. It is
