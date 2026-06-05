@@ -17,7 +17,7 @@ pi0_mass_veto = 400.0
 pi0_mass_veto_low =  10
 pi0_mass_veto_high = 400
 [general]
-output = "output_nueCCInclusive_side_inte"
+output = "output_nueCCInclusive_side"
 primfn = "default_primary_classification"
 pidfn = "default_pid"
 fsthresh = [
@@ -41,11 +41,13 @@ fsthresh = [
 # ICARUS MC NuMI Neutrino + Cosmics CV
 [[sample]]
 name = "NuMIFull"
-path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_00.root"
+#path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_00.root"
 #path  =  "/pnfs/icarus/persistent/users/nabrego/*.root"
 ##path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/*.root" # 500k sample 
 #path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p02_2/*.flat.root" # extended sample
+#path= "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p02_2/*.root"  #muestra completa 
 #path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p02_2/larcv_mc_20250724_092328_157902-0a30b0cc-ebbe-4234-8f7f-99601dd72bef.flat.root"
 ismc = true
 disable = false # Optional: default = false
 
@@ -782,7 +784,7 @@ branch = [
     {name = "pi0_mass", type = "both"},
     {name = "pi0_momentum", type = "both"},
     #particle identification 
-    { name = "true_pdg_from_reco",       type = "matched"},
+    #{ name = "true_pdg_from_reco",       type = "matched"},
 
 ]
 
