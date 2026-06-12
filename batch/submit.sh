@@ -1,7 +1,8 @@
 #!/bin/bash
 
 #######################################################################
-# Usage: submit.sh [--project=PROJECT] [--tag=TAG]# 
+# Usage: submit.sh [--project=PROJECT] [--tag=TAG]
+#
 # Arguments:
 #   --project=PROJECT   : Specify the project directory
 #   --tag=TAG           : Git ref to checkout on grid nodes (default: develop)
