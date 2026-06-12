@@ -12,7 +12,6 @@ branches = ["reco_fiducial_cut",
             "reco_flash_cut",
             "true_category",
             "true_neutrino_energy",
-            "reco_leading_electron_ke",
             "reco_ele_beam_open_angle",
             "reco_leading_electron_energy",
             "reco_containment_cut",
@@ -32,11 +31,11 @@ branches = ["reco_fiducial_cut",
             "reco_leading_proton_proton_softmax",
             "reco_leading_electron_axial_spread",
             "reco_leading_photon_energy",
-            "reco_leading_electron_p",
-            "reco_leading_proton_p",
+            "reco_leading_electron_ke",
+            "reco_leading_proton_ke",
             "reco_valid_flashmatch",
-            "reco_leading_muon_p",
-            "reco_leading_pion_p",
+            "reco_leading_muon_ke",
+            "reco_leading_pion_ke",
             "reco_leading_electron_start_dedx",
             "reco_leading_electron_electron_softmax",
             "reco_leading_electron_primary_softmax",
@@ -55,7 +54,7 @@ branches = ["reco_fiducial_cut",
             ]
 
 #precompute = {"reco_leading_electron_electron_softmax_cut" = "reco_leading_electron_electron_softmax > 0.72", "reco_leading_electron_primary_softmax_cut" = "reco_leading_electron_primary_softmax > 0.97"}
-precompute = {"true_opening_angle_cos" = "np.cos(true_opening_angle)", "true_leading_electron_cos" = "np.cos(true_leading_electron_polar_angle)", "reco_leading_proton_proton_softmax_cut" = "reco_leading_proton_proton_softmax > 0.75", "reco_leading_electron_axial_spread_cut" = "reco_leading_electron_axial_spread > 0.1", "reco_leading_photon_energy_cut" = "np.where((reco_leading_photon_energy < 50) | np.isnan(reco_leading_photon_energy), True, False)", "reco_leading_electron_momentum_cut" = "reco_leading_electron_p > 300", "reco_leading_proton_momentum_cut" = "reco_leading_proton_p > 40", "reco_leading_muon_cut" = "np.where((reco_leading_muon_p < 25) | np.isnan(reco_leading_muon_p), True, False)", "reco_leading_pion_cut" = "np.where((reco_leading_pion_p < 25) | np.isnan(reco_leading_pion_p), True, False)", "reco_leading_electron_cut" = "reco_leading_electron_p > 75", "electron_softmax_cut" = "reco_leading_electron_electron_softmax > 0.90", "electron_primary_softmax_cut" = "reco_leading_electron_primary_softmax > 0.99", "proton_softmax_cut" = "reco_leading_proton_proton_softmax > 0.75", "vertex_distance_cut" = "reco_leading_electron_vertex_distance < 3.5", "dedx_cut" = "reco_leading_electron_start_dedx < 4", "reco_leading_proton_cut" = "reco_leading_proton_p > 40"}
+precompute = {"true_opening_angle_cos" = "np.cos(true_opening_angle)", "true_leading_electron_cos" = "np.cos(true_leading_electron_polar_angle)", "reco_leading_proton_proton_softmax_cut" = "reco_leading_proton_proton_softmax > 0.75", "reco_leading_electron_axial_spread_cut" = "reco_leading_electron_axial_spread > 0.1", "reco_leading_photon_energy_cut" = "np.where((reco_leading_photon_energy < 50) | np.isnan(reco_leading_photon_energy), True, False)", "reco_leading_muon_cut" = "np.where((reco_leading_muon_ke < 25) | np.isnan(reco_leading_muon_ke), True, False)", "reco_leading_pion_cut" = "np.where((reco_leading_pion_ke < 25) | np.isnan(reco_leading_pion_ke), True, False)", "reco_leading_electron_cut" = "reco_leading_electron_ke > 75", "electron_softmax_cut" = "reco_leading_electron_electron_softmax > 0.90", "electron_primary_softmax_cut" = "reco_leading_electron_primary_softmax > 0.99", "proton_softmax_cut" = "reco_leading_proton_proton_softmax > 0.75", "vertex_distance_cut" = "reco_leading_electron_vertex_distance < 3.5", "dedx_cut" = "reco_leading_electron_start_dedx < 4", "reco_leading_proton_cut" = "reco_leading_proton_ke > 40"}
 
 # Output directory for plots
 [output]
@@ -426,39 +425,6 @@ type = 'SpineEfficiency'
 variable = 'true_dalphaT'
 groups = ['Signal']  # Can show both: ['Signal', 'Backgrounds']
 xtitle = 'True $\delta \alpha_T$ [MeV]'
-
-[figure.artists.cuts]
-reco_fiducial_cut = 'Fiducial Volume'
-reco_flash_cut = 'Flash Cut'
-reco_containment_cut = 'Interaction Containment Cut'
-reco_leading_muon_cut = 'No Muon-like Particles > 25 MeV'
-reco_leading_pion_cut = 'No Charged Pion-like Particles > 25 MeV'
-reco_leading_proton_cut = '>= 1 40 MeV Proton-like Particle'
-reco_leading_electron_cut = '>= 1 75 MeV Electron-like Particle'
-electron_primary_softmax_cut = 'Electron Primary Softmax > 0.99'
-electron_softmax_cut = 'Leading Electron Softmax > 0.90'
-proton_softmax_cut = 'Leading Proton Softmax > 0.75'
-vertex_distance_cut = 'Vertex Distance < 3.5 cm'
-dedx_cut = "Leading Electron dE/dx < 4 MeV/cm"
-
-[figure.artists.draw_kwargs]
-show_option = 'differential'  # KEY: This makes it a plot vs energy!
-percentage = true
-show_seqeff = true     # Show cumulative efficiency curve
-show_unseqeff = false  # Don't show individual cut curves
-
-# FIGURE 9: Efficiency vs electron opening angle wrt beam
-[[figure]]
-name = 'efficiency_vs_trueElectronPolarAngle'
-type = 'SimpleFigure'
-style = 'basic_sbnd'
-title = 'Selection Efficiency vs True Leading Electron cos$\theta$'
-
-[[figure.artists]]
-type = 'SpineEfficiency'
-variable = 'true_leading_electron_cos'
-groups = ['Signal']  # Can show both: ['Signal', 'Backgrounds']
-xtitle = 'True Leading Electron cos$\theta$'
 
 [figure.artists.cuts]
 reco_fiducial_cut = 'Fiducial Volume'

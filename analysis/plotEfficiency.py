@@ -19,7 +19,7 @@ def main():
     # Load the analysis
     #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/efficiency_analysis.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine12/merged_output.root')
     #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/efficiency_recoInt.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine12/merged_output.root')
-    ana = Analysis('/nashome/m/micarrig/sbnd/nueCCNp/medulla/analysis/efficiency_nueCCNp.toml', 'root://fndcadoor.fnal.gov:/sbnd/scratch/users/micarrig/nueCCNp_v3/output/merged_output.root')
+    ana = Analysis('/nashome/m/micarrig/sbnd/nueCCNp/medulla/analysis/efficiency_nueCCNp.toml', 'root://fndcadoor.fnal.gov:/sbnd/scratch/users/micarrig/nueCCNp_v4/output/merged_output.root')
 
     outputDir = 'plots/selection_efficiency_trueTree'
 
@@ -66,11 +66,6 @@ def main():
     plt.savefig(f'{outputDir}/efficiency_vs_trueDalphaT.png', dpi=300)
     with open(f'{outputDir}/efficiency_vs_trueDalphaT.pkl', 'wb') as f:
         pickle.dump(eff_dalphaT, f)
-
-    eff_elePolar = ana.run_interactively('efficiency_vs_trueElectronPolarAngle')
-    plt.savefig(f'{outputDir}/efficiency_vs_trueElectronPolarAngle.png', dpi=300)
-    with open(f'{outputDir}/efficiency_vs_trueElectronPolarAngle.pkl', 'wb') as f:
-        pickle.dump(eff_elePolar, f)
 
     eff_eleOpening = ana.run_interactively('efficiency_vs_trueElectronOpeningAngle')
     plt.savefig(f'{outputDir}/efficiency_vs_trueElectronOpeningAngle.png', dpi=300)

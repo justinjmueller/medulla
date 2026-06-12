@@ -50,7 +50,7 @@ name = "signal"
 # path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input000.flat.root" #5e18 sample
 path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/*.flat.*root" #1e20 sample
 ismc = true
-disable = false # Optional: default = false
+disable = true # Optional: default = false
 
 # SBND Dev Data Sample
 [[sample]]

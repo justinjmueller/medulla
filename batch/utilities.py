@@ -7,7 +7,6 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 import numpy as np
-from ROOT import TFile
 
 # SQL schema for the configuration table for storing job configurations
 SCHEMA_CONFIGURATION = """
@@ -537,6 +536,7 @@ def check_good_output(fin, reprocess=False):
         return False
 
     if reprocess:
+        from ROOT import TFile
         tf = TFile.Open(fin, "READ")
         if not tf or tf.IsZombie():
             print(f"[WARNING] -- Found zombie output file {fin}.")
