@@ -88,7 +88,7 @@ ups active
 # Build medulla
 git clone https://github.com/justinjmueller/medulla.git
 cd medulla
-git checkout ${TAG}
+git checkout "${TAG}"
 mkdir build && cd build
 export CC=$(which gcc)
 export CXX=$(which g++)

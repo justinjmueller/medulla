@@ -17,6 +17,7 @@ def main(
     memory : int = 1800,
     disk : Optional[int] = None,
     lifetime : str = '1h',
+    relaunch_missing : bool = False,
 ):
     """
     Main function to run the medulla script.
@@ -48,7 +49,9 @@ def main(
     disk : int | None
         Amount of disk to request for each job in GB. If None, use default.
     lifetime : str
-        Expected lifetime of each job (e.g., '1h', '30m'). 
+        Expected lifetime of each job (e.g., '1h', '30m').
+    relaunch_missing : bool
+        If True, relaunch jobs that are in project.db but missing output files.
 
     Returns
     -------
@@ -79,13 +82,13 @@ def main(
     if test_job:
         if not project_exists:
             raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
-        launch_jobsub(project_dir, experiment, njobs=1, tag=tag, memory=memory, disk=disk, lifetime=lifetime)
+        launch_jobsub(project_dir, experiment, njobs=1, tag=tag, memory=memory, disk=disk, lifetime=lifetime, relaunch_missing=relaunch_missing)
 
     # If the user requested to launch jobs, do so.
     if launch_jobs is not None:
         if not project_exists:
             raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
-        launch_jobsub(project_dir, experiment, njobs=launch_jobs, tag=tag, memory=memory, disk=disk, lifetime=lifetime)
+        launch_jobsub(project_dir, experiment, njobs=launch_jobs, tag=tag, memory=memory, disk=disk, lifetime=lifetime, relaunch_missing=relaunch_missing)
 
 if __name__ == '__main__':
     p = ArgumentParser(description='Run medulla.')
@@ -140,6 +143,11 @@ if __name__ == '__main__':
         '--launch-jobs', '-l', type=int, nargs='?', const=-1,
         help='Launch the specified number of jobs. If no number is provided, '
              'then all pending jobs will be launched.'
+    )
+
+    p.add_argument(
+        '--relaunch-missing', '-r', action='store_true',
+        help='Also relaunch jobs tracked in project.db but missing output files.'
     )
 
     p.add_argument(
@@ -199,4 +207,5 @@ if __name__ == '__main__':
         memory=args.memory,
         disk=args.disk,
         lifetime=args.lifetime,
+        relaunch_missing=args.relaunch_missing,
     )
