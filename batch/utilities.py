@@ -348,7 +348,7 @@ def check_project_status(
     ins = [('completed', jid) for jid in completed_jobs]
     command(curs, "UPDATE jobs SET status = ? WHERE jobid = ?", ins)
     conn.commit()
-    
+
     stub_jobs = [
         int(Path(f).stem.split("jobid")[-1])
         for f in output_files
