@@ -664,7 +664,7 @@ namespace cuts
      * @return true if the interaction has a leading electron with dE/dx below the threshold.
     */
     template<class T>
-    bool particle_dedx(const T & obj, std::vector<double> params={0.0,})
+    bool leading_electron_dedx(const T & obj, std::vector<double> params={0.0,})
     {   
         size_t i = selectors::leading_electron(obj);
         if (i == kNoMatch) return false;
@@ -672,7 +672,7 @@ namespace cuts
         bool pass = (double)p.start_dedx < params[0] && (double)p.start_dedx >= 0;
         return pass;
     }
-    REGISTER_CUT_SCOPE(RegistrationScope::Reco, particle_dedx, particle_dedx);
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, leading_electron_dedx, leading_electron_dedx);
 
     /**
      * @brief Cut to select interactions with a leading electron vertex distance below a threshold.
