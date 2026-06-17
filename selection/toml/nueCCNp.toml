@@ -48,8 +48,8 @@ fsthresh = [
 [[sample]]
 name = "signal"
 # path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input00[0-13-9].flat.root" #5e18 sample
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input000.flat.root" #5e18 sample
-# path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/*.flat.*root" #1e20 sample
+# path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/input000.flat.root" #5e18 sample
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc1e20/*.flat.*root" #1e20 sample
 ismc = true
 disable = false # Optional: default = false
 
@@ -58,7 +58,7 @@ disable = false # Optional: default = false
 name = "data"
 path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/devsample/*.flat.root" #dev data sample
 ismc = false
-disable = true # Optional: default = false
+disable = false # Optional: default = false
 
 [[tree]]
 name = "all"
