@@ -109,6 +109,20 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::True, iscc, iscc);
 
     /**
+     * @brief Apply a cut to select neutral current interactions.
+     * @details This function applies a cut to select neutral current
+     * interactions. This cut makes use of the `current_type` attribute in the
+     * true interaction object and is intended to be used to identify neutral
+     * current interactions.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the interaction is a neutral current interaction.
+     */
+    template<class T>
+    bool isnc(const T & obj) { return obj.current_type == 1; }
+    REGISTER_CUT_SCOPE(RegistrationScope::True, isnc, isnc);
+
+    /**
      * @brief Apply a cut on the interaction mode.
      * @details This function applies a cut to select interactions based on
      * the interaction mode. The interaction mode is stored by Genie as an
@@ -991,5 +1005,21 @@ namespace cuts
         return true; // All tracks are in the same TPC (or no tracks found)
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, single_tpc_contained, single_tpc_contained);
+
+    template<class T>
+    bool two_photon_candidates(const T & obj, std::vector<double> params={25.0, 25.0})
+    {
+        size_t i = selectors::leading_photon(obj);
+        size_t j = selectors::subleading_photon(obj);
+
+        if (i == kNoMatch || j == kNoMatch) return false;
+
+        if (pvars::ke(obj.particles[i]) < params[0] || pvars::ke(obj.particles[j]) < params[1])
+            return false; // Both photons must be above the KE thresholds
+
+        return true; // Both leading and subleading photons are valid candidates
+
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, two_photon_candidates, two_photon_candidates);
 }
 #endif

@@ -59,6 +59,44 @@ namespace selectors
     }
 
     /**
+     * @brief Finds the index corresponding to the subleading particle of the
+     * specified particle type.
+     * @details The subleading particle is defined as the particle with the
+     * second highest kinetic energy. The method of calculating kinetic energy is
+     * inherited by the @ref pvars::ke function.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @param pid of the particle type.
+     * @return the index of the subleading particle (second highest KE). 
+     */
+    template <class T>
+    size_t subleading_particle_index(const T & obj, uint16_t pid)
+    {
+        double leading_ke(0);
+        double subleading_ke(0);
+        size_t leading_index(kNoMatch);
+        size_t subleading_index(kNoMatch);
+        for(size_t i(0); i < obj.particles.size(); ++i)
+        {
+            const auto & p = obj.particles[i];
+            double energy(pvars::ke(p));
+            if(pvars::pid(p) == pid && energy > leading_ke)
+            {
+                subleading_ke = leading_ke;
+                subleading_index = leading_index;
+                leading_ke = energy;
+                leading_index = i;
+            }
+            else if(pvars::pid(p) == pid && energy > subleading_ke)
+            {
+                subleading_ke = energy;
+                subleading_index = i;
+            }
+        }
+        return subleading_index;
+    }
+
+    /**
      * @brief Finds the index corresponding to the longest track.
      * @details The longest track is defined as the track with the longest
      * length, which is calculated upstream in SPINE. The particle instance is
@@ -169,6 +207,21 @@ namespace selectors
         return leading_particle_index(obj, pvars::kPhoton);
     }
     REGISTER_SELECTOR(leading_photon, leading_photon);
+
+    /**
+     * @brief Finds the index corresponding to the subleading photon.
+     * @details The subleading photon is defined as the photon with the second
+     * highest kinetic energy.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the subleading photon (second highest KE).
+     */
+    template<class T>
+    size_t subleading_photon(const T & obj)
+    {
+        return subleading_particle_index(obj, pvars::kPhoton);
+    }
+    REGISTER_SELECTOR(subleading_photon, subleading_photon);
 
     /**
      * @brief Finds the index corresponding to the leading electron.
