@@ -310,12 +310,18 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     {
         std::cout << "Configuring systematic " << t.get_string_field("name") << " of type " << t.get_string_field("type") << std::endl;
         std::string tname = table.get_string_field("name") + '_' + t.get_string_field("type");
+        if(systrees.find(tname) == systrees.end())
+        {
+            std::cout << "Skipping systematic " << t.get_string_field("name") << " (type '" << t.get_string_field("type") << "' not in table_types)" << std::endl;
+            continue;
+        }
         // Use name_short as the output branch name if provided, otherwise fall back to name.
         const std::string branch_name = t.get_string_field("name_short", t.get_string_field("name"));
         std::cout << "Branch name for systematic " << t.get_string_field("name") << " is " << branch_name << std::endl;
         systematics.insert(std::make_pair<std::string, Systematic *>(t.get_string_field("name"), new Systematic(t, systrees[tname])));
         Systematic * tmp = systematics[t.get_string_field("name")];
         tmp->get_tree()->Branch(branch_name.c_str(), &systematics[t.get_string_field("name")]->get_weights());
+        std::cout << "Created branch " << branch_name << " for systematic " << t.get_string_field("name") << " in TTree " << tname << std::endl;
         if(tmp->get_nsigma()->size() > 0)
         {
             tmp->get_tree()->Branch((branch_name + "_sigma").c_str(), &systematics[t.get_string_field("name")]->get_nsigma());
@@ -498,6 +504,132 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     }
 
     // Write detector systematic histograms to the output file.
+    if(calc.is_initialized())
+        calc.write_results();
+}
+
+// Apply pre-loaded detector variation weights directly from the selection tree.
+// No WeightReader needed: detsys weights depend only on the event's reconstructed
+// variable value and the pre-rolled z-scores stored in the DetsysCalculator.
+void sys::trees::copy_with_detsys_weights(cfg::ConfigurationTable & config, cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc)
+{
+    std::cout << "Processing tree " << table.get_string_field("origin")
+              << " (add_detsys_weights) -> " << table.get_string_field("destination") << std::endl;
+
+    TDirectory * directory = (TDirectory *) output;
+    directory = create_directory(directory, table.get_string_field("destination").c_str());
+    directory->cd();
+
+    // Copy POT/Livetime from the parent directory of the origin tree.
+    if(!directory->GetListOfKeys()->Contains("POT"))
+    {
+        TDirectory * parent = (TDirectory *) input;
+        parent = get_parent_directory(parent, table.get_string_field("origin").c_str());
+        TH1D * pot      = (TH1D *) parent->Get("POT");
+        TH1D * livetime = (TH1D *) parent->Get("Livetime");
+        if(pot)      directory->WriteObject(pot,      "POT");
+        if(livetime) directory->WriteObject(livetime, "Livetime");
+    }
+
+    // Connect to the input tree and map all double branches.
+    TTree * input_tree = (TTree *) input->Get(table.get_string_field("origin").c_str());
+    if(!input_tree)
+    {
+        std::cerr << "[WARN] Tree " << table.get_string_field("origin") << " not found. Skipping." << std::endl;
+        return;
+    }
+
+    std::map<std::string, double> brs;
+    Int_t run, subrun, event;
+    for(int i(0); i < input_tree->GetNbranches() - 3; ++i)
+    {
+        std::string brname = input_tree->GetListOfBranches()->At(i)->GetName();
+        brs[brname] = 0;
+        input_tree->SetBranchAddress(brname.c_str(), &brs[brname]);
+    }
+    input_tree->SetBranchAddress("Run",    &run);
+    input_tree->SetBranchAddress("Subrun", &subrun);
+    input_tree->SetBranchAddress("Evt",    &event);
+
+    // Build the output tree with the same branches as the input.
+    TTree * output_tree = new TTree(table.get_string_field("name").c_str(),
+                                    table.get_string_field("name").c_str());
+    for(auto & br : brs)
+        output_tree->Branch(br.first.c_str(), &br.second);
+    output_tree->Branch("Run",    &run);
+    output_tree->Branch("Subrun", &subrun);
+    output_tree->Branch("Evt",    &event);
+
+    // Create one systree per table_type (typically just "variation" here).
+    std::map<std::string, TTree *>      systrees;
+    std::map<std::string, Systematic *> systematics;
+
+    std::vector<std::string> table_types = table.get_string_vector("table_types");
+    for(const std::string & s : table_types)
+    {
+        std::string tname = table.get_string_field("name") + '_' + s;
+        systrees[tname] = new TTree((tname + "Tree").c_str(), (tname + "Tree").c_str());
+        systrees[tname]->SetDirectory(nullptr);
+        systrees[tname]->Branch("Run",    &run);
+        systrees[tname]->Branch("Subrun", &subrun);
+        systrees[tname]->Branch("Evt",    &event);
+        systrees[tname]->SetDirectory(directory);
+        systrees[tname]->SetAutoFlush(1000);
+    }
+
+    // Configure sysvariables and register them with the calculator.
+    std::vector<SysVariable> sysvariables;
+    for(cfg::ConfigurationTable & t : config.get_subtables("sysvar"))
+    {
+        sysvariables.push_back(SysVariable(t));
+        calc.add_variable(sysvariables.back());
+    }
+
+    // Wire up only variation-type systematics (others need a CAF reader).
+    for(cfg::ConfigurationTable & t : config.get_subtables("sys"))
+    {
+        if(t.get_string_field("type") != "variation")
+            continue;
+        std::string tname = table.get_string_field("name") + "_variation";
+        if(systrees.find(tname) == systrees.end())
+            continue;
+        const std::string branch_name = t.get_string_field("name_short", t.get_string_field("name"));
+        systematics.insert(std::make_pair(t.get_string_field("name"),
+                                          new Systematic(t, systrees[tname])));
+        Systematic * tmp = systematics[t.get_string_field("name")];
+        tmp->get_tree()->Branch(branch_name.c_str(), &tmp->get_weights());
+        if(tmp->get_nsigma()->size() > 0)
+            tmp->get_tree()->Branch((branch_name + "_sigma").c_str(), &tmp->get_nsigma());
+    }
+
+    std::cout << "Applying detsys weights to " << input_tree->GetEntries() << " events." << std::endl;
+
+    // Main loop: iterate directly over the selection tree entries.
+    for(int i(0); i < input_tree->GetEntries(); ++i)
+    {
+        input_tree->GetEntry(i);
+        output_tree->Fill();
+        calc.increment_nominal_count(1.0);
+
+        for(auto & [key, value] : systematics)
+        {
+            value->get_weights()->clear();
+            for(double & z : calc.get_zscores(key))
+                value->get_weights()->push_back(calc.get_weight(key, brs[calc.get_variable()], z));
+            for(SysVariable & sv : sysvariables)
+                calc.add_value(sv.name, brs[sv.name], key, brs);
+        }
+
+        for(auto & [key, value] : systrees)
+            value->Fill();
+    }
+
+    std::cout << "Finished applying detsys weights." << std::endl;
+
+    directory->WriteObject(output_tree, table.get_string_field("name").c_str());
+    for(auto & [key, value] : systrees)
+        directory->WriteObject(value, (key + "Tree").c_str());
+
     if(calc.is_initialized())
         calc.write_results();
 }

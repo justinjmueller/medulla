@@ -232,6 +232,8 @@ namespace cfg
     {
         std::vector<std::string> values;
         const toml::array * elements = scope.at_path(field).as_array();
+        if(!elements)
+            throw ConfigurationError("Field " + field + " is not an array or was not found.");
         for(auto & e : *elements)
             values.push_back(*e.value<std::string>());
         return values;

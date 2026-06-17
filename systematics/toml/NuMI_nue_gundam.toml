@@ -1,14 +1,13 @@
 
 [input]
 #path = '/exp/icarus/data/users/micarrig/merged_output.root'
-path = '/nashome/m/micarrig/scratch/nueCCInclusiveSpine21/output//merged_output.root'
+path = '/nashome/m/micarrig/scratch/nueCCInclusiveSpine22/output/merged_output.root'
 weights = '/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p02_2/*.flat.root'
-# weights = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root" # extended sample
-
+# weights = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p02_2/larcv_mc_20250908_042106_684590-ab806c2a-41ea-4e85-aeb8-c36f59582a1c.flat.root" # extended sample
 use_additional_hash = true
 
 [output]
-path = '/exp/icarus/data/users/micarrig/gundam_merged_test.root'
+path = '/exp/icarus/data/users/micarrig/gundam_merged_v2.root'
 histogram_destination = 'variations/'
 
 [[sysvar]]
@@ -25,22 +24,23 @@ bins = [[225, 350, 500, 650, 800, 1000, 1250, 1500, 2000, 5000], [-1.0, -0.4, 0.
 nuniverses = 1000
 variable_length = false
 
-[[tree]]
-origin = 'events/NuMIFull/true_signal'
-destination = 'events/NuMIFull/'
-name = 'true_signal'
-action = 'add_weights'
-table_types = ['multisim', 'multisigma', 'variation', 'NuMIfluxsim']
-gundam_store_syst = true
-is_nu = true
-is_data = false
+# [[tree]]
+# origin = 'events/NuMIFull/true_signal'
+# destination = 'events/NuMIFull/'
+# name = 'true_signal'
+# action = 'add_weights'
+# table_types = ['multisim', 'multisigma', 'variation', 'NuMIfluxsim']
+# gundam_store_syst = true
+# is_nu = true
+# is_data = false
 
 [[tree]]
 origin = 'events/NuMIFull/selected'
 destination = 'events/NuMIFull/'
 name = 'selected'
 action = 'add_weights'
-table_types = ['multisim', 'multisigma', 'variation', 'NuMIfluxsim']
+# table_types = ['multisim', 'multisigma', 'variation', 'NuMIfluxsim']
+table_types = ['variation']
 gundam_store_syst = true
 is_nu = true
 is_data = false

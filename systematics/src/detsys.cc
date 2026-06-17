@@ -254,6 +254,99 @@ void sys::detsys::DetsysCalculator::add_variable(SysVariable & variable)
     }
 }
 
+// Spline-loading constructor: reads pre-built splines from a prior phase-1 run
+// instead of rebuilding them from variation histograms. Variable configuration,
+// z-scores, and nuniverses are still taken from the configuration table.
+sys::detsys::DetsysCalculator::DetsysCalculator(cfg::ConfigurationTable & table, TFile * output, const std::string & splines_path)
+{
+    // Pre-roll the same number of random z-scores as the original run.
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::normal_distribution<double> dist(0, 1);
+    nuniverses = table.get_int_field("variations.nuniverses");
+    for(size_t n(0); n < nuniverses; ++n)
+        random_zscores.push_back(dist(gen));
+
+    // Create output directories.
+    histogram_directory = create_directory(output, table.get_string_field("output.histogram_destination"));
+    result_directory = create_directory(output, table.get_string_field("variations.result_destination"));
+
+    // Load variable configuration from the TOML.
+    if(table.has_field("variations.variables"))
+        variables = table.get_string_vector("variations.variables");
+    else if(table.has_field("variations.variable"))
+    {
+        try { variables = table.get_string_vector("variations.variable"); }
+        catch(const cfg::ConfigurationError &) { variables = {table.get_string_field("variations.variable")}; }
+    }
+    else
+        throw cfg::ConfigurationError("variations.variable or variations.variables must be present.");
+    if(variables.empty())
+        throw cfg::ConfigurationError("variations.variables must contain at least one variable.");
+    variable = variables.front();
+
+    // Open the splines file.
+    TFile * splines_file = TFile::Open(splines_path.c_str(), "READ");
+    if(!splines_file || splines_file->IsZombie())
+        throw cfg::ConfigurationError("Could not open splines file: " + splines_path);
+
+    std::string result_dest = table.get_string_field("variations.result_destination");
+    TDirectory * spline_dir = (TDirectory *) splines_file->Get(result_dest.c_str());
+    if(!spline_dir)
+        throw cfg::ConfigurationError("result_destination '" + result_dest + "' not found in splines file.");
+
+    // For each variation-type systematic, load the splines and reconstruct
+    // the hdummy used for bin-finding in get_weight().
+    for(cfg::ConfigurationTable & t : table.get_subtables("sys"))
+    {
+        if(t.get_string_field("type") != "variation")
+            continue;
+
+        std::string name = t.get_string_field("name");
+        zscores.insert(std::make_pair(name, t.get_double_vector("nsigma")));
+        std::string ordinate = t.get_string_field("ordinate");
+
+        for(const std::string & configured_variable : variables)
+        {
+            std::string spline_key = make_spline_key(name, configured_variable);
+            std::string hist_key   = make_hist_key(configured_variable, ordinate);
+
+            // Load splines bin-by-bin until a named bin is missing.
+            TDirectory * sdir = (TDirectory *) spline_dir->Get((spline_key + "_splines").c_str());
+            if(!sdir)
+                throw cfg::ConfigurationError("Spline directory '" + spline_key + "_splines' not found in splines file.");
+
+            splines.insert(std::make_pair(spline_key, std::vector<TSpline3 *>()));
+            for(int i = 0; ; ++i)
+            {
+                TSpline3 * sp = (TSpline3 *) sdir->Get(("bin" + std::to_string(i)).c_str());
+                if(!sp) break;
+                splines[spline_key].push_back((TSpline3 *) sp->Clone());
+            }
+
+            if(splines[spline_key].empty())
+                throw cfg::ConfigurationError("No spline bins found for '" + spline_key + "' in splines file.");
+
+            // Reconstruct hdummy from the saved ordinate histogram to recover
+            // the bin boundaries needed by FindBin() inside get_weight().
+            TH1D * h = (TH1D *) spline_dir->Get(hist_key.c_str());
+            if(!h)
+                throw cfg::ConfigurationError("Ordinate histogram '" + hist_key + "' not found in splines file.");
+
+            int nbins = h->GetXaxis()->GetNbins();
+            const double * xedges = h->GetXaxis()->GetXbins()->GetArray();
+            hdummies.insert(std::make_pair(spline_key, new TH1D("hdummy", "hdummy", nbins, xedges)));
+        }
+
+        std::cout << "Loaded " << splines[make_spline_key(name, variable)].size()
+                  << " spline bins for systematic " << name << std::endl;
+    }
+
+    splines_file->Close();
+    initialized = true;
+    std::cout << "DetsysCalculator: loaded splines from " << splines_path << std::endl;
+}
+
 // Default constructor for the DetsysCalculator class.
 sys::detsys::DetsysCalculator::DetsysCalculator()
     : initialized(false)

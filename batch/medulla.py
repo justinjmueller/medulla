@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 from argparse import ArgumentParser
 from pathlib import Path
-from utilities import create_new_project, check_project_status, launch_jobsub, check_git_branch
+from utilities import (
+    create_new_project, check_project_status, launch_jobsub, check_git_branch,
+    run_variation_phase1_interactive, launch_variation_phase1_jobsub,
+    launch_variation_phase2_jobsub,
+)
 from typing import Optional
 
 def main(
@@ -18,6 +22,12 @@ def main(
     disk : Optional[int] = None,
     lifetime : str = '1h',
     relaunch_missing : bool = False,
+    variation_systematics : str = None,
+    variation_input : str = None,
+    variation_phase1 : bool = False,
+    variation_phase2 : bool = False,
+    variation_interactive : bool = False,
+    variation_test : bool = False,
 ):
     """
     Main function to run the medulla script.
@@ -52,6 +62,23 @@ def main(
         Expected lifetime of each job (e.g., '1h', '30m').
     relaunch_missing : bool
         If True, relaunch jobs that are in project.db but missing output files.
+    variation_systematics : str
+        Path to the variation systematics TOML. Used with --variation-phase1
+        and --variation-phase2.
+    variation_input : str
+        PNFS or xrootd path to the merged variation+CV ROOT file. Required
+        for --variation-phase1.
+    variation_phase1 : bool
+        Build detector-variation splines from the merged variation+CV input.
+        Runs interactively if variation_interactive is True, otherwise submits
+        a single batch job.
+    variation_phase2 : bool
+        Apply pre-built splines to each individual selection output file via
+        parallel batch jobs. Requires variation_splines.root to already exist
+        in the project directory (i.e. Phase 1 must have completed first).
+    variation_interactive : bool
+        When True and variation_phase1 is set, runs Phase 1 on the current
+        node instead of submitting a batch job.
 
     Returns
     -------
@@ -89,6 +116,43 @@ def main(
         if not project_exists:
             raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
         launch_jobsub(project_dir, experiment, njobs=launch_jobs, tag=tag, memory=memory, disk=disk, lifetime=lifetime, relaunch_missing=relaunch_missing)
+
+    # Phase 1: build detector-variation splines.
+    if variation_phase1:
+        if not project_exists:
+            raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
+        if variation_interactive:
+            run_variation_phase1_interactive(
+                project_dir=project_dir,
+                variation_input=variation_input,
+                variation_toml=variation_systematics,
+            )
+        else:
+            launch_variation_phase1_jobsub(
+                project_dir=project_dir,
+                variation_input=variation_input,
+                variation_toml=variation_systematics,
+                exp=experiment,
+                branch=branch,
+                memory=memory,
+                disk=disk,
+                lifetime=lifetime,
+            )
+
+    # Phase 2: apply pre-built splines to individual selection outputs.
+    if variation_phase2:
+        if not project_exists:
+            raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
+        launch_variation_phase2_jobsub(
+            project_dir=project_dir,
+            variation_toml=variation_systematics,
+            exp=experiment,
+            branch=branch,
+            memory=memory,
+            disk=disk,
+            lifetime=lifetime,
+            njobs=1 if variation_test else -1,
+        )
 
 if __name__ == '__main__':
     p = ArgumentParser(description='Run medulla.')
@@ -170,6 +234,44 @@ if __name__ == '__main__':
         help="Expected lifetime of each job (e.g., '1h', '30m') (default: '1h')."
     )
 
+    p.add_argument(
+        '--variation-systematics', '-V', type=str, default=None,
+        help='Path to the variation systematics TOML. Required with '
+             '--variation-phase1 and --variation-phase2.'
+    )
+
+    p.add_argument(
+        '--variation-input', '-I', type=str, default=None,
+        help='PNFS or xrootd path to the merged variation+CV ROOT file '
+             '(required with --variation-phase1).'
+    )
+
+    p.add_argument(
+        '--variation-phase1', action='store_true',
+        help='Build detector-variation splines from the merged variation+CV '
+             'input (requires --variation-systematics and --variation-input). '
+             'Submits a single batch job unless --variation-interactive is set.'
+    )
+
+    p.add_argument(
+        '--variation-phase2', action='store_true',
+        help='Apply pre-built splines to each individual selection output '
+             'file via parallel batch jobs (requires --variation-systematics '
+             'and a completed Phase 1 run).'
+    )
+
+    p.add_argument(
+        '--variation-interactive', action='store_true',
+        help='Run Phase 1 on the current node instead of submitting a batch '
+             'job (only valid with --variation-phase1).'
+    )
+
+    p.add_argument(
+        '--variation-test', action='store_true',
+        help='Submit only one Phase 2 job as a test (only valid with '
+             '--variation-phase2).'
+    )
+
     args = p.parse_args()
 
     # Requirement: the experiment must be sbnd or icarus.
@@ -183,15 +285,29 @@ if __name__ == '__main__':
     if args.create_project and args.batch_size is None:
         p.error('--batch-size is required when --create-project is set.')
 
-    # Conditional requirement: flags --test-job and --launch-jobs are 
+    # Conditional requirement: flags --test-job and --launch-jobs are
     # mutually exclusive.
     if args.test_job and args.launch_jobs is not None:
         p.error('--test-job and --launch-jobs are mutually exclusive.')
 
-    if args.tag != 'develop':
-        print(f"[INFO] -- Using tag '{args.tag}' for medulla repository.")
-    if not check_git_branch(args.tag):
-        p.error(f"Tag '{args.tag}' does not exist in the medulla repository.")
+    # Conditional requirements for variation phases.
+    if args.variation_phase1 and args.variation_phase2:
+        p.error('--variation-phase1 and --variation-phase2 are mutually exclusive.')
+    if args.variation_phase1 and args.variation_systematics is None:
+        p.error('--variation-systematics is required with --variation-phase1.')
+    if args.variation_phase1 and args.variation_input is None:
+        p.error('--variation-input is required with --variation-phase1.')
+    if args.variation_phase2 and args.variation_systematics is None:
+        p.error('--variation-systematics is required with --variation-phase2.')
+    if args.variation_interactive and not args.variation_phase1:
+        p.error('--variation-interactive is only valid with --variation-phase1.')
+    if args.variation_test and not args.variation_phase2:
+        p.error('--variation-test is only valid with --variation-phase2.')
+
+    if args.branch != 'develop':
+        print(f"[INFO] -- Using branch '{args.branch}' for medulla repository.")
+        if not check_git_branch(args.branch):
+            p.error(f"Branch '{args.branch}' does not exist in the medulla repository.")
 
     # Run the main function.
     main(
@@ -208,4 +324,10 @@ if __name__ == '__main__':
         disk=args.disk,
         lifetime=args.lifetime,
         relaunch_missing=args.relaunch_missing,
+        variation_systematics=args.variation_systematics,
+        variation_input=args.variation_input,
+        variation_phase1=args.variation_phase1,
+        variation_phase2=args.variation_phase2,
+        variation_interactive=args.variation_interactive,
+        variation_test=args.variation_test,
     )

@@ -14,6 +14,11 @@ _INFO     = '\033[1m\033[94m[INFO]\033[0m'      # bold blue
 _ERROR    = '\033[1m\033[91m[ERROR]\033[0m'     # bold red
 _CAMPAIGN = '\033[1m\033[96m[CAMPAIGN]\033[0m'  # bold cyan
 
+def _ifdh_cp(src: str, dest: str):
+    """Copy src to dest via ifdh, removing dest first if it already exists."""
+    subprocess.run(['ifdh', 'rm', dest], capture_output=True)
+    subprocess.run(['ifdh', 'cp', src, dest], check=True)
+
 # SQL schema for the configuration table for storing job configurations
 SCHEMA_CONFIGURATION = """
 CREATE TABLE IF NOT EXISTS configuration (
@@ -187,12 +192,15 @@ def create_systematics_cfg(
                     raise ValueError(f"Tree {tree['name']} for sample {sample['name']} requests systematics but does not define a 'neutrino_id' branch.")
                 if base_cfg.get('input.use_additional_hash', False) and ('neutrino_energy', 'mctruth') not in branch_variables:
                     raise ValueError(f"Tree {tree['name']} for sample {sample['name']} requests systematics but does not define a 'neutrino_energy' branch.")
+                table_types = ['multisim', 'multisigma']
+                if 'variations' in base_cfg:
+                    table_types.append('variation')
                 syst_trees[key] = {
                     'origin' : key,
                     'destination' : f'events/{sample["name"]}/',
                     'name' : tree['name'],
                     'action' : 'add_weights',
-                    'table_types': ['multisim', 'multisigma']
+                    'table_types': table_types
                 }
 
     # Create a new configuration dictionary based on the base
@@ -493,6 +501,8 @@ def launch_jobsub(
             print(f"{_INFO} -- Requested number of jobs exceeds pending jobs. Preparing {njobs} jobs instead.")
     if njobs == -1:
         njobs = len(pending_jobs)
+    if njobs > 10000:
+        raise ValueError(f"Requested number of jobs ({njobs}) exceeds reasonable limits. Please check the project status and reduce the number of jobs to launch.")
 
     if confirm:
         print(f"{_INFO} -- Found {len(pending_jobs)} pending jobs.")
@@ -557,6 +567,333 @@ def launch_jobsub(
         job_id = match.group(1) if match else 'unknown'
         print(f"{_CAMPAIGN} Submitted {njobs} job(s). Job ID: {job_id}")
     return True
+
+def run_variation_phase1_interactive(
+    project_dir: Path,
+    variation_input: str,
+    variation_toml: str,
+):
+    """
+    Run Phase 1 (spline building) interactively on the current node.
+
+    Loads the variation TOML, strips [[tree]] blocks, rewrites the
+    [input] and [output] paths, runs run_systematics locally, then
+    stages the resulting splines file to project_dir.
+
+    Parameters
+    ----------
+    project_dir : Path
+        Path to the project directory (PNFS or local).
+    variation_input : str
+        Path or xrootd URL to the merged variation+CV ROOT file.
+    variation_toml : str
+        Local path to the variation systematics TOML.
+
+    Returns
+    -------
+    bool
+        True if successful, False otherwise.
+    """
+    import tempfile
+
+    binary = Path(__file__).resolve().parent.parent / 'build' / 'systematics' / 'run_systematics'
+    if not binary.exists():
+        print(f"{_ERROR} -- run_systematics binary not found at {binary}. Build medulla first.")
+        return False
+
+    variation_toml_path = Path(variation_toml).resolve()
+    if not variation_toml_path.exists():
+        print(f"{_ERROR} -- Variation systematics TOML not found: {variation_toml_path}")
+        return False
+
+    cfg = toml.load(str(variation_toml_path))
+    cfg['input']['path'] = variation_input
+    cfg['output']['path'] = 'variation_splines.root'
+    cfg.pop('tree', None)
+
+    print(f"{_INFO} -- Running Phase 1 interactively:")
+    print(f"{_INFO} --   TOML:   {variation_toml_path}")
+    print(f"{_INFO} --   Input:  {variation_input}")
+    print(f"{_INFO} --   Output: {project_dir}/variation_splines.root")
+
+    resp = input("Confirm Phase 1 interactive run? [Y/N] ")
+    if resp.strip().lower() != 'y':
+        print(f"{_INFO} -- User aborted.")
+        return False
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir = Path(tmpdir)
+        toml_path = tmpdir / 'variation_systematics_phase1.toml'
+        with open(toml_path, 'w') as f:
+            toml.dump(cfg, f)
+
+        try:
+            subprocess.run([str(binary), str(toml_path)], check=True, cwd=str(tmpdir))
+        except subprocess.CalledProcessError as e:
+            print(f"{_ERROR} -- run_systematics failed: {e}")
+            return False
+
+        splines_local = tmpdir / 'variation_splines.root'
+        if not splines_local.exists():
+            print(f"{_ERROR} -- Expected output not found: {splines_local}")
+            return False
+
+        splines_dest = str(project_dir / 'variation_splines.root')
+        print(f"{_INFO} -- Staging splines to {splines_dest}")
+        _ifdh_cp(str(splines_local), splines_dest)
+
+    print(f"{_INFO} -- Phase 1 complete. Splines at {project_dir}/variation_splines.root")
+    return True
+
+
+def launch_variation_phase1_jobsub(
+    project_dir: Path,
+    variation_input: str,
+    variation_toml: str,
+    exp: str = 'sbnd',
+    branch: str = 'develop',
+    memory: int = 8000,
+    disk: Optional[int] = None,
+    lifetime: str = '8h',
+):
+    """
+    Submit a single batch job to run Phase 1 (spline building) on the
+    grid. Stages the variation TOML to the project directory before
+    submission so the grid worker can retrieve it.
+
+    Parameters
+    ----------
+    project_dir : Path
+        Path to the project directory (PNFS).
+    variation_input : str
+        PNFS or xrootd path to the merged variation+CV ROOT file.
+    variation_toml : str
+        Local path to the variation systematics TOML.
+    exp : str
+        Experiment name (default: sbnd).
+    branch : str
+        Medulla git branch (default: develop).
+    memory : int
+        Memory to request in MB (default: 8000).
+    disk : int | None
+        Disk to request in GB. If None, defaults to 80 GB.
+    lifetime : str
+        Expected job lifetime (default: '8h').
+
+    Returns
+    -------
+    bool
+        True if submission succeeded, False otherwise.
+    """
+    runner = Path(__file__).resolve().parent / 'submit_variation_phase1.sh'
+    if not runner.exists():
+        print(f"{_ERROR} -- Runner script not found: {runner}")
+        return False
+
+    variation_toml_path = Path(variation_toml).resolve()
+    if not variation_toml_path.exists():
+        print(f"{_ERROR} -- Variation systematics TOML not found: {variation_toml_path}")
+        return False
+
+    dest_toml = str(project_dir / 'variation_systematics.toml')
+    print(f"{_INFO} -- Copying {variation_toml_path} -> {dest_toml}")
+    _ifdh_cp(str(variation_toml_path), dest_toml)
+
+    disk_size = f'{disk}GB' if disk is not None else '80GB'
+
+    cmd = [
+        'jobsub_submit',
+        '-G', exp,
+        '-N', '1',
+        f'--memory={memory}MB',
+        f'--disk={disk_size}',
+        f'--expected-lifetime={lifetime}',
+        '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE',
+        "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
+        '--singularity-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest',
+        f'file://{runner}',
+        '--',
+        f'--project={project_dir.resolve()}',
+        f'--branch={branch}',
+        f'--variation-input={variation_input}',
+    ]
+
+    print(f"{_INFO} -- Submitting Phase 1 variation systematics job:")
+    print(f"{_INFO} --   TOML:   {variation_toml_path}")
+    print(f"{_INFO} --   Input:  {variation_input}")
+    print(f"{_INFO} --   Output: {project_dir}/variation_splines.root")
+    print(f"{_INFO} --   Command: {' '.join(cmd)}")
+
+    resp = input("Confirm Phase 1 batch submission? [Y/N] ")
+    if resp.strip().lower() != 'y':
+        print(f"{_INFO} -- User aborted.")
+        return False
+
+    try:
+        out = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+        if 'ExpiredSignatureError' in (output := e.stderr.strip()):
+            print(f"{_ERROR} -- Submission failed: expired token. Run `htgettoken` and retry.")
+        else:
+            print(f"{_ERROR} -- Submission failed: {output}")
+        return False
+
+    stdout = out.stdout.strip()
+    print('\n'.join(stdout.split('\n')[-4:]))
+    print(f"{_INFO} -- Phase 1 job submitted.")
+    return True
+
+
+def launch_variation_phase2_jobsub(
+    project_dir: Path,
+    variation_toml: str,
+    exp: str = 'sbnd',
+    branch: str = 'develop',
+    memory: int = 4000,
+    disk: Optional[int] = None,
+    lifetime: str = '4h',
+    njobs: int = -1,
+):
+    """
+    Submit one batch job per completed selection output file to apply
+    pre-built detector-variation splines (Phase 2). Files that already
+    have a corresponding output_varsys_jobid<NNNN>.root are skipped.
+
+    A manifest (variation_phase2_manifest.txt) listing the job IDs to
+    process is staged to the project directory so each grid worker can
+    look up its own input file via $PROCESS.
+
+    Parameters
+    ----------
+    project_dir : Path
+        Path to the project directory (PNFS).
+    variation_toml : str
+        Local path to the variation systematics TOML.
+    exp : str
+        Experiment name (default: sbnd).
+    branch : str
+        Medulla git branch (default: develop).
+    memory : int
+        Memory to request in MB (default: 4000).
+    disk : int | None
+        Disk to request in GB. If None, defaults to 25 GB.
+    lifetime : str
+        Expected job lifetime (default: '4h').
+    njobs : int
+        Maximum number of jobs to submit. -1 submits all pending files.
+
+    Returns
+    -------
+    bool
+        True if submission succeeded, False otherwise.
+    """
+    runner = Path(__file__).resolve().parent / 'submit_variation_phase2.sh'
+    if not runner.exists():
+        print(f"{_ERROR} -- Runner script not found: {runner}")
+        return False
+
+    variation_toml_path = Path(variation_toml).resolve()
+    if not variation_toml_path.exists():
+        print(f"{_ERROR} -- Variation systematics TOML not found: {variation_toml_path}")
+        return False
+
+    splines_path = project_dir / 'variation_splines.root'
+    if not splines_path.exists():
+        print(f"{_ERROR} -- Phase 1 splines file not found: {splines_path}")
+        print(f"{_ERROR} -- Run Phase 1 first (--variation-phase1).")
+        return False
+
+    all_output_files = sorted(glob(str(project_dir / 'output' / 'output_jobid*.root')))
+    if not all_output_files:
+        print(f"{_ERROR} -- No selection output files found in {project_dir}/output/")
+        return False
+
+    already_done = {
+        int(Path(f).stem.split('jobid')[-1])
+        for f in glob(str(project_dir / 'output' / 'output_varsys_jobid*.root'))
+    }
+
+    pending_files = [
+        f for f in all_output_files
+        if int(Path(f).stem.split('jobid')[-1]) not in already_done
+    ]
+
+    if not pending_files:
+        print(f"{_INFO} -- All selection outputs already have Phase 2 results. Nothing to do.")
+        return False
+
+    jobids = [int(Path(f).stem.split('jobid')[-1]) for f in pending_files]
+    if njobs > 0:
+        jobids = jobids[:njobs]
+    njobs = len(jobids)
+
+    # Build the Phase 2 TOML in Python so the grid job doesn't need awk
+    # rewriting. The only substitution left for the grid is replacing the
+    # input path placeholder with the per-job staged file name.
+    cfg = toml.load(str(variation_toml_path))
+    cfg['input']['path'] = '__INPUT_FILE__'
+    cfg['output']['path'] = 'output_varsys.root'
+    if 'variations' in cfg:
+        cfg['variations']['splines_file'] = 'variation_splines.root'
+    for tree in cfg.get('tree', []):
+        if tree.get('action') == 'add_weights':
+            tree['action'] = 'add_detsys_weights'
+    phase2_toml_local = Path('variation_systematics_phase2.toml')
+    with open(phase2_toml_local, 'w') as f:
+        toml.dump(cfg, f)
+    _ifdh_cp(str(phase2_toml_local), str(project_dir / 'variation_systematics_phase2.toml'))
+    phase2_toml_local.unlink()
+
+    manifest_local = Path('variation_phase2_manifest.txt')
+    manifest_local.write_text('\n'.join(str(jid) for jid in jobids) + '\n')
+    manifest_dest = str(project_dir / 'variation_phase2_manifest.txt')
+    _ifdh_cp(str(manifest_local), manifest_dest)
+    manifest_local.unlink()
+
+    disk_size = f'{disk}GB' if disk is not None else '25GB'
+
+    cmd = [
+        'jobsub_submit',
+        '-G', exp,
+        '-N', str(njobs),
+        f'--memory={memory}MB',
+        f'--disk={disk_size}',
+        f'--expected-lifetime={lifetime}',
+        '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE',
+        "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
+        '--singularity-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest',
+        f'file://{runner}',
+        '--',
+        f'--project={project_dir.resolve()}',
+        f'--branch={branch}',
+    ]
+
+    print(f"{_INFO} -- Submitting {njobs} Phase 2 variation systematics jobs:")
+    print(f"{_INFO} --   TOML:    {variation_toml_path}")
+    print(f"{_INFO} --   Splines: {splines_path}")
+    print(f"{_INFO} --   Jobs:    {njobs}")
+    print(f"{_INFO} --   Output:  {project_dir}/output/output_varsys_jobid<NNNN>.root")
+    print(f"{_INFO} --   Command: {' '.join(cmd)}")
+
+    resp = input("Confirm Phase 2 batch submission? [Y/N] ")
+    if resp.strip().lower() != 'y':
+        print(f"{_INFO} -- User aborted.")
+        return False
+
+    try:
+        out = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+        if 'ExpiredSignatureError' in (output := e.stderr.strip()):
+            print(f"{_ERROR} -- Submission failed: expired token. Run `htgettoken` and retry.")
+        else:
+            print(f"{_ERROR} -- Submission failed: {output}")
+        return False
+
+    stdout = out.stdout.strip()
+    print('\n'.join(stdout.split('\n')[-4:]))
+    print(f"{_INFO} -- Submitted {njobs} Phase 2 jobs.")
+    return True
+
 
 def check_git_branch(
     branch : str,

@@ -95,8 +95,23 @@ int main(int argc, char * argv[])
     sys::detsys::DetsysCalculator calc;
     if(config.has_field("variations"))
     {
-        calc = sys::detsys::DetsysCalculator(config, output, input);
-        calc.write();
+        if(config.has_field("variations.splines_file"))
+        {
+            // Phase 2: load pre-built splines from a prior run instead of
+            // rebuilding from variation histograms. The splines file is the
+            // output produced by a phase-1 run on the merged sample.
+            std::string splines_path = config.get_string_field("variations.splines_file");
+            std::cout << "Loading pre-built splines from: " << splines_path << std::endl;
+            calc = sys::detsys::DetsysCalculator(config, output, splines_path);
+            // No calc.write() here: histograms and splines already live in the
+            // phase-1 output; only the per-event weight results are written.
+        }
+        else
+        {
+            // Phase 1: build histograms and splines from variation trees.
+            calc = sys::detsys::DetsysCalculator(config, output, input);
+            calc.write();
+        }
     }
 
     std::cout << "Finished loading configuration and opening files." << std::endl;
@@ -144,6 +159,12 @@ int main(int argc, char * argv[])
         else if(type == "add_weights"){
             std::cout << "Copying tree " << table.get_string_field("origin") << " and adding weights for systematics." << std::endl;
             sys::trees::copy_with_weight_systematics(config, table, output, input, calc);
+        }
+        else if(type == "add_detsys_weights"){
+            // Phase 2: apply pre-loaded detector variation weights directly from
+            // the selection tree without reading CAF files.
+            std::cout << "Copying tree " << table.get_string_field("origin") << " and applying pre-loaded detsys weights." << std::endl;
+            sys::trees::copy_with_detsys_weights(config, table, output, input, calc);
         }
 
         std::cout << "Finished processing tree: " << table.get_string_field("origin") << std::endl;

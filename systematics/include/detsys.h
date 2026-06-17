@@ -84,6 +84,21 @@ namespace sys::detsys
         DetsysCalculator(cfg::ConfigurationTable & table, TFile * output, TFile * input);
 
         /**
+         * @brief Spline-loading constructor for the DetsysCalculator class.
+         * @details This constructor initializes the DetsysCalculator class by
+         * loading pre-built splines from a prior phase-1 run rather than
+         * rebuilding them from variation histograms. The splines file should
+         * be the output produced by the full constructor. Variable configuration
+         * and z-scores are still read from the configuration table; only the
+         * variation histogram and spline building steps are skipped.
+         * @param table The configuration table.
+         * @param output The output file.
+         * @param splines_path Path to the ROOT file containing pre-built splines.
+         * @see cfg::ConfigurationTable
+         */
+        DetsysCalculator(cfg::ConfigurationTable & table, TFile * output, const std::string & splines_path);
+
+        /**
          * @brief Default constructor for the DetsysCalculator class.
          * @details This constructor initializes the DetsysCalculator class when
          * no arguments are provided. The class is not initialized and is marked
