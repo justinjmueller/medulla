@@ -209,6 +209,25 @@ namespace cuts
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut, fiducial_cut);
 
+    /**
+     * @brief Apply a fiducial volume cut; the interaction vertex must be
+     * reconstructed within the fiducial volume.
+     * @details The DENT team is analyzing an ineffective region of the 
+     * detector near the cathode (x=0) noticed in Wirecell studies.
+     * This cut is intended to be applied on top of the standard fiducial cut
+     * to veto interactions with vertices reconstructed within 5 cm of the
+     * cathode.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the vertex is at least 5 cm from the cathode.
+     */
+    template<class T>
+    bool DENT_cut(const T & obj)
+    {
+        return abs(obj.vertex[0]) >= 5;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, DENT_cut, DENT_cut);
+
     template<class T>
     bool fiducial_cut_tmp(const T & obj)
     {
@@ -635,6 +654,87 @@ namespace cuts
         return particle_multiplicity(obj, 1, 3, params) == 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, single_pion, single_pion);
+
+    /**
+     * @brief Binding for a single particle neutral pion multiplicity cut.
+     * @details This function binds the single particle multiplicity cut for
+     * neutral pions, which corresponds to the index 5 in the
+     * @ref utilities::count_primaries function.
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for a neutral pion to count towards the multiplicity.
+     * Defaults to 0 MeV.
+     * @return true if the interaction has a single primary neutral pion.
+     */
+    template<class T>
+    bool single_pi0(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params = {0.0,})
+    {
+        double num_primary_pi0s = utilities::true_primary_pi0_multiplicity(obj, params);
+	return num_primary_pi0s == 1;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::True, single_pi0, single_pi0);
+
+    /**
+     * @brief Binding for at least one primary neutral pion multiplicity cut.
+     * @details This function binds a cut that requires at least one primary
+     * neutral pion, which corresponds to the index 5 in the
+     * @ref utilities::count_primaries function. This is intended to be used as
+     * a more inclusive alternative to the single_pi0 cut, which may be useful in
+     * cases where we want to allow for additional neutral pions in the final
+     * state (e.g. from FSI) but still want to require the presence of a pi0.
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for a neutral pion to count towards the multiplicity.
+     * Defaults to 0 MeV.
+     * @return true if the interaction has at least one primary neutral pion.
+     */
+    template<class T>
+    bool at_least_one_pi0(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params = {0.0,})
+    {
+        double num_primary_pi0s = utilities::true_primary_pi0_multiplicity(obj, params);
+	return num_primary_pi0s >= 1;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::True, at_least_one_pi0, at_least_one_pi0);
+
+    /**
+     * @brief Binding for a leading photon kinetic energy cut.
+     * @details This function binds a cut that requires the leading photon
+     * in a pi0 candidate to have a minimum kinetic energy.
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * minimum kinetic energy for the leading photon. Defaults to 40 MeV.
+     * @return true if the leading photon has a kinetic energy above the threshold.
+     */
+    template<class T>
+    bool leading_photon_ke_cut(const T & obj, std::vector<double> params={40.0})
+    {
+        auto [i0, i1] = biselectors::pi0_photon_pair(obj);
+        if(i0 == kNoMatch || i1 == kNoMatch) return false;
+        const auto & p0 = obj.particles[i0]; 
+        double ke0 = pvars::calo_ke(p0);
+        return ke0 >= params[0];
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, leading_photon_ke_cut, leading_photon_ke_cut);
+
+    /**
+     * @brief Binding for a subleading photon kinetic energy cut.
+     * @details This function binds a cut that requires the subleading photon
+     * in a pi0 candidate to have a minimum kinetic energy.
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * minimum kinetic energy for the subleading photon. Defaults to 40 MeV.
+     * @return true if the subleading photon has a kinetic energy above the threshold.
+     */
+    template<class T>
+    bool subleading_photon_ke_cut(const T & obj, std::vector<double> params={40.0})
+    {
+        auto [i0, i1] = biselectors::pi0_photon_pair(obj);
+        if(i0 == kNoMatch || i1 == kNoMatch) return false;
+        const auto & p1 = obj.particles[i1]; 
+        double ke1 = pvars::calo_ke(p1);
+        return ke1 >= params[0];
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, subleading_photon_ke_cut, subleading_photon_ke_cut);
 
     /**
      * @brief Binding for a single particle proton multiplicity cut.
