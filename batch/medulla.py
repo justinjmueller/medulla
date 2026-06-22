@@ -143,7 +143,7 @@ if __name__ == '__main__':
     )
 
     p.add_argument(
-        '--tag', '-t', type=str, default='develop',
+        '--tag', type=str, default='develop',
         help='Tag to use for the medulla repository (defaults to develop).'
     )
 
