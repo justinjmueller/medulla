@@ -626,7 +626,8 @@ void sys::trees::copy_with_detsys_weights(cfg::ConfigurationTable & config, cfg:
 
     std::cout << "Finished applying detsys weights." << std::endl;
 
-    directory->WriteObject(output_tree, table.get_string_field("name").c_str());
+    if(table.get_bool_field("write_tree", true))
+        directory->WriteObject(output_tree, table.get_string_field("name").c_str());
     for(auto & [key, value] : systrees)
         directory->WriteObject(value, (key + "Tree").c_str());
 

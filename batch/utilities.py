@@ -838,6 +838,7 @@ def launch_variation_phase2_jobsub(
     for tree in cfg.get('tree', []):
         if tree.get('action') == 'add_weights':
             tree['action'] = 'add_detsys_weights'
+            tree['write_tree'] = False
     phase2_toml_local = Path('variation_systematics_phase2.toml')
     with open(phase2_toml_local, 'w') as f:
         toml.dump(cfg, f)
