@@ -291,6 +291,8 @@ sys::detsys::DetsysCalculator::DetsysCalculator(cfg::ConfigurationTable & table,
         throw cfg::ConfigurationError("Could not open splines file: " + splines_path);
 
     std::string result_dest = table.get_string_field("variations.result_destination");
+    if(!result_dest.empty() && result_dest.back() == '/')
+        result_dest.pop_back();
     TDirectory * spline_dir = (TDirectory *) splines_file->Get(result_dest.c_str());
     if(!spline_dir)
         throw cfg::ConfigurationError("result_destination '" + result_dest + "' not found in splines file.");

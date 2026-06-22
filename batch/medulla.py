@@ -133,7 +133,7 @@ def main(
                 variation_input=variation_input,
                 variation_toml=variation_systematics,
                 exp=experiment,
-                branch=branch,
+                branch=tag,
                 memory=memory,
                 disk=disk,
                 lifetime=lifetime,
@@ -147,7 +147,7 @@ def main(
             project_dir=project_dir,
             variation_toml=variation_systematics,
             exp=experiment,
-            branch=branch,
+            branch=tag,
             memory=memory,
             disk=disk,
             lifetime=lifetime,
@@ -215,7 +215,7 @@ if __name__ == '__main__':
     )
 
     p.add_argument(
-        '--tag', '-t', type=str, default='develop',
+        '--tag', type=str, default='develop',
         help='Tag to use for the medulla repository (defaults to develop).'
     )
 
@@ -304,10 +304,10 @@ if __name__ == '__main__':
     if args.variation_test and not args.variation_phase2:
         p.error('--variation-test is only valid with --variation-phase2.')
 
-    if args.branch != 'develop':
-        print(f"[INFO] -- Using branch '{args.branch}' for medulla repository.")
-        if not check_git_branch(args.branch):
-            p.error(f"Branch '{args.branch}' does not exist in the medulla repository.")
+    if args.tag != 'develop':
+        print(f"[INFO] -- Using tag '{args.tag}' for medulla repository.")
+        if not check_git_branch(args.tag):
+            p.error(f"Tag '{args.tag}' does not exist in the medulla repository.")
 
     # Run the main function.
     main(
