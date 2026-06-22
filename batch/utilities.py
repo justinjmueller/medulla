@@ -16,8 +16,8 @@ _CAMPAIGN = '\033[1m\033[96m[CAMPAIGN]\033[0m'  # bold cyan
 
 def _ifdh_cp(src: str, dest: str):
     """Copy src to dest via ifdh, removing dest first if it already exists."""
-    subprocess.run(['ifdh', 'rm', dest], capture_output=True)
-    subprocess.run(['ifdh', 'cp', src, dest], check=True)
+    subprocess.run(['rm', dest], capture_output=True)
+    subprocess.run(['cp', src, dest], check=True)
 
 # SQL schema for the configuration table for storing job configurations
 SCHEMA_CONFIGURATION = """
