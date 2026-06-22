@@ -63,6 +63,7 @@ struct MatchedInteraction
     const RType & reco;   ///< reconstructed interaction (always valid)
     const TType * truth;  ///< matched true interaction, or nullptr if unmatched
 };
+/**
  * @namespace context
  * @brief Namespace for storing the current event context.
  * @details This namespace is intended to be used for storing the current event
