@@ -8,6 +8,15 @@
 #   --tag=TAG           : Git ref to checkout on grid nodes (default: develop)
 #######################################################################
 
+# Print usage information
+usage() {
+  echo "Usage: submit.sh [--project=PROJECT] [--tag=TAG]"
+  echo ""
+  echo "Arguments:"
+  echo "  --project=PROJECT   : Specify the project directory"
+  echo "  --tag=TAG           : Git ref to checkout on grid nodes (default: develop)"
+}
+
 # Initialize variables
 PROJECT=""
 TAG="develop"
@@ -33,6 +42,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     -h|--help)
       usage
+      exit 0
       ;;
     --) # end of options
       shift
@@ -41,6 +51,7 @@ while [[ $# -gt 0 ]]; do
     *)
       echo "Unknown option: $1" >&2
       usage
+      exit 1
       ;;
   esac
 done

@@ -1,0 +1,201 @@
+[general]
+output = "icarus_nueCC_inclusive_2026"
+primfn = "default_primary_classification"
+pidfn = "default_pid"
+fsthresh = [
+    "@photon_threshold",
+    "@electron_threshold",
+    "@muon_threshold",
+    "@pion_threshold",
+    "@proton_threshold",
+]
+
+[parameters]
+photon_threshold = 25.0
+electron_threshold = 0.0
+muon_threshold = 143.425
+pion_threshold = 25.0
+proton_threshold = 50.0
+trackLength_threshold = 190.0
+electron_dedx = 3.625
+
+# ICARUS MC NuMI Neutrino + Cosmics CV
+[[sample]]
+name = "NuMIFull"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/*.root"
+ismc = true
+disable = true # Optional: default = false
+
+# ICARUS debug single file
+[[sample]]
+name = "debugMC"
+#path = "/pnfs/icarus/persistent/users/mueller/production/simulation/cvext/input000.flat.root"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_00.root"
+ismc = true
+disable = false # Optional: default = false
+
+[[tree]]
+name = "all"
+sim_only = false
+mode = "reco"
+cut = []
+branch = [
+    { name = "fiducial_cut",          type = "reco"    },
+    { name = "valid_flashmatch",      type = "reco"    },
+    { name = "neutrino_id",           type = "true"    },
+    { name = "neutrino_energy",       type = "mctruth" },
+    { name = "baseline",              type = "mctruth" },
+    { name = "cc",                    type = "mctruth" },
+    { name = "pdg",                   type = "mctruth" },
+    { name = "category",              type = "true"    },
+    { name = "visible_energy",        type = "both"    },
+    { name = "track_length",          type = "both", parameters = [ "@trackLength_threshold" ] },
+    { name = "containment_cut",       type = "reco" },
+    { name = "containment_cut",         type = "reco_particle", selector = "leading_electron"},
+    { name = "particle_dedx",         type = "reco", parameters = [ "@electron_dedx" ] },
+    { name = "start_dedx",            type = "reco_particle", selector = "leading_electron" },
+    { name = "electron_multiplicity", type = "both", parameters = [ 0 ] },
+    { name = "vertex_distance",       type = "reco_particle", selector = "leading_electron" },
+    { name = "vertex_distance_cut",   type = "reco", parameters = [ 3.25 ] },
+    { name = "has_particle_multiplicity", type = "reco", parameters = [1, 1] },
+    { name = "no_cut",                  type = "reco" },
+    { name = "ke",                      type = "reco_particle", selector = "leading_electron" },
+    { name = "calo_ke",                  type = "reco_particle", selector = "leading_electron" },
+    { name = "mcs_ke",                  type = "reco_particle", selector = "leading_electron" },
+    { name = "csda_ke",                  type = "reco_particle", selector = "leading_electron" },
+]
+
+[[tree]]
+name = "selected"
+sim_only = false
+mode = "reco"
+cut = [
+    { name = "no_cut",                  type = "reco" },
+    { name = "fiducial_cut",            type = "reco" },
+    { name = "valid_flashmatch",        type = "reco" },
+    { name = "containment_cut",         type = "reco" },
+    { name = "track_length",            type = "reco",  parameters = [ "@trackLength_threshold" ] },
+    { name = "has_particle_multiplicity", type = "reco", parameters = [1, 1] },
+    { name = "containment_cut",         type = "reco_particle", selector = "leading_electron"},
+    { name = "particle_dedx",           type = "reco", parameters = [ "@electron_dedx" ] },
+    { name = "vertex_distance_cut",   type = "reco", parameters = [ 3.25 ] },
+]
+branch = [
+    { name = "fiducial_cut",          type = "reco"    },
+    { name = "valid_flashmatch",      type = "reco"    },
+    { name = "neutrino_id",           type = "true"    },
+    { name = "neutrino_energy",       type = "mctruth" },
+    { name = "baseline",              type = "mctruth" },
+    { name = "cc",                    type = "mctruth" },
+    { name = "pdg",                   type = "mctruth" },
+    { name = "category",              type = "true"    },
+    { name = "visible_energy",        type = "both"    },
+    { name = "track_length",          type = "both", parameters = [ "@trackLength_threshold" ] },
+    { name = "containment_cut",       type = "reco" },
+    { name = "containment_cut",         type = "reco_particle", selector = "leading_electron"},
+    { name = "particle_dedx",         type = "reco", parameters = [ "@electron_dedx" ] },
+    { name = "start_dedx",            type = "reco_particle", selector = "leading_electron" },
+    { name = "electron_multiplicity", type = "both", parameters = [ 0 ] },
+    { name = "vertex_distance",       type = "reco_particle", selector = "leading_electron" },
+    { name = "vertex_distance_cut",   type = "reco", parameters = [ 3.25 ] },
+    { name = "has_particle_multiplicity", type = "reco", parameters = [1, 1] },
+    { name = "no_cut",                  type = "reco" },
+    { name = "ke",                      type = "reco_particle", selector = "leading_electron" },
+    { name = "calo_ke",                  type = "reco_particle", selector = "leading_electron" },
+    { name = "mcs_ke",                  type = "reco_particle", selector = "leading_electron" },
+    { name = "csda_ke",                  type = "reco_particle", selector = "leading_electron" },
+]
+
+[[tree]]
+name = "eventLevel"
+sim_only = false
+mode = "event"
+cut = []
+branch = [
+    { name = "ntrue",         type = "event"    },
+    { name = "nreco",         type = "event"    },
+    { name = "nnu",           type = "event"    },
+    { name = "nintime",       type = "event", parameters = [ -0.5, 9.6 ] },
+]
+
+[[category]] # 0 : Fiducial, electron neutrino CC signal
+cuts = [
+    { name = "neutrino"        },
+    { name = "fiducial_cut"    },
+    { name = "iscc"            },
+    { name = "neutrino_pdg",        parameters = [ 12.0, -12.0 ] },
+]
+
+[[category]] # 1 : Fiducial, other neutrino CC signal
+cuts = [
+    { name = "neutrino"        },
+    { name = "fiducial_cut"    },
+    { name = "iscc"            },
+    { name = "!neutrino_pdg",        parameters = [ 12.0, -12.0 ] },
+]
+
+[[category]] # 2 : Non-fiducial,  neutrino 
+cuts = [
+    { name = "neutrino"        },
+    { name = "!fiducial_cut"    },
+]
+
+[[category]] # 3 : neutral current
+cuts = [
+    { name = "neutrino"        },
+    { name = "!iscc"            },
+]
+
+[[category]] # 4 : Cosmic
+cuts = [
+    { name = "!neutrino"        },
+]
+
+# [[category]] # 2 : Fiducial, non-contained, single muon, single proton
+# cuts = [
+#     { name = "neutrino"         },
+#     { name = "fiducial_cut"     },
+#     { name = "!containment_cut" },
+#     { name = "no_photons",        parameters = [ "@photon_threshold"   ] },
+#     { name = "no_electrons",      parameters = [ "@electron_threshold" ] },
+#     { name = "no_charged_pions",  parameters = [ "@pion_threshold"     ] },
+#     { name = "single_muon",       parameters = [ "@muon_threshold"     ] },
+#     { name = "single_proton",     parameters = [ "@proton_threshold"   ] },
+# ]
+
+# [[category]] # 3 : Non-fiducial, non-contained, single muon, single proton
+# cuts = [
+#     { name = "neutrino"         },
+#     { name = "!fiducial_cut"    },
+#     { name = "!containment_cut" },
+#     { name = "no_photons",        parameters = [ "@photon_threshold"   ] },
+#     { name = "no_electrons",      parameters = [ "@electron_threshold" ] },
+#     { name = "no_charged_pions",  parameters = [ "@pion_threshold"     ] },
+#     { name = "single_muon",       parameters = [ "@muon_threshold"     ] },
+#     { name = "single_proton",     parameters = [ "@proton_threshold"   ] },
+# ]
+
+# [[category]] # 4 : Fiducial, CC, non-signal
+# cuts = [
+#     { name = "neutrino"         },
+#     { name = "fiducial_cut"     },
+#     { name = "iscc"             }
+# ]
+
+# [[category]] # 5 : Non-fiducial, CC, non-signal
+# cuts = [
+#     { name = "neutrino"         },
+#     { name = "!fiducial_cut"    },
+#     { name = "iscc"             },
+# ]
+
+# [[category]] # 6 : NC
+# cuts = [
+#     { name = "neutrino"         },
+#     { name = "!iscc"            },
+# ]
+
+# [[category]] # 7 : Cosmic
+# cuts = [
+#     { name = "!neutrino"        },
+# ]

@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.14)
 project(spine_anaplot_tools LANGUAGES C CXX)
 
+# Get the absolute paths
+set(MEDULLA_SOURCE_DIR ${CMAKE_SOURCE_DIR})
+set(MEDULLA_BUILD_DIR ${CMAKE_BINARY_DIR})
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(CheckEnvironment) # Validate first
 include(SetupEnvironment) # Set paths to external dependencies
@@ -57,3 +61,18 @@ if(BUILD_DOCS)
         add_subdirectory(docs)
     endif()
 endif()
+
+# Generate setup script
+configure_file(
+    ${CMAKE_SOURCE_DIR}/cmake/setup_medulla.sh.in
+    ${CMAKE_BINARY_DIR}/setup_medulla.sh
+    @ONLY
+)
+
+# Make it executable
+execute_process(
+    COMMAND chmod 755 ${CMAKE_BINARY_DIR}/setup_medulla.sh
+)
+
+message(STATUS "Setup script generated: ${CMAKE_BINARY_DIR}/setup_medulla.sh")
+message(STATUS "Source it with: source ${CMAKE_BINARY_DIR}/setup_medulla.sh")
