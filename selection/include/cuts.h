@@ -202,7 +202,7 @@ namespace cuts
     template<class T>
     bool fiducial_cut(const T & obj)
     {
-        return obj.is_fiducial && !(obj.vertex[0] > 210.215 && obj.vertex[1] > 60 && (obj.vertex[2] > 290 && obj.vertex[2] < 390));
+       return obj.is_fiducial; //&& !(obj.vertex[0] > 210.215 && obj.vertex[1] > 60 && (obj.vertex[2] > 290 && obj.vertex[2] < 390));
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut, fiducial_cut);
 
