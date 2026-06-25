@@ -445,7 +445,7 @@ TH1D * sys::detsys::DetsysCalculator::operator[](std::string key)
 double sys::detsys::DetsysCalculator::get_weight(std::string name, double value, double zscore)
 {
     std::string spline_key = make_spline_key(name, variable);
-    if(value < hdummies[spline_key]->GetXaxis()->GetXmin() || value > hdummies[spline_key]->GetXaxis()->GetXmax())
+    if(value < hdummies[spline_key]->GetXaxis()->GetXmin() || value >= hdummies[spline_key]->GetXaxis()->GetXmax())
         return 1;
     else
     {
@@ -478,7 +478,7 @@ void sys::detsys::DetsysCalculator::add_value(std::string varname, double binvar
 
         std::string spline_key = make_spline_key(detsysname, configured_variable);
         double configured_value = value_it->second;
-        if(configured_value < hdummies[spline_key]->GetXaxis()->GetXmin() || configured_value > hdummies[spline_key]->GetXaxis()->GetXmax())
+        if(configured_value < hdummies[spline_key]->GetXaxis()->GetXmin() || configured_value >= hdummies[spline_key]->GetXaxis()->GetXmax())
             continue;
 
         int bin = hdummies[spline_key]->FindBin(configured_value);
