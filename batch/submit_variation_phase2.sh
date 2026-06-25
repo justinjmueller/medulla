@@ -105,6 +105,22 @@ ls -lrth
 # Stage output
 #######################################################################
 
+#get the number of entries in the output file
+root -l -b -q output_varsys.root <<EOF
+TFile *f = TFile::Open("output_varsys.root");
+if (!f || f->IsZombie()) {
+  std::cerr << "[ERROR] Failed to open output_varsys.root" << std::endl;
+  return 1;
+}
+TTree *t = dynamic_cast<TTree*>(f->Get("events/NuMIFull/selected_variationTree"));
+if (!t) {
+  std::cerr << "[ERROR] Failed to get TTree 'events/NuMIFull/selected_variationTree' from output_varsys.root" << std::endl;
+  return 1;
+}
+std::cout << "[INFO] Number of entries in output_varsys.root: " << t->GetEntries() << std::endl;
+f->Close();
+EOF
+
 printf -v OUTNAME "output_varsys_jobid%04d.root" "$JOBID"
 ifdh cp output_varsys.root "$PROJECT/output/$OUTNAME"
 echo "[INFO] Staged output to: $PROJECT/output/$OUTNAME"
