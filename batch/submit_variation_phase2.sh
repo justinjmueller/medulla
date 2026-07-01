@@ -2,7 +2,7 @@
 
 #######################################################################
 # Usage: submit_variation_phase2.sh [--project=PROJECT]
-#                                   [--branch=BRANCH]
+#                                   [--tag=BRANCH]
 #
 # Phase 2 runner: applies pre-built detector-variation splines to one
 # individual selection output file. Uses $PROCESS to look up the job
@@ -12,8 +12,10 @@
 #
 # Arguments:
 #   --project=PROJECT   : Path to the project directory (PNFS)
-#   --branch=BRANCH     : Medulla git branch (default: develop)
+#   --tag=BRANCH     : Medulla git branch (default: develop)
 #######################################################################
+
+set -e
 
 PROJECT=""
 BRANCH="develop"
@@ -22,8 +24,8 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --project=*) PROJECT="${1#*=}"; shift ;;
     --project)   PROJECT="$2";      shift 2 ;;
-    --branch=*)  BRANCH="${1#*=}";  shift ;;
-    --branch)    BRANCH="$2";       shift 2 ;;
+    --tag=*)  BRANCH="${1#*=}";  shift ;;
+    --tag)    BRANCH="$2";       shift 2 ;;
     *) shift ;;
   esac
 done
@@ -105,21 +107,29 @@ ls -lrth
 # Stage output
 #######################################################################
 
-#get the number of entries in the output file
-root -l -b -q output_varsys.root <<EOF
-TFile *f = TFile::Open("output_varsys.root");
-if (!f || f->IsZombie()) {
-  std::cerr << "[ERROR] Failed to open output_varsys.root" << std::endl;
-  return 1;
+# Validate that the output file contains the expected variation tree.
+# Write the check to a temp macro file because ROOT ignores stdin when a
+# .root file is passed on the command line (here-docs are silently dropped).
+VALIDATE_MACRO=$(mktemp /tmp/validate_varsys_XXXXXX.C)
+cat > "$VALIDATE_MACRO" <<'MACRO'
+{
+    TFile *f = TFile::Open("output_varsys.root");
+    if (!f || f->IsZombie()) {
+        std::cerr << "[ERROR] Failed to open output_varsys.root" << std::endl;
+        gSystem->Exit(1);
+    }
+    TTree *t = dynamic_cast<TTree*>(f->Get("events/NuMIFull/selected_variationTree"));
+    if (!t) {
+        std::cerr << "[ERROR] selected_variationTree not found in output_varsys.root" << std::endl;
+        f->Close();
+        gSystem->Exit(1);
+    }
+    std::cout << "[INFO] selected_variationTree has " << t->GetEntries() << " entries" << std::endl;
+    f->Close();
 }
-TTree *t = dynamic_cast<TTree*>(f->Get("events/NuMIFull/selected_variationTree"));
-if (!t) {
-  std::cerr << "[ERROR] Failed to get TTree 'events/NuMIFull/selected_variationTree' from output_varsys.root" << std::endl;
-  return 1;
-}
-std::cout << "[INFO] Number of entries in output_varsys.root: " << t->GetEntries() << std::endl;
-f->Close();
-EOF
+MACRO
+root -l -b -q "$VALIDATE_MACRO"
+rm -f "$VALIDATE_MACRO"
 
 printf -v OUTNAME "output_varsys_jobid%04d.root" "$JOBID"
 ifdh cp output_varsys.root "$PROJECT/output/$OUTNAME"

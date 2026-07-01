@@ -108,6 +108,7 @@ sys::detsys::DetsysCalculator::DetsysCalculator(cfg::ConfigurationTable & table,
     // the detector model.
     for(std::string variation : variations)
     {
+        std::cout << "Processing variation: " << variation << std::endl;
         double pot(0);
         // Check if the variation has an exposure tree instead of a histogram.
         std::string exp_tree_name = table.get_string_field("variations.origin") + variation + "/" + table.get_string_field("variations.tree") + "_exposure";
@@ -155,6 +156,7 @@ sys::detsys::DetsysCalculator::DetsysCalculator(cfg::ConfigurationTable & table,
                 histograms[hist_key]->Fill(value, 1.0 / pot);
             }
         }
+        std::cout << "Variation " << variation << " histogram filled." << std::endl;
     }
 
     // Loop over the detector systematics and create the splines. A single

@@ -193,8 +193,6 @@ def create_systematics_cfg(
                 if base_cfg.get('input.use_additional_hash', False) and ('neutrino_energy', 'mctruth') not in branch_variables:
                     raise ValueError(f"Tree {tree['name']} for sample {sample['name']} requests systematics but does not define a 'neutrino_energy' branch.")
                 table_types = ['multisim', 'multisigma']
-                if 'variations' in base_cfg:
-                    table_types.append('variation')
                 syst_trees[key] = {
                     'origin' : key,
                     'destination' : f'events/{sample["name"]}/',
@@ -215,6 +213,7 @@ def create_systematics_cfg(
     syst_cfg['input']['weights'] = 'data/*flat*.root'
     syst_cfg['output']['path'] = 'output_sys.root'
     syst_cfg['tree'] = list(syst_trees.values())
+    syst_cfg.pop('variations', None)
     return syst_cfg
 
 def create_new_project(
@@ -301,8 +300,30 @@ def create_new_project(
     conn.commit()
     conn.close()
 
+def _check_root_file(path: Path) -> tuple[bool, bool]:
+    """
+    Open a ROOT file and return (is_zombie, is_recovered).
+
+    is_zombie   — file could not be opened or is flagged as corrupt.
+    is_recovered — file was not properly closed and ROOT had to recover it;
+                   it may be incomplete even though it opened successfully.
+    """
+    try:
+        import ROOT
+        ROOT.gErrorIgnoreLevel = ROOT.kFatal
+        f = ROOT.TFile.Open(str(path))
+        if f is None or f.IsZombie():
+            return True, False
+        recovered = f.TestBit(ROOT.TFile.kRecovered)
+        f.Close()
+        return False, bool(recovered)
+    except Exception:
+        return True, False
+
+
 def check_project_status(
     project_dir : str,
+    check_zombies : bool = False,
 ):
     """
     Check the status of the project by inspecting the job output in the
@@ -312,6 +333,11 @@ def check_project_status(
     ----------
     project_dir : str
         Path to the base directory for the job directory.
+    check_zombies : bool, optional
+        If True, open each ROOT output file that passes the size check and
+        flag it as a stub if ROOT reports it as a zombie or as recovered
+        (not properly closed, likely incomplete).  Requires PyROOT.
+        Default is False.
 
     Returns
     -------
@@ -331,10 +357,12 @@ def check_project_status(
     # complete. This helps avoid marking jobs as complete if they
     # failed and produced an empty output file.
     output_files = glob(str(project_dir / 'output' / 'output_jobid*.root'))
+    output_files_sys = glob(str(project_dir / 'output' / 'output_systematics_jobid*.root'))
     output_jobids = {
         int(Path(f).stem.split('jobid')[-1])
         for f in output_files
     }
+
 
     # Find jobs tracked in project.db that do not have a corresponding
     # output file in output/.
@@ -362,11 +390,75 @@ def check_project_status(
         for f in output_files
         if Path(f).stat().st_size < 1024
     ]
+    stub_sys_jobs = [
+        int(Path(f).stem.split("jobid")[-1])    
+        for f in output_files_sys
+        if Path(f).stat().st_size < 1024
+    ]
+
+    stub_jobs = sorted(set(stub_jobs).union(stub_sys_jobs))
+
+    if check_zombies:
+        candidates = [
+            (f, False) for f in output_files if Path(f).stat().st_size >= 1024
+        ] + [
+            (f, True) for f in output_files_sys if Path(f).stat().st_size >= 1024
+        ]
+        total = len(candidates)
+        print(f"[INFO] -- Checking {total} ROOT file(s) for zombies and recovered files...")
+        bad_output = []
+        bad_sys = []
+        recovered_output = []
+        recovered_sys = []
+        for i, (f, is_sys) in enumerate(candidates, start=1):
+            if i % 100 == 0 or i == total:
+                print(f"[INFO] -- Zombie check: {i}/{total}", flush=True)
+            is_zombie, is_recovered = _check_root_file(Path(f))
+            jid = int(Path(f).stem.split('jobid')[-1])
+            if is_zombie:
+                (bad_sys if is_sys else bad_output).append(jid)
+            elif is_recovered:
+                (recovered_sys if is_sys else recovered_output).append(jid)
+        zombie_jobs = sorted(set(bad_output).union(bad_sys))
+        recovered_jobs = sorted(set(recovered_output).union(recovered_sys))
+        if zombie_jobs:
+            print(
+                f"[INFO] -- Found {len(zombie_jobs)} zombie ROOT file(s)"
+                " (corrupt despite passing size check)."
+            )
+            stub_jobs = sorted(set(stub_jobs).union(zombie_jobs))
+        if recovered_jobs:
+            print(
+                f"[WARN] -- Found {len(recovered_jobs)} recovered ROOT file(s)"
+                " (not properly closed; may be incomplete): job IDs {recovered_jobs}"
+            )
+            stub_jobs = sorted(set(stub_jobs).union(recovered_jobs))
+
     if stub_jobs:
-        resp = input(
-            f"[INFO] -- Found {len(stub_jobs)} stub output file(s) <"
-            f" 1024 bytes.\nDelete these stub outputs? [Y/N] "
-        )
+        label = "stub/zombie" if check_zombies else "stub"
+        print(f"[INFO] -- Found {len(stub_jobs)} {label} output file(s) (< 1024 bytes or zombie ROOT file).")
+
+        # Collect the actual paths that exist on disk.
+        stub_paths = []
+        for jid in stub_jobs:
+            for pattern in [f'output_jobid{jid:04d}.root', f'output_systematics_jobid{jid:04d}.root']:
+                p = project_dir / 'output' / pattern
+                if p.exists():
+                    stub_paths.append(p)
+
+        resp_list = input("[INFO] -- Print file details before deleting? [Y/N] ")
+        if resp_list.strip().lower() == 'y':
+            import datetime
+            col_w = max((len(p.name) for p in stub_paths), default=10)
+            print(f"\n  {'File':<{col_w}}  {'Size (bytes)':>14}  {'Created'}")
+            print(f"  {'-'*col_w}  {'-'*14}  {'-'*19}")
+            for p in stub_paths:
+                st = p.stat()
+                created = datetime.datetime.fromtimestamp(st.st_ctime).strftime('%Y-%m-%d %H:%M:%S')
+                print(f"  {p.name:<{col_w}}  {st.st_size:>14,}  {created}")
+            print()
+
+        resp = input("Delete these outputs? [Y/N] ")
         if resp.strip().lower() != 'y':
             print(
                 "[INFO] -- Keeping stub output files. Please check"
@@ -374,11 +466,13 @@ def check_project_status(
                 " outputs or if the jobs need to be resubmitted."
             )
         else:
-            for jid in stub_jobs:
-                stub_file = project_dir / 'output' / f'output_jobid{jid:04d}.root'
-                if stub_file.exists():
-                    stub_file.unlink()
-            print(f"[INFO] -- Deleted {len(stub_jobs)} stub output file(s).")
+            for p in stub_paths:
+                p.unlink()
+            print(f"[INFO] -- Deleted {len(stub_paths)} stub output file(s).")
+            reset = [('pending', jid) for jid in stub_jobs]
+            command(curs, "UPDATE jobs SET status = ? WHERE jobid = ?", reset)
+            conn.commit()
+            print(f"[INFO] -- Reset {len(stub_jobs)} job(s) to 'pending' in project.db.")
 
     if missing_output_jobs:
         print(
@@ -518,22 +612,15 @@ def launch_jobsub(
         '-N', str(njobs),
         f'--memory={memory}MB',
         f'--expected-lifetime={lifetime}',
+        f'--disk={disk_size}',
         '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE',
         "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
         '--singularity-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest',
         f'file://{Path(__file__).resolve().parent / "submit.sh"}',
         '--',
         f'--project={project_dir.resolve()}',
-        f'--branch={branch}',
+        f'--tag={tag}',
     ]
-
-    if disk is not None:
-        cmd.append(f'--disk={disk}GB')
-    elif exp == 'sbnd':
-        cmd.append(f'--disk=10GB')
-    else:
-        cmd.append(f'--disk=25GB')
-
     # Query the user to confirm that they want to launch the jobs.
     if confirm:
         print(f"{_INFO} -- Launching {njobs} jobs with command: {' '.join(cmd)}")
@@ -651,7 +738,7 @@ def launch_variation_phase1_jobsub(
     variation_input: str,
     variation_toml: str,
     exp: str = 'sbnd',
-    branch: str = 'develop',
+    tag: str = 'develop',
     memory: int = 8000,
     disk: Optional[int] = None,
     lifetime: str = '8h',
@@ -671,8 +758,8 @@ def launch_variation_phase1_jobsub(
         Local path to the variation systematics TOML.
     exp : str
         Experiment name (default: sbnd).
-    branch : str
-        Medulla git branch (default: develop).
+    tag : str
+        Medulla git tag (default: develop).
     memory : int
         Memory to request in MB (default: 8000).
     disk : int | None
@@ -714,7 +801,7 @@ def launch_variation_phase1_jobsub(
         f'file://{runner}',
         '--',
         f'--project={project_dir.resolve()}',
-        f'--branch={branch}',
+        f'--tag={tag}',
         f'--variation-input={variation_input}',
     ]
 
@@ -748,7 +835,7 @@ def launch_variation_phase2_jobsub(
     project_dir: Path,
     variation_toml: str,
     exp: str = 'sbnd',
-    branch: str = 'develop',
+    tag: str = 'develop',
     memory: int = 4000,
     disk: Optional[int] = None,
     lifetime: str = '4h',
@@ -771,8 +858,8 @@ def launch_variation_phase2_jobsub(
         Local path to the variation systematics TOML.
     exp : str
         Experiment name (default: sbnd).
-    branch : str
-        Medulla git branch (default: develop).
+    tag : str
+        Medulla git tag (default: develop).
     memory : int
         Memory to request in MB (default: 4000).
     disk : int | None
@@ -868,7 +955,7 @@ def launch_variation_phase2_jobsub(
         f'file://{runner}',
         '--',
         f'--project={project_dir.resolve()}',
-        f'--branch={branch}',
+        f'--tag={tag}',
     ]
 
     print(f"{_INFO} -- Submitting {njobs} Phase 2 variation systematics jobs:")

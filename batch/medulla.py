@@ -28,6 +28,7 @@ def main(
     variation_phase2 : bool = False,
     variation_interactive : bool = False,
     variation_test : bool = False,
+    check_zombies : bool = False,
 ):
     """
     Main function to run the medulla script.
@@ -102,7 +103,7 @@ def main(
 
     # If the project exists, do a check of the project status.
     if project_exists:
-        check_project_status(project_dir)
+        check_project_status(project_dir, check_zombies=check_zombies)
 
     # If the user requested a test job, run a single job to test the
     # configuration.
@@ -133,7 +134,7 @@ def main(
                 variation_input=variation_input,
                 variation_toml=variation_systematics,
                 exp=experiment,
-                branch=tag,
+                tag=tag,
                 memory=memory,
                 disk=disk,
                 lifetime=lifetime,
@@ -147,7 +148,7 @@ def main(
             project_dir=project_dir,
             variation_toml=variation_systematics,
             exp=experiment,
-            branch=tag,
+            tag=tag,
             memory=memory,
             disk=disk,
             lifetime=lifetime,
@@ -191,6 +192,13 @@ if __name__ == '__main__':
     p.add_argument(
         '--systematic', '-s', type=str, default=None,
         help='Path to the systematic template file to use.'
+    )
+
+    # The --check-zombies flag enables PyROOT zombie detection on output
+    # files that pass the size check.
+    p.add_argument(
+        '--check-zombies', '-Z', action='store_true',
+        help='Flag ROOT files as stubs if they are zombies or were recovered (not properly closed). Requires PyROOT.'
     )
 
     # The --test-job flag indicates that a test job should be run. That
@@ -330,4 +338,5 @@ if __name__ == '__main__':
         variation_phase2=args.variation_phase2,
         variation_interactive=args.variation_interactive,
         variation_test=args.variation_test,
+        check_zombies=args.check_zombies,
     )

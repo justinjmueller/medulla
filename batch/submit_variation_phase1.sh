@@ -2,7 +2,7 @@
 
 #######################################################################
 # Usage: submit_variation_phase1.sh [--project=PROJECT]
-#                                   [--branch=BRANCH]
+#                                   [--tag=BRANCH]
 #                                   [--variation-input=FILE]
 #
 # Phase 1 runner: builds detector-variation splines from the merged
@@ -12,7 +12,7 @@
 #
 # Arguments:
 #   --project=PROJECT        : Path to the project directory (PNFS)
-#   --branch=BRANCH          : Medulla git branch (default: develop)
+#   --tag=BRANCH          : Medulla git branch (default: develop)
 #   --variation-input=FILE   : PNFS or xrootd path to the merged
 #                              variation+CV ROOT file
 #######################################################################
@@ -25,8 +25,8 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --project=*)           PROJECT="${1#*=}";        shift ;;
     --project)             PROJECT="$2";             shift 2 ;;
-    --branch=*)            BRANCH="${1#*=}";         shift ;;
-    --branch)              BRANCH="$2";              shift 2 ;;
+    --tag=*)            BRANCH="${1#*=}";         shift ;;
+    --tag)              BRANCH="$2";              shift 2 ;;
     --variation-input=*)   VARIATION_INPUT="${1#*=}"; shift ;;
     --variation-input)     VARIATION_INPUT="$2";     shift 2 ;;
     *) shift ;;

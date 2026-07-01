@@ -79,7 +79,19 @@ int main(int argc, char * argv[])
      * the TTrees that are produced by this code.
      */
     TFile * input = TFile::Open(config.get_string_field("input.path").c_str(), "READ");
+    if(!input || input->IsZombie())
+    {
+        std::cerr << "Error: Could not open input file: " << config.get_string_field("input.path") << std::endl;
+        return 1;
+    }
+
     TFile * output = TFile::Open(config.get_string_field("output.path").c_str(), "RECREATE");
+    if(!output || output->IsZombie())
+    {
+        std::cerr << "Error: Could not create output file: " << config.get_string_field("output.path") << std::endl;
+        input->Close();
+        return 1;
+    }
 
     std::cout << "Input file: " << config.get_string_field("input.path") << std::endl;
     std::cout << "Output file: " << config.get_string_field("output.path") << std::endl;
@@ -109,7 +121,9 @@ int main(int argc, char * argv[])
         else
         {
             // Phase 1: build histograms and splines from variation trees.
+            std::cout << "Building histograms and splines from variation trees." << std::endl;
             calc = sys::detsys::DetsysCalculator(config, output, input);
+            std::cout << "Writing histograms and splines to output file." << std::endl;
             calc.write();
         }
     }

@@ -685,6 +685,141 @@ name = 'GENIEReWeight_SBN_v1_multisim_FSI_N_VariationResponse'
 type = 'multisim'
 index = 81
 
+[[sys]]
+name = 'hysyst_beam_horn_2kA_v'
+type = 'NuMIfluxsim'
+index = 0
+
+[[sys]]
+name = 'hysyst_beam_horn1_x_3mm_v'
+type = 'NuMIfluxsim'
+index = 1
+
+[[sys]]
+name = 'hysyst_beam_horn1_y_3mm_v'
+type = 'NuMIfluxsim'
+index = 2
+
+[[sys]]
+name = 'hysyst_beam_spot_1_3mm_v'
+type = 'NuMIfluxsim'
+index = 3
+
+[[sys]]
+name = 'hysyst_beam_spot_1_7mm_v'
+type = 'NuMIfluxsim'
+index = 4
+
+[[sys]]
+name = 'hysyst_beam_horn2_x_3mm_v'
+type = 'NuMIfluxsim'
+index = 5
+
+[[sys]]
+name = 'hysyst_beam_horn2_y_3mm_v'
+type = 'NuMIfluxsim'
+index = 6
+
+[[sys]]
+name = 'hysyst_beam_horns_0mm_water_v'
+type = 'NuMIfluxsim'
+index = 7
+
+[[sys]]
+name = 'hysyst_beam_horns_2mm_water_v'
+type = 'NuMIfluxsim'
+index = 7
+
+[[sys]]
+name = 'hysyst_beam_Beam_shift_x_1mm_v'
+type = 'NuMIfluxsim'
+index = 8
+
+[[sys]]
+name = 'hysyst_beam_Beam_shift_y_1mm_v'
+type = 'NuMIfluxsim'
+index = 9
+
+[[sys]]
+name = 'hysyst_beam_Target_z_7mm_v'
+type = 'NuMIfluxsim'
+index = 10
+
+[[sys]]
+name = 'hysyst_hpc_0_v'
+type = 'NuMIfluxsim'
+index = 11
+
+[[sys]]
+name = 'hysyst_hpc_1_v'
+type = 'NuMIfluxsim'
+index = 12
+
+[[sys]]
+name = 'hysyst_hpc_2_v'
+type = 'NuMIfluxsim'
+index = 13
+
+[[sys]]
+name = 'hysyst_hpc_3_v'
+type = 'NuMIfluxsim'
+index = 14
+
+[[sys]]
+name = 'hysyst_hpc_4_v'
+type = 'NuMIfluxsim'
+index = 15
+
+[[sys]]
+name = 'hysyst_hpc_5_v'
+type = 'NuMIfluxsim'
+index = 16
+
+[[sys]]
+name = 'hysyst_hpc_6_v'
+type = 'NuMIfluxsim'
+index = 17
+
+[[sys]]
+name = 'hysyst_hpc_7_v'
+type = 'NuMIfluxsim'
+index = 18
+
+[[sys]]
+name = 'hysyst_hpc_8_v'
+type = 'NuMIfluxsim'
+index = 19
+
+[[sys]]
+name = 'hysyst_hpc_9_v'
+type = 'NuMIfluxsim'
+index = 20
+
+[[sys]]
+name = 'hysyst_hpc_10_v'
+type = 'NuMIfluxsim'
+index = 21
+
+[[sys]]
+name = 'hysyst_hpc_11_v'
+type = 'NuMIfluxsim'
+index = 22
+
+[[sys]]
+name = 'hysyst_hpc_12_v'
+type = 'NuMIfluxsim'
+index = 23
+
+[[sys]]
+name = 'hysyst_hpc_13_v'
+type = 'NuMIfluxsim'
+index = 24
+
+[[sys]]
+name = 'hysyst_hpc_14_v'
+type = 'NuMIfluxsim'
+index = 25
+
 # [[sys]]
 # name = "expskin_Flux"
 # type = "multisim"
