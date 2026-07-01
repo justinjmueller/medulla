@@ -30,7 +30,7 @@ setup cmake v3_27_4
 
 # Clone the medulla repository:
 git clone https://github.com/justinjmueller/medulla.git medulla
-cd medulla && git checkout v1.0.3
+cd medulla && git checkout v1.0.8
 mkdir build && cd build
 
 # Configure and build medulla:
