@@ -891,6 +891,82 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::Both, has_particle_multiplicity, has_particle_multiplicity);
 
     /**
+     * @brief Apply a cut on the number of identified primary tracks.
+     * @details Counts primary particles with a semantic type of 1 (track).
+     * This is a PID-species-agnostic analogue of @ref has_particle_multiplicity,
+     * intended for pre-selections that study the impact of PID-based cuts
+     * downstream. No requirement is made on a particle's proximity to the
+     * interaction vertex.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut:
+     *   - params[0]: minimum desired track count (default 2.0)
+     * @return true if the interaction has at least params[0] identified
+     * primary tracks.
+     */
+    template<class T>
+    bool track_multiplicity(const T & obj, std::vector<double> params={2.0})
+    {
+        size_t desired_mult = static_cast<size_t>(params[0]);
+
+        size_t count(0);
+        for(size_t i(0); i < obj.particles.size(); ++i)
+        {
+            const auto & p = obj.particles[i];
+            if(pvars::semantic_type(p) != 1 || !pvars::primary_classification(p))
+                continue;
+            ++count;
+        }
+        return count >= desired_mult;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, track_multiplicity, track_multiplicity);
+
+    /**
+     * @brief Cut to select interactions with an identified longest track.
+     * @details Checks that @ref selectors::longest_track finds a valid
+     * particle (a particle with a semantic type of 1, i.e. a track).
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the interaction has an identified longest track.
+     */
+    template<class T>
+    bool is_longest_track(const T & obj)
+    {
+        return selectors::longest_track(obj) != kNoMatch;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, is_longest_track, is_longest_track);
+
+    /**
+     * @brief Cut to select interactions with an identified second longest track.
+     * @details Checks that @ref selectors::second_longest_track finds a
+     * valid particle (a particle with a semantic type of 1, i.e. a track).
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the interaction has an identified second longest track.
+     */
+    template<class T>
+    bool is_second_longest_track(const T & obj)
+    {
+        return selectors::second_longest_track(obj) != kNoMatch;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, is_second_longest_track, is_second_longest_track);
+
+    /**
+     * @brief Cut to select interactions with an identified third longest track.
+     * @details Checks that @ref selectors::third_longest_track finds a
+     * valid particle (a particle with a semantic type of 1, i.e. a track).
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the interaction has an identified third longest track.
+     */
+    template<class T>
+    bool is_third_longest_track(const T & obj)
+    {
+        return selectors::third_longest_track(obj) != kNoMatch;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, is_third_longest_track, is_third_longest_track);
+
+    /**
      * @brief Cut to select longest track length below a threshold.
      * @details This function applies a cut to select interactions with a
      * longest track length below a specified threshold.

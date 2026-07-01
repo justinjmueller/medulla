@@ -90,8 +90,9 @@ namespace selectors
      * @brief Finds the index corresponding to the longest track.
      * @details The longest track is defined as the track with the longest
      * length, which is calculated upstream in SPINE. The particle instance is
-     * required to have a semantic type of 1 (track) and have a start point
-     * within 6 cm of the interaction vertex.
+     * required to be a primary particle with a semantic type of 1 (track).
+     * No requirement is made on the particle's proximity to the interaction
+     * vertex.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to operate on.
      * @return the index of the longest track.
@@ -105,18 +106,10 @@ namespace selectors
         {
             const auto & p = obj.particles[i];
 
-            // Distance between interaction vertex and particle start.
-            double vertex_distance = std::sqrt(
-                std::pow(pvars::start_x(p) - obj.vertex[0], 2) +
-                std::pow(pvars::start_y(p) - obj.vertex[1], 2) +
-                std::pow(pvars::start_z(p) - obj.vertex[2], 2)
-            );
-
-            // Skip particles that are not tracks or are too far from the
-            // interaction vertex.
-            if(pvars::semantic_type(p) != 1 || vertex_distance >= 6)
+            // Skip particles that are not primary tracks.
+            if(pvars::semantic_type(p) != 1 || !pvars::primary_classification(p))
                 continue;
-            
+
             // Update the longest length and index if the current particle
             // is longer than the longest found so far.
             if(pvars::length(p) > longest_length)
@@ -133,8 +126,9 @@ namespace selectors
      * @brief Finds the index corresponding to the second longest track.
      * @details The second longest track is defined as the track with the
      * second longest length, which is calculated upstream in SPINE. The
-     * particle instance is required to have a semantic type of 1 (track) and
-     * have a start point within 6 cm of the interaction vertex.
+     * particle instance is required to be a primary particle with a semantic
+     * type of 1 (track). No requirement is made on the particle's proximity
+     * to the interaction vertex.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to operate on.
      * @return the index of the second longest track.
@@ -149,16 +143,8 @@ namespace selectors
         {
             const auto & p = obj.particles[i];
 
-            // Distance between interaction vertex and particle start.
-            double vertex_distance = std::sqrt(
-                std::pow(pvars::start_x(p) - obj.vertex[0], 2) +
-                std::pow(pvars::start_y(p) - obj.vertex[1], 2) +
-                std::pow(pvars::start_z(p) - obj.vertex[2], 2)
-            );
-
-            // Skip particles that are not tracks or are too far from the
-            // interaction vertex.
-            if(pvars::semantic_type(p) != 1 || vertex_distance >= 6)
+            // Skip particles that are not primary tracks.
+            if(pvars::semantic_type(p) != 1 || !pvars::primary_classification(p))
                 continue;
 
             // Check if the current particle is longer than the longest found
@@ -179,9 +165,71 @@ namespace selectors
                 second_index = i;
             }
         }
-        return index;
+        return second_index;
     }
     REGISTER_SELECTOR(second_longest_track, second_longest_track);
+
+    /**
+     * @brief Finds the index corresponding to the third longest track.
+     * @details The third longest track is defined as the track with the
+     * third longest length, which is calculated upstream in SPINE. The
+     * particle instance is required to be a primary particle with a semantic
+     * type of 1 (track). No requirement is made on the particle's proximity
+     * to the interaction vertex.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the third longest track.
+    */
+    template<class T>
+    size_t third_longest_track(const T & obj)
+    {
+        double longest_length(0);
+        double second_longest_length(0);
+        double third_longest_length(0);
+        size_t index(kNoMatch), second_index(kNoMatch), third_index(kNoMatch);
+        for(size_t i(0); i < obj.particles.size(); ++i)
+        {
+            const auto & p = obj.particles[i];
+
+            // Skip particles that are not primary tracks.
+            if(pvars::semantic_type(p) != 1 || !pvars::primary_classification(p))
+                continue;
+
+            // Check if the current particle is longer than the longest found
+            // so far. If so, shift the longest and second longest down into
+            // the second and third longest slots.
+            if(pvars::length(p) > longest_length)
+            {
+                third_longest_length = second_longest_length;
+                third_index = second_index;
+                second_longest_length = longest_length;
+                second_index = index;
+                longest_length = pvars::length(p);
+                index = i;
+            }
+
+            // If the current particle is not longer than the longest but is
+            // longer than the second longest, shift the second longest down
+            // into the third longest slot.
+            else if(pvars::length(p) > second_longest_length)
+            {
+                third_longest_length = second_longest_length;
+                third_index = second_index;
+                second_longest_length = pvars::length(p);
+                second_index = i;
+            }
+
+            // If the current particle is not longer than the second longest
+            // but is longer than the third longest, update the third longest.
+            else if(pvars::length(p) > third_longest_length)
+            {
+                third_longest_length = pvars::length(p);
+                third_index = i;
+            }
+        }
+        return third_index;
+    }
+    REGISTER_SELECTOR(third_longest_track, third_longest_track);
 
     /**
      * @brief Finds the index corresponding to the leading photon.
