@@ -36,3 +36,14 @@ experiments = ["sbnd"]
 
   [toml.enable.sbnd]
   keys = ["sbnd_offbeam"]
+
+[[toml]]
+role = "preselection"
+file = "preselection.toml"
+output_pattern = "spineosc_numu_%e_%t_preselection#"
+
+  [toml.enable.sbnd]
+  keys = ["sbnd_mc5e18", "sbnd_mc1e20", "sbnd_offbeam", "sbnd_bnblight"]
+
+  [toml.enable.icarus]
+  keys = ["icarus_nominal", "icarus_cvext", "icarus_offbeam", "icarus_bnblight"]
