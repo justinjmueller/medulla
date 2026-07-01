@@ -467,6 +467,7 @@ batch_size = 1
 [[toml]]
 role = "primary"
 file = "selection.toml"
+output_pattern = "numu_%e_%t_%d"
 
   [toml.enable.sbnd]
   keys = ["sbnd_mc5e18", "sbnd_mc1e20", "sbnd_offbeam"]
@@ -477,6 +478,7 @@ file = "selection.toml"
 [[toml]]
 role = "data_blind_safe"
 file = "data_blind_safe.toml"
+output_pattern = "numu_%e_%t_%d_dbs#"
 
   [toml.enable.sbnd]
   keys = ["sbnd_bnblight"]
@@ -497,6 +499,7 @@ The important fields are:
   * `role` — the name of the role (e.g. `primary`). Must be unique within the analysis.
   * `file` — the selection TOML file for this role, relative to the `meta.toml` directory.
   * `experiments` — optional per-role override of the top-level experiment list.
+  * `output_pattern` — optional filename stem used by the `finalize` subcommand when merging output files with `hadd`. The following tokens are substituted at finalize time: `%a` (analysis name), `%e` (experiment), `%t` (campaign tag), `%r` (role), `%d` (date in YYYYMMDD format). Without a trailing `#`, two merged files are produced per project: `<pattern>_nosyst.root` (plain selection output) and `<pattern>_wsyst.root` (output with systematics weights). A trailing `#` suppresses the suffix and produces only `<pattern>.root`, which is useful for data-like roles where no systematics are expected. If omitted, the default pattern `%a_%r_%e_%t_%d` is used.
   * `[toml.enable.<experiment>]` — the sample catalog keys to activate for a given experiment. These are the keys defined in `selection/toml/common/samples.toml`. Samples whose keys are not in the `enable` list will have `disable = true` set automatically. If no `enable` block is provided for an experiment, the selection TOML is expected to contain inline `[[sample]]` blocks instead.
 
 Analyses whose selection TOMLs use inline `[[sample]]` blocks (no `[[include_samples]]`) are also fully supported — simply leave the `[toml.enable.*]` blocks empty or omit them entirely.
@@ -621,6 +624,34 @@ python3 batch/campaign.py status --name v1.0_apr22
 ```
 
 All subcommands also accept `--campaign /full/path/to/campaign` in place of `--name`, which is useful for campaigns created without `--name` or when running on a different machine where the registry is not available.
+
+### Step 6 — Finalize
+Once the campaign is sufficiently complete, use the `finalize` subcommand to merge each project's per-job output files into a single combined ROOT file using `hadd`. The merged files are written directly into the campaign directory alongside `campaign.db`.
+
+```bash
+python3 batch/campaign.py finalize --name v1.0_apr22
+```
+
+The subcommand reads the `output_pattern` key from each role's `[[toml]]` block in `meta.toml` (see [The `meta.toml` File](#the-metatoml-file)) and substitutes the configured tokens to form the output filename. For each project two files are produced by default:
+
+* `<pattern>_nosyst.root` — merged from `output_jobid*.root` (plain selection output).
+* `<pattern>_wsyst.root` — merged from `output_systematics_jobid*.root` (output with systematics weights added).
+
+If the pattern ends with `#`, only `<pattern>.root` is produced (the nosyst merge, without any suffix). This is the appropriate setting for data-blind-safe or data-quality roles where systematics files are not expected.
+
+If no systematics output files are found for a project, the `_wsyst` merge is skipped with a warning and all other merges proceed normally.
+
+Before running `hadd`, a preview table is printed showing every output file that would be created, and confirmation is required. Use `--dry-run` to inspect the plan without producing any files:
+
+```bash
+python3 batch/campaign.py finalize --name v1.0_apr22 --dry-run
+```
+
+An optional `--experiment` flag restricts finalization to one experiment:
+
+```bash
+python3 batch/campaign.py finalize --name v1.0_apr22 --experiment sbnd
+```
 
 # Testing and Validation
 `medulla` ships with two complementary test suites — a Python unit test suite covering the batch and campaign layer, and a C++ framework validation suite that exercises the core selection logic end-to-end. Both are managed through `pytest` and are invoked together with a single CMake target.

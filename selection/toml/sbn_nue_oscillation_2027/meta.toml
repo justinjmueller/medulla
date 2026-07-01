@@ -10,6 +10,7 @@ batch_size = 1
 [[toml]]
 role = "primary"
 file = "selection.toml"
+output_pattern = "spineosc_nue_%e_%t"
 
   [toml.enable.sbnd]
   keys = ["sbnd_mc5e18", "sbnd_mc1e20", "sbnd_offbeam"]
@@ -20,6 +21,7 @@ file = "selection.toml"
 [[toml]]
 role = "data_blind_safe"
 file = "data_blind_safe.toml"
+output_pattern = "spineosc_nue_%e_%t_bnblight#"
 
   [toml.enable.sbnd]
   keys = ["sbnd_bnblight"]
