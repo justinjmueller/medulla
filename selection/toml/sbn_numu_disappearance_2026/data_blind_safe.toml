@@ -73,6 +73,9 @@ branch = [
     { name = "proton_softmax",        type = "reco_particle", selector = "leading_muon" },
 
     # Leading PROTON interaction-level
+    { name = "start_x",           type = "both_particle", selector = "leading_proton" },
+    { name = "start_y",           type = "both_particle", selector = "leading_proton" },
+    { name = "start_z",           type = "both_particle", selector = "leading_proton" },
     { name = "end_x",             type = "both_particle", selector = "leading_proton" },
     { name = "end_y",             type = "both_particle", selector = "leading_proton" },
     { name = "end_z",             type = "both_particle", selector = "leading_proton" },
