@@ -988,19 +988,28 @@ def _load_output_pattern(toml_file, role):
     return None
 
 
+def _sanitize_path_component(value):
+    """Replace path separators with '-' so a token value (e.g. a git tag
+    like 'release/v1.0.8') can't be misinterpreted as a directory
+    separator when substituted into an output filename."""
+    return value.replace('/', '-')
+
+
 def _apply_pattern(pattern, analysis, role, experiment, tag, date_str):
     """Substitute % tokens in an output filename pattern.
 
     Tokens: %a=analysis, %e=experiment, %t=tag, %r=role, %d=date(YYYYMMDD).
     A trailing '#' signals single-output mode and is NOT substituted here;
-    the caller strips it after calling this function.
+    the caller strips it after calling this function. Substituted values
+    are sanitized so that path separators (e.g. in a git tag like
+    'release/v1.0.8') don't get interpreted as directory separators.
     """
     return (pattern
-        .replace('%a', analysis)
-        .replace('%r', role)
-        .replace('%e', experiment)
-        .replace('%t', tag)
-        .replace('%d', date_str)
+        .replace('%a', _sanitize_path_component(analysis))
+        .replace('%r', _sanitize_path_component(role))
+        .replace('%e', _sanitize_path_component(experiment))
+        .replace('%t', _sanitize_path_component(tag))
+        .replace('%d', _sanitize_path_component(date_str))
     )
 
 
