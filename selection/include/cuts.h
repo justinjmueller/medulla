@@ -701,7 +701,7 @@ namespace cuts
     template<class T>
     bool multiproton(const T & obj, std::vector<double> params={50.0,})
     {
-        return particle_multiplicity(obj, 1, 4, params) > 1;
+        return particle_multiplicity(obj, 1, 4, params) >= 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, multiproton, multiproton);
 
@@ -816,7 +816,7 @@ namespace cuts
         double ke_threshold = (params.size() >= 3) ? params[2] : 0.0;
         
         std::vector<double> threshold_params = {ke_threshold};
-        size_t actual_mult = particle_multiplicity(obj, 1, particle_species, threshold_params);
+        size_t actual_mult = particle_multiplicity(obj, desired_mult, particle_species, threshold_params);
         
         return actual_mult >= desired_mult;
     }
@@ -912,6 +912,157 @@ namespace cuts
         return false;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::True, neutrino_pdg, neutrino_pdg);
+
+    template<class T>
+    bool good_proton(const T & obj, std::vector<double> params={50.0, 0.5, 0.5})
+    {
+        for (const auto & p : obj.particles)
+        {
+            if (pvars::pid(p) == 4 && 
+                pvars::ke(p) >= params[0] && 
+                pvars::proton_softmax(p) >= params[1] &&
+                pvars::muon_softmax(p) < params[2]
+            )
+                return true;
+        }
+        return false;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, good_proton, good_proton);
+
+    template<class T>
+    bool good_electron(const T & obj, std::vector<double> params={25.0, 0.5})
+    {
+        for (const auto & p : obj.particles)
+        {
+            if (pvars::pid(p) == 1 && 
+                pvars::ke(p) >= params[0] && 
+                pvars::electron_softmax(p) >= params[1]
+            )
+                return true;
+        }
+        return false;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, good_electron, good_electron);
+
+    bool checkSoftmax(double softmax_value, double threshold, double direction)
+    {
+        if (direction == -1.0)
+        {
+            return softmax_value < threshold;
+        }
+        else if (direction == 1.0)
+        {
+            return softmax_value > threshold;
+        }
+        else if (direction == 0.0)
+        {
+            return softmax_value == threshold;
+        }
+        else
+        {
+            throw std::invalid_argument("checkSoftmax requires the direction parameter to be -1.0, 0.0, or 1.0 to specify the direction of the cut.");
+        }
+    }
+
+    template<class T>
+    bool electron_softmax_cut(const T & obj, std::vector<double> params={0.5, 1.0})
+    {
+        if(params.size() != 2)
+            throw std::invalid_argument("electron_softmax_cut requires exactly two parameters: the softmax threshold and the direction of the cut.");
+
+        size_t i = selectors::leading_electron(obj);
+        if (i == kNoMatch) return false;
+        const auto & p = obj.particles[i];
+
+        double softmax_threshold = params[0];
+        double direction = params[1];
+
+        if (std::isnan(pvars::electron_softmax(p)))
+        {
+            return false; // or true, depending on how you want to handle NaN values
+        }
+        return (pvars::electron_softmax(p) > softmax_threshold); //checkSoftmax(pvars::electron_softmax(p), softmax_threshold, direction);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, electron_softmax_cut, electron_softmax_cut);
+
+    template<class T>
+    bool primary_softmax_cut(const T & obj, std::vector<double> params={0.5, 1.0})
+    {
+        if(params.size() != 2)
+            throw std::invalid_argument("primary_softmax_cut requires exactly two parameters: the softmax threshold and the direction of the cut.");
+
+        size_t i = selectors::leading_electron(obj);
+        if (i == kNoMatch) return false;
+        const auto & p = obj.particles[i];
+    
+        double softmax_threshold = params[0];
+        double direction = params[1];
+        
+        if (std::isnan(pvars::primary_softmax(p)))
+        {
+            return false; // or true, depending on how you want to handle NaN values
+        }
+        return checkSoftmax(pvars::primary_softmax(p), softmax_threshold, direction);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, primary_softmax_cut, primary_softmax_cut);
+
+    template<class T>
+    double ele_beam_open_angle(const T & obj)
+    {
+        size_t i = selectors::leading_electron(obj);
+        if (i == kNoMatch) return -1.0;
+        const auto & p = obj.particles[i];
+
+        utilities::three_vector p_dir = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+        utilities::three_vector vtx = {obj.vertex[0], obj.vertex[1], obj.vertex[2]};
+
+        p_dir = utilities::normalize(p_dir);
+        utilities::three_vector unit;
+        if constexpr(!BEAM_IS_NUMI)
+            unit = std::make_tuple(0, 0, 1);
+        else
+        {
+            utilities::three_vector beam = std::make_tuple(315.120380 + std::get<0>(vtx), 33.644912 + std::get<1>(vtx), 733.632532 + std::get<2>(vtx));
+            unit = utilities::normalize(beam);
+        }
+        double open_angle = std::acos(std::get<0>(p_dir) * std::get<0>(unit) + std::get<1>(p_dir) * std::get<1>(unit) + std::get<2>(p_dir) * std::get<2>(unit));
+        return open_angle;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, ele_beam_open_angle, ele_beam_open_angle);
+
+    template<class T>
+    bool leading_ele_energy_cut(const T & obj, std::vector<double> params={25.0})
+    {
+        if(params.size() != 1)
+            throw std::invalid_argument("leading_ele_energy_cut requires exactly the energy threshold");
+
+        size_t i = selectors::leading_electron(obj);
+        if (i == kNoMatch) return false;
+        const auto & p = obj.particles[i];
+
+        double energy_threshold = params[0];
+
+        if (std::isnan(pvars::energy(p)))
+        {
+            return false; // or true, depending on how you want to handle NaN values
+        }
+        return pvars::energy(p) > energy_threshold;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, leading_ele_energy_cut, leading_ele_energy_cut);
+
+    template<class T>
+    bool track_containment_cut(const T & obj) {
+        bool passes(true);
+        for(auto & p : obj.particles)
+            {
+            if(p.is_primary && p.pid > 2 && !p.is_contained)
+            {
+            passes = false;
+        }
+            }
+            return passes;
+        }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, track_containment_cut, track_containment_cut);
 
 }
 #endif

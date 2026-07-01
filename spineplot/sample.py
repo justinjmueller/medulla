@@ -38,7 +38,7 @@ class Sample:
     """
     def __init__(self, name, rf, category_branch, key, exposure_type, trees,
                  fillna=None, systematics=None, override_exposure=None, precompute=None,
-                 presel=None, override_category=None, print_sys=False) -> None:
+                 presel=None, override_category=None, print_sys=False, branches=None) -> None:
         """
         Initializes the Sample object with the given name and key.
 
@@ -93,15 +93,30 @@ class Sample:
         if override_exposure is not None:
             self.override_exposure(override_exposure, exposure_type)
 
-        self._data = pd.concat([self._file_handle[tree].arrays(library='pd') for tree in trees])
-        if self._category_branch not in self._data.columns:
-            raise ValueError(f'Category branch `{self._category_branch}` not found in sample `{self._name}`.')
-        if override_category is not None:
-            self._data[self._category_branch] = override_category
+        if branches is None:
+            self._data = pd.concat([self._file_handle[tree].arrays(library='pd') for tree in trees])
+        else:
+            self._data = pd.concat([self._file_handle[tree].arrays(library='pd', expressions=branches) for tree in trees])
         
         if precompute is not None:
             for k, v in precompute.items():
-                self._data[k] = self._data.eval(v)
+                if 'np' in v:
+                    print("branches", self._data.keys())
+                    self._data[k] = eval(
+                        v,
+                        {"np": np},
+                        {col: self._data[col] for col in self._data.columns}
+                    )
+                else:
+                    self._data[k] = self._data.eval(v)
+        
+        if self._category_branch not in self._data.columns:
+            raise ValueError(f'Category branch `{self._category_branch}` not found in sample `{self._name}`.')
+        
+        print("debug category", self._data[self._category_branch])
+        
+        if override_category is not None:
+            self._data[self._category_branch] = override_category
         
         if presel is not None:
             self._presel_mask = self._data.eval(presel)
@@ -149,6 +164,7 @@ class Sample:
         # Add statistical uncertainty. This can always be added to the
         # sample, because it is not dependent on some external source
         # of weights.
+        print("Adding statistical uncertainty to sample ", self._name)
         self._systematics.update({f'{self._name}_statistical': Systematic('statistical', None)})
 
     def override_exposure(self, exposure, exposure_type='pot') -> None:

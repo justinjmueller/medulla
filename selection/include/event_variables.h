@@ -126,14 +126,41 @@ namespace evar
     template<typename T>
     double nnu(const T & sr)
     {
-        size_t count = 0;
-        for(const auto & interaction : sr.dlp_true)
-        {
-            if(interaction.nu_id > -1) ++count;
+        int count = 0;
+        for (const auto & nu : sr.mc.nu){
+            if (!std::isnan(nu.pdg)) {
+                ++count;
+            }
         }
         return count;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Event, nnu, nnu);
+
+    template<typename T>
+    double nnu_mu(const T & sr)
+    {
+        int count = 0;
+        for (const auto & nu : sr.mc.nu){
+            if (!std::isnan(nu.pdg) && std::abs(nu.pdg) == 14) {
+                ++count;
+            }
+        }
+        return count;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, nnu_mu, nnu_mu);
+
+    template<typename T>
+    double nnu_e(const T & sr)
+    {
+        int count = 0;
+        for (const auto & nu : sr.mc.nu){
+            if (!std::isnan(nu.pdg) && std::abs(nu.pdg) == 12) {
+                ++count;
+            }
+        }
+        return count;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, nnu_e, nnu_e);
 
     /**
      * @brief Variable for the multiplicity of in-time interactions in the

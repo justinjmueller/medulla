@@ -31,6 +31,15 @@
 #include "framework.h"
 
 /**
+ * @brief Tree-level metadata flags set by main.cc before each tree is processed.
+ * @details These globals allow interaction-level variable functions to reflect
+ * per-tree properties (e.g. whether the tree is a data or signal tree) that
+ * have no equivalent field on the interaction object itself.
+ */
+inline bool g_isdata   = false;
+inline bool g_issignal = false;
+
+/**
  * @namespace vars
  * @brief Namespace for organizing generic variables which act on interactions.
  * @details This namespace is intended to be used for organizing variables which
@@ -949,5 +958,93 @@ namespace vars
         return utilities::magnitude(utilities::subtract(muon_start, vtx));
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, leading_muon_vertex_gap, leading_muon_vertex_gap);
+
+    template<class T>
+    double vertex_distance(const T & obj, std::vector<double> params={0.0,})
+    {   
+        size_t i = selectors::leading_electron(obj);
+        if (i == kNoMatch) return false;
+        const auto & p = obj.particles[i];
+        return p.vertex_distance >= 0 ? (double)p.vertex_distance : PLACEHOLDERVALUE;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Reco, vertex_distance, vertex_distance);
+
+
+    template<class T>
+    double reco_interaction_type(const T & obj)
+    {
+        int nEle(0);
+        int nMu(0);
+        int nPi(0);
+        int nProton(0);
+        for (size_t i = 0; i < obj.particles.size(); ++i)
+        {
+            if(pvars::pid(obj.particles[i]) == pvars::kElectron && pvars::primary_classification(obj.particles[i]))
+                nEle++;
+            else if(pvars::pid(obj.particles[i]) == pvars::kMuon && pvars::primary_classification(obj.particles[i]))
+                nMu++;
+            else if(pvars::pid(obj.particles[i]) == pvars::kPion && pvars::primary_classification(obj.particles[i]))
+                nPi++;
+            else if(pvars::pid(obj.particles[i]) == pvars::kProton && pvars::primary_classification(obj.particles[i]))
+                nProton++;
+        }
+
+        if(nEle > 0 && nMu == 0 && nPi == 0 && nProton == 1)
+            return 1; // CC QE-like
+        else if(nEle > 0 && nMu == 0 && nPi == 0 && nProton == 2)
+            return 2; // CC MEC-like
+        else if(nEle > 0 && nMu == 0 && nPi == 0 && nProton > 2)
+            return 3; // CC DIS-like
+        else if(nEle > 0 && nMu == 0 && nPi == 1)
+            return 4; // RES-like
+        else if(nEle > 0 && nMu == 0)
+            return 5; // Other nuE
+        else
+            return 0; // Other interaction type
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Reco, reco_interaction_type, reco_interaction_type);
+
+    template<class T>
+    double momentum_transfer(const T & obj)
+    {
+        return obj.momentum_transfer;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, momentum_transfer, momentum_transfer);
+
+    template<class T>
+    double hadronic_invariant_mass(const T & obj)
+    {
+        return obj.hadronic_invariant_mass;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, hadronic_invariant_mass, hadronic_invariant_mass);
+
+    template<class T>
+    double is_nu(const T & obj)
+    {
+        return -5.0; // Default value for non-neutrino interactions.
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, is_nu, is_nu);
+
+    template<class T>
+    double is_data(const T & obj)
+    {
+        return g_isdata ? 1.0 : 0.0;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, is_data, is_data);
+
+    /**
+     * @brief Variable indicating whether the tree is a signal tree.
+     * @details Returns 1.0 if the tree was marked issignal = true in the TOML,
+     * 0.0 otherwise. Set via the global g_issignal before each tree is processed.
+     * @tparam T the type of interaction (reco).
+     * @param obj the interaction to apply the variable on.
+     * @return 1.0 if signal tree, 0.0 otherwise.
+     */
+    template<class T>
+    double cut_type(const T & obj)
+    {
+        return g_issignal ? 1.0 : 0.0;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, cut_type, cut_type);
 }
 #endif // VARIABLES_H

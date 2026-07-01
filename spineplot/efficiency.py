@@ -52,7 +52,7 @@ class SpineEfficiency(SpineArtist):
     """
     def __init__(self, variable, categories, cuts, title,
                  xrange=None, xtitle=None, show_option='table',
-                 npts=1e6):
+                 npts=100, show_counts=True):
         """
         Parameters
         ----------
@@ -76,6 +76,8 @@ class SpineEfficiency(SpineArtist):
         npts : int, optional
             The number of points to use when calculating the efficiency.
             The default is 1e6.
+        show_counts : bool, optional
+            Toggle whether numerator/denominator counts are appended to table entries. The default is True.
         """
         super().__init__(title)
         self._xrange = xrange
@@ -85,6 +87,7 @@ class SpineEfficiency(SpineArtist):
         self._categories = categories
         self._cuts = cuts
         self._show_option = show_option
+        self._show_counts = show_counts
         self._npts = int(npts)
         self._posteriors = dict()
         self._totals = dict()
@@ -92,8 +95,8 @@ class SpineEfficiency(SpineArtist):
         self._selected_counts = dict()
 
     def draw(self, ax, show_option, percentage=True, show_seqeff=True,
-             show_unseqeff=True, show_purity=False, yrange=None, npts=1e6, style=None,
-             logx=False, logy=False):
+             show_unseqeff=True, show_purity=False, yrange=None, npts=100, style=None,
+             logx=False, logy=False, colors=None):
         """
         Draw the artist on the given axis.
 
@@ -180,17 +183,76 @@ class SpineEfficiency(SpineArtist):
                 _, cv, msigma, psigma = self.reduce(group, significance=0.6827)
                 _, pur_cv, pur_msigma, pur_psigma = self.calculate_purity(group, significance=0.6827)
 
-                seq = lambda x : [v for k, v in x.items() if 'unbinned_seq_' in k and 'unseq' not in k]
-                unseq = lambda x : [v for k, v in x.items() if 'unbinned_unseq_' in k]
-                purity_seq = lambda x: [v for k, v in x.items() if 'purity_seq_' in k]
+                # Build per-cut formatted strings including numerator/denominator
+                cuts_order = list(self._cuts.keys())
+                diff_list = []
+                cumu_list = []
+                purity_list = []
+
+                # precompute total selected across all groups for purity denominators
+                total_selected_all = {f'seq_{c}': 0 for c in self._cuts.keys()}
+                for g, cats in self._selected_counts.items():
+                    for cat, cuts_dict in cats.items():
+                        for k, v in cuts_dict.items():
+                            if k.startswith('seq_'):
+                                total_selected_all[k] = total_selected_all.get(k, 0) + int(v)
+
+                # gather per-category counts for this group
+                group_cats = self._selected_counts.get(group, {})
+                total_events = sum(cat.get('total', 0) for cat in group_cats.values())
+
+                for cut in cuts_order:
+                    unseq_key = f'unbinned_unseq_{cut}'
+                    seq_key = f'unbinned_seq_{cut}'
+
+                    u_cv = cv.get(unseq_key, 0.0)
+                    u_m = msigma.get(unseq_key, 0.0)
+                    u_p = psigma.get(unseq_key, 0.0)
+                    s_cv = cv.get(seq_key, 0.0)
+                    s_m = msigma.get(seq_key, 0.0)
+                    s_p = psigma.get(seq_key, 0.0)
+
+                    n_unseq = sum(cat.get(f'unseq_{cut}', 0) for cat in group_cats.values())
+                    n_seq = sum(cat.get(f'seq_{cut}', 0) for cat in group_cats.values())
+
+                    if self._show_counts:
+                        if total_events > 0:
+                            unseq_str = f"{formatter(u_cv, u_m, u_p)} ({int(n_unseq)}/{int(total_events)})"
+                            seq_str = f"{formatter(s_cv, s_m, s_p)} ({int(n_seq)}/{int(total_events)})"
+                        else:
+                            unseq_str = f"{formatter(u_cv, u_m, u_p)} (0/0)"
+                            seq_str = f"{formatter(s_cv, s_m, s_p)} (0/0)"
+                    else:
+                        unseq_str = f"{formatter(u_cv, u_m, u_p)}"
+                        seq_str = f"{formatter(s_cv, s_m, s_p)}"
+
+                    diff_list.append(unseq_str)
+                    cumu_list.append(seq_str)
+
+                    if show_purity:
+                        pur_key = f'purity_seq_{cut}'
+                        p_cv = pur_cv.get(pur_key, 0.0)
+                        p_m = pur_msigma.get(pur_key, 0.0)
+                        p_p = pur_psigma.get(pur_key, 0.0)
+                        n_group = sum(cat.get(f'seq_{cut}', 0) for cat in group_cats.values())
+                        n_total = total_selected_all.get(f'seq_{cut}', 0)
+                        if self._show_counts:
+                            if n_total > 0:
+                                purity_str = f"{formatter(p_cv, p_m, p_p)} ({int(n_group)}/{int(n_total)})"
+                            else:
+                                purity_str = f"{formatter(p_cv, p_m, p_p)} (0/0)"
+                        else:
+                            purity_str = f"{formatter(p_cv, p_m, p_p)}"
+                        purity_list.append(purity_str)
+
+
 
                 entry = {   r'   ': [group,] + [r'' for _ in range(1, len(self._cuts))],
                             r'Cut': self._cuts.values(),
-                            diff_key: [formatter(x,y,z) for x,y,z in zip(unseq(cv), unseq(msigma), unseq(psigma))],
-                            cumu_key: [formatter(x,y,z) for x,y,z in zip(seq(cv), seq(msigma), seq(psigma))] }
+                            diff_key: diff_list,
+                            cumu_key: cumu_list }
                 if show_purity:
-                    entry[purity_key] = [formatter(x,y,z) for x,y,z in zip(
-                        purity_seq(pur_cv), purity_seq(pur_msigma), purity_seq(pur_psigma))]
+                    entry[purity_key] = purity_list
                 results = pd.concat([results, pd.DataFrame(entry)])
                 group_endpoint[group] = len(results)
 
@@ -243,7 +305,7 @@ class SpineEfficiency(SpineArtist):
             if style.mark_preliminary is not None:
                 mark_preliminary(ax, style.mark_preliminary, vadj=0.1)
 
-        elif show_option == 'differential':
+        elif show_option in ('differential', 'final_only'):
             # Lambda formatter to round the values to two decimal
             # places, and display as percentage if toggled.
             if percentage:
@@ -264,6 +326,15 @@ class SpineEfficiency(SpineArtist):
             else:
                 key_base = 'binned_seq_'
 
+            # Decide which cuts to draw:
+            # - 'differential': all cuts
+            # - 'final_only'  : only the last cut
+            all_cuts = list(self._cuts.items())
+            if show_option == 'final_only':
+                cuts_to_draw = [all_cuts[-1]]
+            else:
+                cuts_to_draw = all_cuts
+
             # Note: if the user requests a differential plot, the
             # clarity of the plot is highly dependent on the number
             # of groups requested. If the number of groups is one,
@@ -276,23 +347,36 @@ class SpineEfficiency(SpineArtist):
             # the user the flexibility (and the responsibility) to 
             # ensure that the plot is clear and understandable.
             if len(groups) == 1:
-                for ci, (cut, cutname) in enumerate(self._cuts.items()):
+                for ci, (cut, cutname) in enumerate(cuts_to_draw):
                     _, cv, msigma, psigma = self.reduce(groups[0], significance=0.6827)
-                    ax.errorbar(self._variable._bin_centers[groups[0]], fmt(cv[f'{key_base}{cut}']),
-                                xerr=self._variable._bin_widths[groups[0]] / 2.0,
-                                yerr=[  fmt(msigma[f'{key_base}{cut}']),
-                                        fmt(psigma[f'{key_base}{cut}'])],
-                                fmt='o', color=style.get_color(ci), label=cutname)
+                    ax.errorbar(
+                        self._variable._bin_centers[groups[0]],
+                        fmt(cv[f'{key_base}{cut}']),
+                        xerr=self._variable._bin_widths[groups[0]] / 2.0,
+                        yerr=[
+                            fmt(msigma[f'{key_base}{cut}']),
+                            fmt(psigma[f'{key_base}{cut}']),
+                        ],
+                        fmt='o',
+                        color=colors.get(groups[0], style.get_color(ci)) if (colors and show_option == 'final_only') else style.get_color(ci),
+                        label=cutname if show_option != 'final_only' else None,
+                    )
             else:
                 for gi, group in enumerate(groups):
-                    for ci, (cut, cutname) in enumerate(self._cuts.items()):
+                    for ci, (cut, cutname) in enumerate(cuts_to_draw):
                         _, cv, msigma, psigma = self.reduce(group, significance=0.6827)
-                        ax.errorbar(self._variable._bin_centers[group], fmt(cv[f'{key_base}{cut}']),
-                                    xerr=self._variable._bin_widths[group] / 2.0,
-                                    yerr=[  fmt(msigma[f'{key_base}{cut}']),
-                                            fmt(psigma[f'{key_base}{cut}'])],
-                                    fmt=style.get_marker(ci), color=style.get_color(gi),
-                                    label=f'{group} : {cutname}')
+                        ax.errorbar(
+                            self._variable._bin_centers[group],
+                            fmt(cv[f'{key_base}{cut}']),
+                            xerr=self._variable._bin_widths[group] / 2.0,
+                            yerr=[
+                                fmt(msigma[f'{key_base}{cut}']),
+                                fmt(psigma[f'{key_base}{cut}']),
+                            ],
+                            fmt=style.get_marker(ci),
+                            color=colors.get(group, style.get_color(gi)) if colors else style.get_color(gi),
+                            label=group if show_option == 'final_only' else f'{group} : {cutname}',
+                        )
 
             ax.set_xlabel(self._variable._xlabel if self._xtitle is None else self._xtitle)
             ax.set_ylabel('Efficiency [%]' if percentage else 'Efficiency')
@@ -386,7 +470,8 @@ class SpineEfficiency(SpineArtist):
             pos /= np.sum(pos)
         else:
             pos /= np.sum(pos, axis=-1)[:, np.newaxis]
-                
+        # Clip underflow noise to keep the distribution sparse
+        pos[pos < 1e-10] = 0.0
         return pos
 
     def calculate(self, sample, significance=0.6827):
@@ -415,7 +500,7 @@ class SpineEfficiency(SpineArtist):
         """
         # Create a linear space of efficiencies to calculate the
         # posterior distribution.
-        efficiencies = np.linspace(0.0, 1, self._npts)
+        efficiencies = np.linspace(0.0, 1, self._npts, dtype=np.float32)
 
         # `_selected_counts` is initialized in `__init__` and must be
         # preserved across calls so purity-related quantities accumulate
@@ -429,10 +514,6 @@ class SpineEfficiency(SpineArtist):
         for category, values in data.items():
             if category not in self._categories:
                 continue
-            if category not in self._posteriors:
-                self._posteriors[category] = {f'seq_{c}' : np.ones(efficiencies.shape) for c in self._cuts.keys()}
-                self._posteriors[category].update({f'unseq_{c}' : np.ones(efficiencies.shape) for c in self._cuts.keys()})
-                
 
             # If the group does not already have an entry in the
             # posteriors dictionary, create one.
@@ -445,7 +526,7 @@ class SpineEfficiency(SpineArtist):
                 # If the show option is set to 'differential', create
                 # the necessary dictionaries to store the binned
                 # efficiencies.
-                if self._show_option == 'differential':
+                if self._show_option in ('differential', 'final_only'):
                     
                     self._posteriors[self._categories[category]].update({f'binned_seq_{c}' : np.ones((self._variable._nbins, efficiencies.shape[0])) for c in self._cuts.keys()})
                     self._posteriors[self._categories[category]].update({f'binned_unseq_{c}' : np.ones((self._variable._nbins, efficiencies.shape[0])) for c in self._cuts.keys()})
@@ -453,6 +534,20 @@ class SpineEfficiency(SpineArtist):
                     self._successes[self._categories[category]] = {f'binned_seq_{c}' : np.zeros(self._variable._nbins) for c in self._cuts.keys()}
                     self._successes[self._categories[category]].update({f'binned_unseq_{c}' : np.zeros(self._variable._nbins) for c in self._cuts.keys()})
             
+            # Prepare bookkeeping for totals and per-cut selections used in tables/purity
+            group_name = self._categories[category]
+            if group_name not in self._selected_counts:
+                self._selected_counts[group_name] = {}
+            if category not in self._selected_counts[group_name]:
+                init = {'total': 0}
+                for _c in self._cuts.keys():
+                    init[f'seq_{_c}'] = 0
+                    init[f'unseq_{_c}'] = 0
+                self._selected_counts[group_name][category] = init
+
+            total_events = len(values[0])
+            self._selected_counts[group_name][category]['total'] += int(total_events)
+
             # The calculation of efficiency as a function of some the
             # variable of interest requires the binning of the variable
             # into a number of bins.
@@ -464,38 +559,33 @@ class SpineEfficiency(SpineArtist):
             self._totals[self._categories[category]] += np.bincount(indices, minlength=len(bin_edges)+1)[1:-1]
             for ci, (cut, cutname) in enumerate(self._cuts.items()):
                 # Sequential cuts (unbinned)
-                total = len(values[0])
+                total = total_events
                 success = np.sum(np.all(values[1:ci+2], axis=0))
                 self._posteriors[self._categories[category]][f'unbinned_seq_{cut}'] = SpineEfficiency.multiply_posteriors(self._posteriors[self._categories[category]][f'unbinned_seq_{cut}'], binom.pmf(success, total, efficiencies))
-                # Track selected counts per group/category for purity calculation
-                group_name = self._categories[category]
-                if group_name not in self._selected_counts:
-                    self._selected_counts[group_name] = {}
-                if category not in self._selected_counts[group_name]:
-                    self._selected_counts[group_name][category] = {f'seq_{c}': 0 for c in self._cuts.keys()}
                 self._selected_counts[group_name][category][f'seq_{cut}'] += int(success)
                 # Non-sequential cuts (unbinned)
                 success = np.sum(values[ci+1].to_numpy(bool))
                 self._posteriors[self._categories[category]][f'unbinned_unseq_{cut}'] = SpineEfficiency.multiply_posteriors(self._posteriors[self._categories[category]][f'unbinned_unseq_{cut}'], binom.pmf(success, total, efficiencies))
+                self._selected_counts[group_name][category][f'unseq_{cut}'] += int(success)
 
                 # If the show option is set to 'differential', calculate
                 # the binned efficiencies.
-                if self._show_option == 'differential':
+                if self._show_option in ('differential', 'final_only'):
                     # Sequential cuts (binned)
                     indices = np.digitize(values[0][np.all(values[1:ci+2], axis=0)], bin_edges, right=False)
                     success = np.bincount(indices, minlength=len(bin_edges)+1)[1:-1]
                     self._successes[self._categories[category]][f'binned_seq_{cut}'] += success
-                    binomialpmf = [binom.pmf(self._successes[self._categories[category]][f'binned_seq_{cut}'][i],
-                                             self._totals[self._categories[category]][i], efficiencies) for i in range(nbins)]
-                    self._posteriors[self._categories[category]][f'binned_seq_{cut}'] = np.array(binomialpmf)
+                    _s = self._successes[self._categories[category]][f'binned_seq_{cut}'][:, np.newaxis]  # (nbins, 1)
+                    _t = self._totals[self._categories[category]][:, np.newaxis]                          # (nbins, 1)
+                    self._posteriors[self._categories[category]][f'binned_seq_{cut}'] = binom.pmf(_s, _t, efficiencies[np.newaxis, :]).astype(np.float32)
 
                     # Non-sequential cuts (binned)
                     indices = np.digitize(values[0][values[ci+1] == 1], bin_edges, right=False)
                     success = np.bincount(indices, minlength=len(bin_edges)+1)[1:-1]
                     self._successes[self._categories[category]][f'binned_unseq_{cut}'] += success
-                    binomialpmf = [binom.pmf(self._successes[self._categories[category]][f'binned_unseq_{cut}'][i],
-                                             self._totals[self._categories[category]][i], efficiencies) for i in range(nbins)]
-                    self._posteriors[self._categories[category]][f'binned_unseq_{cut}'] = np.array(binomialpmf)
+                    _s = self._successes[self._categories[category]][f'binned_unseq_{cut}'][:, np.newaxis]  # (nbins, 1)
+                    _t = self._totals[self._categories[category]][:, np.newaxis]                             # (nbins, 1)
+                    self._posteriors[self._categories[category]][f'binned_unseq_{cut}'] = binom.pmf(_s, _t, efficiencies[np.newaxis, :]).astype(np.float32)
 
     def reduce(self, group, significance=0.6827):
         """
@@ -536,7 +626,7 @@ class SpineEfficiency(SpineArtist):
             If the group is not in the list of groups configured
             in the analysis block.
         """
-        efficiencies = np.linspace(0.0, 1, self._npts)
+        efficiencies = np.linspace(0.0, 1, self._npts, dtype=np.float32)
         
         # If the group is not in the list of groups configured in
         # the analysis block, raise an exception. Otherwise,

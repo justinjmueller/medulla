@@ -1,0 +1,281 @@
+
+[[this_includes]]
+file = '/nashome/m/micarrig/icarus/nuESpine/medulla/spineplot/configurations/common/styles.toml'
+
+# Define your samples
+[samples]
+[samples.NuMIFull]
+key = "NuMIFull"
+exposure_type = "pot"
+trees = ['all']
+branches = ["reco_fiducial_cut",
+            "reco_flash_cut",
+            "true_category",
+            "true_neutrino_energy",
+            "reco_leading_electron_ke",
+            "reco_ele_beam_open_angle",
+            "reco_leading_electron_energy",
+            "reco_containment_cut",
+            "reco_has_particle_multiplicity",
+            "reco_no_muons",
+            "reco_vertex_distance_cut",
+            "reco_track_length",
+            "reco_electron_softmax_cut",
+            "reco_primary_softmax_cut",
+            "reco_reco_interaction_type",
+            "true_interaction_mode",
+            "true_hadronic_invariant_mass",
+            "true_momentum_transfer"]
+
+# precompute = {"reco_category" = "np.where(true_category == 0, reco_reco_interaction_type, -1)"}
+precompute = {"reco_category" = "np.where(true_category == 0, true_interaction_mode, -1)"}
+
+# Output directory for plots
+[output]
+path = 'plots/'
+
+# Analysis configuration
+[analysis]
+ordinate_sample = 'NuMIFull'
+category_branch = 'reco_category'
+# category_assignment = [
+#     [1], # QE-like
+#     [2], # MEC-like
+#     [3], # DIS-like
+#     [4], # RES-like
+#     [5], # Other >=1 electron
+#     [0]  # Other
+# ]
+# category_labels = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', '$\geq1e$ (Other-e)', 'Other']
+category_assignment = [
+    [0], # QE
+    [1], # RES
+    [2], # DIS
+    [3], # COH
+    [10], # MEC
+    [-1]  # Other
+]
+category_labels = ['QE', 'RES', 'DIS', 'COH', 'MEC', 'Other']
+
+category_colors = ['C0', 'C1', 'C2', 'C3', 'C4', 'C5']
+category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram']
+
+# Define your variables (if not already in included variables.toml)
+[variables]
+[variables.true_neutrino_energy]
+key = 'true_neutrino_energy'  
+nbins = 20
+range = [0, 5]
+xlabel = 'True Neutrino Energy [GeV]'
+
+[variables.reco_leading_electron_polar_angle]
+key = 'reco_leading_electron_polar_angle'
+nbins = 32
+range = [0.0, 3.2]
+binning_scheme = 'custom_bins'
+custom_bins = [0.0, 0.275, 0.42, 0.55, 0.68, 0.825, 1.0, 1.25, 1.7, 3.2]
+xlabel = "Reco Leading Electron Polar Angle [rad]"
+
+[variables.reco_leading_electron_energy]
+key = 'reco_leading_electron_energy'
+nbins = 10
+range = [0.0, 5000.0]
+binning_scheme = 'custom_bins'
+custom_bins = [0, 225, 350, 500, 650, 800, 1000, 1250, 1500, 2000, 5000]
+xlabel = 'Reco Leading Electron Energy [MeV]'
+
+[variables.true_hadronic_invariant_mass]
+key = 'true_hadronic_invariant_mass'
+nbins = 15
+range = [0, 3]
+xlabel = 'True Hadronic Invariant Mass (W) [GeV]'
+
+[variables.true_momentum_transfer]
+key = 'true_momentum_transfer'
+nbins = 25
+range = [0, 5]
+xlabel = 'True Momentum Transfer ($Q^{2}$) [GeV$^{2}$]'
+
+# Create efficiency plot figures
+[[figure]]
+name = 'selection_efficiency_table'
+type = 'SimpleFigure'
+style = 'basic_icarus'  # This references a style defined in the included styles.toml
+title = 'Signal Selection Efficiency'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'true_neutrino_energy'
+#groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', '$\geq1e$ (Other-e)', 'Other']
+groups = ['QE', 'RES', 'DIS', 'COH', 'MEC', 'Other']
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_has_particle_multiplicity = '>=1 Electron-like Particle'
+reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.72'
+reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
+reco_no_muons = 'No Muon-like Particles'
+reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
+
+[figure.artists.draw_kwargs]
+show_option = 'table'
+percentage = true
+show_seqeff = true
+show_unseqeff = true
+show_purity = true
+show_counts = true
+
+# FIGURE 2: Efficiency vs Neutrino Energy Plot 
+[[figure]]
+name = 'efficiency_vs_energy'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+title = 'Selection Efficiency vs True Neutrino Energy'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'true_neutrino_energy'
+#groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', '$\geq1e$ (Other-e)', 'Other']
+groups = ['QE', 'RES', 'DIS', 'COH', 'MEC', 'Other']
+
+xrange = [0, 5]
+xtitle = 'True Neutrino Energy [GeV]'
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_has_particle_multiplicity = '>=1 Electron-like Particle'
+reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.72'
+reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
+reco_no_muons = 'No Muon-like Particles'
+reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
+
+[figure.artists.draw_kwargs]
+show_option = 'final_only' 
+percentage = true
+show_seqeff = true     # Show cumulative efficiency curve
+show_unseqeff = false  # Don't show individual cut curves
+
+# FIGURE 3: Efficiency vs Electron Energy Plot 
+[[figure]]
+name = 'efficiency_vs_electronEnergy'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+title = 'Selection Efficiency vs Reco Electron Energy'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'reco_leading_electron_energy'
+#groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', '$\geq1e$ (Other-e)', 'Other']
+groups = ['QE', 'RES', 'DIS', 'COH', 'MEC', 'Other']
+xrange = [0, 5000]
+xtitle = 'Reco Electron Energy [MeV]'
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_has_particle_multiplicity = '>=1 Electron-like Particle'
+reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.72'
+reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
+reco_no_muons = 'No Muon-like Particles'
+reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
+
+[figure.artists.draw_kwargs]
+show_option = 'final_only'  # KEY: This makes it a plot vs energy!
+percentage = true
+show_seqeff = true     # Show cumulative efficiency curve
+show_unseqeff = false  # Don't show individual cut curves
+
+# FIGURE 4: Efficiency vs Electron Polar Angle Plot 
+[[figure]]
+name = 'efficiency_vs_electronAngle'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+title = 'Selection Efficiency vs Reco Electron Polar Angle'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'reco_ele_beam_open_angle'
+#groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', '$\geq1e$ (Other-e)', 'Other']
+groups = ['QE', 'RES', 'DIS', 'COH', 'MEC', 'Other']
+xtitle = 'Reco Electron Polar Angle [rad]'
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_has_particle_multiplicity = '>=1 Electron-like Particle'
+reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.72'
+reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
+reco_no_muons = 'No Muon-like Particles'
+reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
+
+[figure.artists.draw_kwargs]
+show_option = 'differential'  # KEY: This makes it a plot vs energy!
+percentage = true
+show_seqeff = true     # Show cumulative efficiency curve
+show_unseqeff = false  # Don't show individual cut curves
+
+# FIGURE 5: Efficiency vs True Invariant Mass Plot
+[[figure]]
+name = 'efficiency_vs_invariantMass'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+title = 'Selection Efficiency vs True Hadronic Invariant Mass (W)'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'true_hadronic_invariant_mass'
+#groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', '$\geq1e$ (Other-e)', 'Other']
+groups = ['QE', 'RES', 'DIS', 'COH', 'MEC', 'Other']
+xtitle = 'True Hadronic Invariant Mass (W) [GeV]'
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_has_particle_multiplicity = '>=1 Electron-like Particle'
+reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.72'
+reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
+reco_no_muons = 'No Muon-like Particles'
+reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
+
+[figure.artists.draw_kwargs]
+show_option = 'differential'  # KEY: This makes it a plot vs energy!
+percentage = true
+show_seqeff = true     # Show cumulative efficiency curve
+show_unseqeff = false  # Don't show individual cut curves
+
+# FIGURE 6: Efficiency vs True Momentum Transfer Plot 
+[[figure]]
+name = 'efficiency_vs_trueMomentumTransfer'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+title = 'Selection Efficiency vs True Momentum Transfer (Q^2) [GeV$^{2}$]'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'true_momentum_transfer'
+#groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', '$\geq1e$ (Other-e)', 'Other']
+groups = ['QE', 'RES', 'DIS', 'COH', 'MEC', 'Other']
+xtitle = 'True Momentum Transfer ($Q^{2}$) [GeV$^{2}$]'
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_has_particle_multiplicity = '>=1 Electron-like Particle'
+reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.72'
+reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
+reco_no_muons = 'No Muon-like Particles'
+reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
+
+[figure.artists.draw_kwargs]
+show_option = 'differential'  # KEY: This makes it a plot vs energy!
+percentage = true
+show_seqeff = true     # Show cumulative efficiency curve
+show_unseqeff = false  # Don't show individual cut curves

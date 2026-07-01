@@ -1,0 +1,189 @@
+# Include common configurations (variables, styles)
+# [[this_includes]]
+# file = '/nashome/m/micarrig/icarus/nuESpine/medulla/spineplot/configurations/common/variables.toml'
+
+[[this_includes]]
+file = '/nashome/m/micarrig/icarus/nuESpine/medulla/spineplot/configurations/common/styles.toml'
+
+# Define your samples
+[samples]
+[samples.debugMC]
+key = "debugMC"
+exposure_type = "pot"
+trees = ['selected']
+
+# Output directory for plots
+[output]
+path = 'plots/'
+
+# Analysis configuration
+[analysis]
+ordinate_sample = 'debugMC'
+category_branch = 'true_category'
+
+category_assignment = [
+    [0], # CC nue
+    [1, 2, 3], 
+]
+category_labels = ['Signal', 'OOFV', 'NC', 'Other']
+category_colors = ['C0', 'C1', 'C2', 'C3']
+category_types = ['histogram', 'histogram', 'histogram', 'histogram']
+
+# Define your variables (if not already in included variables.toml)
+[variables]
+[variables.true_neutrino_energy]
+key = 'true_neutrino_energy'  
+nbins = 20
+range = [0, 5]
+xlabel = 'True Neutrino Energy [GeV]'
+
+[variables.reco_leading_electron_ke]
+key = 'reco_leading_electron_ke'
+nbins = 25
+range = [0, 5000]
+xlabel = 'Reco Leading Electron Calo KE [MeV]'
+
+[variables.reco_leading_electron_polar_angle]
+key = 'reco_leading_electron_polar_angle'
+nbins = 40
+range = [0, 4]
+xlabel = "Reco Leading Electron Polar Angle [deg]"
+
+[variables.reco_leading_electron_energy]
+key = 'reco_leading_electron_energy'
+nbins = 50
+range = [0, 5000]
+xlabel = 'Reco Leading Electron Energy [MeV]'
+
+# Create efficiency plot figures
+[[figure]]
+name = 'selection_efficiency_table'
+type = 'SimpleFigure'
+style = 'basic_icarus'  # This references a style defined in the included styles.toml
+title = 'Signal Selection Efficiency'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'true_neutrino_energy'
+groups = ['Signal', 'OOFV', 'NC', 'Other']
+
+[figure.artists.cuts]
+reco_flash_cut = 'Flash Cut'
+reco_fiducial_cut = 'Fiducial Volume'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_single_electron = 'Single Electron-like Particle'
+reco_multiproton = 'No Proton-like Particles'
+reco_no_charged_pions = 'No Charged Pion-like Particles'
+reco_leading_electron_cut_axial_spread = 'Axial Spread > 0.02'
+reco_leading_electron_cut_directional_spread = 'Directional Spread < 0.25'
+reco_vertex_distance_cut = 'Vertex Distance < 7.5 cm'
+reco_good_proton = "Good Proton-like Particle"
+reco_good_electron = "Good Electron-like Particle"
+
+[figure.artists.draw_kwargs]
+show_option = 'table'
+percentage = true
+show_seqeff = true
+show_unseqeff = true
+show_purity = true
+
+# FIGURE 2: Efficiency vs Neutrino Energy Plot 
+[[figure]]
+name = 'efficiency_vs_energy'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+title = 'Selection Efficiency vs True Neutrino Energy'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'true_neutrino_energy'
+groups = ['Signal']  # Can show both: ['Signal', 'Backgrounds']
+xrange = [0, 5]
+xtitle = 'True Neutrino Energy [GeV]'
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_track_length = 'Longest Track Length < 190 cm'
+reco_has_particle_multiplicity = '>=1 Electron-like Particle'
+# reco_leading_electron_containment_cut = 'Leading Electron Containment Cut'
+# reco_particle_dedx = 'Electron dE/dx < 3.625 MeV/cm'
+# reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
+
+[figure.artists.draw_kwargs]
+show_option = 'differential'  # KEY: This makes it a plot vs energy!
+percentage = true
+show_seqeff = true     # Show cumulative efficiency curve
+show_unseqeff = false  # Don't show individual cut curves
+
+# FIGURE 3: Efficiency vs Electron Energy Plot 
+[[figure]]
+name = 'efficiency_vs_electronEnergy'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+title = 'Selection Efficiency vs Reco Electron Energy'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'reco_leading_electron_energy'
+groups = ['Signal']  # Can show both: ['Signal', 'Backgrounds']
+xrange = [0, 5000]
+xtitle = 'Reco Electron Energy [MeV]'
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_track_length = 'Longest Track Length < 190 cm'
+reco_has_particle_multiplicity = '>=1 Electron-like Particle'
+# reco_leading_electron_containment_cut = 'Leading Electron Containment Cut'
+# reco_particle_dedx = 'Electron dE/dx < 3.625 MeV/cm'
+# reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
+
+[figure.artists.draw_kwargs]
+show_option = 'differential'  # KEY: This makes it a plot vs energy!
+percentage = true
+show_seqeff = true     # Show cumulative efficiency curve
+show_unseqeff = false  # Don't show individual cut curves
+
+# FIGURE 4: Efficiency vs Electron Polar Angle Plot 
+[[figure]]
+name = 'efficiency_vs_electronAngle'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+title = 'Selection Efficiency vs Reco Electron Polar Angle'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'reco_leading_electron_polar_angle'
+groups = ['Signal']  # Can show both: ['Signal', 'Backgrounds']
+xrange = [0, 4]
+xtitle = 'Reco Electron Polar Angle [deg]'
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_track_length = 'Longest Track Length < 190 cm'
+reco_has_particle_multiplicity = '>=1 Electron-like Particle'
+# reco_leading_electron_containment_cut = 'Leading Electron Containment Cut'
+# reco_particle_dedx = 'Electron dE/dx < 3.625 MeV/cm'
+# reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
+
+[figure.artists.draw_kwargs]
+show_option = 'differential'  # KEY: This makes it a plot vs energy!
+percentage = true
+show_seqeff = true     # Show cumulative efficiency curve
+show_unseqeff = false  # Don't show individual cut curves
+
+# Figure 5: reco leading electron energy
+[[figure]]
+name = 'reco_leading_electron_energy'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'reco_leading_electron_energy'
+draw_kwargs = {'show_component_number' = true, 'show_component_percentage' = true, 'invert_stack_order' = false}

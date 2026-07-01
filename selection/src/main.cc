@@ -284,6 +284,10 @@ int main(int argc, char * argv[])
                         throw std::runtime_error("Illegal variable type '" + var_type + "' for branch " + tree.get_string_field("name") + ":" + var.get_string_field("name"));
                     }
                 }
+                // Set tree-level globals so interaction-level variable functions
+                // (IsData, IsSignal in variables.h) reflect the current tree.
+                g_isdata   = tree.get_bool_field("isdata",   false);
+                g_issignal = tree.get_bool_field("issignal", false);
                 analysis.AddTreeForSample(sample.get_string_field("name"), tree.get_string_field("name"), vars_map, tree.get_bool_field("sim_only"));
 
                 // Add the exposure tree.

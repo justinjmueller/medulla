@@ -73,6 +73,11 @@ configure_file(
 execute_process(
     COMMAND chmod 755 ${CMAKE_BINARY_DIR}/setup_medulla.sh
 )
+file(CHMOD ${CMAKE_BINARY_DIR}/setup_medulla.sh
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                GROUP_READ GROUP_EXECUTE
+                WORLD_READ WORLD_EXECUTE
+)
 
 message(STATUS "Setup script generated: ${CMAKE_BINARY_DIR}/setup_medulla.sh")
 message(STATUS "Source it with: source ${CMAKE_BINARY_DIR}/setup_medulla.sh")
