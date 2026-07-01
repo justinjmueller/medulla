@@ -447,6 +447,9 @@ def _sync_project_status(project_dir):
         for f in output_files
         if Path(f).stat().st_size >= 1024
     ]
+    stub_files = [
+        Path(f) for f in output_files if Path(f).stat().st_size < 1024
+    ]
 
     # Copy to a local temp file to avoid /pnfs locking failures.
     with tempfile.NamedTemporaryFile(
@@ -475,6 +478,7 @@ def _sync_project_status(project_dir):
     return {
         'n_jobs':      sum(counts.values()),
         'n_completed': counts.get('completed', 0),
+        'stub_files':  stub_files,
     }
 
 
@@ -487,6 +491,7 @@ def cmd_sync(args):
     campaign_dir = _resolve_campaign(args)
     W_AN, W_RO, W_EX, W_ST, W_JB = 28, 18, 10, 12, 10
     synced = 0
+    all_stubs = []
 
     with _open_db(campaign_dir) as (conn, curs):
         curs.execute(
@@ -512,6 +517,7 @@ def cmd_sync(args):
 
             n_jobs      = result['n_jobs']
             n_completed = result['n_completed']
+            all_stubs.extend(result['stub_files'])
 
             if n_jobs == 0:
                 new_status = row['status']
@@ -545,7 +551,19 @@ def cmd_sync(args):
                 _cell(job_str,          W_JB, color=job_color),
             ]))
 
-    print(f"\n[SYNC] Synced {synced} project(s).")
+    print(f"\n{_TAG_SYNC} Synced {synced} project(s).")
+
+    if all_stubs:
+        print(f"{_TAG_SYNC} {_A.YELLOW}Found {len(all_stubs)} stub output file(s) < 1 KB:{_A.RESET}")
+        for p in all_stubs:
+            print(f"  {_A.DIM}{p}{_A.RESET}")
+        resp = input(f"{_TAG_SYNC} Delete these stub files? [Y/N] ")
+        if resp.strip().lower() == 'y':
+            for p in all_stubs:
+                p.unlink(missing_ok=True)
+            print(f"{_TAG_SYNC} Deleted {len(all_stubs)} stub file(s).")
+        else:
+            print(f"{_TAG_SYNC} Keeping stub files.")
 
 
 def _discover_meta_files():

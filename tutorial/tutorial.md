@@ -600,6 +600,8 @@ A job is considered complete when its output file (`output_jobid<N>.root`) exist
 
 Projects in a `partial` state are eligible for relaunch — running `launch` again will resubmit only their remaining pending jobs.
 
+After scanning for completed files, `sync` also checks for **stub output files** — output files smaller than 1 KB that indicate a job exited before producing meaningful output. If any are found across all projects, they are listed and the user is prompted once to delete them. Stub files are excluded from the completion count regardless of whether they are deleted, so they will not block a project from reaching `completed` once the corresponding jobs are resubmitted and finish successfully.
+
 ### Step 5 — Monitor
 At any point, inspect the current state of the campaign with the `status` subcommand:
 
