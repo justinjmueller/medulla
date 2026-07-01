@@ -431,12 +431,21 @@ def launch_jobsub(
     if confirm:
         print(f"{_INFO} -- Found {len(pending_jobs)} pending jobs.")
 
+    # Determine the disk request.
+    if disk is not None:
+        disk_flag = f'--disk={disk}GB'
+    elif exp == 'sbnd':
+        disk_flag = '--disk=10GB'
+    else:
+        disk_flag = '--disk=25GB'
+
     # Form the jobsub command to launch the jobs.
     cmd = [
         'jobsub_submit',
         '-G', exp,
         '-N', str(njobs),
         f'--memory={memory}MB',
+        disk_flag,
         f'--expected-lifetime={lifetime}',
         '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE',
         "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
@@ -446,13 +455,6 @@ def launch_jobsub(
         f'--project={project_dir.resolve()}',
         f'--tag={tag}',
     ]
-
-    if disk is not None:
-        cmd.append(f'--disk={disk}GB')
-    elif exp == 'sbnd':
-        cmd.append(f'--disk=10GB')
-    else:
-        cmd.append(f'--disk=25GB')
 
     # Query the user to confirm that they want to launch the jobs.
     if confirm:
