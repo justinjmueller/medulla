@@ -27,6 +27,7 @@ import pytest
     "sim_reco_event_cut",
     "sim_reco_mctruth",
     "sim_truth_mctruth",
+    "data_reco_track_selectors",
 ])
 def test_framework_group(framework_env, group):
     """Run validate --validate --group <group> and assert exit code 0."""
