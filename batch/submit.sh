@@ -73,8 +73,8 @@ fi
 #######################################################################
 
 # IFDH options
-export IFDH_CP_MAXRETRIES=0
-export IFDH_WEB_TIMEOUT=100
+export IFDH_CP_MAXRETRIES=2
+export IFDH_WEB_TIMEOUT=300
 
 # Setup CVMFS area
 source /cvmfs/icarus.opensciencegrid.org/products/icarus/setup_icarus.sh

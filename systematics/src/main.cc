@@ -107,24 +107,34 @@ int main(int argc, char * argv[])
     sys::detsys::DetsysCalculator calc;
     if(config.has_field("variations"))
     {
-        if(config.has_field("variations.splines_file"))
+        try
         {
-            // Phase 2: load pre-built splines from a prior run instead of
-            // rebuilding from variation histograms. The splines file is the
-            // output produced by a phase-1 run on the merged sample.
-            std::string splines_path = config.get_string_field("variations.splines_file");
-            std::cout << "Loading pre-built splines from: " << splines_path << std::endl;
-            calc = sys::detsys::DetsysCalculator(config, output, splines_path);
-            // No calc.write() here: histograms and splines already live in the
-            // phase-1 output; only the per-event weight results are written.
+            if(config.has_field("variations.splines_file"))
+            {
+                // Phase 2: load pre-built splines from a prior run instead of
+                // rebuilding from variation histograms. The splines file is the
+                // output produced by a phase-1 run on the merged sample.
+                std::string splines_path = config.get_string_field("variations.splines_file");
+                std::cout << "Loading pre-built splines from: " << splines_path << std::endl;
+                calc = sys::detsys::DetsysCalculator(config, output, splines_path);
+                // No calc.write() here: histograms and splines already live in the
+                // phase-1 output; only the per-event weight results are written.
+            }
+            else
+            {
+                // Phase 1: build histograms and splines from variation trees.
+                std::cout << "Building histograms and splines from variation trees." << std::endl;
+                calc = sys::detsys::DetsysCalculator(config, output, input);
+                std::cout << "Writing histograms and splines to output file." << std::endl;
+                calc.write();
+            }
         }
-        else
+        catch(const cfg::ConfigurationError & e)
         {
-            // Phase 1: build histograms and splines from variation trees.
-            std::cout << "Building histograms and splines from variation trees." << std::endl;
-            calc = sys::detsys::DetsysCalculator(config, output, input);
-            std::cout << "Writing histograms and splines to output file." << std::endl;
-            calc.write();
+            std::cerr << "Error initializing DetsysCalculator: " << e.what() << std::endl;
+            output->Close();
+            input->Close();
+            return 1;
         }
     }
 

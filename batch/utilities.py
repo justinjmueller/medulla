@@ -921,7 +921,7 @@ def launch_variation_phase2_jobsub(
     cfg['input']['path'] = '__INPUT_FILE__'
     cfg['output']['path'] = 'output_varsys.root'
     if 'variations' in cfg:
-        cfg['variations']['splines_file'] = 'variation_splines.root'
+        cfg['variations']['splines_file'] = '__SPLINES_FILE__'
     cfg['tree'] = [tree for tree in cfg.get('tree', []) if tree.get('action') != 'copy']
     for tree in cfg['tree']:
         if tree.get('action') == 'add_weights':
@@ -942,6 +942,14 @@ def launch_variation_phase2_jobsub(
 
     disk_size = f'{disk}GB' if disk is not None else '25GB'
 
+    # Package the splines file into a tarball for CVMFS distribution so all
+    # grid nodes read from the CVMFS cache rather than each issuing an
+    # independent ifdh copy of the same large file.
+    import tarfile, tempfile
+    splines_tar = Path(tempfile.mkstemp(suffix='.tar.gz')[1])
+    with tarfile.open(str(splines_tar), 'w:gz') as tar:
+        tar.add(str(splines_path), arcname='variation_splines.root')
+
     cmd = [
         'jobsub_submit',
         '-G', exp,
@@ -952,6 +960,7 @@ def launch_variation_phase2_jobsub(
         '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE',
         "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
         '--singularity-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest',
+        f'--tar_file_name=dropbox://{splines_tar}',
         f'file://{runner}',
         '--',
         f'--project={project_dir.resolve()}',
@@ -968,6 +977,7 @@ def launch_variation_phase2_jobsub(
     resp = input("Confirm Phase 2 batch submission? [Y/N] ")
     if resp.strip().lower() != 'y':
         print(f"{_INFO} -- User aborted.")
+        splines_tar.unlink(missing_ok=True)
         return False
 
     try:
@@ -977,7 +987,10 @@ def launch_variation_phase2_jobsub(
             print(f"{_ERROR} -- Submission failed: expired token. Run `htgettoken` and retry.")
         else:
             print(f"{_ERROR} -- Submission failed: {output}")
+        splines_tar.unlink(missing_ok=True)
         return False
+    finally:
+        splines_tar.unlink(missing_ok=True)
 
     stdout = out.stdout.strip()
     print('\n'.join(stdout.split('\n')[-4:]))

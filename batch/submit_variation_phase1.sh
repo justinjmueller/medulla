@@ -46,8 +46,8 @@ fi
 # Initial setup
 #######################################################################
 
-export IFDH_CP_MAXRETRIES=0
-export IFDH_WEB_TIMEOUT=100
+export IFDH_CP_MAXRETRIES=2
+export IFDH_WEB_TIMEOUT=300
 export CAFANA_DISABLE_SNAPSHOTS=1
 
 source /cvmfs/icarus.opensciencegrid.org/products/icarus/setup_icarus.sh

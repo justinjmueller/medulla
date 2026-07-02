@@ -15,8 +15,6 @@
 #   --tag=BRANCH     : Medulla git branch (default: develop)
 #######################################################################
 
-set -e
-
 PROJECT=""
 BRANCH="develop"
 
@@ -37,15 +35,19 @@ fi
 
 #######################################################################
 # Initial setup
+# UPS source/setup commands return non-zero on warnings even when they
+# succeed, so run them before enabling set -e.
 #######################################################################
 
-export IFDH_CP_MAXRETRIES=0
-export IFDH_WEB_TIMEOUT=100
+export IFDH_CP_MAXRETRIES=2
+export IFDH_WEB_TIMEOUT=300
 export CAFANA_DISABLE_SNAPSHOTS=1
 
 source /cvmfs/icarus.opensciencegrid.org/products/icarus/setup_icarus.sh
 setup sbnana v10_01_02_01 -q e26:prof
 setup cmake v3_27_4
+
+set -e
 
 echo "[INFO] Project: $PROJECT"
 echo "[INFO] Branch:  $BRANCH"
@@ -83,15 +85,16 @@ echo "[INFO] PROCESS=$PROCESS -> JOBID=$JOBID"
 ifdh cp "$PROJECT/variation_systematics_phase2.toml" variation_systematics_phase2.toml
 echo "[INFO] Copied variation_systematics_phase2.toml"
 
-ifdh cp "$PROJECT/variation_splines.root" variation_splines.root
-echo "[INFO] Copied variation_splines.root"
-
 ifdh cp "$PROJECT/output/output_jobid${PADDED_JOBID}.root" input_selection.root
 echo "[INFO] Copied output_jobid${PADDED_JOBID}.root -> input_selection.root"
 
-# Replace the per-job input path placeholder written at submission time.
+# Replace path placeholders written at submission time.
+# variation_splines.root was distributed via the jobsub CVMFS tarball and is
+# already available at $INPUT_TAR_DIR_LOCAL — no ifdh copy needed.
 sed -i 's|__INPUT_FILE__|input_selection.root|g' variation_systematics_phase2.toml
+sed -i "s|__SPLINES_FILE__|${INPUT_TAR_DIR_LOCAL}/variation_splines.root|g" variation_systematics_phase2.toml
 echo "[INFO] Set [input] path -> input_selection.root"
+echo "[INFO] Set [variations] splines_file -> ${INPUT_TAR_DIR_LOCAL}/variation_splines.root"
 
 #######################################################################
 # Run systematics (Phase 2: apply detsys weights from splines)
