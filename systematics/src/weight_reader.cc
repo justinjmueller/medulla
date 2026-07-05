@@ -40,8 +40,10 @@ sys::WeightReader::WeightReader(const std::string & input)
         std::ifstream infile(input);
         std::string line;
         while(std::getline(infile, line))
+        {
             chain.Add(line.c_str());
-        isflat = line.find("flat") != std::string::npos;
+            isflat = line.find("flat") != std::string::npos;
+        }
     }
     else
     {
