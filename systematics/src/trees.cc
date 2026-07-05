@@ -293,10 +293,14 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
         systrees[tname]->SetAutoFlush(1000);
     }
 
+    std::vector<double> default_clip = config.has_field("general.weight_clip")
+        ? config.get_double_vector("general.weight_clip")
+        : std::vector<double>{};
+
     for(cfg::ConfigurationTable & t : config.get_subtables("sys"))
     {
         std::string tname = table.get_string_field("name") + '_' + t.get_string_field("type");
-        systematics.insert(std::make_pair<std::string, Systematic *>(t.get_string_field("name"), new Systematic(t, systrees[tname])));
+        systematics.insert(std::make_pair<std::string, Systematic *>(t.get_string_field("name"), new Systematic(t, systrees[tname], default_clip)));
         Systematic * tmp = systematics[t.get_string_field("name")];
         tmp->get_tree()->Branch(t.get_string_field("name").c_str(), &systematics[t.get_string_field("name")]->get_weights());
         if(tmp->get_nsigma()->size() > 0)
@@ -366,15 +370,16 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
                             }
                             for(size_t u(0); u < reader.get_nuniv(idn); ++u)
                             {
-                                value->get_weights()->push_back(reader.get_weight(idn, u));
-                                results2d[syskey]->Fill(brs[sv.name], u, reader.get_weight(idn, u));
+                                double w = value->clip(reader.get_weight(idn, u));
+                                value->get_weights()->push_back(w);
+                                results2d[syskey]->Fill(brs[sv.name], u, w);
                             }
                         }
                     }
                     else
                     {
                         for(double & z : calc.get_zscores(key))
-                            value->get_weights()->push_back(calc.get_weight(key, brs[calc.get_variable()], z));
+                            value->get_weights()->push_back(value->clip(calc.get_weight(key, brs[calc.get_variable()], z)));
                         for(SysVariable & sv : sysvariables)
                             calc.add_value(sv.name, brs[sv.name], key, brs[calc.get_variable()]);
                     }
