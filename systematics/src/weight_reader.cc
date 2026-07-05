@@ -28,6 +28,20 @@ sys::WeightReader::WeightReader(const std::string & input)
   idx(0),
   progress_started(false)
 {
+    // Check if multiple '*' are present in the input string -- these
+    // are not supported by TChain and will cause issues.
+    size_t first_star = input.find("*");
+    if(first_star != std::string::npos)
+    {
+        size_t second_star = input.find("*", first_star + 1);
+        if(second_star != std::string::npos)
+        {
+            throw std::invalid_argument(
+                "WeightReader: Multiple '*' in input string are not supported by ROOT TChain. Sorry."
+            );
+        }
+    }
+
     if(input.find("*") != std::string::npos)
     {
         // Input is a pattern for a set of files
