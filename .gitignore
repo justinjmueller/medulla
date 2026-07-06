@@ -14,4 +14,3 @@ build/
 */CMakeFiles/*
 *.cmake
 Makefile
-selection/toml/
