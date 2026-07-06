@@ -18,12 +18,6 @@
 #include "framework.h"
 #include "configuration.h"
 
-namespace context
-{
-    const TType * current_true = nullptr;
-    const RType * current_reco = nullptr;
-}
-
 // Get the singleton instance of the Registry.
 template<typename ValueT>
 Registry<ValueT> & Registry<ValueT>::instance()
