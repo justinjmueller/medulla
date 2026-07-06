@@ -290,6 +290,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 auto bivar_fn = factory(varPars);
                 VarFn<TType> var_fn_composed = [bivar_fn, biselector](const TType & e) -> double
                 {
+                    context::current_true = &e;
                     auto [first_idx, second_idx] = biselector(e);
                     if(first_idx == kNoMatch || second_idx == kNoMatch) return kNoMatchValue;
                     return bivar_fn(e.particles[first_idx], e.particles[second_idx]);
@@ -360,6 +361,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 auto bivar_fn = factory(varPars);
                 VarFn<RType> var_fn_composed = [bivar_fn, biselector](const RType & e) -> double
                 {
+                    context::current_reco = &e;
                     auto [first_idx, second_idx] = biselector(e);
                     if(first_idx == kNoMatch || second_idx == kNoMatch) return kNoMatchValue;
                     return bivar_fn(e.particles[first_idx], e.particles[second_idx]);
@@ -490,6 +492,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 auto bivar_fn = factory(varPars);
                 VarFn<TType> var_fn_composed = [bivar_fn, biselector](const TType & e) -> double
                 {
+                    context::current_true = &e;
                     auto [first_idx, second_idx] = biselector(e);
                     if(first_idx == kNoMatch || second_idx == kNoMatch) return kNoMatchValue;
                     return bivar_fn(e.particles[first_idx], e.particles[second_idx]);
@@ -559,6 +562,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 auto bivar_fn = factory(varPars);
                 VarFn<RType> var_fn_composed = [bivar_fn, biselector](const RType & e) -> double
                 {
+                    context::current_reco = &e;
                     auto [first_idx, second_idx] = biselector(e);
                     if(first_idx == kNoMatch || second_idx == kNoMatch) return kNoMatchValue;
                     return bivar_fn(e.particles[first_idx], e.particles[second_idx]);

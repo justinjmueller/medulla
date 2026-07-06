@@ -13,10 +13,14 @@
 #define UTILITIES_H
 #include <vector>
 #include <array>
+#include <cmath>
+#include <unordered_map>
 
 #include "framework.h"
 #include "include/particle_variables.h"
 #include "include/particle_cuts.h"
+
+#define PI0_MASS 134.9768
 
 /**
  * @namespace utilities
@@ -164,6 +168,79 @@ namespace utilities
             }
         }
         return first_flash_index;
+    }
+
+    /**
+     * @brief Group true pi0 daughters by parent track ID.
+     * @details Iterates over particles in a true interaction and collects
+     * photons and electrons whose parent is a pi0 (PDG 111), grouped by
+     * parent track ID. Candidates with fewer than two daughters or whose
+     * reconstructed KE (from the daughter momentum sum) falls below the
+     * threshold in params[0] are removed.
+     * @param obj the true interaction to scan.
+     * @param primaries if true, restrict to primary particles; if false, non-primary.
+     * @param params params[0] is the pi0 KE threshold in MeV (default 0).
+     * @return map from parent track ID to daughter particle indices.
+     */
+    std::unordered_map<int, std::vector<size_t>>
+    get_true_pi0s(const caf::SRInteractionTruthDLPProxy & obj,
+                  bool primaries = true,
+                  std::vector<double> params = {0.0,})
+    {
+        std::unordered_map<int, std::vector<size_t>> true_pi0s;
+        for(size_t i = 0; i < obj.particles.size(); ++i)
+        {
+            const auto & p = obj.particles[i];
+            if( primaries && !p.is_primary) continue;
+            if(!primaries &&  p.is_primary) continue;
+            if(p.parent_pdg_code == 111 &&
+               (p.pdg_code == 22 || p.pdg_code == 11 || p.pdg_code == -11))
+                true_pi0s[p.parent_track_id].push_back(i);
+        }
+        std::vector<int> bad_ids;
+        for(const auto & entry : true_pi0s)
+        {
+            int    ndaughters = 0;
+            double px = 0, py = 0, pz = 0;
+            for(size_t idx : entry.second)
+            {
+                const auto & p = obj.particles[idx];
+                px += p.momentum[0];
+                py += p.momentum[1];
+                pz += p.momentum[2];
+                ++ndaughters;
+            }
+            double pmag  = std::sqrt(px*px + py*py + pz*pz);
+            double pi0ke = std::sqrt(PI0_MASS*PI0_MASS + pmag*pmag) - PI0_MASS;
+            if(ndaughters < 2 || pi0ke < params[0])
+                bad_ids.push_back(entry.first);
+        }
+        for(int id : bad_ids) true_pi0s.erase(id);
+        return true_pi0s;
+    }
+
+    /**
+     * @brief Count primary true neutral pions in a true interaction.
+     * @param obj the true interaction.
+     * @param params params[0] is the pi0 KE threshold in MeV (default 0).
+     * @return number of primary pi0s above threshold.
+     */
+    double true_primary_pi0_multiplicity(const caf::SRInteractionTruthDLPProxy & obj,
+                                          std::vector<double> params = {0.0,})
+    {
+        return static_cast<double>(get_true_pi0s(obj, true, params).size());
+    }
+
+    /**
+     * @brief Count non-primary true neutral pions in a true interaction.
+     * @param obj the true interaction.
+     * @param params params[0] is the pi0 KE threshold in MeV (default 0).
+     * @return number of non-primary pi0s above threshold.
+     */
+    double true_nonprimary_pi0_multiplicity(const caf::SRInteractionTruthDLPProxy & obj,
+                                             std::vector<double> params = {0.0,})
+    {
+        return static_cast<double>(get_true_pi0s(obj, false, params).size());
     }
 }
 #endif // UTILITIES_H

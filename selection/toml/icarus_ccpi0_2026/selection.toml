@@ -1,0 +1,283 @@
+[general]
+output = "icarus_ccpi0_2026"
+primfn = "default_primary_classification"
+pidfn  = "default_pid"
+# calofn_reco = "default_calo_ke"              # nominal
+# calofn_reco = "postpi0adj_spineprod_250625_mc_calo_ke"   # CV + systs
+# calofn_reco = "postpi0adj_spineprod_250625_data_calo_ke" # data
+fsthresh = [
+    "@reco_photon_threshold",
+    "@reco_electron_threshold",
+    "@reco_muon_threshold",
+    "@reco_pion_threshold",
+    "@reco_proton_threshold",
+]
+# NOTE: recopi0showerthresh is not yet wired into the new framework.
+# The pi0_photon_pair biselector currently hardcodes a 25 MeV shower threshold.
+# Porting recopi0showerthresh requires adding a global threshold vector analogous
+# to utilities_pi0ana::reco_pi0_shower_thresholds in medulla_pi0.
+
+[parameters]
+true_photon_threshold    = 0.0
+reco_photon_threshold    = 25.0
+true_electron_threshold  = 0.0
+reco_electron_threshold  = 0.0
+true_muon_threshold      = 143.425
+reco_muon_threshold      = 143.425
+true_second_muon_threshold = 25.0
+reco_second_muon_threshold = 25.0
+true_pi0_threshold       = 0.0
+reco_pi0_threshold       = 0.0
+true_pion_threshold      = 0.0
+reco_pion_threshold      = 25.0
+true_proton_threshold    = 0.0
+reco_proton_threshold    = 0.0
+pi0_mass_veto_low        = 60.0
+pi0_mass_veto_high       = 300.0
+flash_low_t              = -0.5
+flash_high_t             =  1.6
+bnb_fom_cut              =  0.98
+
+[[sample]]
+name = "cv"
+path = "/pnfs/icarus/persistent/users/mueller/production/simulation/nominal/input000.flat.root"
+ismc = true
+disable = false
+
+# NOTE: decrements_exposure is not yet wired in main.cc; the field is accepted
+# by the framework but has no effect. bnb_fom_cut / bnb_fom2_cut are also
+# commented out in event_cuts.h pending CAF field availability.
+
+[[tree]]
+name         = "selected_nu"
+mode         = "reco"
+sim_only     = false
+add_exposure = true
+cut = [
+    {name = "fiducial_cut",              type = "reco"},
+    {name = "avoid_icarus_mystery_zgap", type = "reco"},
+    {name = "flash_cut",                 type = "reco",  parameters = ["@flash_low_t", "@flash_high_t"]},
+    {name = "single_muon",               type = "reco",  parameters = ["@reco_muon_threshold"]},
+    {name = "single_muon",               type = "reco",  parameters = ["@reco_second_muon_threshold"]},
+    {name = "no_charged_pions",          type = "reco",  parameters = ["@reco_pion_threshold"]},
+    {name = "two_photons",               type = "reco",  parameters = ["@reco_photon_threshold"]},
+    {name = "valid_pi0_mass_cut",        type = "reco",  parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+    {name = "data_quality_cut",          type = "event"},
+    {name = "beam_quality_cut",          type = "spill"},
+    # {name = "bnb_fom2_cut", type = "event", parameters = ["@bnb_fom_cut"]},  # NOT YET ACTIVE
+    {name = "neutrino",                  type = "true"},
+]
+branch = [
+    # MC Truth interaction info
+    {name = "pdg",              type = "mctruth"},
+    {name = "baseline",         type = "mctruth"},
+    {name = "cc",               type = "mctruth"},
+    {name = "neutrino_energy",  type = "mctruth"},
+    {name = "neutrino_Q2",      type = "mctruth"},
+    {name = "neutrino_W",       type = "mctruth"},
+    {name = "interaction_mode", type = "mctruth"},
+    {name = "interaction_type", type = "mctruth"},
+    {name = "nphotons_srtruth",   type = "mctruth", parameters = ["@true_photon_threshold"]},
+    {name = "nelectrons_srtruth", type = "mctruth", parameters = ["@true_electron_threshold"]},
+    {name = "nmuons_srtruth",     type = "mctruth", parameters = ["@true_muon_threshold"]},
+    {name = "npi0s_srtruth",      type = "mctruth", parameters = ["@true_pi0_threshold"]},
+    {name = "npions_srtruth",     type = "mctruth", parameters = ["@true_pion_threshold"]},
+    {name = "netas_srtruth",      type = "mctruth"},
+    {name = "nprotons_srtruth",   type = "mctruth", parameters = ["@true_proton_threshold"]},
+
+    # SPINE interaction info
+    {name = "interaction_id",         type = "both"},
+    {name = "neutrino_id",            type = "true"},
+    {name = "containment_cut",        type = "both"},
+    {name = "flash_time",             type = "reco"},
+    {name = "visible_energy",         type = "both"},
+    {name = "visible_energy_calosub", type = "both"},
+    {name = "Q2",                     type = "both"},
+    {name = "W",                      type = "both"},
+    {name = "W_calosub",              type = "both"},
+    {name = "pn",                     type = "both"},
+    {name = "dpT",                    type = "both"},
+    {name = "dpL",                    type = "both"},
+    {name = "dphiT",                  type = "both"},
+    {name = "dalphaT",                type = "both"},
+    {name = "vertex_x",               type = "both"},
+    {name = "vertex_y",               type = "both"},
+    {name = "vertex_z",               type = "both"},
+    {name = "photon_multiplicity",    type = "reco",  parameters = ["@reco_photon_threshold"]},
+    {name = "electron_multiplicity",  type = "reco",  parameters = ["@reco_electron_threshold"]},
+    {name = "muon_multiplicity",      type = "reco",  parameters = ["@reco_muon_threshold"]},
+    {name = "pion_multiplicity",      type = "reco",  parameters = ["@reco_pion_threshold"]},
+    {name = "proton_multiplicity",    type = "reco",  parameters = ["@reco_proton_threshold"]},
+    {name = "photon_multiplicity",    type = "true",  parameters = ["@true_photon_threshold"]},
+    {name = "electron_multiplicity",  type = "true",  parameters = ["@true_electron_threshold"]},
+    {name = "muon_multiplicity",      type = "true",  parameters = ["@true_muon_threshold"]},
+    {name = "pion_multiplicity",      type = "true",  parameters = ["@true_pion_threshold"]},
+    {name = "proton_multiplicity",    type = "true",  parameters = ["@true_proton_threshold"]},
+
+    # Muon observables (SPINE reco and truth)
+    {name = "pid",               type = "both_particle", selector = "leading_primary_muon"},
+    {name = "length",            type = "both_particle", selector = "leading_primary_muon"},
+    {name = "ke",                type = "both_particle", selector = "leading_primary_muon"},
+    {name = "primary_softmax",   type = "reco_particle", selector = "leading_primary_muon"},
+    {name = "secondary_softmax", type = "reco_particle", selector = "leading_primary_muon"},
+    {name = "muon_softmax",      type = "reco_particle", selector = "leading_primary_muon"},
+    {name = "pion_softmax",      type = "reco_particle", selector = "leading_primary_muon"},
+    {name = "proton_softmax",    type = "reco_particle", selector = "leading_primary_muon"},
+    {name = "mip_softmax",       type = "reco_particle", selector = "leading_primary_muon"},
+    {name = "hadron_softmax",    type = "reco_particle", selector = "leading_primary_muon"},
+
+    # Neutral pion observables (SPINE reco and truth, biselector)
+    {name = "pi0_invariant_mass",   type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "pi0_mass_max",         type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "pi0_opening_costheta", type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "leading_ke",           type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "subleading_ke",        type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "leading_conv_dist",    type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "subleading_conv_dist", type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "pi0_momentum_mag",     type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "pi0_beam_costheta",    type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "leading_dirx",         type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "leading_diry",         type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "leading_dirz",         type = "both_bivar", biselector = "pi0_photon_pair"},
+
+    # Pion observables
+    {name = "pid",               type = "both_particle", selector = "leading_primary_pion"},
+    {name = "ke",                type = "both_particle", selector = "leading_primary_pion"},
+    {name = "primary_softmax",   type = "reco_particle", selector = "leading_primary_pion"},
+    {name = "secondary_softmax", type = "reco_particle", selector = "leading_primary_pion"},
+    {name = "muon_softmax",      type = "reco_particle", selector = "leading_primary_pion"},
+    {name = "pion_softmax",      type = "reco_particle", selector = "leading_primary_pion"},
+    {name = "proton_softmax",    type = "reco_particle", selector = "leading_primary_pion"},
+    {name = "mip_softmax",       type = "reco_particle", selector = "leading_primary_pion"},
+    {name = "hadron_softmax",    type = "reco_particle", selector = "leading_primary_pion"},
+    {name = "id",                type = "both_particle", selector = "leading_primary_pion"},
+    {name = "match_id",          type = "both_particle", selector = "leading_primary_pion"},
+
+    # Proton observables
+    {name = "pid",               type = "both_particle", selector = "leading_proton"},
+    {name = "ke",                type = "both_particle", selector = "leading_proton"},
+    {name = "primary_softmax",   type = "reco_particle", selector = "leading_proton"},
+    {name = "secondary_softmax", type = "reco_particle", selector = "leading_proton"},
+    {name = "muon_softmax",      type = "reco_particle", selector = "leading_proton"},
+    {name = "pion_softmax",      type = "reco_particle", selector = "leading_proton"},
+    {name = "proton_softmax",    type = "reco_particle", selector = "leading_proton"},
+    {name = "mip_softmax",       type = "reco_particle", selector = "leading_proton"},
+    {name = "hadron_softmax",    type = "reco_particle", selector = "leading_proton"},
+]
+
+[[tree]]
+name         = "selected_cos"
+mode         = "reco"
+sim_only     = false
+add_exposure = true
+cut = [
+    {name = "fiducial_cut",              type = "reco"},
+    {name = "avoid_icarus_mystery_zgap", type = "reco"},
+    {name = "flash_cut",                 type = "reco",  parameters = ["@flash_low_t", "@flash_high_t"]},
+    {name = "single_muon",               type = "reco",  parameters = ["@reco_muon_threshold"]},
+    {name = "single_muon",               type = "reco",  parameters = ["@reco_second_muon_threshold"]},
+    {name = "no_charged_pions",          type = "reco",  parameters = ["@reco_pion_threshold"]},
+    {name = "two_photons",               type = "reco",  parameters = ["@reco_photon_threshold"]},
+    {name = "valid_pi0_mass_cut",        type = "reco",  parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+    {name = "data_quality_cut",          type = "event"},
+    {name = "beam_quality_cut",          type = "spill"},
+    # {name = "bnb_fom2_cut", type = "event", parameters = ["@bnb_fom_cut"]},  # NOT YET ACTIVE
+    {name = "cosmic",                    type = "true"},
+]
+branch = [
+    # MC Truth interaction info
+    {name = "pdg",              type = "mctruth"},
+    {name = "baseline",         type = "mctruth"},
+    {name = "cc",               type = "mctruth"},
+    {name = "neutrino_energy",  type = "mctruth"},
+    {name = "neutrino_Q2",      type = "mctruth"},
+    {name = "neutrino_W",       type = "mctruth"},
+    {name = "interaction_mode", type = "mctruth"},
+    {name = "interaction_type", type = "mctruth"},
+    {name = "nphotons_srtruth",   type = "mctruth", parameters = ["@true_photon_threshold"]},
+    {name = "nelectrons_srtruth", type = "mctruth", parameters = ["@true_electron_threshold"]},
+    {name = "nmuons_srtruth",     type = "mctruth", parameters = ["@true_muon_threshold"]},
+    {name = "npi0s_srtruth",      type = "mctruth", parameters = ["@true_pi0_threshold"]},
+    {name = "npions_srtruth",     type = "mctruth", parameters = ["@true_pion_threshold"]},
+    {name = "netas_srtruth",      type = "mctruth"},
+    {name = "nprotons_srtruth",   type = "mctruth", parameters = ["@true_proton_threshold"]},
+
+    # SPINE interaction info
+    {name = "interaction_id",         type = "both"},
+    {name = "neutrino_id",            type = "true"},
+    {name = "containment_cut",        type = "both"},
+    {name = "flash_time",             type = "reco"},
+    {name = "visible_energy",         type = "both"},
+    {name = "visible_energy_calosub", type = "both"},
+    {name = "Q2",                     type = "both"},
+    {name = "W",                      type = "both"},
+    {name = "W_calosub",              type = "both"},
+    {name = "pn",                     type = "both"},
+    {name = "dpT",                    type = "both"},
+    {name = "dpL",                    type = "both"},
+    {name = "dphiT",                  type = "both"},
+    {name = "dalphaT",                type = "both"},
+    {name = "vertex_x",               type = "both"},
+    {name = "vertex_y",               type = "both"},
+    {name = "vertex_z",               type = "both"},
+    {name = "photon_multiplicity",    type = "reco",  parameters = ["@reco_photon_threshold"]},
+    {name = "electron_multiplicity",  type = "reco",  parameters = ["@reco_electron_threshold"]},
+    {name = "muon_multiplicity",      type = "reco",  parameters = ["@reco_muon_threshold"]},
+    {name = "pion_multiplicity",      type = "reco",  parameters = ["@reco_pion_threshold"]},
+    {name = "proton_multiplicity",    type = "reco",  parameters = ["@reco_proton_threshold"]},
+    {name = "photon_multiplicity",    type = "true",  parameters = ["@true_photon_threshold"]},
+    {name = "electron_multiplicity",  type = "true",  parameters = ["@true_electron_threshold"]},
+    {name = "muon_multiplicity",      type = "true",  parameters = ["@true_muon_threshold"]},
+    {name = "pion_multiplicity",      type = "true",  parameters = ["@true_pion_threshold"]},
+    {name = "proton_multiplicity",    type = "true",  parameters = ["@true_proton_threshold"]},
+
+    # Muon observables (SPINE reco and truth)
+    {name = "pid",               type = "both_particle", selector = "leading_primary_muon"},
+    {name = "length",            type = "both_particle", selector = "leading_primary_muon"},
+    {name = "ke",                type = "both_particle", selector = "leading_primary_muon"},
+    {name = "primary_softmax",   type = "reco_particle", selector = "leading_primary_muon"},
+    {name = "secondary_softmax", type = "reco_particle", selector = "leading_primary_muon"},
+    {name = "muon_softmax",      type = "reco_particle", selector = "leading_primary_muon"},
+    {name = "pion_softmax",      type = "reco_particle", selector = "leading_primary_muon"},
+    {name = "proton_softmax",    type = "reco_particle", selector = "leading_primary_muon"},
+    {name = "mip_softmax",       type = "reco_particle", selector = "leading_primary_muon"},
+    {name = "hadron_softmax",    type = "reco_particle", selector = "leading_primary_muon"},
+
+    # Neutral pion observables (SPINE reco and truth, biselector)
+    {name = "pi0_invariant_mass",   type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "pi0_mass_max",         type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "pi0_opening_costheta", type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "leading_ke",           type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "subleading_ke",        type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "leading_conv_dist",    type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "subleading_conv_dist", type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "pi0_momentum_mag",     type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "pi0_beam_costheta",    type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "leading_dirx",         type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "leading_diry",         type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "leading_dirz",         type = "both_bivar", biselector = "pi0_photon_pair"},
+
+    # Pion observables
+    {name = "pid",               type = "both_particle", selector = "leading_primary_pion"},
+    {name = "ke",                type = "both_particle", selector = "leading_primary_pion"},
+    {name = "primary_softmax",   type = "reco_particle", selector = "leading_primary_pion"},
+    {name = "secondary_softmax", type = "reco_particle", selector = "leading_primary_pion"},
+    {name = "muon_softmax",      type = "reco_particle", selector = "leading_primary_pion"},
+    {name = "pion_softmax",      type = "reco_particle", selector = "leading_primary_pion"},
+    {name = "proton_softmax",    type = "reco_particle", selector = "leading_primary_pion"},
+    {name = "mip_softmax",       type = "reco_particle", selector = "leading_primary_pion"},
+    {name = "hadron_softmax",    type = "reco_particle", selector = "leading_primary_pion"},
+    {name = "id",                type = "both_particle", selector = "leading_primary_pion"},
+    {name = "match_id",          type = "both_particle", selector = "leading_primary_pion"},
+
+    # Proton observables
+    {name = "pid",               type = "both_particle", selector = "leading_proton"},
+    {name = "ke",                type = "both_particle", selector = "leading_proton"},
+    {name = "primary_softmax",   type = "reco_particle", selector = "leading_proton"},
+    {name = "secondary_softmax", type = "reco_particle", selector = "leading_proton"},
+    {name = "muon_softmax",      type = "reco_particle", selector = "leading_proton"},
+    {name = "pion_softmax",      type = "reco_particle", selector = "leading_proton"},
+    {name = "proton_softmax",    type = "reco_particle", selector = "leading_proton"},
+    {name = "mip_softmax",       type = "reco_particle", selector = "leading_proton"},
+    {name = "hadron_softmax",    type = "reco_particle", selector = "leading_proton"},
+]

@@ -59,6 +59,34 @@ namespace selectors
     }
 
     /**
+     * @brief Finds the index corresponding to the leading primary particle of
+     * the specified particle type.
+     * @details Like leading_particle_index, but restricted to particles
+     * satisfying pvars::primary_classification.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @param pid the particle type.
+     * @return the index of the leading primary particle (highest KE).
+     */
+    template <class T>
+    size_t leading_primary_particle_index(const T & obj, uint16_t pid)
+    {
+        double leading_ke(0);
+        size_t index(kNoMatch);
+        for(size_t i(0); i < obj.particles.size(); ++i)
+        {
+            const auto & p = obj.particles[i];
+            double energy(pvars::ke(p));
+            if(pvars::pid(p) == pid && pvars::primary_classification(p) && energy > leading_ke)
+            {
+                leading_ke = energy;
+                index = i;
+            }
+        }
+        return index;
+    }
+
+    /**
      * @brief Finds the index corresponding to the longest track.
      * @details The longest track is defined as the track with the longest
      * length, which is calculated upstream in SPINE. The particle instance is
@@ -230,7 +258,72 @@ namespace selectors
         return leading_particle_index(obj, pvars::kProton);
     }
     REGISTER_SELECTOR(leading_proton, leading_proton);
-    
+
+    /**
+     * @brief Finds the index corresponding to the leading primary photon.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the leading primary photon (highest KE).
+     */
+    template<class T>
+    size_t leading_primary_photon(const T & obj)
+    {
+        return leading_primary_particle_index(obj, pvars::kPhoton);
+    }
+    REGISTER_SELECTOR(leading_primary_photon, leading_primary_photon);
+
+    /**
+     * @brief Finds the index corresponding to the leading primary electron.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the leading primary electron (highest KE).
+     */
+    template<class T>
+    size_t leading_primary_electron(const T & obj)
+    {
+        return leading_primary_particle_index(obj, pvars::kElectron);
+    }
+    REGISTER_SELECTOR(leading_primary_electron, leading_primary_electron);
+
+    /**
+     * @brief Finds the index corresponding to the leading primary muon.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the leading primary muon (highest KE).
+     */
+    template<class T>
+    size_t leading_primary_muon(const T & obj)
+    {
+        return leading_primary_particle_index(obj, pvars::kMuon);
+    }
+    REGISTER_SELECTOR(leading_primary_muon, leading_primary_muon);
+
+    /**
+     * @brief Finds the index corresponding to the leading primary pion.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the leading primary pion (highest KE).
+     */
+    template<class T>
+    size_t leading_primary_pion(const T & obj)
+    {
+        return leading_primary_particle_index(obj, pvars::kPion);
+    }
+    REGISTER_SELECTOR(leading_primary_pion, leading_primary_pion);
+
+    /**
+     * @brief Finds the index corresponding to the leading primary proton.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the leading primary proton (highest KE).
+     */
+    template<class T>
+    size_t leading_primary_proton(const T & obj)
+    {
+        return leading_primary_particle_index(obj, pvars::kProton);
+    }
+    REGISTER_SELECTOR(leading_primary_proton, leading_primary_proton);
+
     /**
      * @brief Finds the index corresponding to the target Michel.
      * @details The target Michel is defined as the Michel with the most
