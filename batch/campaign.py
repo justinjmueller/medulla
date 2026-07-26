@@ -142,6 +142,7 @@ class TomlEntry:
     file: str                    # absolute path to the selection TOML
     experiments: list
     enable: dict = field(default_factory=dict)  # {experiment: [key, ...]}
+    sys_template: str = None     # absolute path to a systematics TOML template, or None for the default
 
 
 @dataclass
@@ -164,6 +165,7 @@ class ProjectUnit:
     toml_path: str
     enable_keys: list = field(default_factory=list)
     batch_size: int = 50
+    sys_template: str = None     # absolute path to a systematics TOML template, or None for the default
 
 
 # ---------------------------------------------------------------------------
@@ -256,11 +258,13 @@ def discover_analyses(toml_root):
         for t in meta.get('toml', []):
             enable_raw = t.get('enable', {})
             enable = {exp: block.get('keys', []) for exp, block in enable_raw.items()}
+            sys_template = str(meta_path.parent / t['sys_template']) if t.get('sys_template') else None
             tomls.append(TomlEntry(
                 role=t['role'],
                 file=str(meta_path.parent / t['file']),
                 experiments=t.get('experiments', top_experiments),
                 enable=enable,
+                sys_template=sys_template,
             ))
         analyses.append(AnalysisMeta(
             analysis=meta['meta']['analysis'],
@@ -313,6 +317,7 @@ def expand_campaign(analyses, catalog_path,
                     toml_path=t.file,
                     enable_keys=t.enable.get(exp, []),
                     batch_size=a.defaults.get('batch_size', 50),
+                    sys_template=t.sys_template,
                 ))
     return units
 
@@ -392,6 +397,7 @@ def create_campaign(campaign_dir, project_units, catalog_path,
                 batch_size=batch_size,
                 catalog_path=catalog_path,
                 enable_keys=u.enable_keys,
+                sys=u.sys_template,
             )
 
             # Read back the job count from the locally-built project.db.
@@ -698,7 +704,8 @@ def cmd_create(args):
         'campaign': {'name': campaign_name, 'tag': tag, 'created_at': ts_str},
         'projects': [
             {'analysis': u.analysis, 'role': u.role, 'experiment': u.experiment,
-             'toml_path': u.toml_path, 'batch_size': u.batch_size}
+             'toml_path': u.toml_path, 'batch_size': u.batch_size,
+             'sys_template': u.sys_template or ''}
             for u in all_units
         ],
     }

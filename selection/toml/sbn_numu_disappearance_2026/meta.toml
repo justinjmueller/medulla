@@ -10,6 +10,7 @@ batch_size = 10
 [[toml]]
 role = "primary"
 file = "selection.toml"
+sys_template = "sys.toml"
 output_pattern = "spineosc_numu_%e_%t"
 
   [toml.enable.sbnd]
@@ -21,6 +22,7 @@ output_pattern = "spineosc_numu_%e_%t"
 [[toml]]
 role = "dirt"
 file = "selection.toml"
+sys_template = "sys.toml"
 output_pattern = "spineosc_numu_%e_%t_dirt"
 
   [toml.enable.sbnd]
