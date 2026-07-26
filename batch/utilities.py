@@ -369,6 +369,7 @@ def launch_jobsub(
     memory : int = 1800,
     disk : Optional[int] = None,
     lifetime : str = '1h',
+    verbose : bool = False,
 ):
     """
     Launch jobs using jobsub for the given project directory. If njobs
@@ -394,6 +395,12 @@ def launch_jobsub(
         Amount of disk to request for each job in GB. If None, use default.
     lifetime : str
         Expected lifetime of each job (e.g., '1h', '30m'). If None, use default.
+    verbose : bool
+        If True, print the full jobsub_submit command and its complete
+        stdout/stderr, even on a successful submission. jobsub_submit can
+        exit 0 while still failing to submit some individual jobs, and
+        those failures are otherwise only visible in the full output,
+        which is normally discarded down to a one-line summary.
 
     Returns
     -------
@@ -457,8 +464,9 @@ def launch_jobsub(
     ]
 
     # Query the user to confirm that they want to launch the jobs.
-    if confirm:
+    if confirm or verbose:
         print(f"{_INFO} -- Launching {njobs} jobs with command: {' '.join(cmd)}")
+    if confirm:
         resp = input("Confirm job launch? [Y/N] ")
         if resp.lower() != 'y':
             print(f"{_INFO} -- User aborted job launch.")
@@ -476,6 +484,9 @@ def launch_jobsub(
             print(f"{_ERROR} -- Job submission failed due to expired token. Please run `htgettoken` to refresh your token and try again.")
         else:
             print(f"{_ERROR} -- Job submission failed with error: {output}")
+        if verbose:
+            print(f"{_ERROR} -- Full stdout:\n{e.stdout}")
+            print(f"{_ERROR} -- Full stderr:\n{e.stderr}")
         return False
 
     if confirm:
@@ -483,6 +494,16 @@ def launch_jobsub(
         stdout = out.stdout.strip()
         print('\n'.join(stdout.split('\n')[-4:]))
         print(f"{_INFO} -- Launched {njobs} jobs.")
+    elif verbose:
+        # Campaign workflow with verbose requested: jobsub_submit can exit 0
+        # while still failing to submit some individual jobs, so show the
+        # full output rather than just the one-line summary.
+        print(f"{_INFO} -- Full jobsub_submit stdout:\n{out.stdout.strip()}")
+        if out.stderr.strip():
+            print(f"{_INFO} -- Full jobsub_submit stderr:\n{out.stderr.strip()}")
+        match = re.search(r'job id\s+(\S+)', out.stdout)
+        job_id = match.group(1) if match else 'unknown'
+        print(f"{_CAMPAIGN} Submitted {njobs} job(s). Job ID: {job_id}")
     else:
         # Campaign workflow: one clean line per project.
         match = re.search(r'job id\s+(\S+)', out.stdout)

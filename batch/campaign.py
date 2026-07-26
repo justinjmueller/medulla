@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import toml
+import traceback
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from glob import glob
@@ -919,9 +920,12 @@ def cmd_launch(args):
                 proj_dir = Path(row['project_dir'])
                 print(f"\n[CAMPAIGN] Launching: {row['analysis']}/{row['role']}_{row['experiment']}")
                 try:
-                    ok = launch_jobsub(proj_dir, exp=exp, njobs=njobs, confirm=False, tag=tag)
+                    ok = launch_jobsub(proj_dir, exp=exp, njobs=njobs, confirm=False, tag=tag,
+                                       verbose=args.verbose)
                 except Exception as e:
                     print(f"[CAMPAIGN] Launch failed for {proj_dir}: {e}")
+                    if args.verbose:
+                        traceback.print_exc()
                     ok = False
                 if ok:
                     curs.execute(
@@ -1225,6 +1229,10 @@ def main():
                           help='Restrict launch to one experiment')
     p_launch.add_argument('--relaunch', action='store_true',
                           help='Also relaunch projects already marked submitted')
+    p_launch.add_argument('--verbose', '-v', action='store_true',
+                          help='Show full jobsub_submit output (stdout/stderr) for every project, '
+                               'including successful submissions -- use this to catch per-job '
+                               'submission failures that do not fail the overall command')
     launch_grp = p_launch.add_mutually_exclusive_group()
     launch_grp.add_argument('--test', action='store_true',
                             help='Submit one job per project to verify setup')
