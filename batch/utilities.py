@@ -2,6 +2,7 @@
 import os
 import re
 import sqlite3
+import time
 import toml
 from catalog import resolve_samples
 from glob import glob
@@ -477,17 +478,35 @@ def launch_jobsub(
     # they need to run `htgettoken` to refresh it. The exception is
     # printed to stdout by jobsub, so we just need to catch it and
     # print a more user-friendly message.
-    try:
-        out = subprocess.run(cmd, check=True, capture_output=True, text=True)
-    except subprocess.CalledProcessError as e:
-        if 'ExpiredSignatureError' in (output := e.stderr.strip()):
-            print(f"{_ERROR} -- Job submission failed due to expired token. Please run `htgettoken` to refresh your token and try again.")
-        else:
-            print(f"{_ERROR} -- Job submission failed with error: {output}")
-        if verbose:
-            print(f"{_ERROR} -- Full stdout:\n{e.stdout}")
-            print(f"{_ERROR} -- Full stderr:\n{e.stderr}")
-        return False
+    #
+    # A separate, transient failure mode has been observed when multiple
+    # jobsub_submit calls run in quick succession: HTCondor's vault
+    # credential manager (condor_vault_storer) can race against a
+    # still-in-progress credential write from a previous submission and
+    # refuse to proceed ("Credentials exist that do not match the
+    # request"). The requested scopes/handle are unchanged in this case
+    # (no real credential problem), so it is safe to retry once after a
+    # short delay rather than failing outright.
+    max_attempts = 2
+    retry_delay = 5  # seconds
+    for attempt in range(1, max_attempts + 1):
+        try:
+            out = subprocess.run(cmd, check=True, capture_output=True, text=True)
+            break
+        except subprocess.CalledProcessError as e:
+            if 'condor_vault_storer' in e.stderr and attempt < max_attempts:
+                print(f"{_ERROR} -- Transient vault credential conflict detected, "
+                      f"retrying in {retry_delay}s...")
+                time.sleep(retry_delay)
+                continue
+            if 'ExpiredSignatureError' in (output := e.stderr.strip()):
+                print(f"{_ERROR} -- Job submission failed due to expired token. Please run `htgettoken` to refresh your token and try again.")
+            else:
+                print(f"{_ERROR} -- Job submission failed with error: {output}")
+            if verbose:
+                print(f"{_ERROR} -- Full stdout:\n{e.stdout}")
+                print(f"{_ERROR} -- Full stderr:\n{e.stderr}")
+            return False
 
     if confirm:
         # Single-project workflow: show full output so the user can verify.
