@@ -91,7 +91,7 @@ ismc = false
 key = "icarus_ar23p_run4"
 name = "icarus"
 experiment = "icarus"
-path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flat/ICARUS_Run4_CVMC_ReCAF2026_BNB/*/*/*ar23p.flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4_CVMC_ReCAF2026_BNB/*/*/*ar23p.flat.caf.root"
 ismc = true
 
   [sample.metadata]
@@ -105,7 +105,7 @@ ismc = true
 key = "icarus_offbeam_run4"
 name = "icarus_offbeam_run4"
 experiment = "icarus"
-path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flat/ICARUS_Run4BeamOffWF_BNB_data_ReCAF2026/*/*/*flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4BeamOffWF_BNB_data_ReCAF2026/*/*/*flat.caf.root"
 ismc = false
 
   [sample.metadata]
@@ -119,7 +119,7 @@ ismc = false
 key = "icarus_bnblight_run4"
 name = "icarus_bnblight_run4"
 experiment = "icarus"
-path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flat/ICARUS_Run4BeamOnWF_BNB_data_ReCAF2026/*/*/*flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4BeamOnWF_BNB_data_ReCAF2026/*/*/*flat.caf.root"
 ismc = false
 
   [sample.metadata]
