@@ -18,13 +18,16 @@ pion_threshold = 25.0
 proton_threshold = 50.0
 
 [[include_samples]]
-file = "common/samples.toml"
+file = "common/osc.toml"
 keys = [
-    "sbnd_mc5e18", "sbnd_mc1e20", "sbnd_offbeam",
-    "icarus_nominal", "icarus_cvext", "icarus_offbeam",
+    "sbnd_ar23p_mc5e18", "sbnd_ar23p_mc1e20",
+    "sbnd_ar23p_dirt",
+    "sbnd_offbeam",
+    "icarus_ar23p_run4",
+    "icarus_offbeam_run4",
 ]
 # For interactive debugging, uncomment:
-# enable = ["sbnd_mc5e18"]
+enable = ["sbnd_ar23p_mc5e18"]
 
 [[tree]]
 name = "selected"

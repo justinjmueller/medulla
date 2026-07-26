@@ -18,8 +18,11 @@ pion_threshold = 25.0
 proton_threshold = 50.0
 
 [[include_samples]]
-file = "common/samples.toml"
-keys = ["sbnd_bnblight", "icarus_bnblight"]
+file = "common/osc.toml"
+keys = [
+    "sbnd_bnblight",
+    "icarus_bnblight_run4",
+]
 
 [[tree]]
 name = "selected"

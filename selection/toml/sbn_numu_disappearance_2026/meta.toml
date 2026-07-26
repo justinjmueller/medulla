@@ -13,10 +13,18 @@ file = "selection.toml"
 output_pattern = "spineosc_numu_%e_%t"
 
   [toml.enable.sbnd]
-  keys = ["sbnd_mc5e18", "sbnd_mc1e20", "sbnd_offbeam"]
+  keys = ["sbnd_ar23p_mc5e18", "sbnd_ar23p_mc1e20", "sbnd_offbeam"]
 
   [toml.enable.icarus]
-  keys = ["icarus_nominal", "icarus_cvext", "icarus_offbeam"]
+  keys = ["icarus_ar23p_run4", "icarus_offbeam_run4"]
+
+[[toml]]
+role = "dirt"
+file = "selection.toml"
+output_pattern = "spineosc_numu_%e_%t_dirt"
+
+  [toml.enable.sbnd]
+  keys = ["sbnd_ar23p_dirt",]
 
 [[toml]]
 role = "data_blind_safe"
@@ -27,7 +35,7 @@ output_pattern = "spineosc_numu_%e_%t_bnblight#"
   keys = ["sbnd_bnblight"]
 
   [toml.enable.icarus]
-  keys = ["icarus_bnblight"]
+  keys = ["icarus_bnblight_run4"]
 
 [[toml]]
 role = "data_quality"
@@ -35,7 +43,10 @@ file = "data_quality.toml"
 experiments = ["sbnd"]
 
   [toml.enable.sbnd]
-  keys = ["sbnd_offbeam"]
+  keys = ["sbnd_offbeam",]
+
+  [toml.enable.icarus]
+  keys = ["icarus_offbeam_run4",]
 
 [[toml]]
 role = "preselection"
@@ -43,7 +54,7 @@ file = "preselection.toml"
 output_pattern = "spineosc_numu_%e_%t_preselection#"
 
   [toml.enable.sbnd]
-  keys = ["sbnd_mc5e18", "sbnd_mc1e20", "sbnd_offbeam", "sbnd_bnblight"]
+  keys = ["sbnd_ar23p_mc5e18", "sbnd_ar23p_mc1e20", "sbnd_offbeam", "sbnd_bnblight"]
 
   [toml.enable.icarus]
-  keys = ["icarus_nominal", "icarus_cvext", "icarus_offbeam", "icarus_bnblight"]
+  keys = ["icarus_ar23p_run4", "icarus_offbeam_run4", "icarus_bnblight_run4"]
