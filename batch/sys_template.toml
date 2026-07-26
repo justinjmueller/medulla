@@ -1,6 +1,6 @@
 [input]
 path = 'output.root'
-weights = 'data/*flat*'
+weights = 'data/*flat*.root'
 use_additional_hash = true
 
 [output]

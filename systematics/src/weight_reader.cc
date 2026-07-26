@@ -28,16 +28,25 @@ sys::WeightReader::WeightReader(const std::string & input)
   idx(0),
   progress_started(false)
 {
-    // Check if multiple '*' are present in the input string -- these
-    // are not supported by TChain and will cause issues.
-    size_t first_star = input.find("*");
-    if(first_star != std::string::npos)
+    // ROOT's TChain::Add() only expands a wildcard within the final path
+    // component (the filename), matched via a directory listing of a
+    // literal, non-wildcarded parent directory. A '*' in an intermediate
+    // directory component is not expanded -- TChain will try to literally
+    // open a directory with an asterisk in its name, match zero files, and
+    // fail silently. Multiple '*' within the filename component itself are
+    // fine (e.g. "*ar23p*.flat.caf.root"), so we only need to check the
+    // directory portion of the path, not the whole string.
+    size_t last_slash = input.find_last_of('/');
+    if(last_slash != std::string::npos)
     {
-        size_t second_star = input.find("*", first_star + 1);
-        if(second_star != std::string::npos)
+        std::string dirpart = input.substr(0, last_slash);
+        if(dirpart.find('*') != std::string::npos)
         {
             throw std::invalid_argument(
-                "WeightReader: Multiple '*' in input string are not supported by ROOT TChain. Sorry."
+                "WeightReader: A '*' wildcard in a directory component of the input "
+                "path is not supported by ROOT TChain (only the final filename "
+                "component can be a wildcard pattern). Use a '.txt' file listing "
+                "resolved paths instead."
             );
         }
     }
