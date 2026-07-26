@@ -36,14 +36,20 @@ def resolve_samples(cfg, catalog_path=None, enable_keys=None):
         return cfg
 
     resolved = cfg.get('sample', [])
+    default_catalog_path = Path(catalog_path) if catalog_path is not None else DEFAULT_CATALOG
 
-    if catalog_path is None:
-        catalog_path = DEFAULT_CATALOG
-    catalog = toml.load(Path(catalog_path))
+    # Cache loaded catalogs by resolved path, since multiple directives may
+    # reference the same file.
+    catalog_cache = {}
 
-    catalog_by_key = {
-        s['key']: s for s in catalog.get('sample', []) if 'key' in s
-    }
+    def _load_catalog(path):
+        path = Path(path)
+        if path not in catalog_cache:
+            catalog = toml.load(path)
+            catalog_cache[path] = {
+                s['key']: s for s in catalog.get('sample', []) if 'key' in s
+            }
+        return catalog_cache[path]
 
     for inc in includes:
         requested_keys = set(inc.get('keys', []))
@@ -51,6 +57,18 @@ def resolve_samples(cfg, catalog_path=None, enable_keys=None):
         # Empty keys list → resolve nothing for this directive
         if not requested_keys:
             continue
+
+        # Each directive may name its own catalog file (relative to the
+        # shared catalog directory), falling back to the caller-supplied
+        # default when omitted.
+        inc_file = inc.get('file')
+        if inc_file:
+            this_catalog_path = Path(inc_file)
+            if not this_catalog_path.is_absolute():
+                this_catalog_path = CATALOG_DIR / inc_file
+        else:
+            this_catalog_path = default_catalog_path
+        catalog_by_key = _load_catalog(this_catalog_path)
 
         # Priority: function argument > directive 'enable' field > none
         if enable_keys is not None:
