@@ -2,6 +2,7 @@
 import os
 import re
 import sqlite3
+import time
 import toml
 from catalog import resolve_samples
 from glob import glob
@@ -369,6 +370,7 @@ def launch_jobsub(
     memory : int = 1800,
     disk : Optional[int] = None,
     lifetime : str = '1h',
+    verbose : bool = False,
 ):
     """
     Launch jobs using jobsub for the given project directory. If njobs
@@ -394,6 +396,12 @@ def launch_jobsub(
         Amount of disk to request for each job in GB. If None, use default.
     lifetime : str
         Expected lifetime of each job (e.g., '1h', '30m'). If None, use default.
+    verbose : bool
+        If True, print the full jobsub_submit command and its complete
+        stdout/stderr, even on a successful submission. jobsub_submit can
+        exit 0 while still failing to submit some individual jobs, and
+        those failures are otherwise only visible in the full output,
+        which is normally discarded down to a one-line summary.
 
     Returns
     -------
@@ -431,12 +439,21 @@ def launch_jobsub(
     if confirm:
         print(f"{_INFO} -- Found {len(pending_jobs)} pending jobs.")
 
+    # Determine the disk request.
+    if disk is not None:
+        disk_flag = f'--disk={disk}GB'
+    elif exp == 'sbnd':
+        disk_flag = '--disk=10GB'
+    else:
+        disk_flag = '--disk=25GB'
+
     # Form the jobsub command to launch the jobs.
     cmd = [
         'jobsub_submit',
         '-G', exp,
         '-N', str(njobs),
         f'--memory={memory}MB',
+        disk_flag,
         f'--expected-lifetime={lifetime}',
         '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE',
         "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
@@ -447,16 +464,10 @@ def launch_jobsub(
         f'--tag={tag}',
     ]
 
-    if disk is not None:
-        cmd.append(f'--disk={disk}GB')
-    elif exp == 'sbnd':
-        cmd.append(f'--disk=10GB')
-    else:
-        cmd.append(f'--disk=25GB')
-
     # Query the user to confirm that they want to launch the jobs.
-    if confirm:
+    if confirm or verbose:
         print(f"{_INFO} -- Launching {njobs} jobs with command: {' '.join(cmd)}")
+    if confirm:
         resp = input("Confirm job launch? [Y/N] ")
         if resp.lower() != 'y':
             print(f"{_INFO} -- User aborted job launch.")
@@ -467,20 +478,51 @@ def launch_jobsub(
     # they need to run `htgettoken` to refresh it. The exception is
     # printed to stdout by jobsub, so we just need to catch it and
     # print a more user-friendly message.
-    try:
-        out = subprocess.run(cmd, check=True, capture_output=True, text=True)
-    except subprocess.CalledProcessError as e:
-        if 'ExpiredSignatureError' in (output := e.stderr.strip()):
-            print(f"{_ERROR} -- Job submission failed due to expired token. Please run `htgettoken` to refresh your token and try again.")
-        else:
-            print(f"{_ERROR} -- Job submission failed with error: {output}")
-        return False
+    #
+    # A separate, transient failure mode has been observed when multiple
+    # jobsub_submit calls run in quick succession: HTCondor's vault
+    # credential manager (condor_vault_storer) can race against a
+    # still-in-progress credential write from a previous submission and
+    # refuse to proceed ("Credentials exist that do not match the
+    # request"). The requested scopes/handle are unchanged in this case
+    # (no real credential problem), so it is safe to retry once after a
+    # short delay rather than failing outright.
+    max_attempts = 2
+    retry_delay = 5  # seconds
+    for attempt in range(1, max_attempts + 1):
+        try:
+            out = subprocess.run(cmd, check=True, capture_output=True, text=True)
+            break
+        except subprocess.CalledProcessError as e:
+            if 'condor_vault_storer' in e.stderr and attempt < max_attempts:
+                print(f"{_ERROR} -- Transient vault credential conflict detected, "
+                      f"retrying in {retry_delay}s...")
+                time.sleep(retry_delay)
+                continue
+            if 'ExpiredSignatureError' in (output := e.stderr.strip()):
+                print(f"{_ERROR} -- Job submission failed due to expired token. Please run `htgettoken` to refresh your token and try again.")
+            else:
+                print(f"{_ERROR} -- Job submission failed with error: {output}")
+            if verbose:
+                print(f"{_ERROR} -- Full stdout:\n{e.stdout}")
+                print(f"{_ERROR} -- Full stderr:\n{e.stderr}")
+            return False
 
     if confirm:
         # Single-project workflow: show full output so the user can verify.
         stdout = out.stdout.strip()
         print('\n'.join(stdout.split('\n')[-4:]))
         print(f"{_INFO} -- Launched {njobs} jobs.")
+    elif verbose:
+        # Campaign workflow with verbose requested: jobsub_submit can exit 0
+        # while still failing to submit some individual jobs, so show the
+        # full output rather than just the one-line summary.
+        print(f"{_INFO} -- Full jobsub_submit stdout:\n{out.stdout.strip()}")
+        if out.stderr.strip():
+            print(f"{_INFO} -- Full jobsub_submit stderr:\n{out.stderr.strip()}")
+        match = re.search(r'job id\s+(\S+)', out.stdout)
+        job_id = match.group(1) if match else 'unknown'
+        print(f"{_CAMPAIGN} Submitted {njobs} job(s). Job ID: {job_id}")
     else:
         # Campaign workflow: one clean line per project.
         match = re.search(r'job id\s+(\S+)', out.stdout)

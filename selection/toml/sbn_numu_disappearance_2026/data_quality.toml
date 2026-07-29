@@ -1,11 +1,12 @@
 [general]
 output = "data_quality"
 
-[[sample]]
-name = "offbeamlight"
-path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/offbeamlight/input*.flat.root"
-ismc = false
-disable = false
+[[include_samples]]
+file = "common/osc.toml"
+keys = [
+    "sbnd_offbeam",
+    "icarus_offbeam_run4",
+]
 
 [[tree]] # No cut nreco for DQ
 name = "noCut_nreco"

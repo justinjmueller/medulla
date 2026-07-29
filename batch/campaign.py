@@ -4,9 +4,11 @@ import contextlib
 import re
 import shutil
 import sqlite3
+import subprocess
 import sys
 import tempfile
 import toml
+import traceback
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from glob import glob
@@ -86,9 +88,10 @@ _STATUS_COLOR = {
 _ANSI_RE = re.compile(r'\033\[[0-9;]*m')
 
 # Colored tag prefixes used in print statements.
-_TAG_CAMPAIGN = f"{_A.BOLD}{_A.CYAN}[CAMPAIGN]{_A.RESET}"
-_TAG_SYNC     = f"{_A.BOLD}{_A.CYAN}[SYNC]{_A.RESET}"
-_TAG_LIST     = f"{_A.BOLD}{_A.CYAN}[LIST]{_A.RESET}"
+_TAG_CAMPAIGN  = f"{_A.BOLD}{_A.CYAN}[CAMPAIGN]{_A.RESET}"
+_TAG_SYNC      = f"{_A.BOLD}{_A.CYAN}[SYNC]{_A.RESET}"
+_TAG_LIST      = f"{_A.BOLD}{_A.CYAN}[LIST]{_A.RESET}"
+_TAG_FINALIZE  = f"{_A.BOLD}{_A.CYAN}[FINALIZE]{_A.RESET}"
 
 
 def _trunc(s, width):
@@ -140,6 +143,7 @@ class TomlEntry:
     file: str                    # absolute path to the selection TOML
     experiments: list
     enable: dict = field(default_factory=dict)  # {experiment: [key, ...]}
+    sys_template: str = None     # absolute path to a systematics TOML template, or None for the default
 
 
 @dataclass
@@ -162,6 +166,7 @@ class ProjectUnit:
     toml_path: str
     enable_keys: list = field(default_factory=list)
     batch_size: int = 50
+    sys_template: str = None     # absolute path to a systematics TOML template, or None for the default
 
 
 # ---------------------------------------------------------------------------
@@ -254,11 +259,13 @@ def discover_analyses(toml_root):
         for t in meta.get('toml', []):
             enable_raw = t.get('enable', {})
             enable = {exp: block.get('keys', []) for exp, block in enable_raw.items()}
+            sys_template = str(meta_path.parent / t['sys_template']) if t.get('sys_template') else None
             tomls.append(TomlEntry(
                 role=t['role'],
                 file=str(meta_path.parent / t['file']),
                 experiments=t.get('experiments', top_experiments),
                 enable=enable,
+                sys_template=sys_template,
             ))
         analyses.append(AnalysisMeta(
             analysis=meta['meta']['analysis'],
@@ -311,6 +318,7 @@ def expand_campaign(analyses, catalog_path,
                     toml_path=t.file,
                     enable_keys=t.enable.get(exp, []),
                     batch_size=a.defaults.get('batch_size', 50),
+                    sys_template=t.sys_template,
                 ))
     return units
 
@@ -390,6 +398,7 @@ def create_campaign(campaign_dir, project_units, catalog_path,
                 batch_size=batch_size,
                 catalog_path=catalog_path,
                 enable_keys=u.enable_keys,
+                sys=u.sys_template,
             )
 
             # Read back the job count from the locally-built project.db.
@@ -447,6 +456,9 @@ def _sync_project_status(project_dir):
         for f in output_files
         if Path(f).stat().st_size >= 1024
     ]
+    stub_files = [
+        Path(f) for f in output_files if Path(f).stat().st_size < 1024
+    ]
 
     # Copy to a local temp file to avoid /pnfs locking failures.
     with tempfile.NamedTemporaryFile(
@@ -475,6 +487,7 @@ def _sync_project_status(project_dir):
     return {
         'n_jobs':      sum(counts.values()),
         'n_completed': counts.get('completed', 0),
+        'stub_files':  stub_files,
     }
 
 
@@ -487,6 +500,7 @@ def cmd_sync(args):
     campaign_dir = _resolve_campaign(args)
     W_AN, W_RO, W_EX, W_ST, W_JB = 28, 18, 10, 12, 10
     synced = 0
+    all_stubs = []
 
     with _open_db(campaign_dir) as (conn, curs):
         curs.execute(
@@ -512,6 +526,7 @@ def cmd_sync(args):
 
             n_jobs      = result['n_jobs']
             n_completed = result['n_completed']
+            all_stubs.extend(result['stub_files'])
 
             if n_jobs == 0:
                 new_status = row['status']
@@ -545,7 +560,19 @@ def cmd_sync(args):
                 _cell(job_str,          W_JB, color=job_color),
             ]))
 
-    print(f"\n[SYNC] Synced {synced} project(s).")
+    print(f"\n{_TAG_SYNC} Synced {synced} project(s).")
+
+    if all_stubs:
+        print(f"{_TAG_SYNC} {_A.YELLOW}Found {len(all_stubs)} stub output file(s) < 1 KB:{_A.RESET}")
+        for p in all_stubs:
+            print(f"  {_A.DIM}{p}{_A.RESET}")
+        resp = input(f"{_TAG_SYNC} Delete these stub files? [Y/N] ")
+        if resp.strip().lower() == 'y':
+            for p in all_stubs:
+                p.unlink(missing_ok=True)
+            print(f"{_TAG_SYNC} Deleted {len(all_stubs)} stub file(s).")
+        else:
+            print(f"{_TAG_SYNC} Keeping stub files.")
 
 
 def _discover_meta_files():
@@ -678,7 +705,8 @@ def cmd_create(args):
         'campaign': {'name': campaign_name, 'tag': tag, 'created_at': ts_str},
         'projects': [
             {'analysis': u.analysis, 'role': u.role, 'experiment': u.experiment,
-             'toml_path': u.toml_path, 'batch_size': u.batch_size}
+             'toml_path': u.toml_path, 'batch_size': u.batch_size,
+             'sys_template': u.sys_template or ''}
             for u in all_units
         ],
     }
@@ -892,9 +920,12 @@ def cmd_launch(args):
                 proj_dir = Path(row['project_dir'])
                 print(f"\n[CAMPAIGN] Launching: {row['analysis']}/{row['role']}_{row['experiment']}")
                 try:
-                    ok = launch_jobsub(proj_dir, exp=exp, njobs=njobs, confirm=False, tag=tag)
+                    ok = launch_jobsub(proj_dir, exp=exp, njobs=njobs, confirm=False, tag=tag,
+                                       verbose=args.verbose)
                 except Exception as e:
                     print(f"[CAMPAIGN] Launch failed for {proj_dir}: {e}")
+                    if args.verbose:
+                        traceback.print_exc()
                     ok = False
                 if ok:
                     curs.execute(
@@ -953,6 +984,155 @@ def cmd_campaigns(args):
 
 
 # ---------------------------------------------------------------------------
+# `finalize` subcommand
+# ---------------------------------------------------------------------------
+
+def _load_output_pattern(toml_file, role):
+    """Return the output_pattern for *role* from the sibling meta.toml, or None."""
+    meta_path = Path(toml_file).parent / 'meta.toml'
+    if not meta_path.exists():
+        return None
+    meta = toml.load(meta_path)
+    for t in meta.get('toml', []):
+        if t['role'] == role:
+            return t.get('output_pattern')
+    return None
+
+
+def _sanitize_path_component(value):
+    """Replace path separators with '-' so a token value (e.g. a git tag
+    like 'release/v1.0.8') can't be misinterpreted as a directory
+    separator when substituted into an output filename."""
+    return value.replace('/', '-')
+
+
+def _apply_pattern(pattern, analysis, role, experiment, tag, date_str):
+    """Substitute % tokens in an output filename pattern.
+
+    Tokens: %a=analysis, %e=experiment, %t=tag, %r=role, %d=date(YYYYMMDD).
+    A trailing '#' signals single-output mode and is NOT substituted here;
+    the caller strips it after calling this function. Substituted values
+    are sanitized so that path separators (e.g. in a git tag like
+    'release/v1.0.8') don't get interpreted as directory separators.
+    """
+    return (pattern
+        .replace('%a', _sanitize_path_component(analysis))
+        .replace('%r', _sanitize_path_component(role))
+        .replace('%e', _sanitize_path_component(experiment))
+        .replace('%t', _sanitize_path_component(tag))
+        .replace('%d', _sanitize_path_component(date_str))
+    )
+
+
+def cmd_finalize(args):
+    """Merge per-project ROOT outputs into combined files using hadd."""
+    campaign_dir = _resolve_campaign(args)
+    date_str = datetime.now(timezone.utc).strftime('%Y%m%d')
+
+    with _open_db(campaign_dir) as (conn, curs):
+        curs.execute("SELECT tag FROM campaign_meta LIMIT 1")
+        row_meta = curs.fetchone()
+        tag = row_meta['tag'] if row_meta else 'unknown'
+
+        if args.experiment:
+            curs.execute(
+                "SELECT * FROM projects WHERE experiment = ? "
+                "ORDER BY analysis, role, experiment",
+                (args.experiment,),
+            )
+        else:
+            curs.execute("SELECT * FROM projects ORDER BY analysis, role, experiment")
+        rows = list(curs.fetchall())
+
+    if not rows:
+        print(f"{_TAG_FINALIZE} No projects matched.")
+        return
+
+    # Build the task list: one entry per hadd invocation.
+    # task = (row, out_path, input_glob, label)
+    tasks = []
+    W_AN, W_RO, W_EX, W_OUT = 28, 18, 10, 44
+    table_rows = []
+
+    for row in rows:
+        pattern = _load_output_pattern(row['toml_file'], row['role'])
+        if pattern is None:
+            pattern = '%a_%r_%e_%t_%d'
+
+        name = _apply_pattern(pattern, row['analysis'], row['role'],
+                              row['experiment'], tag, date_str)
+
+        single_output = name.endswith('#')
+        if single_output:
+            name = name[:-1]
+
+        proj_dir    = Path(row['project_dir'])
+        nosyst_glob = str(proj_dir / 'output' / 'output_jobid*.root')
+        syst_glob   = str(proj_dir / 'output' / 'output_systematics_jobid*.root')
+
+        if single_output:
+            out_nosyst = campaign_dir / f"{name}.root"
+            tasks.append((row, out_nosyst, nosyst_glob, 'nosyst'))
+            out_label = f"{name}.root"
+        else:
+            out_nosyst = campaign_dir / f"{name}_nosyst.root"
+            out_wsyst  = campaign_dir / f"{name}_wsyst.root"
+            tasks.append((row, out_nosyst, nosyst_glob, 'nosyst'))
+            tasks.append((row, out_wsyst,  syst_glob,   'wsyst'))
+            out_label = f"{name}_[no|w]syst.root"
+
+        table_rows.append([
+            _cell(row['analysis'],   W_AN, color=_A.MAGENTA),
+            _cell(row['role'],       W_RO),
+            _cell(row['experiment'], W_EX),
+            _cell(out_label,         W_OUT),
+        ])
+
+    _print_table(
+        ['Analysis', 'Role', 'Experiment', 'Output'],
+        [W_AN, W_RO, W_EX, W_OUT],
+        table_rows,
+    )
+    print(f"\n{_TAG_FINALIZE} {len(rows)} project(s), {len(tasks)} hadd invocation(s).")
+
+    if args.dry_run:
+        print(f"{_TAG_FINALIZE} Dry-run: no files created.")
+        return
+
+    resp = input(f"\n{_TAG_FINALIZE} Proceed with merging? [Y/N] ")
+    if resp.strip().lower() != 'y':
+        print(f"{_TAG_FINALIZE} Aborted.")
+        return
+
+    n_ok = 0
+    n_skipped = 0
+    for row, out_path, input_glob, label in tasks:
+        files = sorted(glob(input_glob))
+        if not files:
+            tag_str = f"{row['analysis']}/{row['role']}_{row['experiment']}"
+            if label == 'wsyst':
+                print(f"{_TAG_FINALIZE} {_A.YELLOW}Warning:{_A.RESET} "
+                      f"no systematics files for {tag_str}, skipping _wsyst.")
+            else:
+                print(f"{_TAG_FINALIZE} {_A.YELLOW}Warning:{_A.RESET} "
+                      f"no output files for {tag_str}, skipping.")
+            n_skipped += 1
+            continue
+
+        print(f"{_TAG_FINALIZE} hadd → {_A.CYAN}{out_path.name}{_A.RESET} "
+              f"({len(files)} input file(s))")
+        try:
+            subprocess.run(['hadd', '-f', str(out_path)] + files, check=True)
+            n_ok += 1
+        except subprocess.CalledProcessError as e:
+            print(f"{_TAG_FINALIZE} {_A.RED}Error:{_A.RESET} hadd failed for "
+                  f"{out_path.name}: {e}")
+            n_skipped += 1
+
+    print(f"\n{_TAG_FINALIZE} Done. {n_ok} file(s) created, {n_skipped} skipped.")
+
+
+# ---------------------------------------------------------------------------
 # CLI entry point
 # ---------------------------------------------------------------------------
 
@@ -1007,6 +1187,37 @@ def main():
     tgt_sync.add_argument('--name', metavar='NAME',
                           help='Registered short name (see campaigns subcommand)')
 
+    # -- finalize -------------------------------------------------------------
+    p_finalize = sub.add_parser(
+        'finalize',
+        help='Merge project outputs into combined ROOT files using hadd',
+        description=(
+            'Run hadd over each project\'s output files to produce combined ROOT files '
+            'in the campaign directory.\n\n'
+            'Output filenames are controlled by an output_pattern key in the [[toml]] '
+            'block of the analysis meta.toml.  Supported tokens:\n'
+            '  %a  analysis name\n'
+            '  %e  experiment name\n'
+            '  %t  campaign tag\n'
+            '  %r  role\n'
+            '  %d  date (YYYYMMDD)\n\n'
+            'Without a trailing "#", two files are produced per project:\n'
+            '  <pattern>_nosyst.root   (output_jobid*.root)\n'
+            '  <pattern>_wsyst.root    (output_systematics_jobid*.root)\n'
+            'With a trailing "#", only the nosyst merge is produced under <pattern>.root.'
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    tgt_finalize = p_finalize.add_mutually_exclusive_group(required=True)
+    tgt_finalize.add_argument('--campaign', metavar='PATH',
+                              help='Full path to the campaign directory')
+    tgt_finalize.add_argument('--name', metavar='NAME',
+                              help='Registered short name (see campaigns subcommand)')
+    p_finalize.add_argument('--experiment', metavar='EXP',
+                            help='Restrict finalization to one experiment')
+    p_finalize.add_argument('--dry-run', action='store_true',
+                            help='Print what would be merged without running hadd')
+
     # -- launch ---------------------------------------------------------------
     p_launch = sub.add_parser('launch', help='Launch pending campaign jobs')
     tgt_launch = p_launch.add_mutually_exclusive_group(required=True)
@@ -1018,6 +1229,10 @@ def main():
                           help='Restrict launch to one experiment')
     p_launch.add_argument('--relaunch', action='store_true',
                           help='Also relaunch projects already marked submitted')
+    p_launch.add_argument('--verbose', '-v', action='store_true',
+                          help='Show full jobsub_submit output (stdout/stderr) for every project, '
+                               'including successful submissions -- use this to catch per-job '
+                               'submission failures that do not fail the overall command')
     launch_grp = p_launch.add_mutually_exclusive_group()
     launch_grp.add_argument('--test', action='store_true',
                             help='Submit one job per project to verify setup')
@@ -1038,6 +1253,8 @@ def main():
         cmd_sync(args)
     elif args.command == 'launch':
         cmd_launch(args)
+    elif args.command == 'finalize':
+        cmd_finalize(args)
 
 
 if __name__ == '__main__':

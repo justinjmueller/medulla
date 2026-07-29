@@ -1,0 +1,99 @@
+[general]
+output = "sbn_numu_disappearance_2026"
+primfn = "lax_primary_classification"
+pidfn = "default_pid"
+fsthresh = [
+    "@photon_threshold",
+    "@electron_threshold",
+    "@muon_threshold",
+    "@pion_threshold",
+    "@proton_threshold",
+]
+
+[parameters]
+photon_threshold = 25.0
+electron_threshold = 25.0
+muon_threshold = 143.425
+pion_threshold = 25.0
+proton_threshold = 50.0
+pi0_mass_veto_low = 60.0
+pi0_mass_veto_high = 300.0
+
+[[sample]]
+name = "sbnd_mc5e18"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/simulation/mc5e18/*-reweighted.flat.caf.root"
+ismc = true
+
+[[sample]]
+name = "sbnd_bnblight"
+path = "/pnfs/sbnd/persistent/users/mueller/MCP2025B/data/devsample/*.flat.root"
+ismc = false
+
+[[sample]]
+name = "sbnd_mc1e20"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/mc_MCP2025C_1e20_v10_06_00_09_prodgenie_corsika_proton_rockbox_sbnd_CV_caf_sbnd/*/00/caf-*.flat.caf.root"
+ismc = true
+disable = true
+
+[[tree]]
+name = "selected_muons"
+sim_only = false
+add_systematics = true
+mode = "reco"
+cut = [
+    { name = "fiducial_cut",          type = "reco" },
+    { name = "no_photons",            type = "reco",  parameters = [ "@photon_threshold"   ] },
+    { name = "no_electrons",          type = "reco",  parameters = [ "@electron_threshold" ] },
+    { name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold"     ] },
+    { name = "no_charged_pions",      type = "reco",  parameters = [ "@pion_threshold"     ] },
+    { name = "!no_protons",           type = "reco",  parameters = [ "@proton_threshold"   ] },
+    { name = "is_primary",            type = "reco_particle" },
+    { name = "is_pid",                type = "reco_particle", parameters = [ 2 ] },
+]
+branch = [
+    { name = "id",                    type = "reco_particle" },
+    { name = "mcs_csda_diff",         type = "reco_particle" },
+    { name = "calo_csda_diff",        type = "reco_particle" },
+]
+
+[[tree]]
+name = "selected_protons"
+sim_only = false
+add_systematics = true
+mode = "reco"
+cut = [
+    { name = "fiducial_cut",          type = "reco" },
+    { name = "no_photons",            type = "reco",  parameters = [ "@photon_threshold"   ] },
+    { name = "no_electrons",          type = "reco",  parameters = [ "@electron_threshold" ] },
+    { name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold"     ] },
+    { name = "no_charged_pions",      type = "reco",  parameters = [ "@pion_threshold"     ] },
+    { name = "!no_protons",           type = "reco",  parameters = [ "@proton_threshold"   ] },
+    { name = "is_primary",            type = "reco_particle" },
+    { name = "is_pid",                type = "reco_particle", parameters = [ 4 ] },
+]
+branch = [
+    { name = "id",                    type = "reco_particle" },
+    { name = "mcs_csda_diff",         type = "reco_particle" },
+    { name = "calo_csda_diff",        type = "reco_particle" },
+]
+
+[[tree]]
+name = "selected_pi0s"
+mode = "reco"
+sim_only = false
+cut = [
+    {name = "fiducial_cut",              type = "reco"},
+    {name = "avoid_icarus_mystery_zgap", type = "reco"},
+    {name = "single_muon",               type = "reco",  parameters = ["@muon_threshold"]},
+    {name = "no_charged_pions",          type = "reco",  parameters = ["@pion_threshold"]},
+    {name = "two_photons",               type = "reco",  parameters = ["@photon_threshold"]},
+    {name = "valid_pi0_mass_cut",        type = "reco",  parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+]
+branch = [
+    {name = "pi0_invariant_mass",   type = "reco_bivar", biselector = "pi0_photon_pair"},
+    {name = "pi0_opening_costheta", type = "reco_bivar", biselector = "pi0_photon_pair"},
+    {name = "leading_ke",           type = "reco_bivar", biselector = "pi0_photon_pair"},
+    {name = "subleading_ke",        type = "reco_bivar", biselector = "pi0_photon_pair"},
+    {name = "leading_id",           type = "reco_bivar", biselector = "pi0_photon_pair"},
+    {name = "subleading_id",        type = "reco_bivar", biselector = "pi0_photon_pair"}
+]

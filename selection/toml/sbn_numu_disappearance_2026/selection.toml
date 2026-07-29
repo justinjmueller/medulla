@@ -18,13 +18,16 @@ pion_threshold = 25.0
 proton_threshold = 50.0
 
 [[include_samples]]
-file = "common/samples.toml"
+file = "common/osc.toml"
 keys = [
-    "sbnd_mc5e18", "sbnd_mc1e20", "sbnd_offbeam",
-    "icarus_nominal", "icarus_cvext", "icarus_offbeam",
+    "sbnd_ar23p_mc5e18", "sbnd_ar23p_mc1e20",
+    "sbnd_ar23p_dirt",
+    "sbnd_offbeam",
+    "icarus_ar23p_run4",
+    "icarus_offbeam_run4",
 ]
 # For interactive debugging, uncomment:
-# enable = ["sbnd_mc5e18"]
+enable = ["sbnd_ar23p_mc5e18"]
 
 [[tree]]
 name = "selected"
@@ -92,12 +95,16 @@ branch = [
     { name = "length",                type = "reco_particle", selector = "leading_muon" },
     { name = "polar_angle",           type = "both_particle", selector = "leading_muon" },
     { name = "azimuthal_angle",       type = "both_particle", selector = "leading_muon" },
+    { name = "azimuthal_angle_dent",  type = "both_particle", selector = "leading_muon" },
     { name = "primary_softmax",       type = "reco_particle", selector = "leading_muon" },
     { name = "muon_softmax",          type = "reco_particle", selector = "leading_muon" },
     { name = "pion_softmax",          type = "reco_particle", selector = "leading_muon" },
     { name = "proton_softmax",        type = "reco_particle", selector = "leading_muon" },
 
     # Leading PROTON interaction-level
+    { name = "start_x",           type = "both_particle", selector = "leading_proton" },
+    { name = "start_y",           type = "both_particle", selector = "leading_proton" },
+    { name = "start_z",           type = "both_particle", selector = "leading_proton" },
     { name = "end_x",             type = "both_particle", selector = "leading_proton" },
     { name = "end_y",             type = "both_particle", selector = "leading_proton" },
     { name = "end_z",             type = "both_particle", selector = "leading_proton" },
@@ -108,6 +115,7 @@ branch = [
     { name = "dpT",               type = "both_particle", selector = "leading_proton" },
     { name = "polar_angle",       type = "both_particle", selector = "leading_proton" },
     { name = "azimuthal_angle",   type = "both_particle", selector = "leading_proton" },
+    { name = "azimuthal_angle_dent", type = "both_particle", selector = "leading_proton" },
     { name = "primary_softmax",   type = "reco_particle", selector = "leading_proton" },
     { name = "secondary_softmax", type = "reco_particle", selector = "leading_proton" },
     { name = "muon_softmax",      type = "reco_particle", selector = "leading_proton" },
@@ -182,6 +190,7 @@ branch = [
     { name = "length",                type = "reco_particle", selector = "leading_muon" },
     { name = "polar_angle",           type = "both_particle", selector = "leading_muon" },
     { name = "azimuthal_angle",       type = "both_particle", selector = "leading_muon" },
+    { name = "azimuthal_angle_dent",  type = "both_particle", selector = "leading_muon" },
     { name = "primary_softmax",       type = "reco_particle", selector = "leading_muon" },
     { name = "muon_softmax",          type = "reco_particle", selector = "leading_muon" },
     { name = "pion_softmax",          type = "reco_particle", selector = "leading_muon" },
@@ -189,6 +198,9 @@ branch = [
     { name = "mip_softmax",           type = "reco_particle", selector = "leading_muon" },
 
     # Leading PROTON particle-level
+    { name = "start_x",           type = "both_particle", selector = "leading_proton" },
+    { name = "start_y",           type = "both_particle", selector = "leading_proton" },
+    { name = "start_z",           type = "both_particle", selector = "leading_proton" },
     { name = "end_x",             type = "both_particle", selector = "leading_proton" },
     { name = "end_y",             type = "both_particle", selector = "leading_proton" },
     { name = "end_z",             type = "both_particle", selector = "leading_proton" },
@@ -199,6 +211,7 @@ branch = [
     { name = "dpT",               type = "both_particle", selector = "leading_proton" },
     { name = "polar_angle",       type = "both_particle", selector = "leading_proton" },
     { name = "azimuthal_angle",   type = "both_particle", selector = "leading_proton" },
+    { name = "azimuthal_angle_dent", type = "both_particle", selector = "leading_proton" },
     { name = "primary_softmax",   type = "reco_particle", selector = "leading_proton" },
     { name = "secondary_softmax", type = "reco_particle", selector = "leading_proton" },
     { name = "muon_softmax",      type = "reco_particle", selector = "leading_proton" },

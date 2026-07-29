@@ -316,6 +316,8 @@ int match_conditions(const std::vector<row_t> & rows, const std::vector<conditio
 }
 
 // Explicit template instantiations for the functions defined above.
+template caf::SRParticleDLP generate_particle<caf::SRParticleDLP>(int64_t, int64_t);
+template caf::SRParticleTruthDLP generate_particle<caf::SRParticleTruthDLP>(int64_t, int64_t);
 template caf::SRInteractionDLP generate_interaction<caf::SRInteractionDLP>(int64_t, int64_t, multiplicity_t, bool);
 template caf::SRInteractionTruthDLP generate_interaction<caf::SRInteractionTruthDLP>(int64_t, int64_t, multiplicity_t, bool);
 template void pair<caf::SRInteractionDLP, caf::SRInteractionTruthDLP>(caf::SRInteractionDLP &, caf::SRInteractionTruthDLP &);

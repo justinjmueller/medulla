@@ -309,6 +309,55 @@ int main(int argc, char * argv[])
         mark_contained(&rec->dlp[0]);
         write_event(rec, 1, 1, 1, pot, nevt, t);
 
+        /**
+         * @brief Generate events to test the longest/second/third longest
+         * track selectors and the track_multiplicity cut (Run=3).
+         * @details
+         * - ELT00: An interaction with three primary tracks of decreasing
+         *   length (30, 20, 10 cm), a longer secondary track (50 cm,
+         *   is_primary=false), and a longer primary shower (100 cm,
+         *   shape=0/shower). Only the three primary tracks should be
+         *   ranked by the longest/second/third longest track selectors;
+         *   the secondary track and the primary shower must be excluded.
+         *   track_multiplicity with a threshold of 3 should pass (exactly
+         *   3 qualifying primary tracks).
+         *
+         * - ELT01: An interaction with only two primary tracks (30, 20 cm).
+         *   The longest/second-longest selectors should still resolve, but
+         *   there is no third track, so the third-longest-track tree
+         *   should have no entry for this event. track_multiplicity with a
+         *   threshold of 3 should fail.
+         */
+        // ELT00
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {0, 0, 0, 0, 0}));
+        rec->dlp[0].particles.push_back(generate_particle<caf::SRParticleDLP>(0, 2));
+        rec->dlp[0].particles.back().shape = 1;
+        rec->dlp[0].particles.back().length = 30.0;
+        rec->dlp[0].particles.push_back(generate_particle<caf::SRParticleDLP>(1, 2));
+        rec->dlp[0].particles.back().shape = 1;
+        rec->dlp[0].particles.back().length = 20.0;
+        rec->dlp[0].particles.push_back(generate_particle<caf::SRParticleDLP>(2, 4));
+        rec->dlp[0].particles.back().shape = 1;
+        rec->dlp[0].particles.back().length = 10.0;
+        rec->dlp[0].particles.push_back(generate_particle<caf::SRParticleDLP>(3, 2));
+        rec->dlp[0].particles.back().shape = 1;
+        rec->dlp[0].particles.back().length = 50.0;
+        rec->dlp[0].particles.back().is_primary = false;
+        rec->dlp[0].particles.push_back(generate_particle<caf::SRParticleDLP>(4, 0));
+        rec->dlp[0].particles.back().shape = 0;
+        rec->dlp[0].particles.back().length = 100.0;
+        write_event(rec, 3, 0, 0, pot, nevt, t);
+
+        // ELT01
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {0, 0, 0, 0, 0}));
+        rec->dlp[0].particles.push_back(generate_particle<caf::SRParticleDLP>(0, 2));
+        rec->dlp[0].particles.back().shape = 1;
+        rec->dlp[0].particles.back().length = 30.0;
+        rec->dlp[0].particles.push_back(generate_particle<caf::SRParticleDLP>(1, 2));
+        rec->dlp[0].particles.back().shape = 1;
+        rec->dlp[0].particles.back().length = 20.0;
+        write_event(rec, 3, 0, 1, pot, nevt, t);
+
         // Write the tree and histograms to the file.
         t->Write();
         pot->Write();
@@ -1406,6 +1455,84 @@ int main(int argc, char * argv[])
         // Check if each condition_t entry is present in the rows vector.
         total_failures += match_conditions(rows, conditions);
         } // group sim_truth_mctruth
+
+        /**
+         * @brief The eleventh set of events to validate is the "data-like"
+         * ELT events and the response of the framework's longest/second/
+         * third longest track selectors and track_multiplicity cut.
+         *
+         * - ELT00_LONGEST/ELT01_LONGEST: The longest_track selector picks
+         *   the 30 cm primary track in both events, correctly excluding the
+         *   50 cm secondary track and the 100 cm primary shower in ELT00.
+         *
+         * - ELT00_SECOND/ELT01_SECOND: The second_longest_track selector
+         *   picks the 20 cm primary track in both events.
+         *
+         * - ELT00_THIRD: The third_longest_track selector picks the 10 cm
+         *   primary track in ELT00, which has three qualifying tracks.
+         *
+         * - !ELT01_THIRD: ELT01 only has two qualifying primary tracks, so
+         *   is_third_longest_track fails and the event is absent from the
+         *   third-longest-track tree.
+         *
+         * - ELT00_MULT: ELT00 has exactly three qualifying primary tracks,
+         *   so track_multiplicity with a threshold of 3 passes.
+         *
+         * - !ELT01_MULT: ELT01 only has two qualifying primary tracks, so
+         *   track_multiplicity with a threshold of 3 fails.
+         */
+        if(group.empty() || group == "data_reco_track_selectors")
+        {
+        std::cout << "\n\033[1mData-like events with longest/second/third longest track selectors \033[0m" << std::endl;
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_datalike/test_reco_longest_track");
+
+        // Expected results for validation.
+        conditions = {
+            {"ELT00_LONGEST", {{"Run", 3}, {"Subrun", 0}, {"Evt", 0}, {"reco_longest_track_length", 30.0}}},
+            {"ELT01_LONGEST", {{"Run", 3}, {"Subrun", 0}, {"Evt", 1}, {"reco_longest_track_length", 30.0}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        total_failures += match_conditions(rows, conditions);
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_datalike/test_reco_second_longest_track");
+
+        // Expected results for validation.
+        conditions = {
+            {"ELT00_SECOND", {{"Run", 3}, {"Subrun", 0}, {"Evt", 0}, {"reco_second_longest_track_length", 20.0}}},
+            {"ELT01_SECOND", {{"Run", 3}, {"Subrun", 0}, {"Evt", 1}, {"reco_second_longest_track_length", 20.0}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        total_failures += match_conditions(rows, conditions);
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_datalike/test_reco_third_longest_track");
+
+        // Expected results for validation.
+        conditions = {
+            {"ELT00_THIRD", {{"Run", 3}, {"Subrun", 0}, {"Evt", 0}, {"reco_third_longest_track_length", 10.0}}},
+            {"!ELT01_THIRD", {{"Run", 3}, {"Subrun", 0}, {"Evt", 1}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        total_failures += match_conditions(rows, conditions);
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_datalike/test_reco_track_multiplicity");
+
+        // Expected results for validation.
+        conditions = {
+            {"ELT00_MULT", {{"Run", 3}, {"Subrun", 0}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
+            {"!ELT01_MULT", {{"Run", 3}, {"Subrun", 0}, {"Evt", 1}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        total_failures += match_conditions(rows, conditions);
+        } // group data_reco_track_selectors
 
         // Finished!
         std::cout << "\n\033[1m---        DONE        ---\033[0m" << std::endl;

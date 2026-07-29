@@ -901,6 +901,25 @@ namespace pvars
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, azimuthal_angle, azimuthal_angle);
 
     /**
+     * @brief Variable for the azimuthal angle of the particle (Dent
+     * convention).
+     * @details The azimuthal angle is defined as the arctangent of the x-
+     * and y-components of the momentum vector, measured from the y-axis
+     * towards the x-axis. That is, phi = 0 points along +Y, phi = +90
+     * degrees points along +X, phi = -90 degrees points along -X, and
+     * phi = +-180 degrees points along -Y.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the azimuthal angle of the particle in the Dent convention.
+     */
+    template<class T>
+    double azimuthal_angle_dent(const T & p)
+    {
+        return std::atan2(p.start_dir[0], p.start_dir[1]);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, azimuthal_angle_dent, azimuthal_angle_dent);
+
+    /**
      * @brief Variable for the start dE/dx of the particle.
      * @details The start dE/dx is calculated upstream in the SPINE
      * reconstruction using the segment of the track near the start point.

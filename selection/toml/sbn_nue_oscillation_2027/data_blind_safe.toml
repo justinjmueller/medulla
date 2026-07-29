@@ -64,6 +64,7 @@ branch = [
 
     # Leading ELECTRON interaction-level
     { name = "azimuthal_angle",                type = "reco_particle", selector = "leading_electron" },
+    { name = "azimuthal_angle_dent",           type = "reco_particle", selector = "leading_electron" },
     { name = "dpT",                            type = "reco_particle", selector = "leading_electron" },
     { name = "vertex_distance",                type = "reco_particle", selector = "leading_electron" },
     { name = "electron_softmax",               type = "reco_particle", selector = "leading_electron" },
@@ -86,6 +87,7 @@ branch = [
     { name = "length",                         type = "reco_particle", selector = "leading_proton" },
     { name = "polar_angle",                    type = "reco_particle", selector = "leading_proton" },
     { name = "azimuthal_angle",                type = "reco_particle", selector = "leading_proton" },
+    { name = "azimuthal_angle_dent",           type = "reco_particle", selector = "leading_proton" },
     { name = "primary_softmax",                type = "reco_particle", selector = "leading_proton" },
     { name = "muon_softmax",                   type = "reco_particle", selector = "leading_proton" },
     { name = "pion_softmax",                   type = "reco_particle", selector = "leading_proton" },
