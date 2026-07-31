@@ -32,6 +32,9 @@
 #include "selectors.h"
 #include "biselectors.h"
 #include "analysis.h"
+#include "pi0ana/cuts_pi0ana.h"
+#include "pi0ana/variables_pi0ana.h"
+#include "pi0ana/utilities_pi0ana.h"
 
 std::shared_ptr<VarFn<RParticleType>> pvars::primfn = std::make_shared<VarFn<RParticleType>>(pvars::default_primary_classification<RParticleType>);
 std::shared_ptr<VarFn<RParticleType>> pvars::pidfn  = std::make_shared<VarFn<RParticleType>>(pvars::default_pid<RParticleType>);
