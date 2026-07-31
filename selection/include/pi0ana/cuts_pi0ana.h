@@ -101,22 +101,6 @@ namespace cuts::pi0ana
     REGISTER_CUT_SCOPE(RegistrationScope::Both, leading_photon_ke_cut, leading_photon_ke_cut);
     
     /**
-     * @brief Apply pi0 mass cut.
-     * @details This function applies a cut on the invariant diphoton mass
-     * of the interactions two most energetic photons.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to select on.
-     * @return true if the interaction passes the pi0 mass cut.
-     */
-    template<class T>
-    bool valid_pi0_mass_cut(const T & obj, std::vector<double> params = {})
-    {
-        pi0 s = utilities_pi0ana::pi0_info(obj);
-	      return s.mass < params[0];
-    }
-    REGISTER_CUT_SCOPE(RegistrationScope::Both, valid_pi0_mass_cut, valid_pi0_mass_cut);
-
-    /**
      * @brief Apply single pi0 cut in truth
      * @details This function applies a cut on the number of 
      * of primary neutral pions in the interaction at the truth level.
