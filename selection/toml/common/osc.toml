@@ -1,0 +1,130 @@
+# ══════════════════════════════════════════════════════════════════════
+# Centralized catalog of samples employed in First Generation joint
+# oscillation analyses.
+# 
+# Each [[sample]] block has two layers of fields:
+#   (1) Operational fields: consumed by the C++ selection code and
+#       the Python batch system (name, path, ismc, disable).
+#   (2) Metadata fields: provenance and bookkeeping information
+#       ignored by the C++ code but used by the campaign system
+#       and stored for reproducibility.
+#
+# The 'key' and 'experiment' fields are metadata for the Python
+# campaign tooling and are ignored by the C++ selection executable.
+# ══════════════════════════════════════════════════════════════════════
+
+# ─── SBND Run 1 Samples ───────────────────────────────────────────────
+
+[[sample]]
+key = "sbnd_ar23p_mc5e18"
+name = "sbnd"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/mc_MCP2025B_5e18_v10_06_00_09_prodgenie_corsika_proton_rockbox_sbnd_CV_caf_sbnd/*/*/*ar23p.flat.caf.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND central value MC of sufficient statistics to accompany a 5e18 POT dataset. Includes development version of AR23+ systematics."
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.6.0"
+  spine_config = "full_chain_co_250901.yaml"
+
+[[sample]]
+key = "sbnd_ar23p_mc1e20"
+name = "sbnd"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/mc_MCP2025C_1e20_v10_06_00_09_prodgenie_corsika_proton_rockbox_sbnd_CV_caf_sbnd/*/*/*ar23p.flat.caf.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND central value MC of sufficient statistics to accompany a 1e20 POT dataset. Includes development version of AR23+ systematics."
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.6.0"
+  spine_config = "full_chain_co_250901.yaml"
+
+[[sample]]
+key = "sbnd_ar23p_dirt"
+name = "sbnd_dirt"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/mc_MCP2025B_v10_06_00_09_prodgenie_corsika_proton_rockbox_lowenergydirt_sbnd_CV_caf_sbnd/*/*/*ar23p.flat.caf.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND Low-energy Dirt MC of sufficient statistics to accompany a 1e20 POT dataset. Includes development version of AR23+ systematics."
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.6.0"
+  spine_config = "full_chain_co_250901.yaml"
+
+[[sample]]
+key = "sbnd_offbeam"
+name = "sbnd_offbeam"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/data_MCP2025C_Spring25_reprocess_Intime_offbeamlight_v10_06_00_09_caf_sbnd/*/*/*flat.caf.root"
+ismc = false
+
+  [sample.metadata]
+  description = "SBND BNB off-beam+light."
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.6.0"
+  spine_config = "full_chain_co_250901.yaml"
+
+[[sample]]
+key = "sbnd_bnblight"
+name = "sbnd_bnblight"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/data_MCP2025C_Spring25_reprocess_FixedDev_bnblight_v10_06_00_09_caf_sbnd/*/*/*flat.caf.root"
+ismc = false
+
+  [sample.metadata]
+  description = "SBND BNB on-beam+light fixed development sample."
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.6.0"
+  spine_config = "full_chain_co_250901.yaml"
+
+# ─── ICARUS Run 4 Samples ─────────────────────────────────────────────
+
+[[sample]]
+key = "icarus_ar23p_run4"
+name = "icarus"
+experiment = "icarus"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4_CVMC_ReCAF2026_BNB/*/*/*ar23p.flat.caf.root"
+ismc = true
+
+  [sample.metadata]
+  description = "ICARUS overlay central value MC for Run 4. Includes development version of AR23+ systematics."
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_12"
+  spine_production = "v0.10.3"
+  spine_config = "full_chain_co_260501.yaml"
+
+[[sample]]
+key = "icarus_offbeam_run4"
+name = "icarus_offbeam_run4"
+experiment = "icarus"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4BeamOffWF_BNB_data_ReCAF2026/*/*/*flat.caf.root"
+ismc = false
+
+  [sample.metadata]
+  description = "ICARUS BNB off-beam+light Run 4."
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_12"
+  spine_production = "v0.10.3"
+  spine_config = "full_chain_co_260501.yaml"
+
+[[sample]]
+key = "icarus_bnblight_run4"
+name = "icarus_bnblight_run4"
+experiment = "icarus"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4BeamOnWF_BNB_data_ReCAF2026/*/*/*flat.caf.root"
+ismc = false
+
+  [sample.metadata]
+  description = "ICARUS BNB on-beam+light Run 4."
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_12"
+  spine_production = "v0.10.3"
+  spine_config = "full_chain_co_260501.yaml"

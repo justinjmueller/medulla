@@ -1,0 +1,62 @@
+[meta]
+analysis = "sbn_numu_disappearance_2026"
+description = "SBN numu disappearance oscillation analysis"
+owners = ["mueller", "dtotani", "msiden"]
+experiments = ["sbnd", "icarus"]
+
+[defaults]
+batch_size = 25
+
+[[toml]]
+role = "primary"
+file = "selection.toml"
+sys_template = "sys.toml"
+output_pattern = "spineosc_numu_%e_%t"
+
+  [toml.enable.sbnd]
+  keys = ["sbnd_ar23p_mc5e18", "sbnd_ar23p_mc1e20", "sbnd_offbeam"]
+
+  [toml.enable.icarus]
+  keys = ["icarus_ar23p_run4", "icarus_offbeam_run4"]
+
+[[toml]]
+role = "dirt"
+file = "selection.toml"
+sys_template = "sys.toml"
+output_pattern = "spineosc_numu_%e_%t_dirt"
+
+  [toml.enable.sbnd]
+  keys = ["sbnd_ar23p_dirt",]
+
+[[toml]]
+role = "data_blind_safe"
+file = "data_blind_safe.toml"
+output_pattern = "spineosc_numu_%e_%t_bnblight#"
+
+  [toml.enable.sbnd]
+  keys = ["sbnd_bnblight"]
+
+  [toml.enable.icarus]
+  keys = ["icarus_bnblight_run4"]
+
+[[toml]]
+role = "data_quality"
+file = "data_quality.toml"
+experiments = ["sbnd"]
+
+  [toml.enable.sbnd]
+  keys = ["sbnd_offbeam",]
+
+  [toml.enable.icarus]
+  keys = ["icarus_offbeam_run4",]
+
+[[toml]]
+role = "preselection"
+file = "preselection.toml"
+output_pattern = "spineosc_numu_%e_%t_preselection#"
+
+  [toml.enable.sbnd]
+  keys = ["sbnd_ar23p_mc5e18", "sbnd_ar23p_mc1e20", "sbnd_offbeam", "sbnd_bnblight"]
+
+  [toml.enable.icarus]
+  keys = ["icarus_ar23p_run4", "icarus_offbeam_run4", "icarus_bnblight_run4"]

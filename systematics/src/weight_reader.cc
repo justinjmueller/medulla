@@ -28,6 +28,29 @@ sys::WeightReader::WeightReader(const std::string & input)
   idx(0),
   progress_started(false)
 {
+    // ROOT's TChain::Add() only expands a wildcard within the final path
+    // component (the filename), matched via a directory listing of a
+    // literal, non-wildcarded parent directory. A '*' in an intermediate
+    // directory component is not expanded -- TChain will try to literally
+    // open a directory with an asterisk in its name, match zero files, and
+    // fail silently. Multiple '*' within the filename component itself are
+    // fine (e.g. "*ar23p*.flat.caf.root"), so we only need to check the
+    // directory portion of the path, not the whole string.
+    size_t last_slash = input.find_last_of('/');
+    if(last_slash != std::string::npos)
+    {
+        std::string dirpart = input.substr(0, last_slash);
+        if(dirpart.find('*') != std::string::npos)
+        {
+            throw std::invalid_argument(
+                "WeightReader: A '*' wildcard in a directory component of the input "
+                "path is not supported by ROOT TChain (only the final filename "
+                "component can be a wildcard pattern). Use a '.txt' file listing "
+                "resolved paths instead."
+            );
+        }
+    }
+
     if(input.find("*") != std::string::npos)
     {
         // Input is a pattern for a set of files
@@ -40,8 +63,10 @@ sys::WeightReader::WeightReader(const std::string & input)
         std::ifstream infile(input);
         std::string line;
         while(std::getline(infile, line))
+        {
             chain.Add(line.c_str());
-        isflat = line.find("flat") != std::string::npos;
+            isflat = line.find("flat") != std::string::npos;
+        }
     }
     else
     {

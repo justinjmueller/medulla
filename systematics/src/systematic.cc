@@ -12,7 +12,7 @@
 #include "TTree.h"
 
 // Construct a new Systematic object.
-sys::Systematic::Systematic(cfg::ConfigurationTable & table, TTree * t)
+sys::Systematic::Systematic(cfg::ConfigurationTable & table, TTree * t, std::vector<double> default_clip)
     : name(table.get_string_field("name")),
       index(table.get_int_field("index")),
       type(table.get_string_field("type") == "multisim" ? Type::kMULTISIM : table.get_string_field("type") == "multisigma" ? Type::kMULTISIGMA : Type::kVARIATION),
@@ -34,6 +34,18 @@ sys::Systematic::Systematic(cfg::ConfigurationTable & table, TTree * t)
             scale = table.get_double_vector("scale");
         else
             scale = std::vector<double>(points.size(), 1);
+    }
+
+    std::vector<double> clip_vals = table.has_field("clip") ? table.get_double_vector("clip") : default_clip;
+    if(clip_vals.size() >= 2)
+    {
+        clip_min = clip_vals[0];
+        clip_max = clip_vals[1];
+    }
+    else
+    {
+        clip_min = -std::numeric_limits<double>::infinity();
+        clip_max =  std::numeric_limits<double>::infinity();
     }
 }
 
@@ -65,4 +77,10 @@ std::vector<double> * & sys::Systematic::get_weights()
 std::vector<double> * & sys::Systematic::get_nsigma()
 {
     return nsigma;
+}
+
+// Clip a weight to the configured [min, max] range.
+double sys::Systematic::clip(double weight) const
+{
+    return std::clamp(weight, clip_min, clip_max);
 }

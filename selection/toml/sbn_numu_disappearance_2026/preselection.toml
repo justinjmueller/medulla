@@ -1,0 +1,126 @@
+[general]
+output = "sbn_numu_disappearance_2026"
+primfn = "lax_primary_classification"
+pidfn = "default_pid"
+fsthresh = [
+    "@photon_threshold",
+    "@electron_threshold",
+    "@muon_threshold",
+    "@pion_threshold",
+    "@proton_threshold",
+]
+
+[parameters]
+photon_threshold = 25.0
+electron_threshold = 25.0
+muon_threshold = 143.425
+pion_threshold = 25.0
+proton_threshold = 50.0
+
+[[include_samples]]
+file = "common/osc.toml"
+keys = [
+    "sbnd_ar23p_mc5e18", "sbnd_ar23p_mc1e20",
+    "sbnd_ar23p_dirt",
+    "sbnd_offbeam",
+    "icarus_ar23p_run4",
+    "icarus_offbeam_run4",
+]
+# For interactive debugging, uncomment:
+# enable = ["sbnd_mc5e18"]
+
+[[tree]]
+name = "longest_track"
+sim_only = false
+mode = "reco"
+cut = [
+    { name = "fiducial_cut",        type = "reco" },
+    { name = "track_multiplicity",  type = "reco", parameters = [ 2 ] },
+    { name = "is_longest_track",    type = "reco" },
+]
+branch = [
+    { name = "start_x",                type = "both_particle", selector = "longest_track" },
+    { name = "start_y",                type = "both_particle", selector = "longest_track" },
+    { name = "start_z",                type = "both_particle", selector = "longest_track" },
+    { name = "end_x",                  type = "both_particle", selector = "longest_track" },
+    { name = "end_y",                  type = "both_particle", selector = "longest_track" },
+    { name = "end_z",                  type = "both_particle", selector = "longest_track" },
+    { name = "start_dir_x",            type = "both_particle", selector = "longest_track" },
+    { name = "start_dir_y",            type = "both_particle", selector = "longest_track" },
+    { name = "start_dir_z",            type = "both_particle", selector = "longest_track" },
+    { name = "azimuthal_angle",        type = "both_particle", selector = "longest_track" },
+    { name = "azimuthal_angle_dent",   type = "both_particle", selector = "longest_track" },
+    { name = "pid",                    type = "both_particle", selector = "longest_track" },
+    { name = "primary_classification", type = "both_particle", selector = "longest_track" },
+    { name = "primary_softmax",        type = "reco_particle", selector = "longest_track" },
+    { name = "secondary_softmax",      type = "reco_particle", selector = "longest_track" },
+    { name = "muon_softmax",           type = "reco_particle", selector = "longest_track" },
+    { name = "pion_softmax",           type = "reco_particle", selector = "longest_track" },
+    { name = "proton_softmax",         type = "reco_particle", selector = "longest_track" },
+    { name = "mip_softmax",            type = "reco_particle", selector = "longest_track" },
+    { name = "hadron_softmax",         type = "reco_particle", selector = "longest_track" },
+]
+
+[[tree]]
+name = "second_longest_track"
+sim_only = false
+mode = "reco"
+cut = [
+    { name = "fiducial_cut",             type = "reco" },
+    { name = "track_multiplicity",       type = "reco", parameters = [ 2 ] },
+    { name = "is_second_longest_track",  type = "reco" },
+]
+branch = [
+    { name = "start_x",                type = "both_particle", selector = "longest_track" },
+    { name = "start_y",                type = "both_particle", selector = "longest_track" },
+    { name = "start_z",                type = "both_particle", selector = "longest_track" },
+    { name = "end_x",                  type = "both_particle", selector = "longest_track" },
+    { name = "end_y",                  type = "both_particle", selector = "longest_track" },
+    { name = "end_z",                  type = "both_particle", selector = "longest_track" },
+    { name = "start_dir_x",            type = "both_particle", selector = "longest_track" },
+    { name = "start_dir_y",            type = "both_particle", selector = "longest_track" },
+    { name = "start_dir_z",            type = "both_particle", selector = "longest_track" },
+    { name = "azimuthal_angle",        type = "both_particle", selector = "longest_track" },
+    { name = "azimuthal_angle_dent",   type = "both_particle", selector = "longest_track" },
+    { name = "pid",                    type = "both_particle", selector = "longest_track" },
+    { name = "primary_classification", type = "both_particle", selector = "longest_track" },
+    { name = "primary_softmax",        type = "reco_particle", selector = "longest_track" },
+    { name = "secondary_softmax",      type = "reco_particle", selector = "longest_track" },
+    { name = "muon_softmax",           type = "reco_particle", selector = "longest_track" },
+    { name = "pion_softmax",           type = "reco_particle", selector = "longest_track" },
+    { name = "proton_softmax",         type = "reco_particle", selector = "longest_track" },
+    { name = "mip_softmax",            type = "reco_particle", selector = "longest_track" },
+    { name = "hadron_softmax",         type = "reco_particle", selector = "longest_track" },
+]
+
+[[tree]]
+name = "third_longest_track"
+sim_only = false
+mode = "reco"
+cut = [
+    { name = "fiducial_cut",            type = "reco" },
+    { name = "track_multiplicity",      type = "reco", parameters = [ 2 ] },
+    { name = "is_third_longest_track",  type = "reco" },
+]
+branch = [
+    { name = "start_x",                type = "both_particle", selector = "longest_track" },
+    { name = "start_y",                type = "both_particle", selector = "longest_track" },
+    { name = "start_z",                type = "both_particle", selector = "longest_track" },
+    { name = "end_x",                  type = "both_particle", selector = "longest_track" },
+    { name = "end_y",                  type = "both_particle", selector = "longest_track" },
+    { name = "end_z",                  type = "both_particle", selector = "longest_track" },
+    { name = "start_dir_x",            type = "both_particle", selector = "longest_track" },
+    { name = "start_dir_y",            type = "both_particle", selector = "longest_track" },
+    { name = "start_dir_z",            type = "both_particle", selector = "longest_track" },
+    { name = "azimuthal_angle",        type = "both_particle", selector = "longest_track" },
+    { name = "azimuthal_angle_dent",   type = "both_particle", selector = "longest_track" },
+    { name = "pid",                    type = "both_particle", selector = "longest_track" },
+    { name = "primary_classification", type = "both_particle", selector = "longest_track" },
+    { name = "primary_softmax",        type = "reco_particle", selector = "longest_track" },
+    { name = "secondary_softmax",      type = "reco_particle", selector = "longest_track" },
+    { name = "muon_softmax",           type = "reco_particle", selector = "longest_track" },
+    { name = "pion_softmax",           type = "reco_particle", selector = "longest_track" },
+    { name = "proton_softmax",         type = "reco_particle", selector = "longest_track" },
+    { name = "mip_softmax",            type = "reco_particle", selector = "longest_track" },
+    { name = "hadron_softmax",         type = "reco_particle", selector = "longest_track" },
+]

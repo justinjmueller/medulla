@@ -12,6 +12,7 @@
 #define EVENT_VARIABLES_H
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
 #include "sbnanaobj/StandardRecord/SRBNBInfo.h"
+#include "sbnanaobj/StandardRecord/SRNuMIInfo.h"
 //#include "sbnana/SBNAna/Vars/BNBVars.h"
 
 #include "framework.h"
@@ -28,6 +29,18 @@
  */
 std::vector<std::tuple<uint32_t, double>> global_bnb_info;
 size_t global_bnb_event_number = 0;
+
+/**
+ * @brief Global vector to store NuMI information across events.
+ * @details This vector is used to store the NuMI information across events,
+ * which is necessary for certain calculations because the spill information is
+ * only stored for the first event in the subrun. The vector is cleared when
+ * the first event in the subrun is encountered, and it is filled with the
+ * event number and the TORTGT value from the NuMIInfo vector in the header of
+ * the record.
+ */
+std::vector<std::tuple<uint32_t, double>> global_numi_info;
+size_t global_numi_event_number = 0;
 
 /**
  * @namespace evar
@@ -61,6 +74,44 @@ namespace evar
     template<typename T>
     double nreco(const T & sr) { return sr.ndlp; }
     REGISTER_VAR_SCOPE(RegistrationScope::Event, nreco, nreco);
+
+    /**
+     * @brief Variable for the number of true SPINE particles in the event.
+     * @details This variable counts the number of true SPINE particles in the
+     * event by iterating over the true interactions and summing up the number
+     * of particles in each interaction.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the number of true SPINE particles in the event.
+     */
+    template<typename T>
+    double ntrue_particles(const T & sr)
+    {
+        size_t count = 0;
+        for(const auto & interaction : sr.dlp_true)
+            count += interaction.particles.size();
+        return count;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, ntrue_particles, ntrue_particles);
+
+    /**
+     * @brief Variable for the number of reco SPINE particles in the event.
+     * @details This variable counts the number of reco SPINE particles in the
+     * event by iterating over the reco interactions and summing up the number 
+     * of particles in each interaction.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the number of reco SPINE particles in the event.
+     */
+    template<typename T>
+    double nreco_particles(const T & sr)
+    {
+        size_t count = 0;
+        for(const auto & interaction : sr.dlp)
+            count += interaction.particles.size();
+        return count;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, nreco_particles, nreco_particles);
 
     /**
      * @brief Variable for the multiplicity of neutrino interactions in the
@@ -390,7 +441,7 @@ namespace evar
     REGISTER_VAR_SCOPE(RegistrationScope::Event, bnb_fom2, bnb_fom2);*/
 
     /**
-     * @brief Variable for the unfolded event POT (Protons on Target).
+     * @brief Variable for the unfolded event POT (Protons on Target) for BNB.
      * @details This variable retrieves the unfolded event POT by summing up
      * the TOR875 values from the BNBInfo vector in the header of the record.
      * This uses the stored global BNB info to ensure that the POT is bookkept
@@ -400,7 +451,7 @@ namespace evar
      * @return the unfolded event POT in the event.
      */
     template<typename T>
-    double unfolded_event_pot(const T & sr)
+    double unfolded_pot_bnb(const T & sr)
     {
         // If this is the first event in the subrun, we need to reset the
         // global BNB info.
@@ -429,7 +480,49 @@ namespace evar
 
         return pot;
     }
-    REGISTER_VAR_SCOPE(RegistrationScope::Event, unfolded_event_pot, unfolded_event_pot);
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, unfolded_pot_bnb, unfolded_pot_bnb);
+
+    /**
+     * @brief Variable for the unfolded event POT (Protons on Target) for NuMI.
+     * @details This variable retrieves the unfolded event POT by summing up
+     * the TRTGTD values from the NuMIInfo vector in the header of the record.
+     * This uses the stored global NuMI info to ensure that the POT is bookkept
+     * correctly for each event.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the unfolded event POT in the event.
+     */
+    template<typename T>
+    double unfolded_pot_numi(const T & sr)
+    {
+        // If this is the first event in the subrun, we need to reset the
+        // global NuMI info.
+        if(sr.hdr.first_in_subrun && global_numi_event_number != sr.hdr.evt)
+        {
+            global_numi_info.clear();
+            for(const auto & numi_info : sr.hdr.numiinfo)
+            {
+                // Store the event number and the TRTGTD value.
+                global_numi_info.emplace_back((uint32_t)numi_info.event, (double)numi_info.TRTGTD);
+            }
+            global_numi_event_number = sr.hdr.evt;
+        }
+
+        // Loop over the global NuMI info and filter out the events that are not
+        // this one.
+        double pot = 0.0;
+        for(const auto & numi_info : global_numi_info)
+        {
+            if(std::get<0>(numi_info) == sr.hdr.evt)
+            {
+                // Add the TRTGTD value to the pot.
+                pot += std::get<1>(numi_info);
+            }
+        }
+
+        return pot;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, unfolded_pot_numi, unfolded_pot_numi);
 
     /**
      * @brief Variable for the number of unfolded BNB events in the event.
@@ -441,7 +534,7 @@ namespace evar
      * @return the number of unfolded BNB events in the event.
      */
     template<typename T>
-    double unfolded_event_nbnb(const T & sr)
+    double unfolded_nbnb(const T & sr)
     {
         // If this is the first event in the subrun, we need to reset the
         // global BNB info.
@@ -470,7 +563,48 @@ namespace evar
 
         return nbnbs;
     }
-    REGISTER_VAR_SCOPE(RegistrationScope::Event, unfolded_event_nbnb, unfolded_event_nbnb);
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, unfolded_nbnb, unfolded_nbnb);
+
+    /**
+     * @brief Variable for the number of unfolded NuMI events in the event.
+     * @details This variable counts the number of unfolded NuMI events in the
+     * event by checking the global NuMI info vector. It is used to ensure that
+     * the number of NuMI events is bookkept correctly for each event.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the number of unfolded NuMI events in the event.
+     */
+    template<typename T>
+    double unfolded_nnumi(const T & sr)
+    {
+        // If this is the first event in the subrun, we need to reset the
+        // global NuMI info.
+        if(sr.hdr.first_in_subrun && global_numi_event_number != sr.hdr.evt)
+        {
+            global_numi_info.clear();
+            for(const auto & numi_info : sr.hdr.numiinfo)
+            {
+                // Store the event number and the TRTGTD value.
+                global_numi_info.emplace_back((uint32_t)numi_info.event, (double)numi_info.TRTGTD);
+            }
+            global_numi_event_number = sr.hdr.evt;
+        }
+
+        // Loop over the global NuMI info and filter out the events that are not
+        // this one.
+        size_t nnumis = 0;
+        for(const auto & numi_info : global_numi_info)
+        {
+            if(std::get<0>(numi_info) == sr.hdr.evt)
+            {
+                // Count the number of NuMI events.
+                ++nnumis;
+            }
+        }
+
+        return nnumis;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, unfolded_nnumi, unfolded_nnumi);
 }
 
 #endif

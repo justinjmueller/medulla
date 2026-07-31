@@ -14,6 +14,7 @@
 #define MUON_MASS 105.6583745
 #define PION_MASS 139.57039
 #define PROTON_MASS 938.2720813
+#define NUCLEON_MASS 938.9187473
 
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
 #include "sbnanaobj/StandardRecord/SRInteractionDLP.h"
@@ -26,6 +27,8 @@
 #include "include/utilities.h"
 #include "include/particle_utilities.h"
 #include "include/selectors.h"
+#include "include/biselectors.h"
+#include "include/bivariables.h"
 #include "framework.h"
 
 /**
@@ -42,6 +45,19 @@
  */
 namespace vars
 {
+    /**
+     * @brief Variable for the detector of the interaction.
+     * @details The detector is set in the header of the parent
+     * StandardRecord. A value of 1 corresponds to SBND, 2 to ICARUS,
+     * 0 to unknown.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the detector of the interaction.
+     */
+    template<class T>
+    double detector(const T & obj) { return context::current_detector; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, detector, detector);
+
     /**
      * @brief Variable for the neutrino ID of the interaction.
      * @details This variable is intended to provide a unique identifier for
@@ -138,6 +154,31 @@ namespace vars
         return energy/1000.0;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, visible_energy, visible_energy);
+
+    /**
+     * @brief Variable for total visible energy from the hadrons in interaction.
+     * @details This function calculates the total visible energy of the hadrons
+     * in an interaction by summing the energy of all protons that are identified
+     * as counting towards the final state of the interaction.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj interaction to apply the variable on.
+     * @return the total hardronic visible energy of the interaction in MeV.
+     */
+    template<class T>
+    double hadronic_visible_energy(const T & obj)
+    {
+        double energy(0);
+        for(const auto & p : obj.particles)
+        {
+            if(pcuts::final_state_signal(p))
+            {
+                if(pvars::pid(p) == pvars::kProton) energy += pvars::energy(p) - pvars::mass(p) - PROTON_BINDING_ENERGY;
+                if(pvars::pid(p) == pvars::kPion)   energy += pvars::energy(p);
+            }
+        }
+        return energy;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, hadronic_visible_energy, hadronic_visible_energy);
 
     /**
      * @brief Variable for energy reconstruction assuming CCQE kinematics using
@@ -359,6 +400,52 @@ namespace vars
     template<class T>
     double vertex_z(const T & obj) { return obj.vertex[2]; }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, vertex_z, vertex_z);
+
+    /**
+     * @brief Variable for the PRISM off-axis angle of the interaction for a
+     * location consistent with SBND detector location.
+     * @details The PRISM off-axis angle is the angle made by the neutrino
+     * direction vector and the vector aligned with the BNB axis (z-axis).
+     * Because we have no handle on the production vertex, we assume the
+     * direction is the one formed by the unit vector pointing from the BNB
+     * target to the interaction vertex.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the PRISM off-axis angle of the interaction.
+     */
+    template<class T>
+    double off_axis_angle_sbnd(const T & obj)
+    {
+        return 180./3.141592653589793 * std::atan(std::sqrt(
+            std::pow(vertex_x(obj) + 74, 2) +
+            std::pow(vertex_y(obj), 2)
+        ) / 11000);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, off_axis_angle_sbnd, off_axis_angle_sbnd);
+
+    /**
+     * @brief Variable for the PRISM off-axis angle of the interaction for a
+     * location consistent with ICARUS detector location.
+     * @details The PRISM off-axis angle is the angle made by the neutrino
+     * direction vector and the vector aligned with the BNB axis (z-axis).
+     * Because we have no handle on the production vertex, we assume the
+     * direction is the one formed by the unit vector pointing from the BNB
+     * target to the interaction vertex. 59105 cm is the distance from the BNB
+     * target (600m) minus the offset of the ICARUS origin along the beam axis
+     * (8.95m).
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the PRISM off-axis angle of the interaction.
+     */
+    template<class T>
+    double off_axis_angle_icarus(const T & obj)
+    {
+        return 180./3.141592653589793 * std::atan(std::sqrt(
+            std::pow(vertex_x(obj), 2) +
+            std::pow(vertex_y(obj), 2)
+        ) / (vertex_z(obj) + 59105));
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, off_axis_angle_icarus, off_axis_angle_icarus);
 
     /**
      * @brief Variable for the transverse momentum of the interaction counting
@@ -723,6 +810,35 @@ namespace vars
     REGISTER_VAR_SCOPE(RegistrationScope::Both, electron_multiplicity, electron_multiplicity);
 
     /**
+     * @brief Variable for the non-primary shower multiplicity of the
+     * interaction.
+     * @details This function calculates the multiplicity of non-primary
+     * showers in the interaction by counting the number of non-primary particles
+     * that are identified as photons or electrons and have a kinetic energy above a
+     * threshold. The threshold is set by the `params` vector, which defaults
+     * to 25 MeV. The function returns the number of non-primary showers in the
+     * interaction.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for a shower to count towards the
+     * multiplicity. Defaults to 25 MeV.
+     * @return the multiplicity of non-primary showers in the interaction.
+     */
+    template<class T>
+    double nonprimary_shower_multiplicity(const T & obj, std::vector<double> params={25.0,})
+    {
+        size_t count(0);
+        for(const auto & p : obj.particles)
+        {
+            if(pvars::pid(p) <= 1 && !pvars::primary_classification(p) && pvars::ke(p) >= params[0])
+                ++count;
+        }
+        return count;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, nonprimary_shower_multiplicity, nonprimary_shower_multiplicity);
+
+    /**
      * @brief Variable for the (primary) muon multiplicity of the
      * interaction.
      * @details This function calculates the multiplicity of primary muons in
@@ -834,5 +950,67 @@ namespace vars
         return utilities::magnitude(utilities::subtract(muon_start, vtx));
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, leading_muon_vertex_gap, leading_muon_vertex_gap);
+
+    /**
+     * @brief Four-momentum transfer squared Q² in GeV².
+     * @details Q² = 2·Eν·(Eμ − pμ·cosθbeam) − mμ², where Eν is the visible
+     * energy, Eμ and pμ are the leading primary muon energy and momentum
+     * magnitude, and cosθbeam is computed from the momentum components.
+     * All quantities in GeV. Requires leading_primary_muon from stage 1.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return Q² in GeV², or PLACEHOLDERVALUE if no primary muon is found.
+     */
+    template<class T>
+    double Q2(const T & obj)
+    {
+        size_t mi = selectors::leading_primary_muon(obj);
+        if(mi == kNoMatch) return PLACEHOLDERVALUE;
+        const auto & m(obj.particles[mi]);
+        double pmod = std::sqrt(pvars::px(m)*pvars::px(m) + pvars::py(m)*pvars::py(m) + pvars::pz(m)*pvars::pz(m));
+        double beam_costheta = pvars::pz(m) / pmod;
+        return 2*visible_energy(obj)*((pvars::energy(m)/1000.0) - pvars::p(m)*beam_costheta)
+               - std::pow(MUON_MASS/1000.0, 2);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, Q2, Q2);
+
+    /**
+     * @brief Hadronic invariant mass W in GeV.
+     * @details W = sqrt(mN² + 2·mN·(Eν − Eμ) − Q²), where Eν is the visible
+     * energy and Eμ is the leading primary muon energy. Requires
+     * leading_primary_muon from stage 1.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return W in GeV, or PLACEHOLDERVALUE if no primary muon is found.
+     */
+    template<class T>
+    double W(const T & obj)
+    {
+        size_t mi = selectors::leading_primary_muon(obj);
+        if(mi == kNoMatch) return PLACEHOLDERVALUE;
+        const auto & m(obj.particles[mi]);
+        double mN = NUCLEON_MASS / 1000.0;
+        return std::sqrt(mN*mN + 2*mN*(visible_energy(obj) - pvars::energy(m)/1000.0) - Q2(obj));
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, W, W);
+
+    /**
+     * @brief Hadronic invariant mass W using calorimetric-substituted visible energy.
+     * @details Same as W but uses visible_energy_calosub for Eν. Requires
+     * leading_primary_muon from stage 1.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return W in GeV, or PLACEHOLDERVALUE if no primary muon is found.
+     */
+    template<class T>
+    double W_calosub(const T & obj)
+    {
+        size_t mi = selectors::leading_primary_muon(obj);
+        if(mi == kNoMatch) return PLACEHOLDERVALUE;
+        const auto & m(obj.particles[mi]);
+        double mN = NUCLEON_MASS / 1000.0;
+        return std::sqrt(mN*mN + 2*mN*(visible_energy_calosub(obj) - pvars::energy(m)/1000.0) - Q2(obj));
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, W_calosub, W_calosub);
 }
 #endif // VARIABLES_H

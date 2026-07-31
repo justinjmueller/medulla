@@ -148,6 +148,12 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     for(int i(0); i < input_tree->GetNbranches()-3; ++i)
     {
         std::string brname = input_tree->GetListOfBranches()->At(i)->GetName();
+        
+        // We explicitly handle this branch, so we skip it in this loop.
+        if(brname == "true_neutrino_id")
+            continue;
+
+        // Initialize the branch value to 0 and set the branch address.
         brs[brname] = 0;
         input_tree->SetBranchAddress(brname.c_str(), &brs[brname]);
     }
@@ -171,6 +177,7 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     TTree * output_tree = new TTree(table.get_string_field("name").c_str(), table.get_string_field("name").c_str());
     for(auto & br : brs)
         output_tree->Branch(br.first.c_str(), &br.second);
+    output_tree->Branch("true_neutrino_id", &nu_id);
     output_tree->Branch("Run", &run);
     output_tree->Branch("Subrun", &subrun);
     output_tree->Branch("Evt", &event);
@@ -206,10 +213,16 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     for(int i(0); i < input_tree->GetEntries(); ++i)
     {
         input_tree->GetEntry(i);
-        if(!use_additional_hash)
-            candidates.insert(std::make_pair<index_t, size_t>(std::make_tuple(run, subrun, event, nu_id, 0), i));
-        else
-            candidates.insert(std::make_pair<index_t, size_t>(std::make_tuple(run, subrun, event, nu_id, brs["true_neutrino_energy"]), i));
+        // Only consider entries with a valid neutrino ID. That is, cosmics and
+        // failed truth matching will not be included in the candidates map and
+        // will be copied to the non-matched TTree if it has been created.
+        if(nu_id >= 0)
+        {
+            if(!use_additional_hash)
+                candidates.insert(std::make_pair<index_t, size_t>(std::make_tuple(run, subrun, event, nu_id, 0), i));
+            else
+                candidates.insert(std::make_pair<index_t, size_t>(std::make_tuple(run, subrun, event, nu_id, brs["true_neutrino_energy"]), i));
+        }
     }
 
     /**
@@ -280,10 +293,14 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
         systrees[tname]->SetAutoFlush(1000);
     }
 
+    std::vector<double> default_clip = config.has_field("general.weight_clip")
+        ? config.get_double_vector("general.weight_clip")
+        : std::vector<double>{};
+
     for(cfg::ConfigurationTable & t : config.get_subtables("sys"))
     {
         std::string tname = table.get_string_field("name") + '_' + t.get_string_field("type");
-        systematics.insert(std::make_pair<std::string, Systematic *>(t.get_string_field("name"), new Systematic(t, systrees[tname])));
+        systematics.insert(std::make_pair<std::string, Systematic *>(t.get_string_field("name"), new Systematic(t, systrees[tname], default_clip)));
         Systematic * tmp = systematics[t.get_string_field("name")];
         tmp->get_tree()->Branch(t.get_string_field("name").c_str(), &systematics[t.get_string_field("name")]->get_weights());
         if(tmp->get_nsigma()->size() > 0)
@@ -353,15 +370,16 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
                             }
                             for(size_t u(0); u < reader.get_nuniv(idn); ++u)
                             {
-                                value->get_weights()->push_back(reader.get_weight(idn, u));
-                                results2d[syskey]->Fill(brs[sv.name], u, reader.get_weight(idn, u));
+                                double w = value->clip(reader.get_weight(idn, u));
+                                value->get_weights()->push_back(w);
+                                results2d[syskey]->Fill(brs[sv.name], u, w);
                             }
                         }
                     }
                     else
                     {
                         for(double & z : calc.get_zscores(key))
-                            value->get_weights()->push_back(calc.get_weight(key, brs[calc.get_variable()], z));
+                            value->get_weights()->push_back(value->clip(calc.get_weight(key, brs[calc.get_variable()], z)));
                         for(SysVariable & sv : sysvariables)
                             calc.add_value(sv.name, brs[sv.name], key, brs[calc.get_variable()]);
                     }
@@ -386,6 +404,13 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     // Fill the non-matched TTree if it has been created.
     if(nonmatched_tree)
     {
+        // Non-matched signal candidates that are actually neutrinos can happen
+        // due to file mismatching. Though the user is expected to ensure that
+        // the input TTree and the input weights file correspond to the same
+        // set of events, this is not enforced by the code. Therefore, we copy
+        // any neutrino entries that do not have a match in the input weights
+        // file to the non-matched TTree as a "audible" sign that something is
+        // amiss.
         for(auto & [key, value] : candidates)
         {
             if(std::find(saved_indices.begin(), saved_indices.end(), key) != saved_indices.end())
@@ -396,6 +421,23 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
             event = std::get<2>(key);
             nonmatched_tree->Fill();
         }
+
+        // The primary use case for the non-matched TTree is to capture cosmics
+        // and failed truth matching. We explicitly write all entries of the
+        // input tree that have a neutrino ID less than 0 to the non-matched
+        // TTree to capture these cases.
+        for(int i(0); i < input_tree->GetEntries(); ++i)
+        {
+            input_tree->GetEntry(i);
+            if(nu_id < 0)
+            {
+                run = reader.get_run();
+                subrun = reader.get_subrun();
+                event = reader.get_event();
+                nonmatched_tree->Fill();
+            }
+        }
+
         directory->WriteObject(nonmatched_tree, nonmatched_tree->GetName());
         delete nonmatched_tree;
     }

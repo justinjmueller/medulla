@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.stats import binom
+from scipy.stats import binom, beta
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -89,9 +89,10 @@ class SpineEfficiency(SpineArtist):
         self._posteriors = dict()
         self._totals = dict()
         self._successes = dict()
+        self._selected_counts = dict()
 
     def draw(self, ax, show_option, percentage=True, show_seqeff=True,
-             show_unseqeff=True, yrange=None, npts=1e6, style=None,
+             show_unseqeff=True, show_purity=False, yrange=None, npts=1e6, style=None,
              logx=False, logy=False):
         """
         Draw the artist on the given axis.
@@ -114,6 +115,9 @@ class SpineEfficiency(SpineArtist):
         show_unseqeff : bool, optional
             A flag to indicate if the unsequential (single-cut)
             efficiency should be shown. The default is True.
+        show_purity : bool, optional
+            A flag to indicate if the purity should be shown in the
+            efficiency table. The default is False.
         yrange : tuple, optional
             The range of the y-axis. The default is None.
         npts : int, optional
@@ -154,10 +158,12 @@ class SpineEfficiency(SpineArtist):
                 formatter = lambda x,y,z: rf'${100*x:.2f}^{{\ +{100*y:.2f}}}_{{\ -{100*z:.2f}}}$'
                 diff_key = 'Differential\nEfficiency [%]'
                 cumu_key = 'Cumulative\nEfficiency [%]'
+                purity_key = 'Purity [%]'
             else:
                 formatter = lambda x,y,z: rf'${x:.2f}^{{\ +{y:.2e}}}_{{\ -{z:.2e}}}$'
                 diff_key = 'Differential\nEfficiency'
                 cumu_key = 'Cumulative\nEfficiency'
+                purity_key = 'Purity'
 
             # Clear up the axis because we are going to draw a table
             # on it (no need for any other plot elements).
@@ -172,14 +178,19 @@ class SpineEfficiency(SpineArtist):
                 # Extract the cv, msigma, and psigma values for the
                 # group.
                 _, cv, msigma, psigma = self.reduce(group, significance=0.6827)
+                _, pur_cv, pur_msigma, pur_psigma = self.calculate_purity(group, significance=0.6827)
 
                 seq = lambda x : [v for k, v in x.items() if 'unbinned_seq_' in k and 'unseq' not in k]
                 unseq = lambda x : [v for k, v in x.items() if 'unbinned_unseq_' in k]
+                purity_seq = lambda x: [v for k, v in x.items() if 'purity_seq_' in k]
 
                 entry = {   r'   ': [group,] + [r'' for _ in range(1, len(self._cuts))],
                             r'Cut': self._cuts.values(),
                             diff_key: [formatter(x,y,z) for x,y,z in zip(unseq(cv), unseq(msigma), unseq(psigma))],
                             cumu_key: [formatter(x,y,z) for x,y,z in zip(seq(cv), seq(msigma), seq(psigma))] }
+                if show_purity:
+                    entry[purity_key] = [formatter(x,y,z) for x,y,z in zip(
+                        purity_seq(pur_cv), purity_seq(pur_msigma), purity_seq(pur_psigma))]
                 results = pd.concat([results, pd.DataFrame(entry)])
                 group_endpoint[group] = len(results)
 
@@ -190,6 +201,8 @@ class SpineEfficiency(SpineArtist):
                 cols.append(diff_key)
             if show_seqeff:
                 cols.append(cumu_key)
+            if show_purity:
+                cols.append(purity_key)
             results = results[cols]
 
             # Rename "Cumulative" to "Efficiency" if it is the only
@@ -373,6 +386,7 @@ class SpineEfficiency(SpineArtist):
             pos /= np.sum(pos)
         else:
             pos /= np.sum(pos, axis=-1)[:, np.newaxis]
+                
         return pos
 
     def calculate(self, sample, significance=0.6827):
@@ -402,6 +416,10 @@ class SpineEfficiency(SpineArtist):
         # Create a linear space of efficiencies to calculate the
         # posterior distribution.
         efficiencies = np.linspace(0.0, 1, self._npts)
+
+        # `_selected_counts` is initialized in `__init__` and must be
+        # preserved across calls so purity-related quantities accumulate
+        # consistently with `_posteriors`, `_totals`, and `_successes`.
 
         # Get the data for the binning variable and the configured
         # cuts. The data is returned as a dictionary with the key
@@ -449,7 +467,13 @@ class SpineEfficiency(SpineArtist):
                 total = len(values[0])
                 success = np.sum(np.all(values[1:ci+2], axis=0))
                 self._posteriors[self._categories[category]][f'unbinned_seq_{cut}'] = SpineEfficiency.multiply_posteriors(self._posteriors[self._categories[category]][f'unbinned_seq_{cut}'], binom.pmf(success, total, efficiencies))
-                
+                # Track selected counts per group/category for purity calculation
+                group_name = self._categories[category]
+                if group_name not in self._selected_counts:
+                    self._selected_counts[group_name] = {}
+                if category not in self._selected_counts[group_name]:
+                    self._selected_counts[group_name][category] = {f'seq_{c}': 0 for c in self._cuts.keys()}
+                self._selected_counts[group_name][category][f'seq_{cut}'] += int(success)
                 # Non-sequential cuts (unbinned)
                 success = np.sum(values[ci+1].to_numpy(bool))
                 self._posteriors[self._categories[category]][f'unbinned_unseq_{cut}'] = SpineEfficiency.multiply_posteriors(self._posteriors[self._categories[category]][f'unbinned_unseq_{cut}'], binom.pmf(success, total, efficiencies))
@@ -568,3 +592,70 @@ class SpineEfficiency(SpineArtist):
                 psigma[key][psigma[key] < 0] = 0
 
         return final_posteriors, cv, msigma, psigma
+
+    def calculate_purity(self, group, significance=0.6827):
+        """
+        Calculate purity for a given group.
+        
+        Purity = (events selected in group) / (total events selected in all groups)
+        
+        Parameters
+        ----------
+        group : str
+            The name of the group to calculate purity for.
+        significance : float, optional
+            The significance level for uncertainty calculation. Default is 0.6827 (1 sigma).
+        
+        Returns
+        -------
+        tuple : (group, cv, msigma, psigma)
+            Dictionaries with cut names as keys and purity values/uncertainties as values.
+        """
+
+        if group not in self._selected_counts:
+            print(f"Warning: Group '{group}' not found in selected counts. Returning empty purity results.")
+            return {}, {}, {}, {}
+
+        cv = {}
+        msigma = {}
+        psigma = {}
+
+        sig = [0.5 - significance/2.0, 0.5 + significance/2.0]
+
+        # Precompute totals across all groups for each cut
+        total_selected_all = {f'seq_{c}': 0 for c in self._cuts.keys()}
+        for g, cats in self._selected_counts.items():
+            for cat, cuts_dict in cats.items():
+                for k, v in cuts_dict.items():
+                    total_selected_all[k] = total_selected_all.get(k, 0) + int(v)
+
+        # Sum selected in this group (group may contain multiple categories)
+        group_selected = {f'seq_{c}': 0 for c in self._cuts.keys()}
+        if group in self._selected_counts:
+            for cat, cuts_dict in self._selected_counts[group].items():
+                for k, v in cuts_dict.items():
+                    group_selected[k] = group_selected.get(k, 0) + int(v)
+
+        for cut in self._cuts.keys():
+            key = f'seq_{cut}'
+            n_group = group_selected.get(key, 0)
+            n_total = total_selected_all.get(key, 0)
+
+            if n_total == 0:
+                cv[f'purity_{key}'] = 0.0
+                msigma[f'purity_{key}'] = 0.0
+                psigma[f'purity_{key}'] = 0.0
+                continue
+
+            purity = n_group / n_total
+            cv[f'purity_{key}'] = purity
+
+            # Bayesian uncertainty using Beta distribution
+            n_background = n_total - n_group
+            lower = beta.ppf(sig[0], n_group + 1, n_background + 1)
+            upper = beta.ppf(sig[1], n_group + 1, n_background + 1)
+
+            msigma[f'purity_{key}'] = purity - lower
+            psigma[f'purity_{key}'] = upper - purity
+
+        return group, cv, msigma, psigma

@@ -8,6 +8,9 @@
  */
 #ifndef SYSTEMATIC_H
 #define SYSTEMATIC_H
+#include <algorithm>
+#include <limits>
+
 #include "configuration.h"
 
 #include "TTree.h"
@@ -47,7 +50,9 @@ namespace sys
         TTree * tree;
         std::vector<double> * weights;
         std::vector<double> * nsigma;
-        
+        double clip_min;
+        double clip_max;
+
     public:
         /**
          * @brief Construct a new Systematic object
@@ -56,8 +61,12 @@ namespace sys
          * @param table the configuration table containing the systematic
          * configuration details
          * @param t the TTree associated with the systematic
+         * @param default_clip the [min, max] weight clip range to use if the
+         * systematic's own configuration table does not provide a "clip"
+         * field. An empty vector means no clipping is applied.
          */
-        Systematic(cfg::ConfigurationTable & table, TTree * t);
+        Systematic(cfg::ConfigurationTable & table, TTree * t,
+                   std::vector<double> default_clip = {});
 
         /**
          * @brief Get the index of the systematic parameter.
@@ -102,6 +111,17 @@ namespace sys
          * @return std::vector<double>*& reference to the nsigma vector.
          */
         std::vector<double> * & get_nsigma();
+
+        /**
+         * @brief Clip a weight to the configured [min, max] range.
+         * @details This function clamps the input weight to the range
+         * resolved for this systematic (either its own "clip" field, the
+         * general default passed in at construction, or, if neither is
+         * present, no clipping at all).
+         * @param weight the weight to clip.
+         * @return double the clipped weight.
+         */
+        double clip(double weight) const;
     };
 } // namespace sys
 #endif // SYSTEMATIC_H

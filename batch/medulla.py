@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 from argparse import ArgumentParser
 from pathlib import Path
-from utilities import create_new_project, check_project_status, launch_jobsub
+from utilities import create_new_project, check_project_status, launch_jobsub, check_git_branch
+from typing import Optional
 
 def main(
     project_dir : str,
@@ -12,6 +13,10 @@ def main(
     tml : str = None,
     batch_size : int = None,
     systematic : str = None,
+    tag : str = 'develop',
+    memory : int = 1800,
+    disk : Optional[int] = None,
+    lifetime : str = '1h',
 ):
     """
     Main function to run the medulla script.
@@ -36,6 +41,14 @@ def main(
     systematic : str
         Path to the systematic template file to use. If None, use the
         default template file in the batch directory.
+    tag : str
+        Tag to use for the medulla repository (defaults to develop).
+    memory : int
+        Amount of memory to request for each job in MB. 
+    disk : int | None
+        Amount of disk to request for each job in GB. If None, use default.
+    lifetime : str
+        Expected lifetime of each job (e.g., '1h', '30m'). 
 
     Returns
     -------
@@ -66,13 +79,13 @@ def main(
     if test_job:
         if not project_exists:
             raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
-        launch_jobsub(project_dir, experiment, njobs=1)
+        launch_jobsub(project_dir, experiment, njobs=1, tag=tag, memory=memory, disk=disk, lifetime=lifetime)
 
     # If the user requested to launch jobs, do so.
     if launch_jobs is not None:
         if not project_exists:
             raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
-        launch_jobsub(project_dir, experiment, njobs=launch_jobs)
+        launch_jobsub(project_dir, experiment, njobs=launch_jobs, tag=tag, memory=memory, disk=disk, lifetime=lifetime)
 
 if __name__ == '__main__':
     p = ArgumentParser(description='Run medulla.')
@@ -129,6 +142,26 @@ if __name__ == '__main__':
              'then all pending jobs will be launched.'
     )
 
+    p.add_argument(
+        '--tag', type=str, default='develop',
+        help='Tag to use for the medulla repository (defaults to develop).'
+    )
+
+    p.add_argument(
+        '--memory', '-m', type=int, default=1800,
+        help='Amount of memory to request for each job in MB (default: 1800).'
+    )
+
+    p.add_argument(
+        '--disk', '-d', type=int, default=None,
+        help='Amount of disk to request for each job in GB (default: None).'
+    )
+
+    p.add_argument(
+        '--lifetime', '-f', type=str, default='1h',
+        help="Expected lifetime of each job (e.g., '1h', '30m') (default: '1h')."
+    )
+
     args = p.parse_args()
 
     # Requirement: the experiment must be sbnd or icarus.
@@ -147,6 +180,11 @@ if __name__ == '__main__':
     if args.test_job and args.launch_jobs is not None:
         p.error('--test-job and --launch-jobs are mutually exclusive.')
 
+    if args.tag != 'develop':
+        print(f"[INFO] -- Using tag '{args.tag}' for medulla repository.")
+    if not check_git_branch(args.tag):
+        p.error(f"Tag '{args.tag}' does not exist in the medulla repository.")
+
     # Run the main function.
     main(
         project_dir=args.project_dir,
@@ -157,4 +195,8 @@ if __name__ == '__main__':
         tml=args.toml,
         batch_size=args.batch_size,
         systematic=args.systematic,
+        tag=args.tag,
+        memory=args.memory,
+        disk=args.disk,
+        lifetime=args.lifetime,
     )

@@ -129,3 +129,77 @@ cut = [
 branch = [
     {name = "ke", type = "both_particle"},
 ]
+
+[[tree]]
+name = "test_reco_with_mctruth_cut"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "valid_flashmatch", type = "reco"},
+    {name = "iscc", type = "mctruth"}
+]
+branch = [
+    {name = "vertex_x", type = "both"},
+    {name = "neutrino_energy", type = "mctruth"},
+]
+
+[[tree]]
+name = "test_truth_with_mctruth_cut"
+sim_only = true
+mode = "true"
+cut = [
+    {name = "valid_flashmatch", type = "true"},
+    {name = "iscc", type = "mctruth"}
+]
+branch = [
+    {name = "vertex_x", type = "both"},
+    {name = "neutrino_energy", type = "mctruth"},
+]
+
+[[tree]]
+name = "test_reco_longest_track"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "valid_flashmatch", type = "reco"},
+    {name = "is_longest_track", type = "reco"},
+]
+branch = [
+    {name = "length", type = "both_particle", selector = "longest_track"},
+]
+
+[[tree]]
+name = "test_reco_second_longest_track"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "valid_flashmatch", type = "reco"},
+    {name = "is_second_longest_track", type = "reco"},
+]
+branch = [
+    {name = "length", type = "both_particle", selector = "second_longest_track"},
+]
+
+[[tree]]
+name = "test_reco_third_longest_track"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "valid_flashmatch", type = "reco"},
+    {name = "is_third_longest_track", type = "reco"},
+]
+branch = [
+    {name = "length", type = "both_particle", selector = "third_longest_track"},
+]
+
+[[tree]]
+name = "test_reco_track_multiplicity"
+sim_only = false
+mode = "reco"
+cut = [
+    {name = "valid_flashmatch", type = "reco"},
+    {name = "track_multiplicity", type = "reco", parameters = [3]},
+]
+branch = [
+    {name = "vertex_x", type = "both"},
+]

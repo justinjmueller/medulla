@@ -1,0 +1,20 @@
+#!/bin/bash
+# Auto-generated setup script for medulla
+# Source this file: source @MEDULLA_BUILD_DIR@/setup_medulla.sh
+
+export MEDULLA_SOURCE_DIR="@MEDULLA_SOURCE_DIR@"
+export MEDULLA_BUILD_DIR="@MEDULLA_BUILD_DIR@"
+export MEDULLA_SELECTION_DIR="@MEDULLA_BUILD_DIR@/selection"
+export MEDULLA_SYSTEMATICS_DIR="@MEDULLA_BUILD_DIR@/systematics"
+export MEDULLA_PLOT_DIR="@MEDULLA_SOURCE_DIR@/spineplot"
+
+# Add executables to PATH
+export PATH="@MEDULLA_BUILD_DIR@/selection:@MEDULLA_BUILD_DIR@/systematics:${PATH}"
+
+# Optional: Add libraries to LD_LIBRARY_PATH if needed
+export LD_LIBRARY_PATH="@MEDULLA_BUILD_DIR@/selection:@MEDULLA_BUILD_DIR@/systematics:@MEDULLA_BUILD_DIR@/shared:${LD_LIBRARY_PATH}"
+
+echo "medulla environment configured:"
+echo "  MEDULLA_SOURCE_DIR = ${MEDULLA_SOURCE_DIR}"
+echo "  MEDULLA_BUILD_DIR = ${MEDULLA_BUILD_DIR}"
+echo "  Executables available: medulla, run_systematics"

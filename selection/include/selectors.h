@@ -59,11 +59,40 @@ namespace selectors
     }
 
     /**
+     * @brief Finds the index corresponding to the leading primary particle of
+     * the specified particle type.
+     * @details Like leading_particle_index, but restricted to particles
+     * satisfying pvars::primary_classification.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @param pid the particle type.
+     * @return the index of the leading primary particle (highest KE).
+     */
+    template <class T>
+    size_t leading_primary_particle_index(const T & obj, uint16_t pid)
+    {
+        double leading_ke(0);
+        size_t index(kNoMatch);
+        for(size_t i(0); i < obj.particles.size(); ++i)
+        {
+            const auto & p = obj.particles[i];
+            double energy(pvars::ke(p));
+            if(pvars::pid(p) == pid && pvars::primary_classification(p) && energy > leading_ke)
+            {
+                leading_ke = energy;
+                index = i;
+            }
+        }
+        return index;
+    }
+
+    /**
      * @brief Finds the index corresponding to the longest track.
      * @details The longest track is defined as the track with the longest
      * length, which is calculated upstream in SPINE. The particle instance is
-     * required to have a semantic type of 1 (track) and have a start point
-     * within 6 cm of the interaction vertex.
+     * required to be a primary particle with a semantic type of 1 (track).
+     * No requirement is made on the particle's proximity to the interaction
+     * vertex.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to operate on.
      * @return the index of the longest track.
@@ -77,18 +106,10 @@ namespace selectors
         {
             const auto & p = obj.particles[i];
 
-            // Distance between interaction vertex and particle start.
-            double vertex_distance = std::sqrt(
-                std::pow(pvars::start_x(p) - obj.vertex[0], 2) +
-                std::pow(pvars::start_y(p) - obj.vertex[1], 2) +
-                std::pow(pvars::start_z(p) - obj.vertex[2], 2)
-            );
-
-            // Skip particles that are not tracks or are too far from the
-            // interaction vertex.
-            if(pvars::semantic_type(p) != 1 || vertex_distance >= 6)
+            // Skip particles that are not primary tracks.
+            if(pvars::semantic_type(p) != 1 || !pvars::primary_classification(p))
                 continue;
-            
+
             // Update the longest length and index if the current particle
             // is longer than the longest found so far.
             if(pvars::length(p) > longest_length)
@@ -105,8 +126,9 @@ namespace selectors
      * @brief Finds the index corresponding to the second longest track.
      * @details The second longest track is defined as the track with the
      * second longest length, which is calculated upstream in SPINE. The
-     * particle instance is required to have a semantic type of 1 (track) and
-     * have a start point within 6 cm of the interaction vertex.
+     * particle instance is required to be a primary particle with a semantic
+     * type of 1 (track). No requirement is made on the particle's proximity
+     * to the interaction vertex.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to operate on.
      * @return the index of the second longest track.
@@ -121,16 +143,8 @@ namespace selectors
         {
             const auto & p = obj.particles[i];
 
-            // Distance between interaction vertex and particle start.
-            double vertex_distance = std::sqrt(
-                std::pow(pvars::start_x(p) - obj.vertex[0], 2) +
-                std::pow(pvars::start_y(p) - obj.vertex[1], 2) +
-                std::pow(pvars::start_z(p) - obj.vertex[2], 2)
-            );
-
-            // Skip particles that are not tracks or are too far from the
-            // interaction vertex.
-            if(pvars::semantic_type(p) != 1 || vertex_distance >= 6)
+            // Skip particles that are not primary tracks.
+            if(pvars::semantic_type(p) != 1 || !pvars::primary_classification(p))
                 continue;
 
             // Check if the current particle is longer than the longest found
@@ -151,9 +165,71 @@ namespace selectors
                 second_index = i;
             }
         }
-        return index;
+        return second_index;
     }
     REGISTER_SELECTOR(second_longest_track, second_longest_track);
+
+    /**
+     * @brief Finds the index corresponding to the third longest track.
+     * @details The third longest track is defined as the track with the
+     * third longest length, which is calculated upstream in SPINE. The
+     * particle instance is required to be a primary particle with a semantic
+     * type of 1 (track). No requirement is made on the particle's proximity
+     * to the interaction vertex.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the third longest track.
+    */
+    template<class T>
+    size_t third_longest_track(const T & obj)
+    {
+        double longest_length(0);
+        double second_longest_length(0);
+        double third_longest_length(0);
+        size_t index(kNoMatch), second_index(kNoMatch), third_index(kNoMatch);
+        for(size_t i(0); i < obj.particles.size(); ++i)
+        {
+            const auto & p = obj.particles[i];
+
+            // Skip particles that are not primary tracks.
+            if(pvars::semantic_type(p) != 1 || !pvars::primary_classification(p))
+                continue;
+
+            // Check if the current particle is longer than the longest found
+            // so far. If so, shift the longest and second longest down into
+            // the second and third longest slots.
+            if(pvars::length(p) > longest_length)
+            {
+                third_longest_length = second_longest_length;
+                third_index = second_index;
+                second_longest_length = longest_length;
+                second_index = index;
+                longest_length = pvars::length(p);
+                index = i;
+            }
+
+            // If the current particle is not longer than the longest but is
+            // longer than the second longest, shift the second longest down
+            // into the third longest slot.
+            else if(pvars::length(p) > second_longest_length)
+            {
+                third_longest_length = second_longest_length;
+                third_index = second_index;
+                second_longest_length = pvars::length(p);
+                second_index = i;
+            }
+
+            // If the current particle is not longer than the second longest
+            // but is longer than the third longest, update the third longest.
+            else if(pvars::length(p) > third_longest_length)
+            {
+                third_longest_length = pvars::length(p);
+                third_index = i;
+            }
+        }
+        return third_index;
+    }
+    REGISTER_SELECTOR(third_longest_track, third_longest_track);
 
     /**
      * @brief Finds the index corresponding to the leading photon.
@@ -230,5 +306,97 @@ namespace selectors
         return leading_particle_index(obj, pvars::kProton);
     }
     REGISTER_SELECTOR(leading_proton, leading_proton);
+
+    /**
+     * @brief Finds the index corresponding to the leading primary photon.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the leading primary photon (highest KE).
+     */
+    template<class T>
+    size_t leading_primary_photon(const T & obj)
+    {
+        return leading_primary_particle_index(obj, pvars::kPhoton);
+    }
+    REGISTER_SELECTOR(leading_primary_photon, leading_primary_photon);
+
+    /**
+     * @brief Finds the index corresponding to the leading primary electron.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the leading primary electron (highest KE).
+     */
+    template<class T>
+    size_t leading_primary_electron(const T & obj)
+    {
+        return leading_primary_particle_index(obj, pvars::kElectron);
+    }
+    REGISTER_SELECTOR(leading_primary_electron, leading_primary_electron);
+
+    /**
+     * @brief Finds the index corresponding to the leading primary muon.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the leading primary muon (highest KE).
+     */
+    template<class T>
+    size_t leading_primary_muon(const T & obj)
+    {
+        return leading_primary_particle_index(obj, pvars::kMuon);
+    }
+    REGISTER_SELECTOR(leading_primary_muon, leading_primary_muon);
+
+    /**
+     * @brief Finds the index corresponding to the leading primary pion.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the leading primary pion (highest KE).
+     */
+    template<class T>
+    size_t leading_primary_pion(const T & obj)
+    {
+        return leading_primary_particle_index(obj, pvars::kPion);
+    }
+    REGISTER_SELECTOR(leading_primary_pion, leading_primary_pion);
+
+    /**
+     * @brief Finds the index corresponding to the leading primary proton.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the leading primary proton (highest KE).
+     */
+    template<class T>
+    size_t leading_primary_proton(const T & obj)
+    {
+        return leading_primary_particle_index(obj, pvars::kProton);
+    }
+    REGISTER_SELECTOR(leading_primary_proton, leading_primary_proton);
+
+    /**
+     * @brief Finds the index corresponding to the target Michel.
+     * @details The target Michel is defined as the Michel with the most
+     * depositions in the interaction. 
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the target Michel (largest).
+     */
+    template<class T>
+    size_t target_michel(const T & obj)
+    {
+        double largest_size(0);
+        size_t index(kNoMatch);
+        for(size_t i(0); i < obj.particles.size(); ++i)
+        {
+            const auto & p = obj.particles[i];
+            double size(p.size);
+            if(pvars::semantic_type(p) == 2 && size > largest_size)
+            {
+                largest_size = size;
+                index = i;
+            }
+        }
+        return index;
+    }
+    REGISTER_SELECTOR(target_michel, target_michel);
 }
 #endif // SELECTORS_H

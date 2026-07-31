@@ -47,6 +47,15 @@ int main(int argc, char * argv[])
 
     // Check the command line arguments for the mode.
     std::string mode = argv[1];
+    std::string group = "";
+    for(int i = 2; i < argc; ++i)
+    {
+        if(std::string(argv[i]) == "--group" && i + 1 < argc)
+        {
+            group = argv[i + 1];
+            ++i;
+        }
+    }
     if(mode != "--generate" && mode != "--validate")
     {
         std::cerr << "Invalid mode: " << mode << ". Use --generate or --validate." << std::endl;
@@ -207,6 +216,49 @@ int main(int argc, char * argv[])
         mark_contained(&rec->dlp[0], &rec->dlp_true[0]);
         write_event(rec, 1, 3, 3, pot, nevt, t);
 
+        /**
+         * @brief Generate "MCTruth-cut" events to test the mctruth cut and
+         * variable paths in the framework (Run=2).
+         *
+         * - EM00: Paired reco+truth, nu_id=0, mc.nu[0].iscc=true.  The iscc
+         *   mctruth cut passes; true_neutrino_energy == NEUTRINO_ENERGY.
+         *
+         * - EM01: Paired reco+truth, nu_id=0, mc.nu[0].iscc=false.  The iscc
+         *   mctruth cut fails; the interaction must NOT appear in the tree.
+         *
+         * - EM02: Paired reco+truth, nu_id=-1 (cosmic).  The mctruth cut
+         *   filters the interaction out; no entry appears in the tree.
+         */
+
+        // EM00: CC neutrino — mctruth cut passes, neutrino energy readable.
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs));
+        rec->dlp_true[0].nu_id = 0;
+        pair(rec->dlp[0], rec->dlp_true[0]);
+        rec->mc.nu.push_back(generate_neutrino(true));
+        rec->mc.nnu = rec->mc.nu.size();
+        write_event(rec, 2, 0, 0, pot, nevt, t);
+        rec->mc.nu.clear();
+        rec->mc.nnu = 0;
+
+        // EM01: NC neutrino — mctruth cut fails, interaction filtered out.
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs));
+        rec->dlp_true[0].nu_id = 0;
+        pair(rec->dlp[0], rec->dlp_true[0]);
+        rec->mc.nu.push_back(generate_neutrino(false));
+        rec->mc.nnu = rec->mc.nu.size();
+        write_event(rec, 2, 0, 1, pot, nevt, t);
+        rec->mc.nu.clear();
+        rec->mc.nnu = 0;
+
+        // EM02: Cosmic (nu_id=-1) — mctruth cut filters out, event absent from tree.
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, fs));
+        rec->dlp_true.push_back(generate_interaction<caf::SRInteractionTruthDLP>(0, 0, fs));
+        rec->dlp_true[0].nu_id = -1;
+        pair(rec->dlp[0], rec->dlp_true[0]);
+        write_event(rec, 2, 0, 2, pot, nevt, t);
+
         // Write the tree and histograms to the file.
         t->Write();
         pot->Write();
@@ -257,6 +309,55 @@ int main(int argc, char * argv[])
         mark_contained(&rec->dlp[0]);
         write_event(rec, 1, 1, 1, pot, nevt, t);
 
+        /**
+         * @brief Generate events to test the longest/second/third longest
+         * track selectors and the track_multiplicity cut (Run=3).
+         * @details
+         * - ELT00: An interaction with three primary tracks of decreasing
+         *   length (30, 20, 10 cm), a longer secondary track (50 cm,
+         *   is_primary=false), and a longer primary shower (100 cm,
+         *   shape=0/shower). Only the three primary tracks should be
+         *   ranked by the longest/second/third longest track selectors;
+         *   the secondary track and the primary shower must be excluded.
+         *   track_multiplicity with a threshold of 3 should pass (exactly
+         *   3 qualifying primary tracks).
+         *
+         * - ELT01: An interaction with only two primary tracks (30, 20 cm).
+         *   The longest/second-longest selectors should still resolve, but
+         *   there is no third track, so the third-longest-track tree
+         *   should have no entry for this event. track_multiplicity with a
+         *   threshold of 3 should fail.
+         */
+        // ELT00
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {0, 0, 0, 0, 0}));
+        rec->dlp[0].particles.push_back(generate_particle<caf::SRParticleDLP>(0, 2));
+        rec->dlp[0].particles.back().shape = 1;
+        rec->dlp[0].particles.back().length = 30.0;
+        rec->dlp[0].particles.push_back(generate_particle<caf::SRParticleDLP>(1, 2));
+        rec->dlp[0].particles.back().shape = 1;
+        rec->dlp[0].particles.back().length = 20.0;
+        rec->dlp[0].particles.push_back(generate_particle<caf::SRParticleDLP>(2, 4));
+        rec->dlp[0].particles.back().shape = 1;
+        rec->dlp[0].particles.back().length = 10.0;
+        rec->dlp[0].particles.push_back(generate_particle<caf::SRParticleDLP>(3, 2));
+        rec->dlp[0].particles.back().shape = 1;
+        rec->dlp[0].particles.back().length = 50.0;
+        rec->dlp[0].particles.back().is_primary = false;
+        rec->dlp[0].particles.push_back(generate_particle<caf::SRParticleDLP>(4, 0));
+        rec->dlp[0].particles.back().shape = 0;
+        rec->dlp[0].particles.back().length = 100.0;
+        write_event(rec, 3, 0, 0, pot, nevt, t);
+
+        // ELT01
+        rec->dlp.push_back(generate_interaction<caf::SRInteractionDLP>(0, 0, {0, 0, 0, 0, 0}));
+        rec->dlp[0].particles.push_back(generate_particle<caf::SRParticleDLP>(0, 2));
+        rec->dlp[0].particles.back().shape = 1;
+        rec->dlp[0].particles.back().length = 30.0;
+        rec->dlp[0].particles.push_back(generate_particle<caf::SRParticleDLP>(1, 2));
+        rec->dlp[0].particles.back().shape = 1;
+        rec->dlp[0].particles.back().length = 20.0;
+        write_event(rec, 3, 0, 1, pot, nevt, t);
+
         // Write the tree and histograms to the file.
         t->Write();
         pot->Write();
@@ -282,6 +383,10 @@ int main(int argc, char * argv[])
         }
 
         std::cout << "\033[1m--- Running validation ---\033[0m" << std::endl;
+        int total_failures = 0;
+        std::vector<row_t> rows;
+        std::vector<condition_t> conditions;
+
         /**
          * @brief The first set of events to validate is the "sim-like" events
          * and the response of the framework when run over them in "reco" mode.
@@ -334,13 +439,15 @@ int main(int argc, char * argv[])
          *   under no additional truth cut and that does not pass the reco-only
          *   selection. This does not pass the selection.
          */
+        if(group.empty() || group == "sim_reco")
+        {
         std::cout << "\n\033[1mSimulation-like events with mode == 'reco' \033[0m" << std::endl;
 
         //  Read the event data from the TTree in the ROOT file.
-        std::vector<row_t> rows = read_event_data("events/test_simlike/test_reco");
+        rows = read_event_data("events/test_simlike/test_reco");
 
         // Expected results for validation.
-        std::vector<condition_t> conditions = {
+        conditions = {
             {"SR02", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
             {"SR03", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}, {"true_vertex_x", kNaN}}},
             {"!SR04", {{"Run", 1}, {"Subrun", 0}, {"Evt", 1}}},
@@ -350,8 +457,11 @@ int main(int argc, char * argv[])
         };
 
         // Check if each condition_t entry is present in the rows vector.
-        match_conditions(rows, conditions);
+        total_failures += match_conditions(rows, conditions);
+        } // group sim_reco
 
+        if(group.empty() || group == "sim_reco_with_truth_cut")
+        {
         //  Read the event data from the TTree in the ROOT file.
         rows = read_event_data("events/test_simlike/test_reco_with_truth_cut");
 
@@ -365,7 +475,8 @@ int main(int argc, char * argv[])
         };
 
         // Check if each condition_t entry is present in the rows vector.
-        match_conditions(rows, conditions);
+        total_failures += match_conditions(rows, conditions);
+        } // group sim_reco_with_truth_cut
 
         /**
          * @brief The second set of events to validate is the "sim-like" events
@@ -420,11 +531,13 @@ int main(int argc, char * argv[])
          *   under no additional reco cut and that does not pass the truth-only
          *   selection. This does not pass the selection.
          */
+        if(group.empty() || group == "sim_truth")
+        {
         std::cout << "\n\033[1mSimulation-like events with mode == 'truth' \033[0m" << std::endl;
-        
+
         // Read the event data from the TTree in the ROOT file.
         rows = read_event_data("events/test_simlike/test_truth");
-        
+
         // Expected results for validation.
         conditions = {
             {"ST02", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}, {"true_vertex_x", -210.0}}},
@@ -436,8 +549,11 @@ int main(int argc, char * argv[])
         };
 
         // Check if each condition_t entry is present in the rows vector.
-        match_conditions(rows, conditions);
+        total_failures += match_conditions(rows, conditions);
+        } // group sim_truth
 
+        if(group.empty() || group == "sim_truth_with_reco_cut")
+        {
         // Read the event data from the TTree in the ROOT file.
         rows = read_event_data("events/test_simlike/test_truth_with_reco_cut");
 
@@ -451,7 +567,8 @@ int main(int argc, char * argv[])
         };
 
         // Check if each condition_t entry is present in the rows vector.
-        match_conditions(rows, conditions);
+        total_failures += match_conditions(rows, conditions);
+        } // group sim_truth_with_reco_cut
 
         /**
          * @brief The third set of events to validate is the "data-like" events
@@ -487,11 +604,13 @@ int main(int argc, char * argv[])
          *   usual selection cut placed. The interaction should pass the normal
          *   selection cut, and therefore should have a NaN truth-var.  
          */
+        if(group.empty() || group == "data_reco")
+        {
         std::cout << "\n\033[1mData-like events with mode == 'reco' \033[0m" << std::endl;
 
         // Read the event data from the TTree in the ROOT file.
         rows = read_event_data("events/test_datalike/test_reco");
-        
+
         // Expected results for validation.
         conditions = {
             {"DR00", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
@@ -503,7 +622,8 @@ int main(int argc, char * argv[])
         };
 
         // Check if each condition_t entry is present in the rows vector.
-        match_conditions(rows, conditions);
+        total_failures += match_conditions(rows, conditions);
+        } // group data_reco
 
         /**
          * @brief The fourth set of events to validate is the "sim-like" events
@@ -745,8 +865,10 @@ int main(int argc, char * argv[])
          *   truth match and does pass the reco cut. Passes the selection with
          *   a valid truth-var.
          */
+        if(group.empty() || group == "sim_reco_particles")
+        {
         std::cout << "\n\033[1mSimulation-like events with mode == 'reco' and particle-level variables \033[0m" << std::endl;
-        
+
         // Read the event data from the TTree in the ROOT file.
         rows = read_event_data("events/test_simlike/test_reco_particles");
 
@@ -775,11 +897,14 @@ int main(int argc, char * argv[])
         };
 
         // Check if each condition_t entry is present in the rows vector.
-        match_conditions(rows, conditions);
+        total_failures += match_conditions(rows, conditions);
+        } // group sim_reco_particles
 
+        if(group.empty() || group == "sim_reco_particles_with_truth_cut")
+        {
         // Read the event data from the TTree in the ROOT file.
         rows = read_event_data("events/test_simlike/test_reco_particles_with_truth_cut");
-        
+
         // Expected results for validation.
         conditions = {
             {"!SPR05", {{"Run", 1}, {"Subrun", 0}, {"Evt", 1}}},
@@ -787,7 +912,7 @@ int main(int argc, char * argv[])
             {"!SPR07", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}}},
             {"!SPR08", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}}},
             {"!SPR14", {{"Run", 1}, {"Subrun", 2}, {"Evt", 1}}},
-            {"!SPR15", {{"Run", 1}, {"Subrun", 3}, {"Evt", 1}}},      
+            {"!SPR15", {{"Run", 1}, {"Subrun", 3}, {"Evt", 1}}},
             {"!SPR16", {{"Run", 1}, {"Subrun", 2}, {"Evt", 0}}},
             {"!SPR17", {{"Run", 1}, {"Subrun", 3}, {"Evt", 0}}},
             {"!SPR23", {{"Run", 1}, {"Subrun", 0}, {"Evt", 3}}},
@@ -803,7 +928,8 @@ int main(int argc, char * argv[])
         };
 
         // Check if each condition_t entry is present in the rows vector.
-        match_conditions(rows, conditions);
+        total_failures += match_conditions(rows, conditions);
+        } // group sim_reco_particles_with_truth_cut
 
         /**
          * @brief The fifth set of events to validate is the "sim-like" events
@@ -1045,8 +1171,10 @@ int main(int argc, char * argv[])
          *   reco match and does pass the truth cut. Passes the selection with
          *   a valid reco-var.
          */
+        if(group.empty() || group == "sim_truth_particles")
+        {
         std::cout << "\n\033[1mSimulation-like events with mode == 'true' and particle-level variables \033[0m" << std::endl;
-        
+
         // Read the event data from the TTree in the ROOT file.
         rows = read_event_data("events/test_simlike/test_truth_particles");
 
@@ -1075,11 +1203,14 @@ int main(int argc, char * argv[])
         };
 
         // Check if each condition_t entry is present in the rows vector.
-        match_conditions(rows, conditions);
+        total_failures += match_conditions(rows, conditions);
+        } // group sim_truth_particles
 
+        if(group.empty() || group == "sim_truth_particles_with_reco_cut")
+        {
         // Read the event data from the TTree in the ROOT file.
         rows = read_event_data("events/test_simlike/test_truth_particles_with_reco_cut");
-        
+
         // Expected results for validation.
         conditions = {
             {"!SPT05", {{"Run", 1}, {"Subrun", 0}, {"Evt", 1}}},
@@ -1087,7 +1218,7 @@ int main(int argc, char * argv[])
             {"!SPT07", {{"Run", 1}, {"Subrun", 0}, {"Evt", 0}}},
             {"!SPT08", {{"Run", 1}, {"Subrun", 1}, {"Evt", 0}}},
             {"!SPT14", {{"Run", 1}, {"Subrun", 2}, {"Evt", 1}}},
-            {"!SPT15", {{"Run", 1}, {"Subrun", 3}, {"Evt", 1}}},      
+            {"!SPT15", {{"Run", 1}, {"Subrun", 3}, {"Evt", 1}}},
             {"!SPT16", {{"Run", 1}, {"Subrun", 2}, {"Evt", 0}}},
             {"!SPT17", {{"Run", 1}, {"Subrun", 3}, {"Evt", 0}}},
             {"!SPT23", {{"Run", 1}, {"Subrun", 0}, {"Evt", 3}}},
@@ -1103,7 +1234,8 @@ int main(int argc, char * argv[])
         };
 
         // Check if each condition_t entry is present in the rows vector.
-        match_conditions(rows, conditions);
+        total_failures += match_conditions(rows, conditions);
+        } // group sim_truth_particles_with_reco_cut
 
         /**
          * @brief The sixth set of events to validate is the "data-like" events
@@ -1162,11 +1294,13 @@ int main(int argc, char * argv[])
          *   is an additional truth cut at the interaction level. Passes the
          *   selection with a NaN truth-var.
          */
+        if(group.empty() || group == "data_reco_particles")
+        {
         std::cout << "\n\033[1mData-like events with mode == 'reco' and particle-level variables \033[0m" << std::endl;
 
         // Read the event data from the TTree in the ROOT file.
         rows = read_event_data("events/test_datalike/test_reco_particles");
-        
+
         // Expected results for validation.
         conditions = {
             {"!DPR00", {{"Run", 1}, {"Subrun", 0}, {"Evt", 1}}},
@@ -1182,7 +1316,8 @@ int main(int argc, char * argv[])
         };
 
         // Check if each condition_t entry is present in the rows vector.
-        match_conditions(rows, conditions);
+        total_failures += match_conditions(rows, conditions);
+        } // group data_reco_particles
 
         /**
          * @brief The seventh set of events to validate is the "sim-like"
@@ -1199,6 +1334,8 @@ int main(int argc, char * argv[])
          * - SEV01: This represents an event with a trigger time that does not
          *   pass the cut on the trigger time.
          */
+        if(group.empty() || group == "sim_event")
+        {
         std::cout << "\n\033[1mSimulation-like events with mode == 'event' \033[0m" << std::endl;
 
         // Read the event data from the TTree in the ROOT file.
@@ -1211,7 +1348,8 @@ int main(int argc, char * argv[])
         };
 
         // Check if each condition_t entry is present in the rows vector.
-        match_conditions(rows, conditions);
+        total_failures += match_conditions(rows, conditions);
+        } // group sim_event
 
         /**
          * @brief The eight set of events to validate is the "sim-like" events
@@ -1229,6 +1367,8 @@ int main(int argc, char * argv[])
          *   reco-selection and with a parent event that does not pass the
          *   event-level cut.
          */
+        if(group.empty() || group == "sim_reco_event_cut")
+        {
         std::cout << "\n\033[1mSimulation-like events with mode == 'reco' and event-level cut \033[0m" << std::endl;
 
         // Read the event data from the TTree in the ROOT file.
@@ -1241,11 +1381,163 @@ int main(int argc, char * argv[])
         };
 
         // Check if each condition_t entry is present in the rows vector.
-        match_conditions(rows, conditions);
+        total_failures += match_conditions(rows, conditions);
+        } // group sim_reco_event_cut
+
+        /**
+         * @brief The ninth set of events to validate is the "sim-like" EM
+         * events and the response of the framework when an MCTruth cut and
+         * variable are applied in "reco" mode.
+         *
+         * - SMR00: EM00 (CC neutrino, nu_id=0) passes the iscc mctruth cut and
+         *   has a valid reco vertex position.
+         *
+         * - SMR01: EM00 has a valid true_neutrino_energy (== NEUTRINO_ENERGY).
+         *
+         * - SMR02: EM01 (NC neutrino, iscc=false) is filtered by the mctruth
+         *   cut and must NOT appear in the tree.
+         *
+         * - SMR03: EM02 (cosmic, nu_id=-1) has no generator-level neutrino and
+         *   is filtered out by the mctruth cut, consistent with how truth cuts
+         *   treat interactions with no corresponding truth instance.
+         */
+        if(group.empty() || group == "sim_reco_mctruth")
+        {
+        std::cout << "\n\033[1mSimulation-like events with mctruth cut/variable in mode == 'reco' \033[0m" << std::endl;
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_simlike/test_reco_with_mctruth_cut");
+
+        // Expected results for validation.
+        conditions = {
+            {"SMR00", {{"Run", 2}, {"Subrun", 0}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
+            {"SMR01", {{"Run", 2}, {"Subrun", 0}, {"Evt", 0}, {"true_neutrino_energy", NEUTRINO_ENERGY}}},
+            {"!SMR02", {{"Run", 2}, {"Subrun", 0}, {"Evt", 1}}},
+            {"!SMR03", {{"Run", 2}, {"Subrun", 0}, {"Evt", 2}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        total_failures += match_conditions(rows, conditions);
+        } // group sim_reco_mctruth
+
+        /**
+         * @brief The tenth set of events to validate is the "sim-like" EM
+         * events and the response of the framework when an MCTruth cut and
+         * variable are applied in "true" mode.
+         *
+         * - SMT00: EM00 (CC neutrino, nu_id=0) passes the iscc mctruth cut and
+         *   has a valid true vertex position.
+         *
+         * - SMT01: EM00 has a valid true_neutrino_energy (== NEUTRINO_ENERGY).
+         *
+         * - SMT02: EM01 (NC neutrino, iscc=false) is filtered by the mctruth
+         *   cut and must NOT appear in the tree.
+         *
+         * - SMT03: EM02 (cosmic, nu_id=-1) has no generator-level neutrino and
+         *   is filtered out by the mctruth cut, consistent with how truth cuts
+         *   treat interactions with no corresponding truth instance.
+         */
+        if(group.empty() || group == "sim_truth_mctruth")
+        {
+        std::cout << "\n\033[1mSimulation-like events with mctruth cut/variable in mode == 'true' \033[0m" << std::endl;
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_simlike/test_truth_with_mctruth_cut");
+
+        // Expected results for validation.
+        conditions = {
+            {"SMT00", {{"Run", 2}, {"Subrun", 0}, {"Evt", 0}, {"true_vertex_x", -210.0}}},
+            {"SMT01", {{"Run", 2}, {"Subrun", 0}, {"Evt", 0}, {"true_neutrino_energy", NEUTRINO_ENERGY}}},
+            {"!SMT02", {{"Run", 2}, {"Subrun", 0}, {"Evt", 1}}},
+            {"!SMT03", {{"Run", 2}, {"Subrun", 0}, {"Evt", 2}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        total_failures += match_conditions(rows, conditions);
+        } // group sim_truth_mctruth
+
+        /**
+         * @brief The eleventh set of events to validate is the "data-like"
+         * ELT events and the response of the framework's longest/second/
+         * third longest track selectors and track_multiplicity cut.
+         *
+         * - ELT00_LONGEST/ELT01_LONGEST: The longest_track selector picks
+         *   the 30 cm primary track in both events, correctly excluding the
+         *   50 cm secondary track and the 100 cm primary shower in ELT00.
+         *
+         * - ELT00_SECOND/ELT01_SECOND: The second_longest_track selector
+         *   picks the 20 cm primary track in both events.
+         *
+         * - ELT00_THIRD: The third_longest_track selector picks the 10 cm
+         *   primary track in ELT00, which has three qualifying tracks.
+         *
+         * - !ELT01_THIRD: ELT01 only has two qualifying primary tracks, so
+         *   is_third_longest_track fails and the event is absent from the
+         *   third-longest-track tree.
+         *
+         * - ELT00_MULT: ELT00 has exactly three qualifying primary tracks,
+         *   so track_multiplicity with a threshold of 3 passes.
+         *
+         * - !ELT01_MULT: ELT01 only has two qualifying primary tracks, so
+         *   track_multiplicity with a threshold of 3 fails.
+         */
+        if(group.empty() || group == "data_reco_track_selectors")
+        {
+        std::cout << "\n\033[1mData-like events with longest/second/third longest track selectors \033[0m" << std::endl;
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_datalike/test_reco_longest_track");
+
+        // Expected results for validation.
+        conditions = {
+            {"ELT00_LONGEST", {{"Run", 3}, {"Subrun", 0}, {"Evt", 0}, {"reco_longest_track_length", 30.0}}},
+            {"ELT01_LONGEST", {{"Run", 3}, {"Subrun", 0}, {"Evt", 1}, {"reco_longest_track_length", 30.0}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        total_failures += match_conditions(rows, conditions);
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_datalike/test_reco_second_longest_track");
+
+        // Expected results for validation.
+        conditions = {
+            {"ELT00_SECOND", {{"Run", 3}, {"Subrun", 0}, {"Evt", 0}, {"reco_second_longest_track_length", 20.0}}},
+            {"ELT01_SECOND", {{"Run", 3}, {"Subrun", 0}, {"Evt", 1}, {"reco_second_longest_track_length", 20.0}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        total_failures += match_conditions(rows, conditions);
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_datalike/test_reco_third_longest_track");
+
+        // Expected results for validation.
+        conditions = {
+            {"ELT00_THIRD", {{"Run", 3}, {"Subrun", 0}, {"Evt", 0}, {"reco_third_longest_track_length", 10.0}}},
+            {"!ELT01_THIRD", {{"Run", 3}, {"Subrun", 0}, {"Evt", 1}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        total_failures += match_conditions(rows, conditions);
+
+        // Read the event data from the TTree in the ROOT file.
+        rows = read_event_data("events/test_datalike/test_reco_track_multiplicity");
+
+        // Expected results for validation.
+        conditions = {
+            {"ELT00_MULT", {{"Run", 3}, {"Subrun", 0}, {"Evt", 0}, {"reco_vertex_x", -210.0}}},
+            {"!ELT01_MULT", {{"Run", 3}, {"Subrun", 0}, {"Evt", 1}}},
+        };
+
+        // Check if each condition_t entry is present in the rows vector.
+        total_failures += match_conditions(rows, conditions);
+        } // group data_reco_track_selectors
 
         // Finished!
         std::cout << "\n\033[1m---        DONE        ---\033[0m" << std::endl;
         f.Close();
+        return (total_failures > 0) ? 1 : 0;
     }
     return 0;
 }

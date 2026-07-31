@@ -1,0 +1,30 @@
+[meta]
+analysis = "sbn_nue_oscillation"
+description = "SBN nue appearance oscillation analysis"
+owners = ["noza", "jxia", "mueller"]
+experiments = ["sbnd", "icarus"]
+
+[defaults]
+batch_size = 1
+
+[[toml]]
+role = "primary"
+file = "selection.toml"
+output_pattern = "spineosc_nue_%e_%t"
+
+  [toml.enable.sbnd]
+  keys = ["sbnd_mc5e18", "sbnd_mc1e20", "sbnd_offbeam"]
+
+  [toml.enable.icarus]
+  keys = ["icarus_nominal", "icarus_cvext", "icarus_offbeam"]
+
+[[toml]]
+role = "data_blind_safe"
+file = "data_blind_safe.toml"
+output_pattern = "spineosc_nue_%e_%t_bnblight#"
+
+  [toml.enable.sbnd]
+  keys = ["sbnd_bnblight"]
+
+  [toml.enable.icarus]
+  keys = ["icarus_bnblight"]

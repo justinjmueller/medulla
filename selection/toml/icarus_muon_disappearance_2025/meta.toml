@@ -1,0 +1,15 @@
+[meta]
+analysis = "icarus_muon_disappearance"
+description = "ICARUS muon disappearance oscillation analysis"
+owners = ["mueller"]
+experiments = ["icarus"]
+
+[defaults]
+batch_size = 1
+
+[[toml]]
+role = "primary"
+file = "icarus_disappearance.toml"
+
+  [toml.enable.icarus]
+  keys = []
