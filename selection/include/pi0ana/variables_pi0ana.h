@@ -57,16 +57,16 @@ namespace vars::pi0ana
 	      double num_primary_photons_thresh = vars::photon_multiplicity(obj, {params[0]});
 	      double num_primary_electrons_thresh = vars::electron_multiplicity(obj, {params[1]});
 	      double num_primary_muons_thresh = vars::muon_multiplicity(obj, {params[2]});
-	      double num_primary_pi0s_thresh = utilities_pi0ana::true_primary_pi0_multiplicity(obj, {params[3]});
+	      double num_primary_pi0s_thresh = utilities::true_primary_pi0_multiplicity(obj, {params[3]});
 	      double num_primary_pions_thresh = vars::pion_multiplicity(obj, {params[4]});
 	      double num_primary_protons_thresh = vars::proton_multiplicity(obj, {params[5]});
 	
-	      double num_nonprimary_pi0s = utilities_pi0ana::true_nonprimary_pi0_multiplicity(obj, {0});
+	      double num_nonprimary_pi0s = utilities::true_nonprimary_pi0_multiplicity(obj, {0});
 
 	      double num_primary_photons = vars::photon_multiplicity(obj, {0});
 	      double num_primary_electrons = vars::electron_multiplicity(obj, {0});
         double num_primary_muons = vars::muon_multiplicity(obj, {0});
-	      double num_primary_pi0s = utilities_pi0ana::true_primary_pi0_multiplicity(obj, {0.0});
+	      double num_primary_pi0s = utilities::true_primary_pi0_multiplicity(obj, {0.0});
 	      double num_primary_pions = vars::pion_multiplicity(obj, {0});
 	      double num_primary_protons = vars::proton_multiplicity(obj, {0});
 
@@ -106,16 +106,16 @@ namespace vars::pi0ana
         double num_primary_photons_thresh = vars::photon_multiplicity(obj, {params[0]});
 	      double num_primary_electrons_thresh = vars::electron_multiplicity(obj, {params[1]});
 	      double num_primary_muons_thresh = vars::muon_multiplicity(obj, {params[2]});
-	      double num_primary_pi0s_thresh = utilities_pi0ana::true_primary_pi0_multiplicity(obj, {params[3]});
+	      double num_primary_pi0s_thresh = utilities::true_primary_pi0_multiplicity(obj, {params[3]});
 	      double num_primary_pions_thresh = vars::pion_multiplicity(obj, {params[4]});
 	      double num_primary_protons_thresh = vars::proton_multiplicity(obj, {params[5]});
 	
-	      double num_nonprimary_pi0s = utilities_pi0ana::true_nonprimary_pi0_multiplicity(obj, {0});
+	      double num_nonprimary_pi0s = utilities::true_nonprimary_pi0_multiplicity(obj, {0});
       
 	      double num_primary_photons = vars::photon_multiplicity(obj, {0});
 	      double num_primary_electrons = vars::electron_multiplicity(obj, {0});
 	      double num_primary_muons = vars::muon_multiplicity(obj, {0});
-	      double num_primary_pi0s = utilities_pi0ana::true_primary_pi0_multiplicity(obj, {0.0});
+	      double num_primary_pi0s = utilities::true_primary_pi0_multiplicity(obj, {0.0});
 	      double num_primary_pions = vars::pion_multiplicity(obj, {0});
 	      double num_primary_protons = vars::proton_multiplicity(obj, {0});
 
@@ -157,16 +157,16 @@ namespace vars::pi0ana
         double num_primary_photons_thresh = vars::photon_multiplicity(obj, {params[0]});
 	      double num_primary_electrons_thresh = vars::electron_multiplicity(obj, {params[1]});
 	      double num_primary_muons_thresh = vars::muon_multiplicity(obj, {params[2]});
-	      double num_primary_pi0s_thresh = utilities_pi0ana::true_primary_pi0_multiplicity(obj, {params[3]});
+	      double num_primary_pi0s_thresh = utilities::true_primary_pi0_multiplicity(obj, {params[3]});
 	      double num_primary_pions_thresh = vars::pion_multiplicity(obj, {params[4]});
 	      double num_primary_protons_thresh = vars::proton_multiplicity(obj, {params[5]});
 
-	      double num_nonprimary_pi0s = utilities_pi0ana::true_nonprimary_pi0_multiplicity(obj, {0});
+	      double num_nonprimary_pi0s = utilities::true_nonprimary_pi0_multiplicity(obj, {0});
       
 	      double num_primary_photons = vars::photon_multiplicity(obj, {0});
 	      double num_primary_electrons = vars::electron_multiplicity(obj, {0});
 	      double num_primary_muons = vars::muon_multiplicity(obj, {0});
-	      double num_primary_pi0s = utilities_pi0ana::true_primary_pi0_multiplicity(obj, {0.0});
+	      double num_primary_pi0s = utilities::true_primary_pi0_multiplicity(obj, {0.0});
 	      double num_primary_pions = vars::pion_multiplicity(obj, {0});
 	      double num_primary_protons = vars::proton_multiplicity(obj, {0});
 
@@ -216,16 +216,16 @@ namespace vars::pi0ana
         double num_primary_photons_thresh = vars::photon_multiplicity(obj, {params[0]});
 	      double num_primary_electrons_thresh = vars::electron_multiplicity(obj, {params[1]});
 	      double num_primary_muons_thresh = vars::muon_multiplicity(obj, {params[2]});
-	      double num_primary_pi0s_thresh = utilities_pi0ana::true_primary_pi0_multiplicity(obj, {params[3]});
+	      double num_primary_pi0s_thresh = utilities::true_primary_pi0_multiplicity(obj, {params[3]});
 	      double num_primary_pions_thresh = vars::pion_multiplicity(obj, {params[4]});
 	      double num_primary_protons_thresh = vars::proton_multiplicity(obj, {params[5]});
 	
-	      double num_nonprimary_pi0s = utilities_pi0ana::true_nonprimary_pi0_multiplicity(obj, {0.0});
+	      double num_nonprimary_pi0s = utilities::true_nonprimary_pi0_multiplicity(obj, {0.0});
 	
 	      double num_primary_photons = vars::photon_multiplicity(obj, {0.0});
 	      double num_primary_electrons = vars::electron_multiplicity(obj, {0.0});
 	      double num_primary_muons = vars::muon_multiplicity(obj, {0});
-	      double num_primary_pi0s = utilities_pi0ana::true_primary_pi0_multiplicity(obj, {0.0});
+	      double num_primary_pi0s = utilities::true_primary_pi0_multiplicity(obj, {0.0});
 	      double num_primary_pions = vars::pion_multiplicity(obj, {0});
 	      double num_primary_protons = vars::proton_multiplicity(obj, {0});
 
@@ -247,146 +247,5 @@ namespace vars::pi0ana
     }
     REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_ncpi0_simple1, category_topology_ncpi0_simple1);
 
-    /**
-     * @brief Dummy GUNDAM variable for cut type.
-     * @details Cut type specifies a signal or sideband cut.
-     * @param obj the interaction to apply the variable on.
-     * @return the cut type for GUNDAM. 
-     */
-    template<class T>
-    double cut_type(const T & obj)
-    {
-        // Signal
-        double cat(1);
-      
-	      // Sideband
-	      //cat = 2;
-	      return cat;
-    }
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, cut_type, cut_type);
-
-    /**
-     * @brief Dummy GUNDAM variable for sample classification (data or not).
-     * @details "is_data" specifies whether or not sample comes from data.
-     * @param obj the interaction to apply the variable on.
-     * @return the sample classification (data or not.)
-     */
-    template<class T>
-    double is_data(const T & obj)
-    {
-        double cat(-5);
-	      return cat;
-    }
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, is_data, is_data);
-
-    /**
-     * @brief Dummy GUNDAM variable for interaction classification (neutrino or not).
-     * @details "is_nu" specifies wheter or not an interaction is from a neutrino.
-     * @param obj the interactin to apply the variable on.
-     * @return the interaction classification (nu or not.)
-     */
-    template<class T>
-    double is_nu(const T & obj)
-    {
-        double cat(-5);
-	      return cat;
-    }
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, is_nu, is_nu);
-
-    /**
-     * @brief Variable for neutral pion momentum magnitude.
-     * @details Momentum is calculated upstream in SPINE reconstruction.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to apply the variable on.
-     * @return the momentum of the neutral pion in GeV.
-     */
-    template<class T>
-    double pi0_momentum(const T & obj)
-    {
-        pi0 s = utilities_pi0ana::pi0_info(obj);
-	      return s.momentum;
-    }
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_momentum, pi0_momentum);
-    
-    /**
-     * @brief Variable for neutral pion angle to neutrino beam.
-     * @details Angle is calculated using neutral pion momentum and beam direction.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to apply the variable on.
-     * @return the neutral pion angle to the neutrino beam.
-     */
-    template<class T>
-    double pi0_beam_costheta(const T & obj)
-    {
-        pi0 s = utilities_pi0ana::pi0_info(obj);
-	      return s.beam_costheta;
-    }
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_beam_costheta, pi0_beam_costheta);
-
-    /**
-     * @brief Variable for pi0 leading photon conversion distance.
-     * @details Variable for pi0 leading photon conversion distance
-     * [cm], as calculated using interaction vertex and shower start point.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to apply the variable on.
-     * @return the pi0 leading photon conversion distance in cm.
-     */
-    template<class T>
-    double pi0_leading_shower_conv_dist(const T & obj)
-    {
-        pi0 s = utilities_pi0ana::pi0_info(obj);
-	      return s.leading_shower_conv_dist;
-    }
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_leading_shower_conv_dist, pi0_leading_shower_conv_dist);
-
-    /**
-     * @brief Variable for pi0 subleading photon conversion distance.
-     * @details Variable for pi0 subleading photon conversion distance
-     * [cm], as calculated using interaction vertex and shower start point.
-     * @tparam T the type of interaction (true or reco). 
-     * @param obj the interaction to apply the variable on.
-     * @return the pi0 subleading photon conversion distance in cm. 
-     */
-    template<class T>
-    double pi0_subleading_shower_conv_dist(const T & obj)
-    {
-        pi0 s = utilities_pi0ana::pi0_info(obj);
-        return s.subleading_shower_conv_dist;
-    }
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_subleading_shower_conv_dist, pi0_subleading_shower_conv_dist);
-
-    /**
-    * @brief Variable for pi0 diphoton opening angle (cosine).
-    * @Details Variable for pi0 diphoton opening angle, as calculated 
-    * using the neutrino interaction vertex and shower start points in reco, 
-    * and the true photon momenta in truth.
-    * @tparam T the type of interaction (true or reco).
-    * @param obj the interaction to apply the variable on.
-    * @return the pi0 diphoton opening angle.
-    */
-    template<class T>
-    double pi0_showers_costheta(const T & obj)
-    {
-	      pi0 s = utilities_pi0ana::pi0_info(obj);
-	      return s.showers_costheta;
-    }
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_showers_costheta, pi0_showers_costheta);
-
-    /**
-     * @brief Variable for neutral pion mass.
-     * @details Variable for neutral pion mass, as calculated
-     * with photon energies and opening angle.
-     * @tparam T the type of interaction (true or reco).
-     * @param obj the interaction to apply the variable on.
-     * @return the neutral pion mass in MeV/c^2.
-     */
-    template<class T>
-    double pi0_mass(const T & obj)
-    {
-
-        pi0 s = utilities_pi0ana::pi0_info(obj);
-	      return s.mass;
-    }
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_mass, pi0_mass);
 }
 #endif // VARS_PI0ANA_H

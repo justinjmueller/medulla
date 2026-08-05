@@ -16,7 +16,6 @@
 #include "framework.h"
 #include "include/particle_cuts.h"
 #include "include/particle_variables.h"
-#include "include/pi0ana/utilities_pi0ana.h"
 
 /**
  * @namespace selectors
@@ -401,6 +400,109 @@ namespace selectors
     REGISTER_SELECTOR(target_michel, target_michel);
 
     /**
+     * @brief Selects the leading and subleading photon forming the best pi0 candidate.
+     * Helper function. Not registered.
+     * @details
+     * Reco branch: iterates all ordered primary-photon pairs above a 25 MeV
+     * per-shower threshold, computes the diphoton invariant mass using the
+     * vertex-to-shower-start opening angle, and selects the pair whose mass
+     * is closest to PI0_MASS (135 MeV). Leading photon has higher calo KE.
+     *
+     * True branch: groups photon daughters by parent pi0 track ID via
+     * utilities::get_true_pi0s, requires exactly two photon daughters, and
+     * orders them by true KE.
+     *
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return pair of indices {leading_photon, subleading_photon}, or
+     *         {kNoMatch, kNoMatch} if no valid pair is found.
+     */
+    template<class T>
+    std::pair<size_t, size_t> pi0_photon_pair(const T & obj)
+    {
+        if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
+        {
+            auto true_primary_pi0s = utilities::get_true_pi0s(obj, true);
+
+            int num_photon_daughters = 0;
+            std::vector<size_t> daughter_indices;
+            for(const auto & entry : true_primary_pi0s)
+                for(size_t idx : entry.second)
+                {
+                    daughter_indices.push_back(idx);
+                    if(obj.particles[idx].pid == 0) ++num_photon_daughters;
+                }
+
+            if(num_photon_daughters != 2)
+                return {kNoMatch, kNoMatch};
+
+            const auto & d0 = obj.particles[daughter_indices[0]];
+            const auto & d1 = obj.particles[daughter_indices[1]];
+            if(d0.ke > d1.ke)
+                return {daughter_indices[0], daughter_indices[1]};
+            else
+                return {daughter_indices[1], daughter_indices[0]};
+        }
+        else
+        {
+            constexpr double threshold = 25.0;
+            double vx = obj.vertex[0], vy = obj.vertex[1], vz = obj.vertex[2];
+
+            std::vector<std::pair<std::pair<size_t,size_t>, double>> candidates;
+            for(size_t i = 0; i < obj.particles.size(); ++i)
+            {
+                const auto & p = obj.particles[i];
+                if(!(p.is_primary && p.pid == 0)) continue;
+
+                double dx0 = p.start_point[0] - vx;
+                double dy0 = p.start_point[1] - vy;
+                double dz0 = p.start_point[2] - vz;
+                double r0  = std::sqrt(dx0*dx0 + dy0*dy0 + dz0*dz0);
+
+                for(size_t j = 0; j < obj.particles.size(); ++j)
+                {
+                    if(j == i) continue;
+                    const auto & q = obj.particles[j];
+                    if(!(q.is_primary && q.pid == 0)) continue;
+
+                    double ke_p = pvars::calo_ke(p), ke_q = pvars::calo_ke(q);
+                    double leading_ke    = (ke_p > ke_q) ? ke_p : ke_q;
+                    double subleading_ke = (ke_p > ke_q) ? ke_q : ke_p;
+                    if(leading_ke < threshold || subleading_ke < threshold) continue;
+
+                    double dx1 = q.start_point[0] - vx;
+                    double dy1 = q.start_point[1] - vy;
+                    double dz1 = q.start_point[2] - vz;
+                    double r1  = std::sqrt(dx1*dx1 + dy1*dy1 + dz1*dz1);
+
+                    double costheta = (dx0*dx1 + dy0*dy1 + dz0*dz1) / (r0 * r1);
+                    double mass = std::sqrt(2.0 * leading_ke * subleading_ke * (1.0 - costheta));
+                    
+                    // TODO: this currently results in a "no-op" when sorting
+                    // candidate pairs. This is needed to match Lane's thesis
+                    // analysis, but should be revisited in the future to see
+                    // if it can be improved by using a more sophisticated
+                    // metric for selecting the best pi0 candidate.
+                    candidates.push_back({{i, j}, PLACEHOLDERVALUE});
+                }
+            }
+
+            if(candidates.empty()) return {kNoMatch, kNoMatch};
+
+            std::sort(candidates.begin(), candidates.end(),
+                [](const auto & a, const auto & b) {
+                    return std::abs(a.second - PI0_MASS) < std::abs(b.second - PI0_MASS);
+                });
+
+            auto [idx0, idx1] = candidates[0].first;
+            double ke0 = pvars::calo_ke(obj.particles[idx0]);
+            double ke1 = pvars::calo_ke(obj.particles[idx1]);
+            return (ke0 > ke1) ? std::make_pair(idx0, idx1)
+                               : std::make_pair(idx1, idx0);
+        }
+    }
+
+    /**
      * @brief Find the index corresponding to the pi0 leading shower.
      * @details The leading shower is described as the pi0 daughter
      * shower with the highest kinetic energy.
@@ -410,20 +512,7 @@ namespace selectors
     template<class T>
     size_t pi0_leading_shower(const T & obj)
     {
-      
-        // Truth                                                                                                                                                            
-        if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
-                       {
-			 pi0 s = utilities_pi0ana::pi0_info(obj);
-			 return s.leading_shower_index;
-                       }
-        // Reco                                                                                                                                                            
-        else
-	{
-	    pi0 s = utilities_pi0ana::pi0_info(obj);
-            return s.leading_shower_index;
-	}
-
+        return pi0_photon_pair(obj).first;
     }
     REGISTER_SELECTOR(pi0_leading_shower, pi0_leading_shower);
 
@@ -437,20 +526,7 @@ namespace selectors
     template<class T>
     size_t pi0_subleading_shower(const T & obj)
     {
-
-        // Truth                                                                                                                                                             
-        if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
-                       {
-			 pi0 s = utilities_pi0ana::pi0_info(obj);
-			 return s.subleading_shower_index;
-                       }
-        // Reco                                                                                                                                             
-        else
-	{
-            pi0 s = utilities_pi0ana::pi0_info(obj);
-            return s.subleading_shower_index;
-	}
-
+        return pi0_photon_pair(obj).second;
     }
     REGISTER_SELECTOR(pi0_subleading_shower, pi0_subleading_shower);
 }

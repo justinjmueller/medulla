@@ -185,12 +185,12 @@ namespace bvars
      * @tparam T the type of particle (true or reco).
      * @param p0 the leading shower-like particle.
      * @param p1 the subleading shower-like particle (unused).
-     * @return kinetic energy of p0 in GeV.
+     * @return kinetic energy of p0 in MeV.
      */
     template<class T>
     double leading_ke(const T & p0, const T & /*p1*/)
     {
-        return (*pvars::calofn<T>)(p0) / 1000.0;
+        return (*pvars::calofn<T>)(p0);
     }
     REGISTER_BIVAR_SCOPE(RegistrationScope::BothParticle, leading_ke, leading_ke);
 
@@ -203,12 +203,12 @@ namespace bvars
      * @tparam T the type of particle (true or reco).
      * @param p0 the leading shower-like particle (unused).
      * @param p1 the subleading shower-like particle.
-     * @return kinetic energy of p1 in GeV.
+     * @return kinetic energy of p1 in MeV.
      */
     template<class T>
     double subleading_ke(const T & /*p0*/, const T & p1)
     {
-        return (*pvars::calofn<T>)(p1) / 1000.0;
+        return (*pvars::calofn<T>)(p1);
     }
     REGISTER_BIVAR_SCOPE(RegistrationScope::BothParticle, subleading_ke, subleading_ke);
 
@@ -412,37 +412,5 @@ namespace bvars
         return mpz / mag;
     }
     REGISTER_BIVAR_SCOPE(RegistrationScope::BothParticle, pi0_beam_costheta, pi0_beam_costheta);
-
-    /**
-     * @brief SPINE particle index of the leading shower-like particle.
-     * @details Dispatches to pvars::id<T>. The subleading particle p1 is not
-     * used.
-     * @tparam T the type of particle (true or reco).
-     * @param p0 the leading shower-like particle.
-     * @param p1 the subleading shower-like particle (unused).
-     * @return the particle index of p0.
-     */
-    template<class T>
-    double leading_id(const T & p0, const T & /*p1*/)
-    {
-        return pvars::id(p0);
-    }
-    REGISTER_BIVAR_SCOPE(RegistrationScope::BothParticle, leading_id, leading_id);
-
-    /**
-     * @brief SPINE particle index of the subleading shower-like particle.
-     * @details Dispatches to pvars::id<T>. The leading particle p0 is not
-     * used.
-     * @tparam T the type of particle (true or reco).
-     * @param p0 the leading shower-like particle (unused).
-     * @param p1 the subleading shower-like particle.
-     * @return the particle index of p1.
-     */
-    template<class T>
-    double subleading_id(const T & /*p0*/, const T & p1)
-    {
-        return pvars::id(p1);
-    }
-    REGISTER_BIVAR_SCOPE(RegistrationScope::BothParticle, subleading_id, subleading_id);
 }
 #endif // BIVARIABLES_H
