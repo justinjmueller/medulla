@@ -334,6 +334,31 @@ namespace selectors
     REGISTER_SELECTOR(leading_primary_electron, leading_primary_electron);
 
     /**
+     * @brief Finds the index corresponding to the leading primary shower 
+     * (electron OR photon).
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the leading primary shower (highest KE).
+     */
+    template<class T>
+    size_t leading_primary_shower(const T & obj)
+    {
+        size_t leading_electron_index = leading_primary_particle_index(obj, pvars::kElectron);
+        size_t leading_photon_index = leading_primary_particle_index(obj, pvars::kPhoton);
+
+        double leading_electron_ke = (leading_electron_index != kNoMatch) ? pvars::ke(obj.particles[leading_electron_index]) : 0.0;
+        double leading_photon_ke = (leading_photon_index != kNoMatch) ? pvars::ke(obj.particles[leading_photon_index]) : 0.0;
+
+        if (leading_electron_ke > leading_photon_ke)
+            return leading_electron_index;
+        else if (leading_photon_ke > 0)
+            return leading_photon_index;
+        else
+            return kNoMatch; // No primary showers found
+    }
+    REGISTER_SELECTOR(leading_primary_shower, leading_primary_shower);
+
+    /**
      * @brief Finds the index corresponding to the leading primary muon.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to operate on.
