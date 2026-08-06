@@ -15,6 +15,7 @@
 
 #include "framework.h"
 #include "selectors.h"
+#include "cuts.h"
 
 /**
  * @namespace cuts::pi0ana
@@ -113,5 +114,22 @@ namespace cuts::pi0ana
 	      return num_primary_pi0s == 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::True, single_pi0, single_pi0);
+
+    /**
+     * @brief Apply cut on the number of primary showers in the interaction.
+     * @details This function applies a cut on the number of primary photons or electrons 
+     *  in the interaction, requiring exactly one.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @param params the parameters for the cut.
+     * @return true if the interaction contains exactly one primary shower.
+     */
+    template<class T>
+    bool single_shower(const T & obj, std::vector<double> params={25.0})
+    {
+        return (cuts::particle_multiplicity(obj, 1, 0, params) 
+              + cuts::particle_multiplicity(obj, 1, 1, params)) == 1;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, single_shower, single_shower);
 }
 #endif // CUTS_PI0ANA_H
