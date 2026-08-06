@@ -1189,5 +1189,27 @@ namespace pvars
         return p.primary_scores[0];
     }
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, secondary_softmax, secondary_softmax);
+
+    /**
+     * @brief Variable for the off-axis angle of the particle for sbnd.
+     * @details The PRISM off-axis angle is the angle made by the neutrino
+     * direction vector and the vector aligned with the BNB axis (z-axis).
+     * Because we have no handle on the production vertex, we assume the
+     * direction is the one formed by the unit vector pointing from the BNB
+     * target to the interaction vertex. This uses the angle projected onto
+     * the front face of the detector.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the off-axis angle of the particle.
+     */
+    template<class T>
+    double off_axis_angle_sbnd(const T & p)
+    {
+        return 180./3.141592653589793 * std::atan(std::sqrt(
+                std::pow(p.start_point[0] + 74, 2) +
+                std::pow(p.start_point[1], 2)
+            ) / 11000);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, off_axis_angle_sbnd, off_axis_angle_sbnd);
 }
 #endif // PARTICLE_VARIABLES_H
