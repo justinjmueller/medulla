@@ -29,6 +29,7 @@
 #include "include/selectors.h"
 #include "include/biselectors.h"
 #include "include/bivariables.h"
+#include "include/mctruth_variables.h"
 #include "framework.h"
 
 /**
@@ -416,10 +417,17 @@ namespace vars
     template<class T>
     double off_axis_angle_sbnd(const T & obj)
     {
-        return 180./3.141592653589793 * std::atan(std::sqrt(
-            std::pow(vertex_x(obj) + 74, 2) +
-            std::pow(vertex_y(obj), 2)
-        ) / 11000);
+        if constexpr (std::is_same_v<T, caf::SRParticleTruthDLPProxy>)
+        {
+            return mctruth::off_axis_angle(obj);
+        }
+        else
+        {
+            return 180./3.141592653589793 * std::atan(std::sqrt(
+                std::pow(vertex_x(obj) + 74, 2) +
+                std::pow(vertex_y(obj), 2)
+            ) / 11000);
+        }
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, off_axis_angle_sbnd, off_axis_angle_sbnd);
 
@@ -440,10 +448,17 @@ namespace vars
     template<class T>
     double off_axis_angle_icarus(const T & obj)
     {
-        return 180./3.141592653589793 * std::atan(std::sqrt(
-            std::pow(vertex_x(obj), 2) +
-            std::pow(vertex_y(obj), 2)
-        ) / (vertex_z(obj) + 59105));
+        if constexpr (std::is_same_v<T, caf::SRParticleTruthDLPProxy>)
+        {
+            return mctruth::off_axis_angle(obj);
+        }
+        else
+        {
+            return 180./3.141592653589793 * std::atan(std::sqrt(
+                std::pow(vertex_x(obj), 2) +
+                std::pow(vertex_y(obj), 2)
+            ) / (vertex_z(obj) + 59105));
+        }
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, off_axis_angle_icarus, off_axis_angle_icarus);
 
