@@ -247,7 +247,6 @@ namespace vars::pi0ana
     }
     REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_ncpi0_simple1, category_topology_ncpi0_simple1);
 
-
 	/**
      * @brief Variable for enumerating interaction topologies.
      * @details This variable provides a basic categorization of interactions
@@ -273,7 +272,8 @@ namespace vars::pi0ana
 	    {
             // 0mu0pi1pi0 (in-phase, fiducial)
 	        if(cuts::pi0ana::single_pi0<caf::SRInteractionTruthDLPProxy>(obj, {params[4]}) && cuts::no_muons(obj, {params[2]}) && cuts::no_charged_pions(obj, {params[3]}) 
-			&& cuts::two_photons(obj, {params[0]}) && cuts::pi0ana::leading_photon_ke_cut(obj, {params[6]}) && !cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 0;
+			&& cuts::two_photons(obj, {params[0]}) && cuts::pi0ana::leading_photon_ke_cut(obj, {params[6]})
+			&& !cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 0;
 	        // NCpi0 non-signal background
 	        else if(num_primary_pi0s > 0 && !cuts::iscc(obj)) cat = 1;
 			// CCpi0
@@ -284,5 +284,55 @@ namespace vars::pi0ana
 	    return cat;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_ncpi0_simple2, category_topology_ncpi0_simple2);
+
+	/**
+     * @brief Variable for enumerating interaction topologies.
+     * @details This variable provides a basic categorization of interactions
+     * using the following categories:
+     * 0: NCpi0 signal (in-phase, fiducial, 0mu0pi1pi0)
+     * 1: NCpi0 non-signal background
+     * 2: CCpi0
+	 * 3: Other nu without pi0.
+     * 10: Cosmic
+     * @param obj the interaction to apply the variable on.
+     * @return the enumerated topology of the interaction.
+     */
+    template<class T>
+    double category_topology_ncpi0_simple3(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params={})
+    {
+		double num_primary_pi0s = utilities::true_primary_pi0_multiplicity(obj, {0.0});
+
+		bool showers_in_fid_vol(false);
+        size_t phi = selectors::pi0_leading_shower(obj);
+		size_t dex = selectors::pi0_subleading_shower(obj);
+
+	    if(phi != kNoMatch && dex != kNoMatch) 
+		{
+			auto & lead(obj.particles[phi]);
+        	auto & sublead(obj.particles[dex]);
+			if(pvars::containment(lead) && pvars::containment(sublead)) showers_in_fid_vol = true;
+		}
+
+	    // Cosmic
+	    uint16_t cat(10);
+	
+	    // Neutrino
+	    if(cuts::neutrino(obj))
+	    {
+            // 0mu0pi1pi0 (in-phase, fiducial)
+	        if(cuts::pi0ana::single_pi0<caf::SRInteractionTruthDLPProxy>(obj, {params[4]}) && cuts::no_muons(obj, {params[2]}) && cuts::no_charged_pions(obj, {params[3]}) 
+			&& cuts::two_photons(obj, {params[0]}) && cuts::pi0ana::leading_photon_ke_cut(obj, {params[6]}) && showers_in_fid_vol
+			&& !cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 0;
+	        // NCpi0 non-signal background
+	        else if(num_primary_pi0s > 0 && !cuts::iscc(obj)) cat = 1;
+			// CCpi0
+	        else if(num_primary_pi0s > 0 && cuts::iscc(obj)) cat = 2;
+	        // Other nu without pi0
+	        else if(num_primary_pi0s == 0) cat = 3;
+	    }
+	    return cat;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_ncpi0_simple3, category_topology_ncpi0_simple3);
+	
 }
 #endif // VARS_PI0ANA_H

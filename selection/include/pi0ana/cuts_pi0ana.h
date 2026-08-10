@@ -87,7 +87,7 @@ namespace cuts::pi0ana
     {
       
         bool passes(false);
-        size_t phi = selectors::leading_photon(obj);
+        size_t phi = selectors::pi0_leading_shower(obj);
 	      if(phi == kNoMatch)
 	      {
 	          return false;
