@@ -125,6 +125,21 @@ namespace pvars
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, id, id);
 
     /**
+     * @brief Variable for the interaction ID.
+     * @details This variable is intended to provide a unique identifier for
+     * each interaction within../selection/include/variables.h the event record. This number is assigned
+     * starting at 0 for the first interaction in the event and is incremented
+     * for each subsequent interaction. This assignment is done upstream in the
+     * SPINE reconstruction.
+     * @tparam T the type of interaction (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the interaction ID.
+     */
+    template<class T>
+    double interaction_id(const T & p) { return p.id; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, interaction_id, interaction_id);
+
+    /**
      * @brief Variable for the best-match particle index in the counterpart collection.
      * @details Returns the index of the highest-overlap matched particle
      * (reco→true or true→reco) as assigned by the SPINE post-processor.

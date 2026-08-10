@@ -866,6 +866,19 @@ namespace vars
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, muon_multiplicity, muon_multiplicity);
 
+    template<class T>
+    double muon_multiplicity_nothresh(const T & obj)
+    {
+        size_t count(0);
+        for(const auto & p : obj.particles)
+        {
+            if(pvars::pid(p) == pvars::kMuon)
+                ++count;
+        }
+        return count;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, muon_multiplicity_nothresh, muon_multiplicity_nothresh);
+
     /**
      * @brief Variable for the (primary) pion multiplicity of the
      * interaction.
@@ -894,6 +907,19 @@ namespace vars
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, pion_multiplicity, pion_multiplicity);
 
+    template<class T>
+    double pion_multiplicity_nothresh(const T & obj)
+    {
+        size_t count(0);
+        for(const auto & p : obj.particles)
+        {
+            if(pvars::pid(p) == pvars::kPion)
+                ++count;
+        }
+        return count;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, pion_multiplicity_nothresh, pion_multiplicity_nothresh);
+
     /**
      * @brief Variable for the (primary) proton multiplicity of the
      * interaction.
@@ -921,6 +947,19 @@ namespace vars
         return count;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, proton_multiplicity, proton_multiplicity);
+    
+    template<class T>
+    double proton_multiplicity_nothresh(const T & obj)
+    {
+        size_t count(0);
+        for(const auto & p : obj.particles)
+        {
+            if(pvars::pid(p) == pvars::kProton)
+                ++count;
+        }
+        return count;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, proton_multiplicity_nothresh, proton_multiplicity_nothresh);
 
     /**
      * @brief Variable for the distance between the interaction vertex and the
