@@ -1,0 +1,89 @@
+[general]
+output = "output"
+primfn = "lax_primary_classification"
+pidfn = "default_pid"
+fsthresh = [
+    "@photon_threshold",
+    "@electron_threshold",
+    "@muon_threshold",
+    "@pion_threshold",
+    "@proton_threshold",
+]
+
+[parameters]
+photon_threshold = 25.0
+electron_threshold = 25.0
+muon_threshold = 143.425
+pion_threshold = 25.0
+proton_threshold = 50.0
+
+[[sample]]
+key = "sbnd_ar23p_mc5e18"
+name = "sbnd"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/mc_MCP2025B_5e18_v10_06_00_09_prodgenie_corsika_proton_rockbox_sbnd_CV_caf_sbnd/*/*/*ar23p.flat.caf.root"
+ismc = true
+disable = false
+
+[[sample]]
+key = "sbnd_ar23p_mc1e20"
+name = "sbnd"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/mc_MCP2025C_1e20_v10_06_00_09_prodgenie_corsika_proton_rockbox_sbnd_CV_caf_sbnd/*/*/*ar23p.flat.caf.root"
+ismc = true
+disable = false
+
+[[sample]]
+key = "icarus_ar23p_run4"
+name = "icarus"
+experiment = "icarus"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4_CVMC_ReCAF2026_BNB/*/*/*ar23p.flat.caf.root"
+ismc = true
+disable = true
+
+[[tree]]
+name = "selected"
+sim_only = false
+add_systematics = false
+mode = "reco"
+cut = [
+    { name = "fiducial_cut",          type = "reco" },
+    { name = "no_photons",            type = "reco",  parameters = [ "@photon_threshold"   ] },
+    { name = "no_electrons",          type = "reco",  parameters = [ "@electron_threshold" ] },
+    { name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold"     ] },
+    { name = "no_charged_pions",      type = "reco",  parameters = [ "@pion_threshold"     ] },
+    { name = "!no_protons",           type = "reco",  parameters = [ "@proton_threshold"   ] },
+    { name = "containment_cut",       type = "reco"},
+    { name = "size_cut",              type = "true_particle", parameters = [0,]},
+]
+branch = [
+    { name = "interaction_id",        type = "reco_particle"},
+    { name = "pid",                   type = "both_particle"},
+    { name = "p",                     type = "both_particle"},
+    { name = "start_dir_x",           type = "both_particle"},
+    { name = "start_dir_y",           type = "both_particle"},
+    { name = "start_dir_z",           type = "both_particle"},
+]
+
+[[tree]]
+name = "signal"
+sim_only = true
+mode = "true"
+cut = [
+    { name = "fiducial_cut",          type = "true" },
+    { name = "no_photons",            type = "true",  parameters = [ "@photon_threshold"   ] },
+    { name = "no_electrons",          type = "true",  parameters = [ "@electron_threshold" ] },
+    { name = "single_muon",           type = "true",  parameters = [ "@muon_threshold"     ] },
+    { name = "no_charged_pions",      type = "true",  parameters = [ "@pion_threshold"     ] },
+    { name = "!no_protons",           type = "true",  parameters = [ "@proton_threshold"   ] },
+    { name = "containment_cut",       type = "true"},
+    { name = "size_cut",              type = "true_particle", parameters = [0,]},
+]
+branch = [
+    { name = "interaction_id",        type = "true_particle" },
+    { name = "pid",                   type = "both_particle"},
+    { name = "p",                     type = "both_particle"},
+    { name = "start_dir_x",           type = "both_particle"},
+    { name = "start_dir_y",           type = "both_particle"},
+    { name = "start_dir_z",           type = "both_particle"},
+]

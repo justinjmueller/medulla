@@ -19,7 +19,7 @@ usage() {
 
 # Initialize variables
 PROJECT=""
-TAG="develop"
+TAG="feature/nupur_niwg"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do

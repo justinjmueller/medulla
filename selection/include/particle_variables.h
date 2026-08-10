@@ -137,7 +137,7 @@ namespace pvars
      */
     template<class T>
     double interaction_id(const T & p) { return p.id; }
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, interaction_id, interaction_id);
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, interaction_id, interaction_id);
 
     /**
      * @brief Variable for the best-match particle index in the counterpart collection.
