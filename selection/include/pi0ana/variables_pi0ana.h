@@ -333,6 +333,97 @@ namespace vars::pi0ana
 	    return cat;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_ncpi0_simple3, category_topology_ncpi0_simple3);
+
+	/**
+     * @brief Variable for enumerating interaction topologies.
+     * @details This variable provides a basic categorization of interactions
+     * using the following categories:
+     * 0: NCpi0 single shower signal
+	 * 1: CCpi0 single shower signal
+     * 2: NCpi0 non-signal background
+     * 3: CCpi0 non-signal background
+	 * 4: Other nu without pi0.
+     * 10: Cosmic
+     * @param obj the interaction to apply the variable on.
+     * @return the enumerated topology of the interaction.
+     */
+    template<class T>
+    double category_topology_single_shower(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params={})
+    {
+		double num_primary_pi0s = utilities::true_primary_pi0_multiplicity(obj, {0.0});
+
+	    // Cosmic
+	    uint16_t cat(10);
 	
+	    // Neutrino
+	    if(cuts::neutrino(obj))
+	    {
+            // NCpi0 single shower signal
+	        if(cuts::no_muons(obj, {params[1]}) && cuts::no_charged_pions(obj, {params[2]}) && cuts::pi0ana::single_shower(obj, {params[0]}) 
+			&& cuts::fiducial_cut(obj) && !cuts::iscc(obj)) cat = 0;
+			// CCpi0 single shower signal
+			else if(cuts::no_muons(obj, {params[1]}) && cuts::no_charged_pions(obj, {params[2]}) && cuts::pi0ana::single_shower(obj, {params[0]}) 
+			&& cuts::fiducial_cut(obj) && cuts::iscc(obj)) cat = 1;
+	        // NCpi0 non-signal background
+	        else if(num_primary_pi0s > 0 && !cuts::iscc(obj)) cat = 2;
+			// CCpi0
+	        else if(num_primary_pi0s > 0 && cuts::iscc(obj)) cat = 3;
+	        // Other nu without pi0
+	        else if(num_primary_pi0s == 0) cat = 4;
+	    }
+	    return cat;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_single_shower, category_topology_single_shower);
+
+	/**
+     * @brief Variable for enumerating interaction topologies.
+     * @details This variable provides a basic categorization of interactions
+     * using the following categories:
+     * 0: NCpi0 single shower signal
+	 * 1: CCpi0 single shower signal
+     * 2: NCpi0 non-signal background
+     * 3: CCpi0 non-signal background
+	 * 4: Other nu without pi0.
+     * 10: Cosmic
+     * @param obj the interaction to apply the variable on.
+     * @return the enumerated topology of the interaction.
+     */
+    template<class T>
+    double category_topology_single_shower_v2(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params={})
+    {
+		double num_primary_pi0s = utilities::true_primary_pi0_multiplicity(obj, {0.0});
+
+		bool shower_in_fid_vol(false);
+        size_t phi = selectors::leading_primary_shower(obj);
+
+	    if(phi != kNoMatch)
+		{
+			auto & lead(obj.particles[phi]);
+			if(pvars::containment(lead)) shower_in_fid_vol = true;
+		}
+
+	    // Cosmic
+	    uint16_t cat(10);
+	
+	    // Neutrino
+	    if(cuts::neutrino(obj))
+	    {
+            // NCpi0 single shower signal
+	        if(cuts::no_muons(obj, {params[1]}) && cuts::no_charged_pions(obj, {params[2]}) && cuts::pi0ana::single_shower(obj, {params[0]}) && shower_in_fid_vol
+			&& cuts::fiducial_cut(obj) && !cuts::iscc(obj)) cat = 0;
+			// CCpi0 single shower signal
+			else if(cuts::no_muons(obj, {params[1]}) && cuts::no_charged_pions(obj, {params[2]}) && cuts::pi0ana::single_shower(obj, {params[0]}) && shower_in_fid_vol
+			&& cuts::fiducial_cut(obj) && cuts::iscc(obj)) cat = 1;
+	        // NCpi0 non-signal background
+	        else if(num_primary_pi0s > 0 && !cuts::iscc(obj)) cat = 2;
+			// CCpi0
+	        else if(num_primary_pi0s > 0 && cuts::iscc(obj)) cat = 3;
+	        // Other nu without pi0
+	        else if(num_primary_pi0s == 0) cat = 4;
+	    }
+	    return cat;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_single_shower_v2, category_topology_single_shower_v2);
+
 }
 #endif // VARS_PI0ANA_H
