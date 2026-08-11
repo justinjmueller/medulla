@@ -23,7 +23,7 @@ name = "sbnd"
 experiment = "sbnd"
 path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/mc_MCP2025B_5e18_v10_06_00_09_prodgenie_corsika_proton_rockbox_sbnd_CV_caf_sbnd/*/*/*ar23p.flat.caf.root"
 ismc = true
-disable = false
+disable = true
 
 [[sample]]
 key = "sbnd_ar23p_mc1e20"
@@ -31,7 +31,7 @@ name = "sbnd"
 experiment = "sbnd"
 path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/mc_MCP2025C_1e20_v10_06_00_09_prodgenie_corsika_proton_rockbox_sbnd_CV_caf_sbnd/*/*/*ar23p.flat.caf.root"
 ismc = true
-disable = false
+disable = true
 
 [[sample]]
 key = "icarus_ar23p_run4"
@@ -39,7 +39,7 @@ name = "icarus"
 experiment = "icarus"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4_CVMC_ReCAF2026_BNB/*/*/*ar23p.flat.caf.root"
 ismc = true
-disable = true
+disable = false
 
 [[tree]]
 name = "selected"
