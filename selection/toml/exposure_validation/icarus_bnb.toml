@@ -3,27 +3,27 @@ output = "icarus_bnb"
 
 [[sample]]
 name = "onbeam_run2"
-path = "/pnfs/sbn/data/sbn_fd/poms_production/data/Reproc_Run2_SBN_2/reconstructed/icaruscode_v10_06_00_06p03/bnbmajority/flatcaf_unblind/*/*/*.root"
+path = "defname:production_data_2026A_ICARUS_BNB_RUN2_reCAF_bnbmajority_BLIND_Run2_v10_06_00_12_flatcaf"
 ismc = false
-disable = true
+disable = false
 
 [[sample]]
 name = "onbeam_run4"
-#path = "/pnfs/sbn/data/sbn_fd/aurora/data/mueller_stride10_2025_wcdnn_production_Run4_SBN_v10_06_00_01p05_fstrmBNBMAJORITY_reprocess/caf/*/*/*Unblind*.flat.caf.root"
-path = "/pnfs/sbn/data/sbn_fd/aurora/data/mueller_stride10_2025_wcdnn_production_Run4_SBN_v10_06_00_01p05_fstrmBNBMAJORITY_reprocess/caf/*0/*0/*Unblind*.flat.caf.root"
+path = "defname:icarus_recaf_2026_Run4BeamOnWF_flatcaf"
 ismc = false
+disable = false
 
 [[sample]]
 name = "offbeam_run2"
-path = "/pnfs/sbn/data/sbn_fd/poms_production/data/Reproc_Run2_SBN_2/reconstructed/icaruscode_v10_06_00_06p03/offbeambnbmajority/flatcaf_unblind/*/*/*.root"
+path = "defname:production_data_2026A_ICARUS_BNB_RUN2_reCAF_offbeambnbmajority_UNBLIND_Run2_v10_06_00_12_flatcaf"
 ismc = false
-disable = true
+disable = false
 
 [[sample]]
 name = "offbeam_run4"
-path = "/pnfs/sbn/data/sbn_fd/polaris/run4/offbeam/caf/000000/*Unblind*.flat.caf.root"
+path = "defname:icarus_recaf_2026_Run4BeamOffWF_flatcaf"
 ismc = false
-disable = true
+disable = false
 
 [[tree]]
 name = "events"
@@ -41,6 +41,7 @@ branch = [
     { name = "unfolded_nbnb",           type = "event" },
     { name = "global_trigger_time",     type = "event" },
     { name = "trigger_within_gate",     type = "event" },
+    { name = "gate_delta",              type = "event" },
 ]
 
 [[tree]]
