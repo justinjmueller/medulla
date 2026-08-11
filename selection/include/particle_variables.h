@@ -136,7 +136,7 @@ namespace pvars
      * @return the interaction ID.
      */
     template<class T>
-    double interaction_id(const T & p) { return p.id; }
+    double interaction_id(const T & p) { return p.interaction_id; }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, interaction_id, interaction_id);
 
     /**
