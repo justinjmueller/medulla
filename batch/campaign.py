@@ -399,6 +399,7 @@ def create_campaign(campaign_dir, project_units, catalog_path,
                 catalog_path=catalog_path,
                 enable_keys=u.enable_keys,
                 sys=u.sys_template,
+                experiment=u.experiment,
             )
 
             # Read back the job count from the locally-built project.db.

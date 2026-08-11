@@ -10,6 +10,11 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 
+# Prefix used in a sample's 'path' config to indicate that files should
+# be located via a SAMWeb dataset definition rather than a filesystem
+# glob pattern, e.g. path = "defname:my_definition_name".
+DEFNAME_PREFIX = 'defname:'
+
 # ANSI helpers (no third-party dependency)
 _INFO     = '\033[1m\033[94m[INFO]\033[0m'      # bold blue
 _ERROR    = '\033[1m\033[91m[ERROR]\033[0m'     # bold red
@@ -64,11 +69,52 @@ def command(
     except Exception as e:
         print(e)
 
+def locate_samweb_files(defname : str, experiment : str) -> list:
+    """
+    Query SAMWeb for the files belonging to a dataset definition and
+    return their full paths on disk.
+
+    SAMWeb's listFiles() only returns bare file names, so the location
+    of each file is looked up separately (in batches of 1000, SAMWeb's
+    practical limit for a single metadata query) via
+    getMultipleMetadata(locations=True).
+
+    Parameters
+    ----------
+    defname : str
+        Name of the SAMWeb dataset definition.
+    experiment : str
+        Experiment name used to configure the SAMWeb client (e.g.
+        'sbnd' or 'icarus').
+
+    Returns
+    -------
+    list[str]
+        Sorted, full paths (directory + file name) of the files
+        belonging to the definition.
+    """
+    import samweb_client as sam
+    samweb = sam.SAMWebClient(experiment=experiment)
+    files = samweb.listFiles(defname=defname)
+    if not files:
+        return []
+
+    paths = []
+    for i in range(0, len(files), 1000):
+        chunk = files[i:i+1000]
+        res = samweb.getMultipleMetadata(chunk, locations=True)
+        for x in res:
+            loc = x['locations'][0]['location'].split(':', 1)[-1]
+            paths.append(loc + '/' + x['file_name'])
+
+    return sorted(paths)
+
 def get_samples(
     tml : str,
     batch_size : int,
     catalog_path = None,
     enable_keys = None,
+    experiment : str = 'sbnd',
 ):
     """
     Get the list of samples from the TOML file after filtering the list
@@ -87,6 +133,9 @@ def get_samples(
         Path to the sample catalog.  Passed to resolve_samples.
     enable_keys : list[str] | None
         Sample keys to enable.  Passed to resolve_samples.
+    experiment : str
+        Experiment name used to configure the SAMWeb client when a
+        sample's path is a SAMWeb definition (see DEFNAME_PREFIX).
 
     Returns
     -------
@@ -103,7 +152,12 @@ def get_samples(
     # Process the samples and batch them if requested.
     batches = []
     for sample in enabled_samples:
-        paths = glob(sample['path'])
+        sample_path = sample['path']
+        if isinstance(sample_path, str) and sample_path.startswith(DEFNAME_PREFIX):
+            defname = sample_path[len(DEFNAME_PREFIX):]
+            paths = locate_samweb_files(defname, experiment)
+        else:
+            paths = glob(sample_path)
         if len(paths) == 0:
             raise FileNotFoundError(f"No files found for sample {sample.get('name', '<unknown>')} with path {sample['path']}")
         if batch_size is None or batch_size <= 0:
@@ -217,6 +271,7 @@ def create_new_project(
     sys : str = None,
     catalog_path = None,
     enable_keys = None,
+    experiment : str = 'sbnd',
 ):
     """
     Create a new project directory with the necessary subdirectories
@@ -236,6 +291,10 @@ def create_new_project(
         Path to the TOML file containing the systematics configuration
         template. If not provided, the default template in the
         medulla/batch directory is used.
+    experiment : str
+        Experiment name used to configure the SAMWeb client for samples
+        whose path is a SAMWeb definition (see DEFNAME_PREFIX in
+        get_samples).
 
     Returns
     -------
@@ -261,7 +320,7 @@ def create_new_project(
     # Load the TOML file and get the samples.
     cfg = toml.load(tml)
     cfg = resolve_samples(cfg, catalog_path=catalog_path, enable_keys=enable_keys)
-    samples = get_samples(tml, batch_size, catalog_path=catalog_path, enable_keys=enable_keys)
+    samples = get_samples(tml, batch_size, catalog_path=catalog_path, enable_keys=enable_keys, experiment='sbnd')
 
     # Create a systematics configuration based on the selection
     # configuration. This will be used by each job to run systematics

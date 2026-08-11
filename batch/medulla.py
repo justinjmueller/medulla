@@ -67,7 +67,7 @@ def main(
             raise ValueError("Batch size must be provided when creating a new project.")
         if project_exists:
             raise FileExistsError(f"Project database {project_dir / 'project.db'} already exists.")
-        create_new_project(project_dir, tml, batch_size, systematic)
+        create_new_project(project_dir, tml, batch_size, systematic, experiment=experiment)
         print(f"[INFO] -- Created new project in {project_dir}")
 
     # If the project exists, do a check of the project status.
