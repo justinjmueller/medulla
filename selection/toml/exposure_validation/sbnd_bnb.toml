@@ -2,26 +2,32 @@
 output = "sbnd_bnb"
 
 [[sample]]
-name = "onbeam_run1"
-path = "/pnfs/sbn/data_add/sbn_nd/poms_production/data/MCP2025C/v10_06_00_09/Spring25_reprocess_Dev1e20_bnblight/flatcaf/bnblight/*/*.root"
+name = "onbeam_run1_gen1"
+path = "defname:data_MCP2025C_Spring25_reprocess_FullData1e20_bnblight_v10_06_00_09_flatcaf_sbnd"
 ismc = false
 disable = false
 
 [[sample]]
 name = "onbeam_run1_gen2"
-path = "/pnfs/sbn/data_add/sbn_nd/poms_production/data/SBND2026A/v10_14_02_02/gen2_BNB-Run1/flatcaf/bnblight/*/*.flat.caf.root"
+path = "defname:data_SBND2026A_gen2_BNB-Run1_v10_14_02_02_flatcaf_sbnd"
 ismc = false
 disable = false
 
 [[sample]]
-name = "offbeam_run1"
-path = "/pnfs/sbn/data_add/sbn_nd/poms_production/data/MCP2025C/v10_06_00_09/Spring25_reprocess_Intime_offbeamlight/flatcaf/offbeamlight/*/*.root"
+name = "offbeam_run1_gen1"
+path = "defname:data_MCP2025C_Spring25_reprocess_Intime_offbeamlight_v10_06_00_09_flatcaf_sbnd"
 ismc = false
 disable = false
 
 [[sample]]
 name = "offbeam_run1_gen2"
-path = "/pnfs/sbn/data_add/sbn_nd/poms_production/data/SBND2026A/v10_14_02_02/gen2_InTime-Run1/flatcaf/offbeamlight/*/*.root"
+path = "defname:data_SBND2026A_gen2_InTime-Run1_v10_14_02_02_flatcaf_sbnd"
+ismc = false
+disable = false
+
+[[sample]]
+name = "offbeam_run2_gen1"
+path = "defname:data_MCP2025C_Spring25-Run2_InTimeCosmic_offbeamlight_v10_06_00_09_flatcaf_sbnd"
 ismc = false
 disable = false
 
