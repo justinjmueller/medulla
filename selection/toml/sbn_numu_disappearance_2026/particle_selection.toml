@@ -74,9 +74,9 @@ cut = [
     { name = "no_photons",            type = "true",  parameters = [ "@photon_threshold"   ] },
     { name = "no_electrons",          type = "true",  parameters = [ "@electron_threshold" ] },
     { name = "single_muon",           type = "true",  parameters = [ "@muon_threshold"     ] },
-    { name = "no_charged_pions",      type = "true",  parameters = [ "@pion_threshold"     ] },
+#    { name = "no_charged_pions",      type = "true",  parameters = [ "@pion_threshold"     ] },
     { name = "!no_protons",           type = "true",  parameters = [ "@proton_threshold"   ] },
-    { name = "containment_cut",       type = "true"},
+#    { name = "containment_cut",       type = "true"},
     { name = "size_cut",              type = "true_particle", parameters = [0,]},
 ]
 branch = [

@@ -76,7 +76,7 @@ branch = [
     { name = "proton_multiplicity",   type = "both" ,  parameters = [ "@proton_threshold"   ] },
     { name = "electron_multiplicity", type = "both" ,  parameters = [ "@electron_threshold" ] },
     { name = "photon_multiplicity",   type = "both" ,  parameters = [ "@photon_threshold"   ] },
-    { name = "containment",          type = "both"    },
+    { name = "containment",           type = "both"    },
 ]
 
 [[tree]]
@@ -88,9 +88,9 @@ cut = [
     { name = "no_photons",            type = "true",  parameters = [ "@photon_threshold"   ] },
     { name = "no_electrons",          type = "true",  parameters = [ "@electron_threshold" ] },
     { name = "single_muon",           type = "true",  parameters = [ "@muon_threshold"     ] },
-    { name = "no_charged_pions",      type = "true",  parameters = [ "@pion_threshold"     ] },
+   # { name = "no_charged_pions",      type = "true",  parameters = [ "@pion_threshold"     ] },
     { name = "!no_protons",           type = "true",  parameters = [ "@proton_threshold"   ] },
-    { name = "containment_cut",       type = "true"},
+   # { name = "containment_cut",       type = "true"},
 ]
 branch = [
     { name = "interaction_id",        type = "true" },
@@ -113,5 +113,5 @@ branch = [
     { name = "proton_multiplicity",   type = "both" ,  parameters = [ "@proton_threshold"   ] },
     { name = "electron_multiplicity", type = "both" ,  parameters = [ "@electron_threshold" ] },
     { name = "photon_multiplicity",   type = "both" ,  parameters = [ "@photon_threshold"   ] },
-    { name = "containment",          type = "both"    },
+    { name = "containment",           type = "both"    },
 ]
