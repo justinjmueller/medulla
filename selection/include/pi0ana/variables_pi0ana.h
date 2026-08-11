@@ -310,7 +310,7 @@ namespace vars::pi0ana
 		{
 			auto & lead(obj.particles[phi]);
         	auto & sublead(obj.particles[dex]);
-			if(pvars::containment(lead) && pvars::containment(sublead)) showers_in_fid_vol = true;
+			showers_in_fid_vol = (pvars::containment(lead) && pvars::containment(sublead));
 		}
 
 	    // Cosmic
