@@ -872,7 +872,7 @@ namespace vars
         size_t count(0);
         for(const auto & p : obj.particles)
         {
-            if(pvars::pid(p) == pvars::kMuon)
+            if(pvars::pid(p) == pvars::kMuon && pvars::primary_classification(p))
                 ++count;
         }
         return count;
@@ -913,7 +913,7 @@ namespace vars
         size_t count(0);
         for(const auto & p : obj.particles)
         {
-            if(pvars::pid(p) == pvars::kPion)
+            if(pvars::pid(p) == pvars::kPion && pvars::primary_classification(p))
                 ++count;
         }
         return count;
@@ -954,7 +954,7 @@ namespace vars
         size_t count(0);
         for(const auto & p : obj.particles)
         {
-            if(pvars::pid(p) == pvars::kProton)
+            if(pvars::pid(p) == pvars::kProton && pvars::primary_classification(p))
                 ++count;
         }
         return count;
