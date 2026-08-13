@@ -171,6 +171,45 @@ namespace utilities
     }
 
     /**
+     * @brief Utility function to find the index of the largest optical flash
+     * (by total PE) within a time window.
+     * @details This function returns the index of the flash with the largest
+     * total PE among the optical flashes in the event whose `firsttime` falls
+     * within the given time window. It is intended to be used to factorize
+     * the "largest flash" identification logic shared by variables which
+     * report properties of that flash (e.g. its PE or its time).
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @param params the time window in microseconds, params[0] is the lower
+     * bound and params[1] is the upper bound.
+     * @return size_t the index of the largest flash within the time window,
+     * or kNoMatch if no flash is found within the window.
+     */
+    template<typename T>
+    size_t largest_opflash_index(const T & sr, std::vector<double> params)
+    {
+        if(params.size() < 2)
+        {
+            throw std::runtime_error("largest_opflash_index requires two parameters for the time window.");
+        }
+        size_t largest_flash_index = kNoMatch;
+        double largest_flash_pe = 0.0;
+        for(size_t i = 0; i < sr.opflashes.size(); ++i)
+        {
+            const auto & flash = sr.opflashes[i];
+            if(flash.firsttime >= params[0] && flash.firsttime <= params[1])
+            {
+                if(flash.totalpe > largest_flash_pe)
+                {
+                    largest_flash_pe = flash.totalpe;
+                    largest_flash_index = i;
+                }
+            }
+        }
+        return largest_flash_index;
+    }
+
+    /**
      * @brief Group true pi0 daughters by parent track ID.
      * @details Iterates over particles in a true interaction and collects
      * photons and electrons whose parent is a pi0 (PDG 111), grouped by
