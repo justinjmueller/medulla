@@ -359,6 +359,50 @@ namespace evar
     REGISTER_VAR_SCOPE(RegistrationScope::Event, gate_delta, gate_delta);
 
     /**
+     * @brief Variable for the total PE of the largest flash in the event
+     * within the configured time window.
+     * @details This variable retrieves the total PE of the largest flash in
+     * the event within the configured time window. The time window is defined
+     * by the parameters passed to the function.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @param params The time window in microseconds. The default is [-1.0, 1.0].
+     * @return the total PE of the largest flash in the event within the time
+     * window.
+     */
+    template<typename T>
+    double largest_flash_pe(const T & sr, std::vector<double> params)
+    {
+        size_t largest_flash_index = utilities::largest_opflash_index(sr, params);
+        if(largest_flash_index == kNoMatch)
+            return kNoMatchValue;
+        return sr.opflashes[largest_flash_index].totalpe;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, largest_flash_pe, largest_flash_pe);
+
+    /**
+     * @brief Variable for the time of the largest flash in the event within
+     * the configured time window.
+     * @details This variable retrieves the `firsttime` of the largest flash
+     * in the event within the configured time window. The time window is
+     * defined by the parameters passed to the function.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @param params The time window in microseconds. The default is [-1.0, 1.0].
+     * @return the time of the largest flash in the event within the time
+     * window.
+     */
+    template<typename T>
+    double largest_flash_time(const T & sr, std::vector<double> params)
+    {
+        size_t largest_flash_index = utilities::largest_opflash_index(sr, params);
+        if(largest_flash_index == kNoMatch)
+            return kNoMatchValue;
+        return sr.opflashes[largest_flash_index].firsttime;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, largest_flash_time, largest_flash_time);
+
+    /**
      * @brief Variable for time of the flash closest to the trigger time.
      * @details This variable is intended to provide the time of the flash
      * closest to the trigger time of the event. It is useful for producing a
