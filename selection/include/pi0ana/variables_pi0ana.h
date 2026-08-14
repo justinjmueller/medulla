@@ -425,5 +425,73 @@ namespace vars::pi0ana
     }
     REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_single_shower_v2, category_topology_single_shower_v2);
 
+	/**
+     * @brief Variable for enumerating the effect of truth level cuts for NCpi0 interactions.
+     * @details This variable describes the effect of truth level cuts
+     * using the following format:
+	 * 5xxxxxxxx
+	 * Where the numbers x in [0,3] represent the effect of each cut. 0 is failed individually
+	 * and collectively, 1 is failed individually only (impossible), 2 is failed collectively
+	 * only, 3 is passed.
+     * @param obj the interaction to apply the variable on.
+     * @return The enumerated effect of truth cuts.
+     */
+	template<class T>
+    double ncpi0_truth_cut_study(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params={})
+    {
+		bool leading_shower_in_fid_vol(false);
+		bool subleading_shower_in_fid_vol(false);
+        size_t phi = selectors::pi0_leading_shower(obj);
+		size_t dex = selectors::pi0_subleading_shower(obj);
+
+	    if(phi != kNoMatch) 
+		{
+			auto & lead(obj.particles[phi]);
+			leading_shower_in_fid_vol = pcuts::containment_cut(lead);
+		}
+		if(dex != kNoMatch)
+		{
+        	auto & sublead(obj.particles[dex]);
+			subleading_shower_in_fid_vol = pcuts::containment_cut(sublead);
+		}
+
+	    // No cut
+	    double cut_results = 5.0;
+		bool run = true;
+		// NCpi0
+		bool ncpi0_cut = (cuts::pi0ana::single_pi0<caf::SRInteractionTruthDLPProxy>(obj, {params[4]}) && !cuts::iscc(obj));
+		run = run && ncpi0_cut;
+		cut_results = cut_results * 10 + ncpi0_cut*2 + run;
+		// Fiducial
+		bool fiducial_cut = cuts::fiducial_cut(obj);
+		run = run && fiducial_cut;
+		cut_results = cut_results * 10 + fiducial_cut*2 + run;
+		// Leading in fiducial volume
+		run = run && leading_shower_in_fid_vol;
+		cut_results = cut_results * 10 + leading_shower_in_fid_vol*2 + run;
+		// Subleading in fiducial volume
+		run = run && subleading_shower_in_fid_vol;
+		cut_results = cut_results * 10 + subleading_shower_in_fid_vol*2 + run;
+		// No muons
+		bool no_muons_cut = cuts::no_muons(obj, {params[1]});
+		run = run && no_muons_cut;
+		cut_results = cut_results * 10 + no_muons_cut*2 + run;
+		// No charged pions
+		bool no_charged_pions_cut = cuts::no_charged_pions(obj, {params[2]});
+		run = run && no_charged_pions_cut;
+		cut_results = cut_results * 10 + no_charged_pions_cut*2 + run;
+		// Two photons
+		bool two_photons_cut = cuts::two_photons(obj, {params[0]});
+		run = run && two_photons_cut;
+		cut_results = cut_results * 10 + two_photons_cut*2 + run;
+		// Leading photon KE cut
+		bool leading_photon_ke_cut = cuts::pi0ana::leading_photon_ke_cut(obj, {params[5]});
+		run = run && leading_photon_ke_cut;
+		cut_results = cut_results * 10 + leading_photon_ke_cut*2 + run;
+
+		return cut_results;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, ncpi0_truth_cut_study, ncpi0_truth_cut_study);
+
 }
 #endif // VARS_PI0ANA_H
