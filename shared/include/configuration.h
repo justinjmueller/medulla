@@ -222,15 +222,17 @@ namespace cfg
          * @brief Resolve [[include_samples]] blocks in the parsed TOML document.
          * @details This function looks for [[include_samples]] blocks in the
          * parsed document. For each block it reads the list of sample keys and
-         * looks them up in the centralized sample catalog located at
-         * common/samples.toml relative to the parent of the configuration
-         * file's directory. Each matching [[sample]] entry from the catalog is
-         * appended to the document's [[sample]] array. The [[include_samples]]
-         * array is then removed from the document so that all downstream code
-         * sees only [[sample]] blocks.
+         * looks them up in a centralized sample catalog resolved relative to
+         * the parent of the configuration file's directory. Each block may
+         * name its own catalog file via a 'file' key (e.g.
+         * "common/osc.toml"); when omitted, it defaults to
+         * common/samples.toml. Each matching [[sample]] entry from the
+         * catalog is appended to the document's [[sample]] array. The
+         * [[include_samples]] array is then removed from the document so
+         * that all downstream code sees only [[sample]] blocks.
          * @param config_path The path to the configuration file being loaded.
-         * @throws ConfigurationError if the catalog cannot be found or parsed,
-         * or if a requested key is not present in the catalog.
+         * @throws ConfigurationError if a catalog cannot be found or parsed,
+         * or if a requested key is not present in the catalog it names.
          */
         void resolve_sample_includes(const std::string & config_path);
 
