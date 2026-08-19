@@ -185,8 +185,8 @@ namespace mctruth
      * @return W from the generator record.
      */
     template<typename T>
-    double neutrino_W(const T & obj) { return obj.w; }
-    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, neutrino_W, neutrino_W);
+    double W(const T & obj) { return obj.w; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, W, W);
 
     /**
      * @brief Count of true primary photons above an energy threshold.
