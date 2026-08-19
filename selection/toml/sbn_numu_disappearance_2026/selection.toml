@@ -41,6 +41,7 @@ cut = [
     { name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold"     ] },
     { name = "no_charged_pions",      type = "reco",  parameters = [ "@pion_threshold"     ] },
     { name = "!no_protons",           type = "reco",  parameters = [ "@proton_threshold"   ] },
+    { name = "containment_cut",       type = "reco"},
 ]
 branch = [
     # Interaction-level branches
@@ -52,6 +53,9 @@ branch = [
     { name = "interaction_mode",      type = "mctruth" },
     { name = "interaction_type",      type = "mctruth" },
     { name = "off_axis_angle",        type = "mctruth" },
+    { name = "neutrino_W",            type = "mctruth" },
+    { name = "q0",                    type = "mctruth" },
+    { name = "q3",                    type = "mctruth" },
     { name = "off_axis_angle_sbnd",   type = "both"    },
     { name = "off_axis_angle_icarus", type = "both"    },
     { name = "category",              type = "true"    },
@@ -136,6 +140,7 @@ cut = [
     { name = "single_muon",           type = "true",  parameters = [ "@muon_threshold"     ] },
     { name = "no_charged_pions",      type = "true",  parameters = [ "@pion_threshold"     ] },
     { name = "!no_protons",           type = "true",  parameters = [ "@proton_threshold"   ] },
+    { name = "containment_cut",       type = "reco"},
 ]
 branch = [
     # Interaction-level branches
@@ -147,6 +152,9 @@ branch = [
     { name = "interaction_mode",      type = "mctruth" },
     { name = "interaction_type",      type = "mctruth" },
     { name = "off_axis_angle",        type = "mctruth" },
+    { name = "neutrino_W",            type = "mctruth" },
+    { name = "q0",                    type = "mctruth" },
+    { name = "q3",                    type = "mctruth" },
     { name = "off_axis_angle_sbnd",   type = "both"    },
     { name = "off_axis_angle_icarus", type = "both"    },
     { name = "category",              type = "true"    },

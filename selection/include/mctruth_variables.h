@@ -41,8 +41,8 @@ namespace mctruth
         double neutrino_energy(const T & obj) { return obj.E; }
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, neutrino_energy, neutrino_energy);
 
-   /**
-     * @brief Variable for the true interaction energy transfer.
+    /**
+     * @brief Variable for the true interaction energy transfer q0.
      * @details This variable is intended to provide the true energy
      * transfer from the neutrino to the hadronic system. This is
      * defined in the lab frame.
@@ -52,8 +52,22 @@ namespace mctruth
      * in the lab frame.
      */
     template<typename T>
-        double energy_transfer(const T & obj) { return obj.q0_lab; }
-    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, energy_transfer, energy_transfer);
+        double q0(const T & obj) { return obj.q0_lab; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, q0, q0);
+
+    /**
+     * @brief Variable for the true interaction energy transfer |q|.
+     * @details This variable is intended to provide the true energy
+     * transfer from the neutrino to the hadronic system. This is
+     * defined in the lab frame.
+     * @tparam T the type of the object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the true energy transfer into the hadronic system
+     * in the lab frame.
+     */
+    template<typename T>
+        double q3(const T & obj) { return obj.modq_lab; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, q3, q3);
   
     /**
      * @brief Variable for the true neutrino baseline.
