@@ -30,6 +30,7 @@ sim_only = false
 mode = "reco"
 cut = [
     { name = "fiducial_cut",          type = "reco" },
+    { name = "containment_cut",       type = "reco" },
     { name = "no_photons",            type = "reco",  parameters = [ "@photon_threshold"   ] },
     { name = "no_electrons",          type = "reco",  parameters = [ "@electron_threshold" ] },
     { name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold"     ] },
