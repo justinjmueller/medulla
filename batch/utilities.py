@@ -840,6 +840,7 @@ def launch_variation_phase2_jobsub(
     disk: Optional[int] = None,
     lifetime: str = '4h',
     njobs: int = -1,
+    dataset_tag: Optional[str] = None,
 ):
     """
     Submit one batch job per completed selection output file to apply
@@ -868,6 +869,10 @@ def launch_variation_phase2_jobsub(
         Expected job lifetime (default: '4h').
     njobs : int
         Maximum number of jobs to submit. -1 submits all pending files.
+    dataset_tag : str | None
+        If provided, only submit jobs whose sample carries this tag in the
+        selection TOML (e.g. "nominal", "data", "detector_variation").
+        Requires project.db to be present in project_dir.
 
     Returns
     -------
@@ -890,9 +895,29 @@ def launch_variation_phase2_jobsub(
         print(f"{_ERROR} -- Run Phase 1 first (--variation-phase1).")
         return False
 
-    all_output_files = sorted(glob(str(project_dir / 'output' / 'output_jobid*.root')))
+    # Build the set of job IDs whose sample carries the requested tag.
+    tagged_jobids = None
+    if dataset_tag is not None:
+        db_path = project_dir / 'project.db'
+        if not db_path.exists():
+            print(f"{_ERROR} -- project.db not found at {db_path}; cannot filter by dataset_tag.")
+            return False
+        subprocess.run(['cp', db_path, './project_p2.db'], check=True)
+        conn = sqlite3.connect('./project_p2.db')
+        curs = conn.cursor()
+        command(curs, "SELECT jobid, cfg FROM configuration")
+        rows = curs.fetchall()
+        conn.close()
+        os.unlink('./project_p2.db')
+        tagged_jobids = {
+            jobid for jobid, cfg_str in rows
+            if any(s.get('tag') == dataset_tag for s in toml.loads(cfg_str).get('sample', []))
+        }
+        print(f"{_INFO} -- Filtering Phase 2 to {len(tagged_jobids)} job(s) with dataset tag '{dataset_tag}'.")
+
+    all_output_files = sorted(glob(str(project_dir / 'output' / 'output_systematics_jobid*.root')))
     if not all_output_files:
-        print(f"{_ERROR} -- No selection output files found in {project_dir}/output/")
+        print(f"{_ERROR} -- No systematics output files found in {project_dir}/output/")
         return False
 
     already_done = {
@@ -903,6 +928,7 @@ def launch_variation_phase2_jobsub(
     pending_files = [
         f for f in all_output_files
         if int(Path(f).stem.split('jobid')[-1]) not in already_done
+        and (tagged_jobids is None or int(Path(f).stem.split('jobid')[-1]) in tagged_jobids)
     ]
 
     if not pending_files:
@@ -945,10 +971,18 @@ def launch_variation_phase2_jobsub(
     # Package the splines file into a tarball for CVMFS distribution so all
     # grid nodes read from the CVMFS cache rather than each issuing an
     # independent ifdh copy of the same large file.
+    # The splines file lives on PNFS/dCache and cannot be read directly —
+    # stage it locally first, then tar it.
     import tarfile, tempfile
+    splines_local = Path(tempfile.mkstemp(suffix='.root')[1])
+    splines_local.unlink()
     splines_tar = Path(tempfile.mkstemp(suffix='.tar.gz')[1])
-    with tarfile.open(str(splines_tar), 'w:gz') as tar:
-        tar.add(str(splines_path), arcname='variation_splines.root')
+    try:
+        subprocess.run(['ifdh', 'cp', str(splines_path), str(splines_local)], check=True)
+        with tarfile.open(str(splines_tar), 'w:gz') as tar:
+            tar.add(str(splines_local), arcname='variation_splines.root')
+    finally:
+        splines_local.unlink(missing_ok=True)
 
     cmd = [
         'jobsub_submit',

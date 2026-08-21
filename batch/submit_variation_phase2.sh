@@ -85,8 +85,8 @@ echo "[INFO] PROCESS=$PROCESS -> JOBID=$JOBID"
 ifdh cp "$PROJECT/variation_systematics_phase2.toml" variation_systematics_phase2.toml
 echo "[INFO] Copied variation_systematics_phase2.toml"
 
-ifdh cp "$PROJECT/output/output_jobid${PADDED_JOBID}.root" input_selection.root
-echo "[INFO] Copied output_jobid${PADDED_JOBID}.root -> input_selection.root"
+ifdh cp "$PROJECT/output/output_systematics_jobid${PADDED_JOBID}.root" input_selection.root
+echo "[INFO] Copied output_systematics_jobid${PADDED_JOBID}.root -> input_selection.root"
 
 # Replace path placeholders written at submission time.
 # variation_splines.root was distributed via the jobsub CVMFS tarball and is

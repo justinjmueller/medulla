@@ -29,6 +29,7 @@ def main(
     variation_interactive : bool = False,
     variation_test : bool = False,
     check_zombies : bool = False,
+    dataset_tag : str = None,
 ):
     """
     Main function to run the medulla script.
@@ -153,6 +154,7 @@ def main(
             disk=disk,
             lifetime=lifetime,
             njobs=1 if variation_test else -1,
+            dataset_tag=dataset_tag,
         )
 
 if __name__ == '__main__':
@@ -280,6 +282,13 @@ if __name__ == '__main__':
              '--variation-phase2).'
     )
 
+    p.add_argument(
+        '--dataset-tag', type=str, default=None,
+        help='Only submit Phase 2 jobs for samples with this tag in the '
+             'selection TOML (e.g. "nominal", "data", "detector_variation"). '
+             'Only valid with --variation-phase2.'
+    )
+
     args = p.parse_args()
 
     # Requirement: the experiment must be sbnd or icarus.
@@ -311,6 +320,8 @@ if __name__ == '__main__':
         p.error('--variation-interactive is only valid with --variation-phase1.')
     if args.variation_test and not args.variation_phase2:
         p.error('--variation-test is only valid with --variation-phase2.')
+    if args.dataset_tag is not None and not args.variation_phase2:
+        p.error('--dataset-tag is only valid with --variation-phase2.')
 
     if args.tag != 'develop':
         print(f"[INFO] -- Using tag '{args.tag}' for medulla repository.")
@@ -339,4 +350,5 @@ if __name__ == '__main__':
         variation_interactive=args.variation_interactive,
         variation_test=args.variation_test,
         check_zombies=args.check_zombies,
+        dataset_tag=args.dataset_tag,
     )

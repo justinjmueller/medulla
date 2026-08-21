@@ -12,7 +12,7 @@ exposure_type = "pot"
 trees = ['selected']
 print_sys = true
 # Comment this to avoid systematics when plotting (usually done for testing plots)
-systematics = ['selected_multisigmaTree', 'selected_NuMIfluxsimTree']
+systematics = ['selected_multisigmaTree', 'selected_NuMIfluxsimTree', 'selected_variationTree']
 precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "reco_category" = "np.where(true_cc == 1, true_interaction_mode, -1)"}
 
 # DATA SAMPLE
@@ -56,8 +56,8 @@ binning_scheme = 'custom_bins'
 custom_bins = [0.0, 0.275, 0.42, 0.55, 0.68, 0.825, 1.0, 1.25, 1.7, 3.2]
 xlabel = "Reco Leading Electron Polar Angle [rad]"
 
-[variables.reco_ele_beam_cosTheta]
-key = 'reco_ele_beam_cosTheta'
+[variables.reco_ele_beam_open_angle]
+key = 'reco_ele_beam_open_angle'
 nbins = 13
 binning_scheme = 'custom_bins'
 custom_bins = [-1.0, -0.4, 0.0, 0.2, 0.35, 0.5, 0.625, 0.725, 0.8, 0.85, 0.9, 0.94, 0.97, 1.0]
@@ -66,10 +66,10 @@ xlabel = "Reco Leading Electron $cos{\\theta_{NUMI}}$"
 
 [variables.reco_leading_electron_energy]
 key = 'reco_leading_electron_energy'
-nbins = 9
-range = [225.0, 5000.0]
+nbins = 10
+range = [300.0, 5000.0]
 binning_scheme = 'custom_bins'
-custom_bins = [225, 350, 500, 650, 800, 1000, 1250, 1500, 2000, 5000]
+custom_bins = [300, 390, 490, 600, 730, 870, 1030, 1240, 1500, 2000, 5000]
 xlabel = 'Reco Leading Electron Energy [MeV]'
 
 [variables.true_hadronic_invariant_mass]
@@ -92,8 +92,8 @@ binning_scheme = 'custom_bins'
 custom_bins = [225, 350, 500, 650, 800, 1000, 1250, 1500, 2000, 5000]
 xlabel = 'True Leading Electron Energy [MeV]'
 
-[variables.true_ele_beam_cosTheta]
-key = 'true_ele_beam_cosTheta'
+[variables.true_ele_beam_open_angle]
+key = 'true_ele_beam_open_angle'
 nbins = 13
 binning_scheme = 'custom_bins'
 custom_bins = [-1.0, -0.4, 0.0, 0.2, 0.35, 0.5, 0.625, 0.725, 0.8, 0.85, 0.9, 0.94, 0.97, 1.0]
@@ -123,7 +123,8 @@ systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['flux', 'xsec_total', 'total_stat'] # total systematics
+# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
@@ -154,7 +155,8 @@ systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['flux', 'xsec_total', 'total_stat'] # total systematics
+# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
@@ -170,7 +172,7 @@ style = 'basic_icarus'
 
 [[figure.artists]]
 type     = "SpineSystematics"
-variable = "reco_ele_beam_cosTheta"
+variable = "reco_ele_beam_open_angle"
 # Uncomment to restrict to specific recipes:
 systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
 # systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
@@ -186,7 +188,8 @@ systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['flux', 'xsec_total', 'total_stat'] # total systematics
+# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
@@ -218,7 +221,8 @@ systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['flux', 'xsec_total', 'total_stat'] # total systematics
+# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
@@ -234,7 +238,7 @@ style = 'basic_icarus'
 
 [[figure.artists]]
 type     = "SpineSystematics"
-variable = "true_ele_beam_cosTheta"
+variable = "true_ele_beam_open_angle"
 # Uncomment to restrict to specific recipes:
 systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
 # systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
@@ -250,7 +254,8 @@ systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['flux', 'xsec_total', 'total_stat'] # total systematics
+# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
