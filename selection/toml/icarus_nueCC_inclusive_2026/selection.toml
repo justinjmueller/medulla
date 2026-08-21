@@ -64,8 +64,8 @@ fsthresh = [
 # ICARUS nue enhanced sample
 [[sample]]
 name = "NuMI_nue"
-# path = " /pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_CV_flat_cafs/*.flat.root"
-path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_CV_flat_cafs/prodcorsika_genie_protononly_icarus_numi_nue_gen_g4_59172983_0_SBN_production_v09_89_01_01p02_2024A_ICARUS_NuMI_nue_MC_FRFIX_larcv_caf.root.flat.root"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_CV_flat_cafs/*.flat.root"
+# path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_CV_flat_cafs/prodcorsika_genie_protononly_icarus_numi_nue_gen_g4_59172983_0_SBN_production_v09_89_01_01p02_2024A_ICARUS_NuMI_nue_MC_FRFIX_larcv_caf.root.flat.root"
 ismc = true
 tag = "nue_enhanced"
 disable = false # Optional: default = false
@@ -178,125 +178,125 @@ disable = false # Optional: default = false
 #### Nue Detector systematics
 #############################################
 
-# # ICARUS var01 Induction gain high nue
-# [[sample]]
-# name = "induction_high"
-# path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/High_Gain/*.flat.root"
-# ismc = true
-# tag = "detector_variation"
-# disable = false # Optional: default = false
+# ICARUS var01 Induction gain high nue
+[[sample]]
+name = "induction_high"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/High_Gain/*.flat.root"
+ismc = true
+tag = "detector_variation"
+disable = false # Optional: default = false
 
-# # ICARUS var01 Induction gain low
-# [[sample]]
-# name = "induction_low"
-# path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/Low_Gain/*.flat.root"
-# ismc = true
-# tag = "detector_variation"
-# disable = false # Optional: default = false
+# ICARUS var01 Induction gain low
+[[sample]]
+name = "induction_low"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/Low_Gain/*.flat.root"
+ismc = true
+tag = "detector_variation"
+disable = false # Optional: default = false
 
-# # ICARUS var02 TPC Coherent Noise high
-# [[sample]]
-# name = "coherent_high"
-# path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/High_Coh/*.flat.root"
-# ismc = true
-# tag = "detector_variation"
-# disable = false # Optional: default = false
+# ICARUS var02 TPC Coherent Noise high
+[[sample]]
+name = "coherent_high"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/High_Coh/*.flat.root"
+ismc = true
+tag = "detector_variation"
+disable = false # Optional: default = false
 
-# # ICARUS var02 TPC Coherent Noise low
-# [[sample]]
-# name = "coherent_low"
-# path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/Low_Coh/*.flat.root"
-# ismc = true
-# tag = "detector_variation"
-# disable = false # Optional: default = false
+# ICARUS var02 TPC Coherent Noise low
+[[sample]]
+name = "coherent_low"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/Low_Coh/*.flat.root"
+ismc = true
+tag = "detector_variation"
+disable = false # Optional: default = false
 
-# # ICARUS var03 TPC Intrinsic Noise high
-# [[sample]]
-# name = "intrinsic_high"
-# path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/High_Int/*.flat.root"
-# ismc = true
-# tag = "detector_variation"
-# disable = false # Optional: default = false
+# ICARUS var03 TPC Intrinsic Noise high
+[[sample]]
+name = "intrinsic_high"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/High_Int/*.flat.root"
+ismc = true
+tag = "detector_variation"
+disable = false # Optional: default = false
 
-# # ICARUS var03 TPC Intrinsic Noise low
-# [[sample]]
-# name = "intrinsic_low"
-# path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/Low_Int/*.flat.root"
-# ismc = true
-# tag = "detector_variation"
-# disable = false # Optional: default = false
+# ICARUS var03 TPC Intrinsic Noise low
+[[sample]]
+name = "intrinsic_low"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/Low_Int/*.flat.root"
+ismc = true
+tag = "detector_variation"
+disable = false # Optional: default = false
 
-# # ICARUS var04 lifetime high
-# [[sample]]
-# name = "lifetime_high"
-# path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/High_Lifetime/*.flat.root"
-# ismc = true
-# tag = "detector_variation"
-# disable = false # Optional: default = false
+# ICARUS var04 lifetime high
+[[sample]]
+name = "lifetime_high"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/High_Lifetime/*.flat.root"
+ismc = true
+tag = "detector_variation"
+disable = false # Optional: default = false
 
-# # ICARUS var04 lifetime low
-# [[sample]]
-# name = "lifetime_low"
-# path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/Low_Lifetime/*.flat.root"
-# ismc = true
-# tag = "detector_variation"
-# disable = false # Optional: default = false
+# ICARUS var04 lifetime low
+[[sample]]
+name = "lifetime_low"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/Low_Lifetime/*.flat.root"
+ismc = true
+tag = "detector_variation"
+disable = false # Optional: default = false
 
-# # ICARUS var05 scintillation, PMT QE
-# [[sample]]
-# name = "scintillation"
-# path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/Scint_var/*.flat.root"
-# ismc = true
-# tag = "detector_variation"
-# disable = false # Optional: default = false
+# ICARUS var05 scintillation, PMT QE
+[[sample]]
+name = "scintillation"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/Scint_var/*.flat.root"
+ismc = true
+tag = "detector_variation"
+disable = false # Optional: default = false
 
-# # ICARUS var06 induction/wire gap
-# [[sample]]
-# name = "wire_gap"
-# path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/WireGap/*.flat.root"
-# ismc = true
-# tag = "detector_variation"
-# disable = false # Optional: default = false
+# ICARUS var06 induction/wire gap
+[[sample]]
+name = "wire_gap"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/WireGap/*.flat.root"
+ismc = true
+tag = "detector_variation"
+disable = false # Optional: default = false
 
-# # ICARUS var07 yz uniformity
-# [[sample]]
-# name = "yz_uniformity"
-# path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/YZ_unif/*.flat.root"
-# ismc = true
-# tag = "detector_variation"
-# disable = false # Optional: default = false
+# ICARUS var07 yz uniformity
+[[sample]]
+name = "yz_uniformity"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/YZ_unif/*.flat.root"
+ismc = true
+tag = "detector_variation"
+disable = false # Optional: default = false
 
-# # ICARUS var08 recombination
-# [[sample]]
-# name = "recombination"
-# path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/Recomb_Model/*.flat.root"
-# ismc = true
-# tag = "detector_variation"
-# disable = false # Optional: default = false
+# ICARUS var08 recombination
+[[sample]]
+name = "recombination"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/Recomb_Model/*.flat.root"
+ismc = true
+tag = "detector_variation"
+disable = false # Optional: default = false
 
-# # ICARUS var09 null
-# [[sample]]
-# name = "null"
-# path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/Null_sample/*.flat.root"
-# ismc = true
-# tag = "detector_variation"
-# disable = false # Optional: default = false
+# ICARUS var09 null
+[[sample]]
+name = "null"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/Null_sample/*.flat.root"
+ismc = true
+tag = "detector_variation"
+disable = false # Optional: default = false
 
-# # ICARUS var10 cathode bend
-# [[sample]]  
-# name = "cathode_bend"
-# path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/Cath_bend/*.flat.root"
-# ismc = true
-# tag = "detector_variation"
-# disable = false # Optional: default = false
+# ICARUS var10 cathode bend
+[[sample]]  
+name = "cathode_bend"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/Cath_bend/*.flat.root"
+ismc = true
+tag = "detector_variation"
+disable = false # Optional: default = false
 
-# # ICARUS var 11 cv sample
-# [[sample]]
-# name = "cv"
-# path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/CV_sample/*.flat.root"
-# ismc = true
-# tag = "detector_variation"
-# disable = false # Optional: default = false
+# ICARUS var 11 cv sample
+[[sample]]
+name = "cv"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/CV_sample/*.flat.root"
+ismc = true
+tag = "detector_variation"
+disable = false # Optional: default = false
 
 [[tree]]
 name = "all"
