@@ -16,6 +16,8 @@ electron_threshold = 25.0
 muon_threshold = 143.425
 pion_threshold = 25.0
 proton_threshold = 50.0
+containment_threshold = 10.0
+cathode_fiducialization = 5.0
 
 [[include_samples]]
 file = "common/osc.toml"
@@ -29,8 +31,8 @@ name = "selected"
 sim_only = false
 mode = "reco"
 cut = [
-    { name = "fiducial_cut",          type = "reco" },
-    { name = "containment_cut",       type = "reco" },
+    { name = "fiducial_cut_osc",      type = "reco" },
+    { name = "user_containment_cut",  type = "reco",  parameters = [ "@containment_threshold" ] },
     { name = "no_photons",            type = "reco",  parameters = [ "@photon_threshold"   ] },
     { name = "no_electrons",          type = "reco",  parameters = [ "@electron_threshold" ] },
     { name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold"     ] },
@@ -54,11 +56,11 @@ branch = [
     { name = "muon_multiplicity",     type = "both",  parameters = [ "@muon_threshold"     ] },
     { name = "proton_multiplicity",   type = "both",  parameters = [ "@proton_threshold"   ] },
 
-    # Information for Neutrino 2026
-    { name = "cathode_crosser",       type = "both"    },
-    { name = "fiducialize_cathode",   type = "both"    },
+    # DENT Recommendations
+    { name = "fiducialize_cathode",   type = "both",  parameters = [ "@cathode_fiducialization" ] },
     { name = "veto_sbnd_highy_highz", type = "both"    },
     { name = "neutrino2026_veto",     type = "both"    },
+    { name = "cathode_crosser",       type = "both"    },
     { name = "detector",              type = "reco"    },
 
     # Leading MUON interaction-level
