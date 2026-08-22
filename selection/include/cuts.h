@@ -209,23 +209,6 @@ namespace cuts
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut, fiducial_cut);
 
-    template<class T>
-    bool fiducial_cut_tmp(const T & obj)
-    {
-        return (
-            (abs(obj.vertex[0]) > 10) &&
-            (abs(obj.vertex[0]) < 190) &&
-            (obj.vertex[2] > 10) &&
-            (obj.vertex[2] < 450) &&
-            (
-                ((obj.vertex[2] > 250) && (obj.vertex[1] > -190) && (obj.vertex[1] < 100)) ||
-                ((obj.vertex[2] < 250) && (abs(obj.vertex[1]) < 190))
-            )
-
-        );
-    }
-    REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut_tmp, fiducial_cut_tmp);
-
     /**
      * @brief Veto interactions whose vertex falls in the ICARUS z-gap region.
      * @details A region near |z| < 100 cm in ICARUS exhibits anomalously high
