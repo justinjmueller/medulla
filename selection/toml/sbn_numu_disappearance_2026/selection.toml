@@ -89,6 +89,9 @@ branch = [
     { name = "cathode_crosser",       type = "both"    },
     { name = "detector",              type = "true"    },
 
+    # Filter EE TPC (ICARUS Run 2 only)
+    { name = "user_containment_cut_filterEE",  type = "both",  parameters = [ "@containment_threshold" ] },
+
     # Leading MUON interaction-level
     { name = "start_x",               type = "both_particle", selector = "leading_muon" },
     { name = "start_y",               type = "both_particle", selector = "leading_muon" },
@@ -184,12 +187,15 @@ branch = [
     { name = "muon_multiplicity",     type = "both",  parameters = [ "@muon_threshold"     ] },
     { name = "proton_multiplicity",   type = "both",  parameters = [ "@proton_threshold"   ] },
 
-    # Information for Neutrino 2026
+    # DENT Recommendations
     { name = "cathode_crosser",       type = "both"    },
     { name = "fiducialize_cathode",   type = "both"    },
     { name = "veto_sbnd_highy_highz", type = "both"    },
     { name = "neutrino2026_veto",     type = "both"    },
     { name = "detector",              type = "true"    },
+
+    # Filter EE TPC (ICARUS Run 2 only)
+    { name = "user_containment_cut_filterEE",  type = "both",  parameters = [ "@containment_threshold" ] },
 
     # Leading MUON interaction-level
     { name = "start_x",               type = "both_particle", selector = "leading_muon" },
