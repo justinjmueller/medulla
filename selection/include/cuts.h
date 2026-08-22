@@ -479,10 +479,11 @@ namespace cuts
     template<class T>
     bool fiducial_cut_osc(const T & obj)
     {
+        // Apply a cut to within 10 cm of the detector edge in x and y,
+        // 15 cm in upstream z, and 100 cm in downstream z.
         if(context::current_detector == caf::Det_t::kSBND)
         {
-            // Apply a cut to within 10 cm of the detector edge in x and y,
-            // 15 cm in upstream z, and 100 cm in downstream z.
+            // Just the regular fiducial cut for SBND
             return std::abs(obj.vertex[0]) > 10.0 && std::abs(obj.vertex[0]) < 190.0
                 && std::abs(obj.vertex[1]) > 10.0 && std::abs(obj.vertex[1]) < 190.0
                 && obj.vertex[2] > 15.0 && obj.vertex[2] < 400.0;
@@ -490,9 +491,11 @@ namespace cuts
         }
         else if(context::current_detector == caf::Det_t::kICARUS)
         {
-            // Use the "standard" fiducial cut for ICARUS (done upstream in
-            // SPINE) and add a cut to avoid the dangling cable region.
-            return obj.is_fiducial && !(obj.vertex[0] > 210.215 && obj.vertex[1] > 60 && (obj.vertex[2] > 290 && obj.vertex[2] < 390));
+            // Regular fiducial cut for ICARUS, plus the dangling cable cut.
+            return std::abs(obj.vertex[0]) > 61.12 + 10.0 && std::abs(obj.vertex[0]) < 359.45 - 10.0
+                && obj.vertex[1] > -181.71 + 10.0 && obj.vertex[1] < 130.59 - 10.0
+                && obj.vertex[2] > -894.95 + 15.0 && obj.vertex[2] < 894.95 - 100.0
+                && avoid_icarus_dangling_cable(obj);
         }
         // Else, return true.
         return true;
