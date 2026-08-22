@@ -245,6 +245,142 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::Both, containment_cut, containment_cut);
 
     /**
+     * @brief Apply a user-defined containment cut on the entire interaction.
+     * @details The user-defined containment cut is applied on the entire
+     * interaction. It checks if all particles are contained within a specified
+     * distance from the detector edges. The distance is provided as a
+     * parameter.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @param params a vector containing a single parameter for the containment
+     * distance.
+     * @return true if the interaction is contained within the specified
+     * distance from the detector edges.
+     */
+    template<class T>
+    bool user_containment_cut(const T & obj, std::vector<double> params={})
+    {
+        if(params.size() != 1)
+            throw std::invalid_argument("user_containment_cut requires a single parameter for the containment distance.");
+
+        if(!obj.is_contained)
+            return false; // Always more strict than the upstream SPINE cut.
+
+        if(context::current_detector == caf::Det_t::kSBND)
+        {
+            // Bounds are [-200, 200], [-200, 200], [0, 500]
+            for(const auto & p : obj.particles)
+            {
+                if(!std::isnan(pvars::start_x(p)) && !std::isnan(pvars::end_x(p)))
+                {
+                    if(pvars::start_x(p) < -200 + params[0] || pvars::start_x(p) > 200 - params[0]
+                    || pvars::end_x(p) < -200 + params[0] || pvars::end_x(p) > 200 - params[0])
+                        return false;
+                }
+                if(!std::isnan(pvars::start_y(p)) && !std::isnan(pvars::end_y(p)))
+                {
+                    if(pvars::start_y(p) < -200 + params[0] || pvars::start_y(p) > 200 - params[0]
+                    || pvars::end_y(p) < -200 + params[0] || pvars::end_y(p) > 200 - params[0])
+                        return false;
+                }
+                if(!std::isnan(pvars::start_z(p)) && !std::isnan(pvars::end_z(p)))
+                {
+                    if(pvars::start_z(p) < 0 + params[0] || pvars::start_z(p) > 500 - params[0]
+                    || pvars::end_z(p) < 0 + params[0] || pvars::end_z(p) > 500 - params[0])
+                        return false;
+                }
+            }
+        }
+        else if(context::current_detector == caf::Det_t::kICARUS)
+        {
+            // Bounds are [61.12, 359.45], [-181.71, 130.59], [-894.95, 894.95]
+            // Two cryostats, one at positive x and one at negative x.
+            for(const auto & p : obj.particles)
+            {
+                if(!std::isnan(pvars::start_x(p)) && !std::isnan(pvars::end_x(p)))
+                {
+                    if((pvars::start_x(p) < 61.12 + params[0] || pvars::start_x(p) > 359.45 - params[0]
+                    || pvars::end_x(p) < 61.12 + params[0] || pvars::end_x(p) > 359.45 - params[0])
+                    && (pvars::start_x(p) < -359.45 + params[0] || pvars::start_x(p) > -61.12 - params[0]
+                    || pvars::end_x(p) < -359.45 + params[0] || pvars::end_x(p) > -61.12 - params[0]))
+                        return false;
+                }
+                if(!std::isnan(pvars::start_y(p)) && !std::isnan(pvars::end_y(p)))
+                {
+                    if(pvars::start_y(p) < -181.71 + params[0] || pvars::start_y(p) > 130.59 - params[0]
+                    || pvars::end_y(p) < -181.71 + params[0] || pvars::end_y(p) > 130.59 - params[0])
+                        return false;
+                }
+                if(!std::isnan(pvars::start_z(p)) && !std::isnan(pvars::end_z(p)))
+                {
+                    if(pvars::start_z(p) < -894.95 + params[0] || pvars::start_z(p) > 894.95 - params[0]
+                    || pvars::end_z(p) < -894.95 + params[0] || pvars::end_z(p) > 894.95 - params[0])
+                        return false;
+                }
+            }
+        }
+        // Else, return true.
+        return true;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, user_containment_cut, user_containment_cut);
+
+    /**
+     * @brief Apply a user-defined containment cut on the entire interaction,
+     * excluding the EE TPC.
+     * @details This applies user_containment_cut and then additionally
+     * rejects interactions with particles whose start or end point falls in
+     * the EE TPC (the ICARUS TPC pair at negative x, beyond the cathode at
+     * x = -210.215) -- i.e. the region between the cathode and the far wall
+     * (-359.45) that user_containment_cut alone still allows. On SBND, which
+     * has no cathode split of this kind, this is equivalent to
+     * user_containment_cut.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @param params a vector containing a single parameter for the containment
+     * distance.
+     * @return true if the interaction is contained within the specified
+     * distance from the detector edges, excluding the EE TPC.
+     */
+    template<class T>
+    bool user_containment_cut_filterEE(const T & obj, std::vector<double> params={})
+    {
+        if(params.size() != 1)
+            throw std::invalid_argument("user_containment_cut_filterEE requires a single parameter for the containment distance.");
+
+        if(!obj.is_contained)
+            return false; // Always more strict than the upstream SPINE cut.
+
+        if(context::current_detector == caf::Det_t::kSBND)
+        {
+            // Not relevant for SBND
+            return user_containment_cut(obj, params);
+        }
+        else if(context::current_detector == caf::Det_t::kICARUS)
+        {
+            // Start from the standard containment bounds, then additionally
+            // reject particles whose start or end point falls in the EE TPC:
+            // the region between the cathode (x = -210.215) and the far
+            // wall (x = -359.45) that user_containment_cut alone still
+            // allows.
+            if(!user_containment_cut(obj, params))
+                return false;
+
+            for(const auto & p : obj.particles)
+            {
+                if(!std::isnan(pvars::start_x(p)) && !std::isnan(pvars::end_x(p)))
+                {
+                    if((pvars::start_x(p) < 0 && pvars::start_x(p) < -210.215 + params[0])
+                    || (pvars::end_x(p) < 0 && pvars::end_x(p) < -210.215 + params[0]))
+                        return false;
+                }
+            }
+        }
+        // Else, return true.
+        return true;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, user_containment_cut_filterEE, user_containment_cut_filterEE);
+
+    /**
      * @brief Apply a cut to select cathode-crossing interactions.
      * @details This cut is intended to be used in analyses that wish to select
      * (or deselect) interactions that cross the cathode. The cathode-crossing 
@@ -308,6 +444,29 @@ namespace cuts
         }
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducialize_cathode, fiducialize_cathode);
+
+    template<class T>
+    bool fiducial_cut_osc(const T & obj)
+    {
+        if(context::current_detector == caf::Det_t::kSBND)
+        {
+            // Apply a cut to within 10 cm of the detector edge in x and y,
+            // 15 cm in upstream z, and 100 cm in downstream z.
+            return std::abs(obj.vertex[0]) > 10.0 && std::abs(obj.vertex[0]) < 190.0
+                && std::abs(obj.vertex[1]) > 10.0 && std::abs(obj.vertex[1]) < 190.0
+                && obj.vertex[2] > 15.0 && obj.vertex[2] < 400.0;
+
+        }
+        else if(context::current_detector == caf::Det_t::kICARUS)
+        {
+            // Use the "standard" fiducial cut for ICARUS (done upstream in
+            // SPINE) and add a cut to avoid the dangling cable region.
+            return obj.is_fiducial && !(obj.vertex[0] > 210.215 && obj.vertex[1] > 60 && (obj.vertex[2] > 290 && obj.vertex[2] < 390));
+        }
+        // Else, return true.
+        return true;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut_osc, fiducial_cut_osc);
 
     /**
      * @brief Apply a cut to veto the high-y, high-z region of SBND.
