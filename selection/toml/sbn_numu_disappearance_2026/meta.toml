@@ -17,7 +17,10 @@ output_pattern = "spineosc_numu_%e_%t"
   keys = ["sbnd_ar23p_mc5e18", "sbnd_ar23p_mc1e20", "sbnd_offbeam"]
 
   [toml.enable.icarus]
-  keys = ["icarus_ar23p_run4", "icarus_offbeam_run4"]
+  keys = [
+    "icarus_ar23p_run2", "icarus_ar23p_run4",
+    "icarus_offbeam_run2", "icarus_offbeam_run4"
+  ]
 
 [[toml]]
 role = "dirt"
@@ -28,6 +31,32 @@ output_pattern = "spineosc_numu_%e_%t_dirt"
   [toml.enable.sbnd]
   keys = ["sbnd_ar23p_dirt",]
 
+  [toml.enable.icarus]
+  keys = [
+    "icarus_ar23p_dirt_run2",
+    "icarus_ar23p_dirt_run4",
+  ]
+
+[[toml]]
+role = "detvar"
+file = "selection.toml"
+output_pattern = "spineosc_numu_%e_%t_detvar"
+
+  [toml.enable.sbnd]
+  keys = [
+    "sbnd_intime_mc5e18", "sbnd_intime_mc1e20",
+    "sbnd_detvar_cv", "sbnd_detvar_dent",
+    "sbnd_detvar_sce0x", "sbnd_detvar_sce2x",
+    "sbnd_detvar_charge_scale",]
+
+  [toml.enable.icarus]
+  keys = [
+    "icarus_wiremod_xthetaxw_run2", "icarus_wiremod_yz_run2",
+    "icarus_wiremod_xthetaxw_run4", "icarus_wiremod_yz_run4",
+    "icarus_detvar_sce0x_run4", "icarus_detvar_sce2x_run4",
+    "icarus_detvar_charge_scale_run4",
+  ]
+
 [[toml]]
 role = "data_blind_safe"
 file = "data_blind_safe.toml"
@@ -37,7 +66,10 @@ output_pattern = "spineosc_numu_%e_%t_bnblight#"
   keys = ["sbnd_bnblight"]
 
   [toml.enable.icarus]
-  keys = ["icarus_bnblight_run4"]
+  keys = [
+    "icarus_bnblight_run2",
+    "icarus_bnblight_run4",
+  ]
 
 [[toml]]
 role = "data_quality"

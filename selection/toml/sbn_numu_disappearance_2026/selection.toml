@@ -27,8 +27,15 @@ keys = [
     "sbnd_ar23p_mc5e18", "sbnd_ar23p_mc1e20",
     "sbnd_ar23p_dirt",
     "sbnd_offbeam",
-    "icarus_ar23p_run4",
-    "icarus_offbeam_run4",
+    "sbnd_intime_mc5e18", "sbnd_intime_mc1e20",
+    "sbnd_detvar_cv", "sbnd_detvar_dent",
+    "sbnd_detvar_sce0x", "sbnd_detvar_sce2x", "sbnd_detvar_charge_scale",
+    "icarus_ar23p_run2", "icarus_ar23p_run4",
+    "icarus_ar23p_dirt_run2", "icarus_ar23p_dirt_run4",
+    "icarus_offbeam_run2", "icarus_offbeam_run4",
+    "icarus_detvar_sce0x_run4", "icarus_detvar_sce2x_run4", "icarus_detvar_charge_scale_run4",
+    "icarus_wiremod_xthetaxw_run2", "icarus_wiremod_xthetaxw_run4",
+    "icarus_wiremod_yz_run2", "icarus_wiremod_yz_run4",
 ]
 # For interactive debugging, uncomment:
 enable = ["sbnd_ar23p_mc5e18"]
