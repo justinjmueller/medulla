@@ -460,6 +460,22 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 mctruth_cut,
                 ismc));
         }
+        else if(var_type == "event")
+        {
+            // Event-level variable, duplicated once per interaction that
+            // survives the configured cuts.
+            var_name = "event_" + var_name;
+            auto factory = VarFactoryRegistry<EventType>::instance().get(var_name);
+            auto var_fn = factory(varPars);
+            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, EventType>(
+                true_cut,
+                reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
+                true_particle_cut,
+                var_fn,
+                event_cut,
+                mctruth_cut,
+                ismc));
+        }
         else
         {
             throw std::runtime_error("Illegal variable type '" + var_type + "' for variable " + var_name);
@@ -661,6 +677,22 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 mctruth_cut,
                 ismc));
         }
+        else if(var_type == "event")
+        {
+            // Event-level variable, duplicated once per interaction that
+            // survives the configured cuts.
+            var_name = "event_" + var_name;
+            auto factory = VarFactoryRegistry<EventType>::instance().get(var_name);
+            auto var_fn = factory(varPars);
+            return std::make_pair(var_name, spill_multivar_helper<RType, TType, TParticleType, EventType>(
+                reco_cut,
+                true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
+                true_particle_cut,
+                var_fn,
+                event_cut,
+                mctruth_cut,
+                ismc));
+        }
         else
         {
             throw std::runtime_error("Illegal variable type '" + var_type + "' for variable " + var_name);
@@ -781,6 +813,16 @@ ana::SpillMultiVar spill_multivar_helper(
                             values.push_back(kNoMatchValue);
                     }
                 }
+                else if constexpr(std::is_same_v<VarOn, EventType>)
+                {
+                    // Event-level variable duplicated once per surviving
+                    // interaction: the value does not depend on i, only on
+                    // whether this interaction passes the configured cuts.
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))) && (!mctruth_cut || (i.nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[i.nu_id]))))
+                    {
+                        values.push_back(var(*sr));
+                    }
+                }
                 else if constexpr(std::is_same_v<VarOn, TParticleType> || std::is_same_v<VarOn, RParticleType>)
                 {
                     if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))) && (!mctruth_cut || (i.nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[i.nu_id]))))
@@ -859,6 +901,17 @@ ana::SpillMultiVar spill_multivar_helper(
                             int64_t nu_id = sr->dlp_true[match_id].nu_id;
                             values.push_back(nu_id >= 0 ? var(sr->mc.nu[nu_id]) : kNoMatchValue);
                         }
+                    }
+                }
+                else if constexpr(std::is_same_v<VarOn, EventType>)
+                {
+                    // Event-level variable duplicated once per surviving
+                    // interaction: the value does not depend on i, only on
+                    // whether this interaction passes the configured cuts.
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])) || !ismc)
+                        && (match_id == kNoMatch || (!mctruth_cut || (sr->dlp_true[match_id].nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[sr->dlp_true[match_id].nu_id])))))
+                    {
+                        values.push_back(var(*sr));
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, TParticleType> || std::is_same_v<VarOn, RParticleType>)
