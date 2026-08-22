@@ -25,6 +25,7 @@ intime_ub = 5.0
 file = "common/osc.toml"
 keys = [
     "sbnd_bnblight",
+    "icarus_bnblight_run2",
     "icarus_bnblight_run4",
 ]
 
