@@ -188,6 +188,92 @@ class TestDiscovery:
 
 
 # ===================================================================
+# sys_template resolution: scalar (all experiments) vs. per-experiment
+# override table, e.g. [toml.sys_template] sbnd = "..." icarus = "..."
+# ===================================================================
+
+@skip_expand
+class TestSysTemplateResolution:
+    """discover_analyses()/expand_campaign() resolve sys_template both as a
+    single scalar shared by every experiment and as a per-experiment
+    override table, matching the [toml.enable.<experiment>] convention."""
+
+    def _make_analysis(self, toml_root, sys_template_block):
+        d = toml_root / "epsilon_2026"
+        d.mkdir(parents=True)
+        (d / "meta.toml").write_text(textwrap.dedent(f"""\
+            [meta]
+            analysis = "epsilon"
+            experiments = ["sbnd", "icarus"]
+
+            [[toml]]
+            role = "primary"
+            file = "selection.toml"
+            {sys_template_block}
+              [toml.enable.sbnd]
+              keys = ["sbnd_mc_nominal"]
+
+              [toml.enable.icarus]
+              keys = ["icarus_mc_nominal"]
+        """))
+        (d / "selection.toml").write_text(textwrap.dedent("""\
+            [general]
+            output = "epsilon_2026"
+
+            [[include_samples]]
+            keys = ["sbnd_mc_nominal", "icarus_mc_nominal"]
+
+            [[tree]]
+            name = "selected"
+            sim_only = false
+            mode = "reco"
+            cut = []
+            branch = []
+        """))
+        (d / "sys_sbnd.toml").write_text("[input]\npath = 'output.root'\n")
+        (d / "sys_icarus.toml").write_text("[input]\npath = 'output.root'\n")
+        return d
+
+    def test_scalar_sys_template_applies_to_every_experiment(self, tmp_path):
+        toml_root = tmp_path / "selection" / "toml"
+        toml_root.mkdir(parents=True)
+        d = self._make_analysis(toml_root, 'sys_template = "sys_sbnd.toml"\n')
+
+        analyses = discover_analyses(toml_root)
+        units = expand_campaign(analyses, catalog_path=None)
+
+        by_exp = {u.experiment: u.sys_template for u in units}
+        assert by_exp["sbnd"] == str(d / "sys_sbnd.toml")
+        assert by_exp["icarus"] == str(d / "sys_sbnd.toml")
+
+    def test_per_experiment_sys_template_table(self, tmp_path):
+        toml_root = tmp_path / "selection" / "toml"
+        toml_root.mkdir(parents=True)
+        d = self._make_analysis(toml_root, (
+            "  [toml.sys_template]\n"
+            '  sbnd = "sys_sbnd.toml"\n'
+            '  icarus = "sys_icarus.toml"\n'
+        ))
+
+        analyses = discover_analyses(toml_root)
+        units = expand_campaign(analyses, catalog_path=None)
+
+        by_exp = {u.experiment: u.sys_template for u in units}
+        assert by_exp["sbnd"] == str(d / "sys_sbnd.toml")
+        assert by_exp["icarus"] == str(d / "sys_icarus.toml")
+
+    def test_missing_sys_template_resolves_to_none(self, tmp_path):
+        toml_root = tmp_path / "selection" / "toml"
+        toml_root.mkdir(parents=True)
+        self._make_analysis(toml_root, "")
+
+        analyses = discover_analyses(toml_root)
+        units = expand_campaign(analyses, catalog_path=None)
+
+        assert all(u.sys_template is None for u in units)
+
+
+# ===================================================================
 # T3.2 — CLI filters in expand_campaign()
 # ===================================================================
 

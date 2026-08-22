@@ -143,7 +143,9 @@ class TomlEntry:
     file: str                    # absolute path to the selection TOML
     experiments: list
     enable: dict = field(default_factory=dict)  # {experiment: [key, ...]}
-    sys_template: str = None     # absolute path to a systematics TOML template, or None for the default
+    sys_template: str = None     # absolute path to a systematics TOML template, a
+                                  # {experiment: path} dict for a per-experiment
+                                  # override, or None for the default
 
 
 @dataclass
@@ -259,7 +261,16 @@ def discover_analyses(toml_root):
         for t in meta.get('toml', []):
             enable_raw = t.get('enable', {})
             enable = {exp: block.get('keys', []) for exp, block in enable_raw.items()}
-            sys_template = str(meta_path.parent / t['sys_template']) if t.get('sys_template') else None
+            raw_sys_template = t.get('sys_template')
+            if isinstance(raw_sys_template, dict):
+                # Per-experiment override, e.g. [toml.sys_template] sbnd = "..." icarus = "...".
+                sys_template = {
+                    exp: str(meta_path.parent / path) for exp, path in raw_sys_template.items()
+                }
+            elif raw_sys_template:
+                sys_template = str(meta_path.parent / raw_sys_template)
+            else:
+                sys_template = None
             tomls.append(TomlEntry(
                 role=t['role'],
                 file=str(meta_path.parent / t['file']),
@@ -311,6 +322,10 @@ def expand_campaign(analyses, catalog_path,
             for exp in t.experiments:
                 if experiment and exp != experiment:
                     continue
+                if isinstance(t.sys_template, dict):
+                    sys_template = t.sys_template.get(exp)
+                else:
+                    sys_template = t.sys_template
                 units.append(ProjectUnit(
                     analysis=a.analysis,
                     role=t.role,
@@ -318,7 +333,7 @@ def expand_campaign(analyses, catalog_path,
                     toml_path=t.file,
                     enable_keys=t.enable.get(exp, []),
                     batch_size=a.defaults.get('batch_size', 50),
-                    sys_template=t.sys_template,
+                    sys_template=sys_template,
                 ))
     return units
 
