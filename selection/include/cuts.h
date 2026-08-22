@@ -447,20 +447,26 @@ namespace cuts
      * vertex relative to the cathode position.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to select on.
+     * @param params a vector optionally containing a single parameter for the
+     * fiducialization distance from the cathode in cm. Defaults to 5 cm when
+     * not provided.
      * @return true if the interaction is fiducialized.
      */
     template<class T>
-    bool fiducialize_cathode(const T & obj)
+    bool fiducialize_cathode(const T & obj, std::vector<double> params={})
     {
+        double margin = params.empty() ? 5.0 : params[0];
         if(context::current_detector == caf::Det_t::kSBND)
         {
-            // Apply a cut to fiducialize 5 cm around the cathode of SBND.
-            return std::abs(obj.vertex[0]) > 5.0;
+            // Apply a cut to fiducialize the given distance around the
+            // cathode of SBND.
+            return std::abs(obj.vertex[0]) > margin;
         }
         else if(context::current_detector == caf::Det_t::kICARUS)
         {
-            // Apply a cut to fiducialize 5 cm around the cathode of ICARUS.
-            return std::abs(std::abs(obj.vertex[0]) - 210.215) > 5.0;
+            // Apply a cut to fiducialize the given distance around the
+            // cathode of ICARUS.
+            return std::abs(std::abs(obj.vertex[0]) - 210.215) > margin;
         }
         else
         {
