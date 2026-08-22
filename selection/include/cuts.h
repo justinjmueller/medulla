@@ -190,24 +190,22 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::True, primary_lepton_from_antineutrino, primary_lepton_from_antineutrino);
 
     /**
-     * @brief Apply a fiducial volume cut; the interaction vertex must be
-     * reconstructed within the fiducial volume.
-     * @details The fiducial volume cut is applied on the reconstructed
-     * interaction vertex upstream in SPINE. The fiducial volume is defined
-     * (in a SPINE post-processor) as a 25 cm border around the x and y
-     * detector faces, a 50 cm border around the downstream (+) z face, and a
-     * 30 cm border around the upstream (-) z face. The fiducial volume is
-     * intended to reduce the impact of detector edge effects on the analysis.
+     * @brief Veto interactions whose vertex falls in the ICARUS dangling
+     * cable region.
+     * @details A region of ICARUS (x > 210.215 cm, y > 60 cm, 290 cm < z <
+     * 390 cm) contains a dangling cable that causes anomalous
+     * reconstruction. This cut rejects any interaction whose vertex falls
+     * in that region.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to select on.
-     * @return true if the vertex is in the fiducial volume.
+     * @return true if the vertex is outside the dangling cable region.
      */
     template<class T>
-    bool fiducial_cut(const T & obj)
+    bool avoid_icarus_dangling_cable(const T & obj)
     {
-        return obj.is_fiducial && !(obj.vertex[0] > 210.215 && obj.vertex[1] > 60 && (obj.vertex[2] > 290 && obj.vertex[2] < 390));
+        return !(obj.vertex[0] > 210.215 && obj.vertex[1] > 60 && (obj.vertex[2] > 290 && obj.vertex[2] < 390));
     }
-    REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut, fiducial_cut);
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, avoid_icarus_dangling_cable, avoid_icarus_dangling_cable);
 
     /**
      * @brief Veto interactions whose vertex falls in the ICARUS z-gap region.
@@ -226,6 +224,33 @@ namespace cuts
         return !(obj.vertex[2] > -100 && obj.vertex[2] < 100);
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, avoid_icarus_mystery_zgap, avoid_icarus_mystery_zgap);
+
+    /**
+     * @brief Apply a fiducial volume cut; the interaction vertex must be
+     * reconstructed within the fiducial volume.
+     * @details The fiducial volume cut is applied on the reconstructed
+     * interaction vertex upstream in SPINE. The fiducial volume is defined
+     * (in a SPINE post-processor) as a 25 cm border around the x and y
+     * detector faces, a 50 cm border around the downstream (+) z face, and a
+     * 30 cm border around the upstream (-) z face. The fiducial volume is
+     * intended to reduce the impact of detector edge effects on the analysis.
+     * On ICARUS, the dangling cable region is additionally excluded (see
+     * avoid_icarus_dangling_cable).
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the vertex is in the fiducial volume.
+     */
+    template<class T>
+    bool fiducial_cut(const T & obj)
+    {
+        // ICARUS gets special treatment due to the dangling cable.
+        if(context::current_detector == caf::Det_t::kICARUS)
+            return obj.is_fiducial && avoid_icarus_dangling_cable(obj);
+        
+        // Standard fiducial cut for SBND.
+        return obj.is_fiducial;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut, fiducial_cut);
 
     /**
      * @brief Apply a containment cut on the entire interaction.
