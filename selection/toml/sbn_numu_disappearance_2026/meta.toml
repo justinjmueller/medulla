@@ -10,8 +10,11 @@ batch_size = 25
 [[toml]]
 role = "primary"
 file = "selection.toml"
-sys_template = "sys.toml"
 output_pattern = "spineosc_numu_%e_%t"
+
+  [toml.sys_template]
+  sbnd = "sys_sbnd.toml"
+  icarus = "sys_icarus.toml"
 
   [toml.enable.sbnd]
   keys = ["sbnd_ar23p_mc5e18", "sbnd_ar23p_mc1e20", "sbnd_offbeam"]
@@ -25,8 +28,11 @@ output_pattern = "spineosc_numu_%e_%t"
 [[toml]]
 role = "dirt"
 file = "selection.toml"
-sys_template = "sys.toml"
 output_pattern = "spineosc_numu_%e_%t_dirt"
+
+  [toml.sys_template]
+  sbnd = "sys_sbnd.toml"
+  icarus = "sys_icarus.toml"
 
   [toml.enable.sbnd]
   keys = ["sbnd_ar23p_dirt",]
