@@ -68,6 +68,9 @@ branch = [
     { name = "cathode_crosser",       type = "both"    },
     { name = "detector",              type = "reco"    },
 
+    # Filter EE TPC (ICARUS Run 2 only)
+    { name = "user_containment_cut_filterEE",  type = "both",  parameters = [ "@containment_threshold" ] },
+
     # Leading MUON interaction-level
     { name = "start_x",               type = "both_particle", selector = "leading_muon" },
     { name = "start_y",               type = "both_particle", selector = "leading_muon" },
