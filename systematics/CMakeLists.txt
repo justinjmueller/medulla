@@ -10,8 +10,9 @@ find_package(sbnanaobj)
 
 
 add_library(weight_reader SHARED src/weight_reader.cc)
-target_link_libraries(weight_reader PRIVATE ${ROOT_LIBRARIES} shared)
-target_include_directories(weight_reader PRIVATE include/ ${ROOT_INCLUDE_DIRS} ${SBNANAOBJ_INC})
+target_link_directories(weight_reader PRIVATE ${SBNANAOBJ_LIB})
+target_link_libraries(weight_reader PRIVATE ${ROOT_LIBRARIES} shared sbnanaobj_StandardRecordProxy)
+target_include_directories(weight_reader PRIVATE include/ ${ROOT_INCLUDE_DIRS} ${SBNANAOBJ_INC} ${SRPROXY_INC})
 
 # Library for generic systematics
 add_library(systematics SHARED src/systematic.cc)
