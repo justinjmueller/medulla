@@ -18,6 +18,8 @@ pion_threshold = 25.0
 proton_threshold = 50.0
 containment_threshold = 10.0
 cathode_fiducialization = 5.0
+intime_lb = -5.0
+intime_ub = 5.0
 
 [[include_samples]]
 file = "common/osc.toml"
@@ -46,6 +48,10 @@ cut = [
     { name = "!no_protons",           type = "reco",  parameters = [ "@proton_threshold"      ] },
 ]
 branch = [
+    # Event-level branches
+    { name = "largest_flash_pe",      type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    { name = "largest_flash_time",    type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+
     # Interaction-level branches
     { name = "neutrino_id",           type = "true"    },
     { name = "neutrino_energy",       type = "mctruth" },
@@ -61,7 +67,6 @@ branch = [
     { name = "off_axis_angle_sbnd",   type = "both"    },
     { name = "off_axis_angle_icarus", type = "both"    },
     { name = "category",              type = "true"    },
-    { name = "containment_cut",       type = "both"    },
     { name = "visible_energy",        type = "both"    },
     { name = "dpT",                   type = "both"    },
     { name = "dalphaT",               type = "both"    },
@@ -145,6 +150,10 @@ cut = [
     { name = "!no_protons",           type = "true",  parameters = [ "@proton_threshold"      ] },
 ]
 branch = [
+    # Event-level branches
+    { name = "largest_flash_pe",      type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    { name = "largest_flash_time",    type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    
     # Interaction-level branches
     { name = "neutrino_id",           type = "true"    },
     { name = "neutrino_energy",       type = "mctruth" },
@@ -160,7 +169,6 @@ branch = [
     { name = "off_axis_angle_sbnd",   type = "both"    },
     { name = "off_axis_angle_icarus", type = "both"    },
     { name = "category",              type = "true"    },
-    { name = "containment_cut",       type = "both"    },
     { name = "visible_energy",        type = "both"    },
     { name = "dpT",                   type = "both"    },
     { name = "dalphaT",               type = "both"    },
@@ -240,6 +248,27 @@ branch = [
     { name = "single_proton",         type = "reco",  parameters = [ "@proton_threshold"      ] },
 ]
 
+[[tree]]
+name = "events"
+sim_only = false
+mode = "event"
+cut = [
+    { name = "no_cut",             type = "event" },
+]
+branch = [
+    { name = "is_first_in_subrun", type = "event" },
+    { name = "pot",                type = "event" },
+    { name = "pot_from_spillinfo", type = "event" },
+    { name = "largest_flash_pe",   type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    { name = "largest_flash_time", type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    { name = "unfolded_pot_bnb",   type = "event" },
+    { name = "unfolded_nbnb",      type = "event" },
+    { name = "gate_delta",         type = "event" },
+    { name = "nbnb",               type = "event" },
+    { name = "noffbeambnb",        type = "event" },
+    { name = "ngenevt",            type = "event" },
+    { name = "nreco",              type = "event" },
+    { name = "ntrue",              type = "event" },
 ]
 
 [[category]] # 0 : Fiducial, contained, single muon, single proton
