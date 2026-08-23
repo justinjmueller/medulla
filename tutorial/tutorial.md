@@ -622,7 +622,18 @@ Projects in a `partial` state are eligible for relaunch — running `launch` aga
 
 After scanning for completed files, `sync` also checks for **stub output files** — output files smaller than 1 KB that indicate a job exited before producing meaningful output. If any are found across all projects, they are listed and the user is prompted once to delete them. Stub files are excluded from the completion count regardless of whether they are deleted, so they will not block a project from reaching `completed` once the corresponding jobs are resubmitted and finish successfully.
 
-### Step 5 — Monitor
+### Step 5 — Scan (optional integrity check)
+`sync`'s completion check is size-only (`>= 1 KB`), which cannot catch a file that is large enough to pass but is still corrupt or truncated — for example a job that was killed mid-write after the ROOT header had already been flushed. The `scan` subcommand does a real integrity check by opening every completed output file with ROOT (`TFile::IsZombie()`):
+
+```bash
+python3 batch/campaign.py scan --name v1.0_apr22
+```
+
+This is a separate, deliberately-invoked command rather than part of `sync` itself — opening every file with ROOT is far more expensive than a size check, so it isn't run automatically on every sync. Only files `sync` already trusts as complete (`>= 1 KB`) are checked; anything smaller is already handled as a stub file by `sync`.
+
+If any files fail the check, they are listed once for the whole campaign and you are prompted before anything changes. On confirmation, each corrupt file is deleted and its job is reverted to `pending` in `project.db` — including updating `campaign.db`'s completion counts and status for the affected project — so it is automatically picked up the next time `launch` runs. Use `--dry-run` to see what would be flagged without deleting or reverting anything, and `--workers N` to scan multiple projects in parallel (each project's scan is independent). An optional `--experiment` flag restricts the scan to one experiment, matching `sync`/`launch`/`finalize`.
+
+### Step 6 — Monitor
 At any point, inspect the current state of the campaign with the `status` subcommand:
 
 ```bash
@@ -642,7 +653,7 @@ python3 batch/campaign.py status --name v1.0_apr22
 
 All subcommands also accept `--campaign /full/path/to/campaign` in place of `--name`, which is useful for campaigns created without `--name` or when running on a different machine where the registry is not available.
 
-### Step 6 — Finalize
+### Step 7 — Finalize
 Once the campaign is sufficiently complete, use the `finalize` subcommand to merge each project's per-job output files into a single combined ROOT file using `hadd`. The merged files are written directly into the campaign directory alongside `campaign.db`.
 
 ```bash
