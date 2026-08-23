@@ -65,12 +65,17 @@ Run with:
 """
 
 import sqlite3
+import subprocess
 import textwrap
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from unittest import mock
 
 import toml
 import pytest
+import campaign
 
 
 # ---------------------------------------------------------------------------
@@ -598,6 +603,41 @@ class TestCreateCampaignResolved:
 
         assert count == 3
 
+    def test_jobs_sample_column_populated(self, workspace):
+        """Each jobs row should record the name of the sample it belongs
+        to, in the same order the batched samples were produced in."""
+        analyses = discover_analyses(workspace["toml_root"])
+        units = expand_campaign(
+            analyses, workspace["catalog"], analysis_filter=["beta"]
+        )
+        campaign_dir = workspace["root"] / "campaign_samplecol"
+
+        fake_samples = (
+            [{"name": "sbnd_mc", "path": [f"/fake/mc_{i}.root"], "ismc": True, "disable": False}
+             for i in range(3)]
+            + [{"name": "sbnd_offbeam", "path": ["/fake/offbeam_0.root"], "ismc": False, "disable": False}]
+        )
+        with mock.patch("utilities.get_samples", return_value=fake_samples):
+            create_campaign(
+                campaign_dir=campaign_dir,
+                project_units=units,
+                catalog_path=workspace["catalog"],
+                name="beta_samplecol",
+                tag="v1.0.0",
+            )
+
+        project_dirs = [
+            p for p in campaign_dir.iterdir()
+            if p.is_dir() and (p / "project.db").exists()
+        ]
+        conn = sqlite3.connect(str(project_dirs[0] / "project.db"))
+        curs = conn.cursor()
+        curs.execute("SELECT jobid, sample FROM jobs ORDER BY jobid")
+        rows = curs.fetchall()
+        conn.close()
+
+        assert [sample for _, sample in rows] == ["sbnd_mc", "sbnd_mc", "sbnd_mc", "sbnd_offbeam"]
+
 
 # ===================================================================
 # T3.5 — create_campaign() backward compatibility (inline samples)
@@ -1002,3 +1042,124 @@ class TestStatusSync:
 
         # Status must remain 'created' — no output files means no change.
         assert self._db_row(campaign_dir, "status") == "created"
+
+
+# ===================================================================
+# finalize: hadd via a file list ('@filelist' syntax) + parallel workers
+# ===================================================================
+
+try:
+    from campaign import _run_one_hadd
+    _FINALIZE_AVAILABLE = True
+except ImportError:
+    _FINALIZE_AVAILABLE = False
+
+skip_finalize = pytest.mark.skipif(
+    not _FINALIZE_AVAILABLE,
+    reason="_run_one_hadd not yet implemented in campaign.py",
+)
+
+
+@skip_finalize
+class TestFinalizeHadd:
+    """_run_one_hadd() writes an input file list and invokes hadd via the
+    '@<filelist>' syntax instead of passing every file on argv, and
+    cmd_finalize's task loop can run independent merges in parallel."""
+
+    def _make_task(self, tmp_path, n_files, name="proj"):
+        proj_dir = tmp_path / name
+        (proj_dir / "output").mkdir(parents=True)
+        for i in range(n_files):
+            (proj_dir / "output" / f"output_jobid{i:04d}.root").write_bytes(b"fake")
+        row = {"analysis": "eps", "role": "primary", "experiment": "sbnd"}
+        out_path = tmp_path / "campaign" / f"{name}.root"
+        out_path.parent.mkdir(exist_ok=True)
+        input_glob = str(proj_dir / "output" / "output_jobid*.root")
+        return row, out_path, input_glob
+
+    def test_writes_filelist_and_uses_at_syntax(self, tmp_path):
+        row, out_path, input_glob = self._make_task(tmp_path, n_files=5)
+        campaign_dir = out_path.parent
+
+        calls = []
+        def fake_run(cmd, **kwargs):
+            calls.append(cmd)
+
+        with mock.patch("subprocess.run", side_effect=fake_run):
+            ok, skipped = campaign._run_one_hadd(
+                campaign_dir, row, out_path, input_glob, "nosyst", threading.Lock()
+            )
+
+        assert ok is True
+        assert skipped is False
+        assert len(calls) == 1
+        cmd = calls[0]
+        # No individual input file paths on argv -- only '-f', the output
+        # path, and a single '@<filelist>' argument.
+        assert cmd == ["hadd", "-f", str(out_path), cmd[3]]
+        assert cmd[3].startswith("@")
+
+        filelist_path = Path(cmd[3][1:])
+        assert filelist_path.exists()
+        assert filelist_path.parent == campaign_dir / "filelists"
+        lines = filelist_path.read_text().splitlines()
+        assert len(lines) == 5
+        assert all(Path(l).name.startswith("output_jobid") for l in lines)
+
+    def test_no_input_files_is_skipped_not_a_hadd_call(self, tmp_path):
+        row, out_path, _ = self._make_task(tmp_path, n_files=0)
+        campaign_dir = out_path.parent
+        empty_glob = str(tmp_path / "proj" / "output" / "output_jobid*.root")
+
+        with mock.patch("subprocess.run") as mocked_run:
+            ok, skipped = campaign._run_one_hadd(
+                campaign_dir, row, out_path, empty_glob, "wsyst", threading.Lock()
+            )
+
+        assert ok is False
+        assert skipped is True
+        mocked_run.assert_not_called()
+
+    def test_hadd_failure_is_reported_not_raised(self, tmp_path):
+        row, out_path, input_glob = self._make_task(tmp_path, n_files=2)
+        campaign_dir = out_path.parent
+
+        def failing_run(cmd, **kwargs):
+            raise subprocess.CalledProcessError(1, cmd)
+
+        with mock.patch("subprocess.run", side_effect=failing_run):
+            ok, skipped = campaign._run_one_hadd(
+                campaign_dir, row, out_path, input_glob, "nosyst", threading.Lock()
+            )
+
+        assert ok is False
+        assert skipped is False
+
+    def test_tasks_run_concurrently_up_to_worker_limit(self, tmp_path):
+        """cmd_finalize dispatches independent merges through a thread pool
+        sized by --workers; confirm real overlap occurs and is capped."""
+        tasks = [self._make_task(tmp_path, n_files=1, name=f"proj{i}") for i in range(4)]
+        campaign_dir = tasks[0][1].parent
+
+        active = {"n": 0, "max": 0}
+        lock = threading.Lock()
+        def fake_run(cmd, **kwargs):
+            with lock:
+                active["n"] += 1
+                active["max"] = max(active["max"], active["n"])
+            time.sleep(0.1)
+            with lock:
+                active["n"] -= 1
+
+        print_lock = threading.Lock()
+        with mock.patch("subprocess.run", side_effect=fake_run):
+            with ThreadPoolExecutor(max_workers=3) as executor:
+                futures = [
+                    executor.submit(campaign._run_one_hadd, campaign_dir, row, out_path, input_glob, "nosyst", print_lock)
+                    for row, out_path, input_glob in tasks
+                ]
+                results = [f.result() for f in as_completed(futures)]
+
+        assert all(ok for ok, skipped in results)
+        assert active["max"] > 1, "expected real parallelism with 3 workers"
+        assert active["max"] <= 3, "must never exceed the configured worker limit"

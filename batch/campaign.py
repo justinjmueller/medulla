@@ -7,8 +7,10 @@ import sqlite3
 import subprocess
 import sys
 import tempfile
+import threading
 import toml
 import traceback
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from glob import glob
@@ -16,7 +18,7 @@ from pathlib import Path
 
 from auth import authenticate
 from catalog import resolve_samples
-from utilities import create_new_project, check_project_status, launch_jobsub
+from utilities import create_new_project, check_project_status, launch_jobsub, safe_copy
 
 # Repo root is two levels above this script (batch/ -> repo root).
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -214,7 +216,7 @@ def _open_db(campaign_dir):
         suffix='.db', prefix='medulla_campaign_', delete=False
     ) as f:
         tmp = Path(f.name)
-    shutil.copy2(db_path, tmp)
+    safe_copy(db_path, tmp)
     conn = sqlite3.connect(tmp)
     conn.row_factory = sqlite3.Row
     curs = conn.cursor()
@@ -231,7 +233,7 @@ def _open_db(campaign_dir):
         conn.close()
         # /pnfs does not allow overwriting files in place; delete first.
         db_path.unlink(missing_ok=True)
-        shutil.copy2(tmp, db_path)
+        safe_copy(tmp, db_path)
         tmp.unlink(missing_ok=True)
 
 
@@ -433,9 +435,13 @@ def create_campaign(campaign_dir, project_units, catalog_path,
 
         conn.close()
 
-        # Copy the complete staging tree to the final destination.
+        # Copy the complete staging tree to the final destination. Some
+        # project.db files can be large (a project row embeds a full copy
+        # of the resolved TOML config per job), so use safe_copy (not
+        # shutil.copy2) to avoid the sendfile-based fast path dCache can
+        # reject for large files.
         campaign_dir.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(staging, campaign_dir)
+        shutil.copytree(staging, campaign_dir, copy_function=safe_copy)
     finally:
         shutil.rmtree(staging, ignore_errors=True)
 
@@ -482,7 +488,7 @@ def _sync_project_status(project_dir):
     ) as f:
         tmp = Path(f.name)
     try:
-        shutil.copy2(db_path, tmp)
+        safe_copy(db_path, tmp)
         conn = sqlite3.connect(tmp)
         curs = conn.cursor()
         if completed_ids:
@@ -496,7 +502,7 @@ def _sync_project_status(project_dir):
         conn.close()
         # /pnfs does not allow overwriting files in place; delete first.
         db_path.unlink(missing_ok=True)
-        shutil.copy2(tmp, db_path)
+        safe_copy(tmp, db_path)
     finally:
         tmp.unlink(missing_ok=True)
 
@@ -867,12 +873,17 @@ def cmd_launch(args):
     W_AN, W_RO, W_EX = 28, 18, 10
 
     # Resolve how many jobs to submit per project.
+    njobs_per_sample = None
     if args.test:
         njobs = 1
         mode_label = " (test: 1 job per project)"
     elif args.njobs is not None:
         njobs = args.njobs
         mode_label = f" (--njobs {njobs} per project)"
+    elif args.njobs_per_sample is not None:
+        njobs = -1  # launch_jobsub default: all pending
+        njobs_per_sample = args.njobs_per_sample
+        mode_label = f" (--njobs-per-sample {njobs_per_sample} per sample per project)"
     else:
         njobs = -1  # launch_jobsub default: all pending
         mode_label = ""
@@ -936,8 +947,8 @@ def cmd_launch(args):
                 proj_dir = Path(row['project_dir'])
                 print(f"\n[CAMPAIGN] Launching: {row['analysis']}/{row['role']}_{row['experiment']}")
                 try:
-                    ok = launch_jobsub(proj_dir, exp=exp, njobs=njobs, confirm=False, tag=tag,
-                                       verbose=args.verbose)
+                    ok = launch_jobsub(proj_dir, exp=exp, njobs=njobs, njobs_per_sample=njobs_per_sample,
+                                       confirm=False, tag=tag, verbose=args.verbose)
                 except Exception as e:
                     print(f"[CAMPAIGN] Launch failed for {proj_dir}: {e}")
                     if args.verbose:
@@ -1040,6 +1051,71 @@ def _apply_pattern(pattern, analysis, role, experiment, tag, date_str):
     )
 
 
+def _run_one_hadd(campaign_dir, row, out_path, input_glob, label, print_lock):
+    """
+    Run a single hadd invocation for one (project, output) pair.
+
+    The input file list is written to a text file under
+    campaign_dir/filelists/ and passed to hadd via the '@<filelist>' syntax
+    (hadd -f <output> @<filelist>) instead of passing every file on the
+    command line, which avoids bumping into exec/argv length limits for
+    projects with a large number of output files. The file list is kept
+    (not deleted) as an audit trail of exactly what went into each merge.
+
+    Parameters
+    ----------
+    campaign_dir : Path
+        Campaign directory (file lists are written under
+        campaign_dir/filelists/).
+    row : sqlite3.Row
+        The project row this task belongs to (used only for messages).
+    out_path : Path
+        Path to the merged output file to create.
+    input_glob : str
+        Glob pattern for this task's input files.
+    label : str
+        'nosyst' or 'wsyst', used only to phrase the "no files" warning.
+    print_lock : threading.Lock
+        Lock guarding this function's own status prints, so that output
+        from concurrent workers doesn't interleave mid-line. Does not (and
+        cannot) serialize hadd's own subprocess output.
+
+    Returns
+    -------
+    (ok, skipped) : tuple[bool, bool]
+        ok is True if hadd ran successfully. skipped is True if there were
+        no input files to merge (not treated as an error).
+    """
+    files = sorted(glob(input_glob))
+    tag_str = f"{row['analysis']}/{row['role']}_{row['experiment']}"
+    if not files:
+        with print_lock:
+            if label == 'wsyst':
+                print(f"{_TAG_FINALIZE} {_A.YELLOW}Warning:{_A.RESET} "
+                      f"no systematics files for {tag_str}, skipping _wsyst.")
+            else:
+                print(f"{_TAG_FINALIZE} {_A.YELLOW}Warning:{_A.RESET} "
+                      f"no output files for {tag_str}, skipping.")
+        return False, True
+
+    filelist_dir = campaign_dir / 'filelists'
+    filelist_dir.mkdir(exist_ok=True)
+    filelist_path = filelist_dir / f"{out_path.stem}.txt"
+    filelist_path.write_text('\n'.join(files) + '\n')
+
+    with print_lock:
+        print(f"{_TAG_FINALIZE} hadd → {_A.CYAN}{out_path.name}{_A.RESET} "
+              f"({len(files)} input file(s))")
+    try:
+        subprocess.run(['hadd', '-f', str(out_path), f'@{filelist_path}'], check=True)
+        return True, False
+    except subprocess.CalledProcessError as e:
+        with print_lock:
+            print(f"{_TAG_FINALIZE} {_A.RED}Error:{_A.RESET} hadd failed for "
+                  f"{out_path.name}: {e}")
+        return False, False
+
+
 def cmd_finalize(args):
     """Merge per-project ROOT outputs into combined files using hadd."""
     campaign_dir = _resolve_campaign(args)
@@ -1122,28 +1198,19 @@ def cmd_finalize(args):
 
     n_ok = 0
     n_skipped = 0
-    for row, out_path, input_glob, label in tasks:
-        files = sorted(glob(input_glob))
-        if not files:
-            tag_str = f"{row['analysis']}/{row['role']}_{row['experiment']}"
-            if label == 'wsyst':
-                print(f"{_TAG_FINALIZE} {_A.YELLOW}Warning:{_A.RESET} "
-                      f"no systematics files for {tag_str}, skipping _wsyst.")
+    print_lock = threading.Lock()
+    n_workers = max(1, args.workers)
+    with ThreadPoolExecutor(max_workers=n_workers) as executor:
+        futures = [
+            executor.submit(_run_one_hadd, campaign_dir, row, out_path, input_glob, label, print_lock)
+            for row, out_path, input_glob, label in tasks
+        ]
+        for future in as_completed(futures):
+            ok, skipped = future.result()
+            if ok:
+                n_ok += 1
             else:
-                print(f"{_TAG_FINALIZE} {_A.YELLOW}Warning:{_A.RESET} "
-                      f"no output files for {tag_str}, skipping.")
-            n_skipped += 1
-            continue
-
-        print(f"{_TAG_FINALIZE} hadd → {_A.CYAN}{out_path.name}{_A.RESET} "
-              f"({len(files)} input file(s))")
-        try:
-            subprocess.run(['hadd', '-f', str(out_path)] + files, check=True)
-            n_ok += 1
-        except subprocess.CalledProcessError as e:
-            print(f"{_TAG_FINALIZE} {_A.RED}Error:{_A.RESET} hadd failed for "
-                  f"{out_path.name}: {e}")
-            n_skipped += 1
+                n_skipped += 1
 
     print(f"\n{_TAG_FINALIZE} Done. {n_ok} file(s) created, {n_skipped} skipped.")
 
@@ -1233,6 +1300,11 @@ def main():
                             help='Restrict finalization to one experiment')
     p_finalize.add_argument('--dry-run', action='store_true',
                             help='Print what would be merged without running hadd')
+    p_finalize.add_argument('--workers', type=int, default=1, metavar='N',
+                            help='Number of hadd merges to run in parallel '
+                                 '(default: 1, sequential). Each project\'s merges '
+                                 'are fully independent, so this is safe to raise '
+                                 'for campaigns with many projects.')
 
     # -- launch ---------------------------------------------------------------
     p_launch = sub.add_parser('launch', help='Launch pending campaign jobs')
@@ -1254,6 +1326,12 @@ def main():
                             help='Submit one job per project to verify setup')
     launch_grp.add_argument('--njobs', type=int, metavar='N',
                             help='Submit at most N jobs per project')
+    launch_grp.add_argument('--njobs-per-sample', type=int, metavar='N',
+                            help='Submit at most N jobs per sample per project (ensures every '
+                                 'sample in a project gets jobs launched even when the project '
+                                 'has an uneven sample mix and N is small). Requires a project '
+                                 'database created with per-sample job tracking -- recreate the '
+                                 'project if it predates this option')
 
     args = parser.parse_args()
 
