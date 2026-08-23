@@ -441,6 +441,14 @@ python3 medulla/batch/medulla.py -p <path_to_project> -e <experiment> --launch-j
 
 where `N` is some integer number of jobs to launch (e.g., `10` to launch 10 jobs). If no number is provided, all jobs will be launched. Each time this script is run, it will check for completed output files and only submit jobs that have not yet completed. This does not check for running jobs, so the user should be careful not to submit duplicate jobs.
 
+If a project contains multiple samples with very different numbers of input files, `--launch-jobs N` may only ever submit jobs from the largest sample, since it just takes the first `N` pending jobs regardless of which sample they belong to. To instead launch up to `N` jobs *per sample* (ensuring every sample gets some jobs submitted), use `--njobs-per-sample` instead:
+
+```bash
+python3 medulla/batch/medulla.py -p <path_to_project> -e <experiment> --njobs-per-sample N
+```
+
+`--njobs-per-sample` is mutually exclusive with `--test-job` and `--launch-jobs`, and requires a project created after this option was added (older projects should be recreated to use it).
+
 # Running a Campaign
 The single-project batch workflow described above works well for individual analyses, but a typical SBN physics analysis requires running the same selection over many different samples across two experiments (SBND and ICARUS), often with multiple selection roles (e.g., a primary MC selection, a data-blind-safe sample, and a data quality sample). The **campaign layer** automates this by coordinating all of those combinations in a single tracked operation.
 
@@ -579,6 +587,14 @@ python3 batch/campaign.py launch --name v1.0_apr22
 
 If you want finer-grained control, `--njobs N` submits at most `N` jobs per project instead of all pending ones. `--test` and `--njobs` are mutually exclusive.
 
+A project can contain multiple samples with very different numbers of input files (e.g. a large MC sample alongside a small off-beam data sample). Because `--njobs N` just takes the first `N` pending jobs in a project regardless of sample, a small `--njobs` launch can end up submitting jobs from only the largest sample. `--njobs-per-sample N` submits at most `N` jobs *per sample* per project instead, so every sample gets some jobs launched:
+
+```bash
+python3 batch/campaign.py launch --name v1.0_apr22 --njobs-per-sample N
+```
+
+`--njobs-per-sample` is mutually exclusive with `--test` and `--njobs`, and requires projects created after this option was added — recreate the campaign (or affected projects) if they predate it.
+
 In all cases the command groups projects by experiment, authenticates once per experiment via `htgettoken` (including the OIDC browser prompt if required), and submits via `jobsub_submit`. A single confirmation prompt is shown before any jobs are submitted. After submission each project's status is updated to `submitted` in `campaign.db`.
 
 An optional `--experiment` flag restricts the launch to one experiment, which is useful if authentication for one experiment fails or needs to be deferred.
@@ -589,7 +605,7 @@ If a submission attempt fails (for example, due to an expired token), the projec
 python3 batch/campaign.py launch --name v1.0_apr22 --relaunch --test
 ```
 
-`--relaunch` expands the query to include projects with status `submitted` in addition to `created` and `partial`. It can be combined with `--test` or `--njobs`.
+`--relaunch` expands the query to include projects with status `submitted` in addition to `created` and `partial`. It can be combined with `--test`, `--njobs`, or `--njobs-per-sample`.
 
 ### Step 4 — Sync
 After the grid jobs run, use the `sync` subcommand to scan each project's output directory for completed files and update `campaign.db`:
@@ -652,6 +668,14 @@ An optional `--experiment` flag restricts finalization to one experiment:
 
 ```bash
 python3 batch/campaign.py finalize --name v1.0_apr22 --experiment sbnd
+```
+
+Each merge's input file list is always written to a text file under `campaign_dir/filelists/` (one per merged output, kept as an audit trail) and passed to `hadd` as `hadd -f <output> @<filelist>` rather than listing every input file on the command line, which avoids hitting exec/argv length limits for projects with a large number of output files.
+
+Each project's merges are independent, so they can be run in parallel with `--workers N` (default: 1, sequential):
+
+```bash
+python3 batch/campaign.py finalize --name v1.0_apr22 --workers 4
 ```
 
 # Testing and Validation

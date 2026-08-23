@@ -1,6 +1,7 @@
 # Utilities for batch processing in medulla projects using jobsub
 import os
 import re
+import shutil
 import sqlite3
 import time
 import toml
@@ -12,7 +13,11 @@ from typing import Optional
 
 # Prefix used in a sample's 'path' config to indicate that files should
 # be located via a SAMWeb dataset definition rather than a filesystem
-# glob pattern, e.g. path = "defname:my_definition_name".
+# glob pattern, e.g. path = "defname:my_definition_name". The SAMWeb
+# station defaults to the job's --experiment, but can be overridden per
+# sample for definitions registered under a different station (e.g. the
+# combined 'sbn' station rather than 'sbnd' or 'icarus') by prefixing the
+# definition name with "<station>:", e.g. path = "defname:sbn:my_definition_name".
 DEFNAME_PREFIX = 'defname:'
 
 # ANSI helpers (no third-party dependency)
@@ -33,6 +38,7 @@ SCHEMA_JOBS = """
 CREATE TABLE IF NOT EXISTS jobs (
     jobid INTEGER PRIMARY KEY,
     status TEXT,
+    sample TEXT,
     FOREIGN KEY (jobid) REFERENCES configuration(jobid)
 );
 """
@@ -68,6 +74,50 @@ def command(
             curs.execute(comm)
     except Exception as e:
         print(e)
+
+def safe_copy(src, dst):
+    """
+    Copy a file, working around dCache access quirks that break both
+    shutil.copy2()/GNU cp and even a plain buffered read.
+
+    shutil.copy2() (and GNU cp) try an os.sendfile()/copy_file_range()-based
+    zero-copy fast path by default on Linux, which dCache's NFS layer has
+    been observed to reject with EPERM for some files (e.g. a large
+    project.db) even though ordinary buffered reads of the same file
+    succeed -- and Python's shutil does not treat EPERM as recoverable for
+    its automatic fallback, it just crashes. This function avoids that fast
+    path by doing a plain buffered read/write first.
+
+    That alone is not always sufficient, though: a plain buffered read can
+    also fail partway through (observed: EPERM after the first ~16KB) for
+    some large files on dCache, independent of sendfile. When the buffered
+    copy fails, this function falls back to `ifdh cp`, which negotiates
+    dCache's access protocol directly instead of relying on the NFS mount,
+    and is already a hard dependency of this codebase's grid-submission
+    path (submit.sh, auth.py). Any partial output from the failed attempt
+    is removed first so ifdh cp starts clean.
+
+    Every project.db/campaign.db copy in this codebase goes through this
+    function instead of shutil.copy2/subprocess cp for that reason.
+
+    Parameters
+    ----------
+    src : str | Path
+        Source file path.
+    dst : str | Path
+        Destination file path.
+
+    Returns
+    -------
+    None.
+    """
+    dst = Path(dst)
+    try:
+        with open(src, 'rb') as fsrc, open(dst, 'wb') as fdst:
+            shutil.copyfileobj(fsrc, fdst)
+    except OSError:
+        dst.unlink(missing_ok=True)
+        subprocess.run(['ifdh', 'cp', str(src), str(dst)], check=True)
 
 def locate_samweb_files(defname : str, experiment : str) -> list:
     """
@@ -109,6 +159,34 @@ def locate_samweb_files(defname : str, experiment : str) -> list:
 
     return sorted(paths)
 
+def parse_defname_path(sample_path : str, default_station : str) -> tuple:
+    """
+    Parse a 'defname:...' sample path into a (station, defname) pair.
+
+    Accepts 'defname:<name>', which uses default_station as the SAMWeb
+    station, or 'defname:<station>:<name>', which looks up the
+    definition under the named station instead (e.g. 'sbn' for
+    definitions shared across experiments rather than registered under
+    'sbnd' or 'icarus').
+
+    Parameters
+    ----------
+    sample_path : str
+        The sample's 'path' value; must start with DEFNAME_PREFIX.
+    default_station : str
+        SAMWeb station to use when the path does not specify one.
+
+    Returns
+    -------
+    tuple[str, str]
+        (station, defname).
+    """
+    rest = sample_path[len(DEFNAME_PREFIX):]
+    head, sep, tail = rest.partition(':')
+    if sep:
+        return head, tail
+    return default_station, head
+
 def get_samples(
     tml : str,
     batch_size : int,
@@ -134,8 +212,9 @@ def get_samples(
     enable_keys : list[str] | None
         Sample keys to enable.  Passed to resolve_samples.
     experiment : str
-        Experiment name used to configure the SAMWeb client when a
-        sample's path is a SAMWeb definition (see DEFNAME_PREFIX).
+        Default SAMWeb station used to resolve a sample's path when it
+        is a SAMWeb definition (see DEFNAME_PREFIX), unless the sample
+        overrides the station itself.
 
     Returns
     -------
@@ -154,8 +233,8 @@ def get_samples(
     for sample in enabled_samples:
         sample_path = sample['path']
         if isinstance(sample_path, str) and sample_path.startswith(DEFNAME_PREFIX):
-            defname = sample_path[len(DEFNAME_PREFIX):]
-            paths = locate_samweb_files(defname, experiment)
+            station, defname = parse_defname_path(sample_path, experiment)
+            paths = locate_samweb_files(defname, station)
         else:
             paths = glob(sample_path)
         if len(paths) == 0:
@@ -345,11 +424,11 @@ def create_new_project(
         job_tml['sample'] = [sample,]
 
         ins_configurations.append((si, toml.dumps(job_tml),))
-        ins_jobs.append((si, 'pending'))
+        ins_jobs.append((si, 'pending', sample['name']))
 
     # Insert the job configuration into the database.
     command(curs, "INSERT INTO configuration (jobid, cfg) VALUES (?, ?)", ins_configurations)
-    command(curs, "INSERT INTO jobs (jobid, status) VALUES (?, ?)", ins_jobs)
+    command(curs, "INSERT INTO jobs (jobid, status, sample) VALUES (?, ?, ?)", ins_jobs)
     conn.commit()
     conn.close()
 
@@ -374,7 +453,7 @@ def check_project_status(
         raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist.")
     
     # Copy the project database locally to dodge dcache issues.
-    subprocess.run(['cp', project_dir / 'project.db', './project.db'], check=True)
+    safe_copy(project_dir / 'project.db', './project.db')
     conn = sqlite3.connect('./project.db')
     curs = conn.cursor()
 
@@ -420,118 +499,41 @@ def check_project_status(
 
     print(f"[INFO] -- Found {len(completed_jobs)} completed jobs.")
 
-def launch_jobsub(
-    project_dir : str,
-    exp : str = 'sbnd',
-    njobs : int = -1,
-    confirm : bool = True,
-    tag : str = 'develop',
-    memory : int = 1800,
-    disk : Optional[int] = None,
-    lifetime : str = '1h',
-    verbose : bool = False,
+def _submit_jobsub_once(
+    cmd : list,
+    njobs : int,
+    confirm : bool,
+    verbose : bool,
+    label : str = '',
 ):
     """
-    Launch jobs using jobsub for the given project directory. If njobs
-    is provided, only that many jobs will be launched.
+    Run a single jobsub_submit invocation and report the result. Handles
+    the transient vault-credential race and expired-token failure modes,
+    retrying once for the former. This is a helper for launch_jobsub,
+    factored out so it can be called once per project (the default) or
+    once per sample (when njobs_per_sample is used).
 
     Parameters
     ----------
-    project_dir : str
-        Path to the base directory for the job directory.
-    exp : str
-        Experiment name (default: sbnd).
+    cmd : list
+        The full jobsub_submit command/argument list to run.
     njobs : int
-        Number of jobs to launch. If None, launch all pending jobs.
+        The number of jobs requested by this particular invocation, used
+        only for reporting.
     confirm : bool
-        If True (default), prompt the user before submitting.  Pass
-        False when the caller has already obtained confirmation (e.g.
-        campaign launch confirms once for all projects).
-    tag : str
-        Git ref passed to submit.sh as --tag (default: develop).
-    memory : int
-        Amount of memory to request for each job in MB. If None, use default.
-    disk : int
-        Amount of disk to request for each job in GB. If None, use default.
-    lifetime : str
-        Expected lifetime of each job (e.g., '1h', '30m'). If None, use default.
+        Whether this is a single-project, user-facing launch (affects how
+        much output is shown).
     verbose : bool
-        If True, print the full jobsub_submit command and its complete
-        stdout/stderr, even on a successful submission. jobsub_submit can
-        exit 0 while still failing to submit some individual jobs, and
-        those failures are otherwise only visible in the full output,
-        which is normally discarded down to a one-line summary.
+        Whether to show full jobsub_submit stdout/stderr on success.
+    label : str
+        Optional suffix describing what this invocation is for (e.g.
+        " for sample 'sbnd_mc'"), appended to the printed messages.
 
     Returns
     -------
-    None.
+    bool
+        True if the submission succeeded, False otherwise.
     """
-    # Check if the project database exists.
-    if not (project_dir / 'project.db').exists():
-        raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist.")
-
-    # Copy the project database locally to dodge dcache issues.
-    subprocess.run(['cp', project_dir / 'project.db', './project.db'], check=True)
-    conn = sqlite3.connect('./project.db')
-    curs = conn.cursor()
-
-    # Get the list of pending jobs.
-    command(curs, "SELECT jobid FROM jobs WHERE status = 'pending'")
-    pending_jobs = [row[0] for row in curs.fetchall()]
-    conn.close()
-
-    # Do some checking that the request is sane. Naturally, if there
-    # are no pending jobs, there is nothing to launch. Similarly, if
-    # the user requested more jobs than are pending, just launch all
-    # of the pending jobs.
-    if len(pending_jobs) == 0:
-        if confirm:
-            print(f"{_INFO} -- No pending jobs to launch.")
-        return False
-    if njobs > len(pending_jobs):
-        njobs = len(pending_jobs)
-        if confirm:
-            print(f"{_INFO} -- Requested number of jobs exceeds pending jobs. Preparing {njobs} jobs instead.")
-    if njobs == -1:
-        njobs = len(pending_jobs)
-
-    if confirm:
-        print(f"{_INFO} -- Found {len(pending_jobs)} pending jobs.")
-
-    # Determine the disk request.
-    if disk is not None:
-        disk_flag = f'--disk={disk}GB'
-    elif exp == 'sbnd':
-        disk_flag = '--disk=10GB'
-    else:
-        disk_flag = '--disk=25GB'
-
-    # Form the jobsub command to launch the jobs.
-    cmd = [
-        'jobsub_submit',
-        '-G', exp,
-        '-N', str(njobs),
-        f'--memory={memory}MB',
-        disk_flag,
-        f'--expected-lifetime={lifetime}',
-        '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE',
-        "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
-        '--singularity-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest',
-        f'file://{Path(__file__).resolve().parent / "submit.sh"}',
-        '--',
-        f'--project={project_dir.resolve()}',
-        f'--tag={tag}',
-    ]
-
-    # Query the user to confirm that they want to launch the jobs.
-    if confirm or verbose:
-        print(f"{_INFO} -- Launching {njobs} jobs with command: {' '.join(cmd)}")
-    if confirm:
-        resp = input("Confirm job launch? [Y/N] ")
-        if resp.lower() != 'y':
-            print(f"{_INFO} -- User aborted job launch.")
-            return False
-
     # Launch the jobs. If the command raises an "ExpiredSignatureError"
     # exception, it likely means that the user's token has expired and
     # they need to run `htgettoken` to refresh it. The exception is
@@ -559,9 +561,9 @@ def launch_jobsub(
                 time.sleep(retry_delay)
                 continue
             if 'ExpiredSignatureError' in (output := e.stderr.strip()):
-                print(f"{_ERROR} -- Job submission failed due to expired token. Please run `htgettoken` to refresh your token and try again.")
+                print(f"{_ERROR} -- Job submission failed{label} due to expired token. Please run `htgettoken` to refresh your token and try again.")
             else:
-                print(f"{_ERROR} -- Job submission failed with error: {output}")
+                print(f"{_ERROR} -- Job submission failed{label} with error: {output}")
             if verbose:
                 print(f"{_ERROR} -- Full stdout:\n{e.stdout}")
                 print(f"{_ERROR} -- Full stderr:\n{e.stderr}")
@@ -571,7 +573,7 @@ def launch_jobsub(
         # Single-project workflow: show full output so the user can verify.
         stdout = out.stdout.strip()
         print('\n'.join(stdout.split('\n')[-4:]))
-        print(f"{_INFO} -- Launched {njobs} jobs.")
+        print(f"{_INFO} -- Launched {njobs} jobs{label}.")
     elif verbose:
         # Campaign workflow with verbose requested: jobsub_submit can exit 0
         # while still failing to submit some individual jobs, so show the
@@ -581,13 +583,194 @@ def launch_jobsub(
             print(f"{_INFO} -- Full jobsub_submit stderr:\n{out.stderr.strip()}")
         match = re.search(r'job id\s+(\S+)', out.stdout)
         job_id = match.group(1) if match else 'unknown'
-        print(f"{_CAMPAIGN} Submitted {njobs} job(s). Job ID: {job_id}")
+        print(f"{_CAMPAIGN} Submitted {njobs} job(s){label}. Job ID: {job_id}")
     else:
         # Campaign workflow: one clean line per project.
         match = re.search(r'job id\s+(\S+)', out.stdout)
         job_id = match.group(1) if match else 'unknown'
-        print(f"{_CAMPAIGN} Submitted {njobs} job(s). Job ID: {job_id}")
+        print(f"{_CAMPAIGN} Submitted {njobs} job(s){label}. Job ID: {job_id}")
     return True
+
+def launch_jobsub(
+    project_dir : str,
+    exp : str = 'sbnd',
+    njobs : int = -1,
+    njobs_per_sample : Optional[int] = None,
+    confirm : bool = True,
+    tag : str = 'develop',
+    memory : int = 1800,
+    disk : Optional[int] = None,
+    lifetime : str = '1h',
+    verbose : bool = False,
+):
+    """
+    Launch jobs using jobsub for the given project directory. If njobs
+    is provided, only that many jobs will be launched in total. If
+    njobs_per_sample is provided instead, up to that many jobs will be
+    launched for *each* sample in the project (as a separate jobsub_submit
+    call per sample), which ensures every sample gets some jobs launched
+    even when the project has an uneven mix of sample sizes.
+
+    Parameters
+    ----------
+    project_dir : str
+        Path to the base directory for the job directory.
+    exp : str
+        Experiment name (default: sbnd).
+    njobs : int
+        Number of jobs to launch in total. If -1 (default), launch all
+        pending jobs. Mutually exclusive with njobs_per_sample.
+    njobs_per_sample : int
+        Number of jobs to launch per sample. If provided, njobs must be
+        left at its default (-1). Requires a project database created
+        with per-sample job tracking (i.e. created after this feature was
+        added); older projects should be recreated to use this option.
+    confirm : bool
+        If True (default), prompt the user before submitting.  Pass
+        False when the caller has already obtained confirmation (e.g.
+        campaign launch confirms once for all projects).
+    tag : str
+        Git ref passed to submit.sh as --tag (default: develop).
+    memory : int
+        Amount of memory to request for each job in MB. If None, use default.
+    disk : int
+        Amount of disk to request for each job in GB. If None, use default.
+    lifetime : str
+        Expected lifetime of each job (e.g., '1h', '30m'). If None, use default.
+    verbose : bool
+        If True, print the full jobsub_submit command and its complete
+        stdout/stderr, even on a successful submission. jobsub_submit can
+        exit 0 while still failing to submit some individual jobs, and
+        those failures are otherwise only visible in the full output,
+        which is normally discarded down to a one-line summary.
+
+    Returns
+    -------
+    bool
+        True if at least one jobsub_submit invocation succeeded, False
+        otherwise.
+    """
+    if njobs_per_sample is not None and njobs != -1:
+        raise ValueError("njobs and njobs_per_sample are mutually exclusive.")
+
+    # Check if the project database exists.
+    if not (project_dir / 'project.db').exists():
+        raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist.")
+
+    # Copy the project database locally to dodge dcache issues.
+    safe_copy(project_dir / 'project.db', './project.db')
+    conn = sqlite3.connect('./project.db')
+    curs = conn.cursor()
+
+    # Build the list of submission targets. Each target is a (sample, count)
+    # pair, where sample is None for a plain project-wide launch (today's
+    # default behavior) or a sample name when njobs_per_sample is used.
+    if njobs_per_sample is not None:
+        command(curs, "PRAGMA table_info(jobs)")
+        columns = {row[1] for row in curs.fetchall()}
+        if 'sample' not in columns:
+            conn.close()
+            raise RuntimeError(
+                "This project database does not have per-sample job "
+                "tracking (missing 'jobs.sample' column). Create a new "
+                "project to use njobs_per_sample."
+            )
+        command(
+            curs,
+            "SELECT sample, COUNT(*) FROM jobs WHERE status = 'pending' "
+            "GROUP BY sample ORDER BY MIN(jobid)",
+        )
+        sample_counts = curs.fetchall()
+        conn.close()
+
+        if len(sample_counts) == 0:
+            if confirm:
+                print(f"{_INFO} -- No pending jobs to launch.")
+            return False
+
+        targets = [
+            (sample, pending if njobs_per_sample <= 0 else min(njobs_per_sample, pending))
+            for sample, pending in sample_counts
+        ]
+
+        if confirm:
+            print(f"{_INFO} -- Found pending jobs for {len(targets)} sample(s):")
+            for sample, count in targets:
+                print(f"{_INFO} --   {sample}: {count} job(s)")
+    else:
+        # Get the list of pending jobs.
+        command(curs, "SELECT jobid FROM jobs WHERE status = 'pending'")
+        pending_jobs = [row[0] for row in curs.fetchall()]
+        conn.close()
+
+        # Do some checking that the request is sane. Naturally, if there
+        # are no pending jobs, there is nothing to launch. Similarly, if
+        # the user requested more jobs than are pending, just launch all
+        # of the pending jobs.
+        if len(pending_jobs) == 0:
+            if confirm:
+                print(f"{_INFO} -- No pending jobs to launch.")
+            return False
+        if njobs > len(pending_jobs):
+            njobs = len(pending_jobs)
+            if confirm:
+                print(f"{_INFO} -- Requested number of jobs exceeds pending jobs. Preparing {njobs} jobs instead.")
+        if njobs == -1:
+            njobs = len(pending_jobs)
+
+        if confirm:
+            print(f"{_INFO} -- Found {len(pending_jobs)} pending jobs.")
+
+        targets = [(None, njobs)]
+
+    # Determine the disk request.
+    if disk is not None:
+        disk_flag = f'--disk={disk}GB'
+    elif exp == 'sbnd':
+        disk_flag = '--disk=10GB'
+    else:
+        disk_flag = '--disk=25GB'
+
+    # Form the jobsub command(s) to launch the jobs, one per target.
+    submissions = []
+    for sample, count in targets:
+        cmd = [
+            'jobsub_submit',
+            '-G', exp,
+            '-N', str(count),
+            f'--memory={memory}MB',
+            disk_flag,
+            #f'--expected-lifetime={lifetime}',
+            f'--expected-lifetime=3h',
+            '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE',
+            "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
+            '--singularity-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest',
+            f'file://{Path(__file__).resolve().parent / "submit.sh"}',
+            '--',
+            f'--project={project_dir.resolve()}',
+            f'--tag={tag}',
+        ]
+        if sample is not None:
+            cmd.append(f'--sample={sample}')
+        label = f" for sample '{sample}'" if sample is not None else ""
+        submissions.append((cmd, count, label))
+
+    # Show what will be launched and confirm once for the whole set.
+    if confirm or verbose:
+        for cmd, count, label in submissions:
+            print(f"{_INFO} -- Launching {count} jobs{label} with command: {' '.join(cmd)}")
+    if confirm:
+        resp = input("Confirm job launch? [Y/N] ")
+        if resp.lower() != 'y':
+            print(f"{_INFO} -- User aborted job launch.")
+            return False
+
+    any_success = False
+    for cmd, count, label in submissions:
+        ok = _submit_jobsub_once(cmd, count, confirm, verbose, label=label)
+        any_success = any_success or ok
+
+    return any_success
 
 def check_git_branch(
     branch : str,
