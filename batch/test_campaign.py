@@ -64,6 +64,7 @@ Run with:
     make pytest          # from the build directory
 """
 
+import re
 import sqlite3
 import subprocess
 import textwrap
@@ -1163,3 +1164,279 @@ class TestFinalizeHadd:
         assert all(ok for ok, skipped in results)
         assert active["max"] > 1, "expected real parallelism with 3 workers"
         assert active["max"] <= 3, "must never exceed the configured worker limit"
+
+
+# ===================================================================
+# scan: real ROOT-level output-file validation (goes beyond sync's
+# size-only heuristic; TFile::IsZombie() via a batched ROOT subprocess)
+# ===================================================================
+
+try:
+    from campaign import _run_one_scan, cmd_scan
+    _SCAN_AVAILABLE = True
+except ImportError:
+    _SCAN_AVAILABLE = False
+
+skip_scan = pytest.mark.skipif(
+    not _SCAN_AVAILABLE,
+    reason="_run_one_scan/cmd_scan not yet implemented in campaign.py",
+)
+
+
+def _fake_root_run(cmd, **kwargs):
+    """Mock for subprocess.run standing in for the scan_check.C ROOT macro:
+    parses the (filelist, report) paths out of the macro-call argv string,
+    and marks the file named 'output_jobid9999.root' as corrupt (a real,
+    numeric-only jobid, since production code parses it with int()).
+    """
+    macro_call = cmd[-1]
+    m = re.search(r'\("([^"]+)","([^"]+)"\)', macro_call)
+    filelist_path, report_path = m.group(1), m.group(2)
+    lines = Path(filelist_path).read_text().splitlines()
+    bad = [l for l in lines if l.endswith('output_jobid9999.root')]
+    Path(report_path).write_text('\n'.join(bad) + ('\n' if bad else ''))
+    class _Result:
+        returncode = 0
+        stderr = ""
+    return _Result()
+
+
+@skip_scan
+class TestRunOneScan:
+    """_run_one_scan() is detection-only: it never deletes files or writes
+    to project.db, and correctly distinguishes 'no bad files' from 'the
+    check itself could not be completed'."""
+
+    def _make_project(self, tmp_path, sizes):
+        """sizes: dict[str, int] mapping a filename suffix (e.g. '9999'
+        or '0000') to a byte size for output_jobid<suffix>.root."""
+        proj_dir = tmp_path / "proj"
+        (proj_dir / "output").mkdir(parents=True)
+        for suffix, size in sizes.items():
+            (proj_dir / "output" / f"output_jobid{suffix}.root").write_bytes(b"x" * size)
+        return proj_dir
+
+    def test_detects_bad_file_and_ignores_stub(self, tmp_path):
+        proj_dir = self._make_project(tmp_path, {
+            "0000": 2000, "9999": 2000, "0002": 10,  # 0002 is a stub, < 1KB
+        })
+        campaign_dir = tmp_path / "campaign"
+        with mock.patch("subprocess.run", side_effect=_fake_root_run):
+            result = _run_one_scan(campaign_dir, "proj", proj_dir, threading.Lock())
+
+        assert result["error"] is None
+        assert result["n_checked"] == 2  # stub excluded from the (expensive) check
+        assert len(result["bad_files"]) == 1
+        assert "9999" in str(result["bad_files"][0])
+        # Detection only -- the bad file must still be on disk.
+        assert (proj_dir / "output" / "output_jobid9999.root").exists()
+
+    def test_no_eligible_files_short_circuits(self, tmp_path):
+        proj_dir = self._make_project(tmp_path, {"0000": 10})  # only a stub
+        campaign_dir = tmp_path / "campaign"
+        with mock.patch("subprocess.run") as mocked_run:
+            result = _run_one_scan(campaign_dir, "proj", proj_dir, threading.Lock())
+        assert result == {"n_checked": 0, "bad_files": [], "error": None}
+        mocked_run.assert_not_called()
+
+    def test_nonzero_returncode_is_an_error_not_clean(self, tmp_path):
+        proj_dir = self._make_project(tmp_path, {"0000": 2000})
+        campaign_dir = tmp_path / "campaign"
+        def failing_run(cmd, **kwargs):
+            class _Result:
+                returncode = 1
+                stderr = "boom"
+            return _Result()
+        with mock.patch("subprocess.run", side_effect=failing_run):
+            result = _run_one_scan(campaign_dir, "proj", proj_dir, threading.Lock())
+        assert result["error"] == "root_failed"
+        assert result["bad_files"] == []
+
+    def test_timeout_is_an_error_not_clean(self, tmp_path):
+        proj_dir = self._make_project(tmp_path, {"0000": 2000})
+        campaign_dir = tmp_path / "campaign"
+        def timeout_run(cmd, **kwargs):
+            raise subprocess.TimeoutExpired(cmd, kwargs.get("timeout", 1))
+        with mock.patch("subprocess.run", side_effect=timeout_run):
+            result = _run_one_scan(campaign_dir, "proj", proj_dir, threading.Lock())
+        assert result["error"] == "timeout"
+        assert result["bad_files"] == []
+
+
+@skip_scan
+class TestSyncProjectStatusRevert:
+    """_sync_project_status(revert_ids=...) is the only path that ever
+    moves a job backward from 'completed' to 'pending'."""
+
+    def _make_project_db(self, tmp_path, job_statuses):
+        proj_dir = tmp_path / "proj"
+        (proj_dir / "output").mkdir(parents=True)
+        conn = sqlite3.connect(proj_dir / "project.db")
+        conn.execute("CREATE TABLE configuration (jobid INTEGER PRIMARY KEY, cfg TEXT NOT NULL)")
+        conn.execute("CREATE TABLE jobs (jobid INTEGER PRIMARY KEY, status TEXT, sample TEXT)")
+        for jid, status in job_statuses.items():
+            conn.execute("INSERT INTO configuration (jobid, cfg) VALUES (?, '')", (jid,))
+            conn.execute("INSERT INTO jobs (jobid, status, sample) VALUES (?, ?, 's')", (jid, status))
+        conn.commit()
+        conn.close()
+        return proj_dir
+
+    def test_revert_ids_moves_job_back_to_pending(self, tmp_path):
+        proj_dir = self._make_project_db(tmp_path, {0: "completed", 1: "completed", 2: "pending"})
+        # Job 1 still has a valid (undeleted) output file; job 0's was
+        # already removed by the caller before this call, per scan's
+        # required ordering.
+        (proj_dir / "output" / "output_jobid0001.root").write_bytes(b"x" * 2000)
+
+        result = _sync_project_status(proj_dir, revert_ids=[0])
+
+        conn = sqlite3.connect(proj_dir / "project.db")
+        statuses = dict(conn.execute("SELECT jobid, status FROM jobs").fetchall())
+        conn.close()
+        assert statuses[0] == "pending"
+        assert statuses[1] == "completed"
+        assert statuses[2] == "pending"
+        assert result["n_completed"] == 1
+
+    def test_default_revert_ids_is_backward_compatible(self, tmp_path):
+        """Existing sync call sites (no revert_ids) must be unaffected."""
+        proj_dir = self._make_project_db(tmp_path, {0: "pending"})
+        (proj_dir / "output" / "output_jobid0000.root").write_bytes(b"x" * 2000)
+        result = _sync_project_status(proj_dir)
+        assert result["n_completed"] == 1
+
+
+@skip_scan
+class TestCmdScan:
+    """cmd_scan end-to-end: detect -> single confirm -> delete + revert +
+    campaign.db update, plus its safety-relevant edge cases."""
+
+    def _make_campaign(self, tmp_path, bad=True):
+        from campaign import SCHEMA_CAMPAIGN_META, SCHEMA_PROJECTS
+        campaign_dir = tmp_path / "campaign"
+        campaign_dir.mkdir()
+        conn = sqlite3.connect(campaign_dir / "campaign.db")
+        conn.executescript(SCHEMA_CAMPAIGN_META + SCHEMA_PROJECTS)
+        conn.execute("INSERT INTO campaign_meta (name, tag) VALUES ('c1', 'v1')")
+        proj_dir = campaign_dir / "eps_primary_sbnd"
+        (proj_dir / "output").mkdir(parents=True)
+        conn.execute(
+            "INSERT INTO projects (analysis, role, experiment, toml_file, project_dir, "
+            "batch_size, n_jobs, n_completed, status) "
+            "VALUES ('eps', 'primary', 'sbnd', 'x.toml', ?, 25, 2, 2, 'completed')",
+            (str(proj_dir),),
+        )
+        conn.commit()
+        conn.close()
+
+        # The second job's id matches whichever filename this scenario
+        # uses -- 9999 for the file _fake_root_run will report as corrupt,
+        # or a plain 1 when this campaign is meant to be entirely clean.
+        second_jobid = 9999 if bad else 1
+
+        pconn = sqlite3.connect(proj_dir / "project.db")
+        pconn.execute("CREATE TABLE configuration (jobid INTEGER PRIMARY KEY, cfg TEXT NOT NULL)")
+        pconn.execute("CREATE TABLE jobs (jobid INTEGER PRIMARY KEY, status TEXT, sample TEXT)")
+        pconn.execute("INSERT INTO configuration (jobid, cfg) VALUES (0, ''), (?, '')", (second_jobid,))
+        pconn.execute(
+            "INSERT INTO jobs (jobid, status, sample) VALUES (0, 'completed', 's'), (?, 'completed', 's')",
+            (second_jobid,),
+        )
+        pconn.commit()
+        pconn.close()
+
+        (proj_dir / "output" / "output_jobid0000.root").write_bytes(b"x" * 2000)
+        (proj_dir / "output" / f"output_jobid{second_jobid:04d}.root").write_bytes(b"x" * 2000)
+        return campaign_dir, proj_dir
+
+    class _Args:
+        name = None
+        experiment = None
+        dry_run = False
+        workers = 1
+
+    def test_confirmed_scan_deletes_reverts_and_updates_campaign_db(self, tmp_path):
+        campaign_dir, proj_dir = self._make_campaign(tmp_path)
+        args = self._Args()
+        args.campaign = str(campaign_dir)
+
+        with mock.patch("subprocess.run", side_effect=_fake_root_run), \
+             mock.patch("shutil.which", return_value="/usr/bin/root"), \
+             mock.patch("builtins.input", return_value="y"):
+            cmd_scan(args)
+
+        assert not (proj_dir / "output" / "output_jobid9999.root").exists()
+        assert (proj_dir / "output" / "output_jobid0000.root").exists()
+
+        conn = sqlite3.connect(proj_dir / "project.db")
+        statuses = dict(conn.execute("SELECT jobid, status FROM jobs").fetchall())
+        conn.close()
+        assert statuses[9999] == "pending"
+        assert statuses[0] == "completed"
+
+        conn2 = sqlite3.connect(campaign_dir / "campaign.db")
+        row = conn2.execute("SELECT n_jobs, n_completed, status FROM projects").fetchone()
+        conn2.close()
+        assert row == (2, 1, "partial")
+
+    def test_dry_run_makes_no_changes_and_never_prompts(self, tmp_path):
+        campaign_dir, proj_dir = self._make_campaign(tmp_path)
+        args = self._Args()
+        args.campaign = str(campaign_dir)
+        args.dry_run = True
+
+        with mock.patch("subprocess.run", side_effect=_fake_root_run), \
+             mock.patch("shutil.which", return_value="/usr/bin/root"), \
+             mock.patch("builtins.input", side_effect=AssertionError("must not prompt in dry-run")):
+            cmd_scan(args)
+
+        assert (proj_dir / "output" / "output_jobid9999.root").exists()
+        conn = sqlite3.connect(proj_dir / "project.db")
+        statuses = dict(conn.execute("SELECT jobid, status FROM jobs").fetchall())
+        conn.close()
+        assert statuses[9999] == "completed"
+
+    def test_missing_root_exits_cleanly_without_prompting(self, tmp_path):
+        campaign_dir, proj_dir = self._make_campaign(tmp_path)
+        args = self._Args()
+        args.campaign = str(campaign_dir)
+
+        with mock.patch("shutil.which", return_value=None), \
+             mock.patch("builtins.input", side_effect=AssertionError("must not prompt when root is missing")):
+            cmd_scan(args)  # must not raise
+
+    def test_failed_delete_skips_revert_for_that_job(self, tmp_path):
+        """Ordering fix: a job must never be reverted to pending while its
+        corrupt file is still on disk, or the next plain `sync` would just
+        re-mark it completed based on size alone."""
+        campaign_dir, proj_dir = self._make_campaign(tmp_path)
+        args = self._Args()
+        args.campaign = str(campaign_dir)
+
+        real_unlink = Path.unlink
+        def failing_unlink(self, *a, **kw):
+            if "output_jobid9999.root" in str(self):
+                raise OSError("simulated delete failure")
+            return real_unlink(self, *a, **kw)
+
+        with mock.patch("subprocess.run", side_effect=_fake_root_run), \
+             mock.patch("shutil.which", return_value="/usr/bin/root"), \
+             mock.patch("builtins.input", return_value="y"), \
+             mock.patch.object(Path, "unlink", failing_unlink):
+            cmd_scan(args)
+
+        assert (proj_dir / "output" / "output_jobid9999.root").exists()
+        conn = sqlite3.connect(proj_dir / "project.db")
+        statuses = dict(conn.execute("SELECT jobid, status FROM jobs").fetchall())
+        conn.close()
+        assert statuses[9999] == "completed", "must not revert a job whose file failed to delete"
+
+    def test_no_bad_files_no_prompt(self, tmp_path):
+        campaign_dir, proj_dir = self._make_campaign(tmp_path, bad=False)
+        args = self._Args()
+        args.campaign = str(campaign_dir)
+
+        with mock.patch("subprocess.run", side_effect=_fake_root_run), \
+             mock.patch("shutil.which", return_value="/usr/bin/root"), \
+             mock.patch("builtins.input", side_effect=AssertionError("must not prompt when nothing is bad")):
+            cmd_scan(args)

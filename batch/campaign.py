@@ -94,6 +94,7 @@ _TAG_CAMPAIGN  = f"{_A.BOLD}{_A.CYAN}[CAMPAIGN]{_A.RESET}"
 _TAG_SYNC      = f"{_A.BOLD}{_A.CYAN}[SYNC]{_A.RESET}"
 _TAG_LIST      = f"{_A.BOLD}{_A.CYAN}[LIST]{_A.RESET}"
 _TAG_FINALIZE  = f"{_A.BOLD}{_A.CYAN}[FINALIZE]{_A.RESET}"
+_TAG_SCAN      = f"{_A.BOLD}{_A.CYAN}[SCAN]{_A.RESET}"
 
 
 def _trunc(s, width):
@@ -450,7 +451,25 @@ def create_campaign(campaign_dir, project_units, catalog_path,
 # Sync helpers
 # ---------------------------------------------------------------------------
 
-def _sync_project_status(project_dir):
+def _compute_project_status(old_status, n_jobs, n_completed):
+    """
+    Resolve a project's campaign-level status from fresh job counts,
+    preserving the current status when there's nothing new to report.
+
+    Shared by cmd_sync and cmd_scan so both apply the exact same
+    completed/partial/unchanged rule.
+    """
+    if n_jobs == 0:
+        return old_status
+    elif n_completed == n_jobs:
+        return 'completed'
+    elif n_completed > 0:
+        return 'partial'
+    else:
+        return old_status
+
+
+def _sync_project_status(project_dir, revert_ids=None):
     """
     Inspect output files for a single project, update its project.db, and
     return completion counts.
@@ -461,6 +480,15 @@ def _sync_project_status(project_dir):
     Parameters
     ----------
     project_dir : str | Path
+    revert_ids : list[int] | None
+        Job IDs to explicitly revert to 'pending' before recomputing status
+        (used by `scan` after deleting a corrupt output file — this is the
+        only way a job ever moves backward from 'completed', since the
+        size-based completion check below only ever moves jobs forward).
+        The caller is responsible for having already deleted the
+        corresponding output file(s); otherwise the completion check below
+        would just re-mark them 'completed' again as part of this same
+        call.
 
     Returns
     -------
@@ -491,6 +519,12 @@ def _sync_project_status(project_dir):
         safe_copy(db_path, tmp)
         conn = sqlite3.connect(tmp)
         curs = conn.cursor()
+        if revert_ids:
+            curs.executemany(
+                "UPDATE jobs SET status = 'pending' WHERE jobid = ?",
+                [(jid,) for jid in revert_ids],
+            )
+            conn.commit()
         if completed_ids:
             curs.executemany(
                 "UPDATE jobs SET status = 'completed' WHERE jobid = ?",
@@ -550,14 +584,7 @@ def cmd_sync(args):
             n_completed = result['n_completed']
             all_stubs.extend(result['stub_files'])
 
-            if n_jobs == 0:
-                new_status = row['status']
-            elif n_completed == n_jobs:
-                new_status = 'completed'
-            elif n_completed > 0:
-                new_status = 'partial'
-            else:
-                new_status = row['status']
+            new_status = _compute_project_status(row['status'], n_jobs, n_completed)
 
             curs.execute(
                 "UPDATE projects "
@@ -595,6 +622,228 @@ def cmd_sync(args):
             print(f"{_TAG_SYNC} Deleted {len(all_stubs)} stub file(s).")
         else:
             print(f"{_TAG_SYNC} Keeping stub files.")
+
+
+# ---------------------------------------------------------------------------
+# `scan` subcommand
+# ---------------------------------------------------------------------------
+
+# The batched ROOT integrity-check macro invoked by _run_one_scan. Kept as
+# a static .C file (not a Python-templated string) so the loop body is
+# reviewable/testable on its own and the subprocess argv stays a clean
+# list -- no shell-quoting of an inline multi-statement macro.
+SCAN_MACRO = Path(__file__).resolve().parent / 'scan_check.C'
+
+
+def _run_one_scan(campaign_dir, project_name, project_dir, print_lock, timeout=1800):
+    """
+    Validate a single project's completed output files with a real ROOT
+    integrity check (TFile::IsZombie()), going beyond sync's size-only
+    heuristic.
+
+    Detection only: does not delete files or touch project.db. cmd_scan
+    collects results across every project, asks a single campaign-wide
+    confirmation, and only then performs cleanup -- mirroring cmd_sync's
+    stub-file handling.
+
+    A single ROOT process is used to check every file in this project
+    (via SCAN_MACRO, which loops internally over a file list) rather than
+    one ROOT process per file: ROOT startup alone costs ~1-2s, so
+    one-process-per-file would make scanning a campaign with thousands of
+    output files impractically slow.
+
+    Parameters
+    ----------
+    campaign_dir : Path
+        Campaign directory. The file list and report for this project are
+        written under campaign_dir/scan/ and kept (not deleted) as an
+        audit trail, mirroring _run_one_hadd's filelists/ convention.
+    project_name : str
+        Filesystem-safe label for this project (e.g.
+        "<analysis>_<role>_<experiment>"), used to name its filelist/report
+        files.
+    project_dir : Path
+        The project's own directory (contains output/ and project.db).
+    print_lock : threading.Lock
+        Guards this function's own status prints against interleaving
+        across concurrent workers.
+    timeout : int
+        Seconds to allow the batched ROOT check to run before giving up on
+        this project.
+
+    Returns
+    -------
+    dict with keys:
+        n_checked : int
+            Number of output files (>= 1KB) that were checked.
+        bad_files : list[Path]
+            Output files that failed to open or reported IsZombie().
+        error : str | None
+            Set if the ROOT check itself could not be completed (timeout,
+            nonzero exit, missing report). Callers must treat this project
+            as unverified, not as "zero bad files found".
+    """
+    output_files = [
+        Path(f) for f in glob(str(project_dir / 'output' / 'output_jobid*.root'))
+        if Path(f).stat().st_size >= 1024
+    ]
+    if not output_files:
+        return {'n_checked': 0, 'bad_files': [], 'error': None}
+
+    scan_dir = campaign_dir / 'scan'
+    scan_dir.mkdir(parents=True, exist_ok=True)
+    filelist_path = scan_dir / f"{project_name}_filelist.txt"
+    report_path = scan_dir / f"{project_name}_report.txt"
+    filelist_path.write_text('\n'.join(str(f) for f in output_files) + '\n')
+    report_path.unlink(missing_ok=True)
+
+    with print_lock:
+        print(f"{_TAG_SCAN} Checking {_A.CYAN}{project_name}{_A.RESET} "
+              f"({len(output_files)} file(s))")
+
+    macro_call = f'{SCAN_MACRO}("{filelist_path}","{report_path}")'
+    try:
+        result = subprocess.run(
+            ['root', '-l', '-b', '-q', macro_call],
+            capture_output=True, text=True, timeout=timeout, check=False,
+        )
+    except subprocess.TimeoutExpired:
+        with print_lock:
+            print(f"{_TAG_SCAN} {_A.RED}Error:{_A.RESET} scan timed out for {project_name}")
+        return {'n_checked': len(output_files), 'bad_files': [], 'error': 'timeout'}
+
+    if result.returncode != 0 or not report_path.exists():
+        with print_lock:
+            print(f"{_TAG_SCAN} {_A.RED}Error:{_A.RESET} scan failed for {project_name}: "
+                  f"{result.stderr.strip()[-500:]}")
+        return {'n_checked': len(output_files), 'bad_files': [], 'error': 'root_failed'}
+
+    bad_files = [Path(l) for l in report_path.read_text().splitlines() if l.strip()]
+    return {'n_checked': len(output_files), 'bad_files': bad_files, 'error': None}
+
+
+def cmd_scan(args):
+    """Validate completed output files with a real ROOT integrity check."""
+    campaign_dir = _resolve_campaign(args)
+    W_AN, W_RO, W_EX, W_CH, W_BAD = 28, 18, 10, 10, 10
+
+    if shutil.which('root') is None:
+        print(f"{_TAG_SCAN} {_A.RED}Error:{_A.RESET} 'root' not found on PATH. "
+              f"Set up the analysis environment (e.g. `setup sbnana ...`) before running scan.")
+        return
+
+    with _open_db(campaign_dir) as (conn, curs):
+        if args.experiment:
+            curs.execute(
+                "SELECT * FROM projects WHERE experiment = ? "
+                "ORDER BY analysis, role, experiment",
+                (args.experiment,),
+            )
+        else:
+            curs.execute("SELECT * FROM projects ORDER BY analysis, role, experiment")
+        rows = list(curs.fetchall())
+
+        if not rows:
+            print(f"{_TAG_SCAN} No projects matched.")
+            return
+
+        print_lock = threading.Lock()
+        n_workers = max(1, args.workers)
+        with ThreadPoolExecutor(max_workers=n_workers) as executor:
+            future_to_row = {
+                executor.submit(
+                    _run_one_scan, campaign_dir,
+                    f"{row['analysis']}_{row['role']}_{row['experiment']}",
+                    Path(row['project_dir']), print_lock,
+                ): row
+                for row in rows
+            }
+            results = {}
+            for future in as_completed(future_to_row):
+                row = future_to_row[future]
+                results[row['project_id']] = future.result()
+
+        table_rows = []
+        for row in rows:
+            r = results[row['project_id']]
+            n_bad = len(r['bad_files'])
+            bad_note = 'ERROR' if r['error'] else str(n_bad)
+            table_rows.append([
+                _cell(row['analysis'],   W_AN, color=_A.MAGENTA),
+                _cell(row['role'],       W_RO),
+                _cell(row['experiment'], W_EX),
+                _cell(str(r['n_checked']), W_CH),
+                _cell(bad_note, W_BAD, color=(_A.RED if (n_bad or r['error']) else _A.GREEN)),
+            ])
+        _print_table(
+            ['Analysis', 'Role', 'Experiment', 'Checked', 'Bad'],
+            [W_AN, W_RO, W_EX, W_CH, W_BAD],
+            table_rows,
+        )
+
+        n_checked_total = sum(r['n_checked'] for r in results.values())
+        all_bad = [(row, f) for row in rows for f in results[row['project_id']]['bad_files']]
+        n_errors = sum(1 for r in results.values() if r['error'])
+
+        print(f"\n{_TAG_SCAN} Checked {n_checked_total} file(s) across {len(rows)} project(s).")
+        if n_errors:
+            print(f"{_TAG_SCAN} {_A.YELLOW}Warning:{_A.RESET} {n_errors} project(s) could not be "
+                  f"verified (see errors above) -- treated as unknown, not clean.")
+
+        if args.dry_run:
+            print(f"{_TAG_SCAN} Dry-run: no files deleted, no jobs reverted.")
+            return
+
+        if not all_bad:
+            print(f"{_TAG_SCAN} No corrupt output files found.")
+            return
+
+        print(f"{_TAG_SCAN} {_A.RED}Found {len(all_bad)} corrupt output file(s):{_A.RESET}")
+        for _, f in all_bad:
+            print(f"  {_A.DIM}{f}{_A.RESET}")
+        resp = input(f"{_TAG_SCAN} Delete these files and revert their jobs to pending? [Y/N] ")
+        if resp.strip().lower() != 'y':
+            print(f"{_TAG_SCAN} Aborted. No changes made.")
+            return
+
+        # Delete files and revert jobs before recomputing status -- deleting
+        # first is required so the fresh glob inside _sync_project_status
+        # doesn't just re-mark a reverted job 'completed' again.
+        by_project = {}
+        for row, f in all_bad:
+            by_project.setdefault(row['project_id'], (row, []))[1].append(f)
+
+        n_reverted = 0
+        n_delete_failed = 0
+        for project_id, (row, bad_files) in by_project.items():
+            deleted_ids = []
+            for f in bad_files:
+                try:
+                    f.unlink()
+                    deleted_ids.append(int(f.stem.split('jobid')[-1]))
+                except OSError as e:
+                    n_delete_failed += 1
+                    print(f"{_TAG_SCAN} {_A.RED}Error:{_A.RESET} could not delete {f}: {e} "
+                          f"-- leaving its job as-is.")
+
+            if not deleted_ids:
+                continue
+
+            result = _sync_project_status(Path(row['project_dir']), revert_ids=deleted_ids)
+            if result is None:
+                continue
+            n_jobs = result['n_jobs']
+            n_completed = result['n_completed']
+            new_status = _compute_project_status(row['status'], n_jobs, n_completed)
+            curs.execute(
+                "UPDATE projects SET n_jobs = ?, n_completed = ?, status = ? WHERE project_id = ?",
+                (n_jobs, n_completed, new_status, project_id),
+            )
+            conn.commit()
+            n_reverted += len(deleted_ids)
+
+    fail_note = f", {n_delete_failed} delete(s) failed" if n_delete_failed else ""
+    print(f"\n{_TAG_SCAN} Done. {n_reverted} job(s) reverted to pending{fail_note}.")
 
 
 def _discover_meta_files():
@@ -1306,6 +1555,38 @@ def main():
                                  'are fully independent, so this is safe to raise '
                                  'for campaigns with many projects.')
 
+    # -- scan -----------------------------------------------------------------
+    p_scan = sub.add_parser(
+        'scan',
+        help='Validate completed output files with a real ROOT integrity check',
+        description=(
+            'sync marks a job complete based only on output file size (>= 1KB), '
+            'which cannot catch a file that is large enough but still corrupt or '
+            'truncated. scan opens every completed output file with ROOT '
+            '(TFile::IsZombie()) and, on confirmation, deletes any that fail and '
+            'reverts their job to pending so it gets picked up for resubmission. '
+            'This is a separate, deliberately-invoked command rather than part of '
+            'sync itself, since opening every file with ROOT is much more '
+            'expensive than a size check and sync is meant to be cheap and '
+            'frequent.'
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    tgt_scan = p_scan.add_mutually_exclusive_group(required=True)
+    tgt_scan.add_argument('--campaign', metavar='PATH',
+                          help='Full path to the campaign directory')
+    tgt_scan.add_argument('--name', metavar='NAME',
+                          help='Registered short name (see campaigns subcommand)')
+    p_scan.add_argument('--experiment', metavar='EXP',
+                        help='Restrict scan to one experiment')
+    p_scan.add_argument('--dry-run', action='store_true',
+                        help='Report corrupt files without deleting them or reverting jobs')
+    p_scan.add_argument('--workers', type=int, default=1, metavar='N',
+                        help='Number of projects to scan in parallel '
+                             '(default: 1, sequential). Each project\'s scan is '
+                             'independent, so this is safe to raise for campaigns '
+                             'with many projects.')
+
     # -- launch ---------------------------------------------------------------
     p_launch = sub.add_parser('launch', help='Launch pending campaign jobs')
     tgt_launch = p_launch.add_mutually_exclusive_group(required=True)
@@ -1349,6 +1630,8 @@ def main():
         cmd_launch(args)
     elif args.command == 'finalize':
         cmd_finalize(args)
+    elif args.command == 'scan':
+        cmd_scan(args)
 
 
 if __name__ == '__main__':
