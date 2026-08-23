@@ -189,7 +189,7 @@ ismc = true
 key = "icarus_ar23p_run4"
 name = "icarus"
 experiment = "icarus"
-path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run4_cvmc/*/*/*ar23p.flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run4_cvmc/*/*/*.root"
 ismc = true
 
   [sample.metadata]
@@ -203,7 +203,7 @@ ismc = true
 key = "icarus_ar23p_dirt_run4"
 name = "icarus"
 experiment = "icarus"
-path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4_DirtMC_ReCAF2026_BNB/*/*/*ar23p.flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4_DirtMC_ReCAF2026_BNB/*/*/*.root"
 ismc = true
 
   [sample.metadata]
@@ -217,7 +217,7 @@ ismc = true
 key = "icarus_offbeam_run4"
 name = "icarus_offbeam_run4"
 experiment = "icarus"
-path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4BeamOffWF_BNB_data_ReCAF2026_20p/*/*/*flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4BeamOffWF_BNB_data_ReCAF2026_20p/*/*/*.root"
 ismc = false
 
   [sample.metadata]
@@ -231,7 +231,7 @@ ismc = false
 key = "icarus_bnblight_run4"
 name = "icarus_bnblight_run4"
 experiment = "icarus"
-path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4BeamOnWF_BNB_data_ReCAF2026/*/*/*flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4BeamOnWF_BNB_data_ReCAF2026/*/*/*.root"
 ismc = false
 
   [sample.metadata]
@@ -245,7 +245,7 @@ ismc = false
 key = "icarus_wiremod_xthetaxw_run4"
 name = "icarus_wiremod_xthetaxw_run4"
 experiment = "icarus"
-path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4_WM_ReCAF2026/*/*/*flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4_WM_ReCAF2026/*/*/*.root"
 ismc = true
 
   [sample.metadata]
@@ -259,7 +259,7 @@ ismc = true
 key = "icarus_wiremod_yz_run4"
 name = "icarus_wiremod_yz_run4"
 experiment = "icarus"
-path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run4_wiremod_yz/*/*/*flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run4_wiremod_yz/*/*/*.root"
 ismc = true
 
   [sample.metadata]
@@ -273,7 +273,7 @@ ismc = true
 key = "icarus_detvar_sce0x_run4"
 name = "icarus_detvar_sce0x_run4"
 experiment = "icarus"
-path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run4_detvar_sce0x/*/*/*flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run4_detvar_sce0x/*/*/*.root"
 ismc = true
 
   [sample.metadata]
@@ -287,7 +287,7 @@ ismc = true
 key = "icarus_detvar_sce2x_run4"
 name = "icarus_detvar_sce2x_run4"
 experiment = "icarus"
-path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run4_detvar_sce2x/*/*/*flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run4_detvar_sce2x/*/*/*.root"
 ismc = true
 
   [sample.metadata]
@@ -301,7 +301,7 @@ ismc = true
 key = "icarus_detvar_charge_scale_run4"
 name = "icarus_detvar_charge_scale_run4"
 experiment = "icarus"
-path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run4_detvar_charge_scale/*/*/*flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run4_detvar_charge_scale/*/*/*.root"
 ismc = true
 
   [sample.metadata]
@@ -317,7 +317,7 @@ ismc = true
 key = "icarus_ar23p_run2"
 name = "icarus"
 experiment = "icarus"
-path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_cvmc/*/*/*ar23p.flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_cvmc/*/*/*.root"
 ismc = true
 
   [sample.metadata]
@@ -331,7 +331,7 @@ ismc = true
 key = "icarus_ar23p_dirt_run2"
 name = "icarus"
 experiment = "icarus"
-path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_dirt/*/*/*ar23p.flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_dirt/*/*/*.root"
 ismc = true
 
   [sample.metadata]
@@ -345,7 +345,7 @@ ismc = true
 key = "icarus_offbeam_run2"
 name = "icarus_offbeam_run2"
 experiment = "icarus"
-path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run2BeamOffWF_BNB_data_ReCAF2026/*/*/*flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run2BeamOffWF_BNB_data_ReCAF2026/*/*/*.root"
 ismc = false
 
   [sample.metadata]
@@ -359,7 +359,7 @@ ismc = false
 key = "icarus_bnblight_run2"
 name = "icarus_bnblight_run2"
 experiment = "icarus"
-path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_onbeam_10p/*/*/*flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_onbeam_10p/*/*/*.root"
 ismc = false
 
   [sample.metadata]
@@ -373,7 +373,7 @@ ismc = false
 key = "icarus_wiremod_xthetaxw_run2"
 name = "icarus_wiremod_xthetaxw_run2"
 experiment = "icarus"
-path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_wiremod/*/*/*flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_wiremod/*/*/*.root"
 ismc = true
 
   [sample.metadata]
@@ -387,7 +387,7 @@ ismc = true
 key = "icarus_wiremod_yz_run2"
 name = "icarus_wiremod_yz_run2"
 experiment = "icarus"
-path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_wiremod_yz/*/*/*flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_wiremod_yz/*/*/*.root"
 ismc = true
 
   [sample.metadata]
