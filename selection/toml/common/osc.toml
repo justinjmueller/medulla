@@ -295,7 +295,7 @@ ismc = true
   parent_production = "Generation 1"
   production_version = "v10_06_00_12"
   spine_production = "v0.10.9"
-  spine_config = "full_chain_co_260501.yaml + modifier/sce_backward/mod_sce_forward_260813.yaml"
+  spine_config = "full_chain_co_260501.yaml + modifier/sce_forward/mod_sce_forward_260813.yaml"
 
 [[sample]]
 key = "icarus_detvar_charge_scale_run4"
