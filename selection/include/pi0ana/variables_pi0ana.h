@@ -399,7 +399,7 @@ namespace vars::pi0ana
 	    if(phi != kNoMatch)
 		{
 			auto & lead(obj.particles[phi]);
-			shower_in_fid_vol = pcuts::_cut(lead);
+			shower_in_fid_vol = pcuts::containment_cut(lead);
 		}
 
 	    // Cosmic
