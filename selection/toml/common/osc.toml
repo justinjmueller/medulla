@@ -23,7 +23,7 @@ path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/mc_MCP2025B_5e18_v10_06_00_0
 ismc = true
 
   [sample.metadata]
-  description = "SBND central value MC of sufficient statistics to accompany a 5e18 POT dataset. Includes development version of AR23+ systematics."
+  description = "SBND central value MC of sufficient statistics to accompany a 5e18 POT dataset. Includes official version of AR23+ systematics."
   parent_production = "Generation 1"
   production_version = "v10_06_00_09"
   spine_production = "v0.6.0"
@@ -37,7 +37,7 @@ path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/mc_MCP2025C_1e20_v10_06_00_0
 ismc = true
 
   [sample.metadata]
-  description = "SBND central value MC of sufficient statistics to accompany a 1e20 POT dataset. Includes development version of AR23+ systematics."
+  description = "SBND central value MC of sufficient statistics to accompany a 1e20 POT dataset. Includes official version of AR23+ systematics."
   parent_production = "Generation 1"
   production_version = "v10_06_00_09"
   spine_production = "v0.6.0"
@@ -51,7 +51,7 @@ path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/mc_MCP2025B_v10_06_00_09_pro
 ismc = true
 
   [sample.metadata]
-  description = "SBND Low-energy Dirt MC of sufficient statistics to accompany a 1e20 POT dataset. Includes development version of AR23+ systematics."
+  description = "SBND Low-energy Dirt MC of sufficient statistics to accompany a 1e20 POT dataset. Includes official version of AR23+ systematics."
   parent_production = "Generation 1"
   production_version = "v10_06_00_09"
   spine_production = "v0.6.0"
@@ -187,13 +187,13 @@ ismc = true
 
 [[sample]]
 key = "icarus_ar23p_run4"
-name = "icarus"
+name = "icarus_run4"
 experiment = "icarus"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run4_cvmc/*/*/*.root"
 ismc = true
 
   [sample.metadata]
-  description = "ICARUS overlay central value MC for Run 4. Includes AR23+ systematics."
+  description = "ICARUS overlay central value MC for Run 4. Includes official AR23+ systematics."
   parent_production = "Generation 1"
   production_version = "v10_06_00_12"
   spine_production = "v0.10.9"
@@ -201,13 +201,13 @@ ismc = true
 
 [[sample]]
 key = "icarus_ar23p_dirt_run4"
-name = "icarus"
+name = "icarus_dirt_run4"
 experiment = "icarus"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4_DirtMC_ReCAF2026_BNB/*/*/*.root"
 ismc = true
 
   [sample.metadata]
-  description = "ICARUS overlay Dirt MC for Run 4. Includes AR23+ systematics."
+  description = "ICARUS overlay Dirt MC for Run 4. Includes official AR23+ systematics."
   parent_production = "Generation 1"
   production_version = "v10_06_00_12"
   spine_production = "v0.10.9"
@@ -315,13 +315,13 @@ ismc = true
 
 [[sample]]
 key = "icarus_ar23p_run2"
-name = "icarus"
+name = "icarus_run2"
 experiment = "icarus"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_cvmc/*/*/*.root"
 ismc = true
 
   [sample.metadata]
-  description = "ICARUS overlay central value MC for Run 2. Includes AR23+ systematics."
+  description = "ICARUS overlay central value MC for Run 2. Includes official AR23+ systematics."
   parent_production = "Generation 1"
   production_version = "v10_06_00_12"
   spine_production = "v0.10.9"
@@ -329,13 +329,13 @@ ismc = true
 
 [[sample]]
 key = "icarus_ar23p_dirt_run2"
-name = "icarus"
+name = "icarus_dirt_run2"
 experiment = "icarus"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_dirt/*/*/*.root"
 ismc = true
 
   [sample.metadata]
-  description = "ICARUS overlay Dirt MC for Run 2. Includes AR23+ systematics."
+  description = "ICARUS overlay Dirt MC for Run 2. Includes official AR23+ systematics."
   parent_production = "Generation 1"
   production_version = "v10_06_00_12"
   spine_production = "v0.10.9"
