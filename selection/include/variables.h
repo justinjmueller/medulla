@@ -94,6 +94,30 @@ namespace vars
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_mass, pi0_mass);
 
+	template<class T>
+    double pi0_invariant_mass(const T & obj)
+    {
+        size_t i = selectors::leading_photon(obj);
+        size_t j = selectors::secondary_photon(obj);
+        if (i == kNoMatch || j == kNoMatch) return PLACEHOLDERVALUE;
+        const auto & p1 = obj.particles[i];
+        const auto & p2 = obj.particles[j];
+
+        double E1 = pvars::ke(p1);
+        double E2 = pvars::ke(p2);
+
+        utilities::three_vector p1_mom = {pvars::px(p1), pvars::py(p1), pvars::pz(p1)};
+        utilities::three_vector p2_mom = {pvars::px(p2), pvars::py(p2), pvars::pz(p2)};
+
+        double total_E = E1 + E2;
+        utilities::three_vector total_p = utilities::add(p1_mom, p2_mom);
+
+        double invariant_mass_squared = std::pow(total_E, 2) - std::pow(utilities::magnitude(total_p), 2);
+        if (invariant_mass_squared < 0) return PLACEHOLDERVALUE; // Unphysical result
+        return std::sqrt(invariant_mass_squared);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_invariant_mass, pi0_invariant_mass);
+
     /**
      * @brief Variable for the interaction ID.
      * @details This variable is intended to provide a unique identifier for
