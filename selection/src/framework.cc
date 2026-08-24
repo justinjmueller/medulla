@@ -521,12 +521,15 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                         }
                     }
                     
-                    // Apply true cuts and optional matched cuts
-                    // For matched variables, we need a valid reco interaction
-                    if(true_cut(truth_int) && reco_int && 
-                       (!matched_cut || (*matched_cut)(MatchedInteraction{*reco_int, &truth_int})))
+                    // Mirror spill_multivar_helper: only gate on matched_cut when it is set;
+                    // push kNoMatchValue for true interactions with no reco match so the
+                    // branch entry count stays in sync with other variables in the same tree.
+                    if(true_cut(truth_int))
                     {
-                        values.push_back(var_fn(MatchedInteraction{*reco_int, &truth_int}));
+                        bool has_match = (reco_int != nullptr);
+                        bool matched_ok = !matched_cut || (has_match && (*matched_cut)(MatchedInteraction{*reco_int, &truth_int}));
+                        if(matched_ok)
+                            values.push_back(has_match ? var_fn(MatchedInteraction{*reco_int, &truth_int}) : kNoMatchValue);
                     }
                 }
                 
