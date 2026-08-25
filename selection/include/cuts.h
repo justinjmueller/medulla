@@ -88,7 +88,30 @@ namespace cuts
 	return (s.mass >= params[0] && s.mass < params[1]);
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, valid_pi0_mass_cut, valid_pi0_mass_cut);
+      /**
+     * @brief Apply invariant mass cut.
+     * @details This is a placeholder function for a cut which does not apply
+     * any selection criteria. It is intended to be used in cases where a cut
+     * function is required, but no selection is desired.
+     * @tparam T the type of object (true or reco).
+     * @param obj the interaction to select on.
+     * @return true (always).
+     */
+	template<class T>
+	bool pi0_invariant_mass_cut(const T & obj, std::vector<double> params = {})
+	{
+	if (params.size()<2){
+		throw std:: run_time_error("Error pi0_invariant_mass_cut")
+			
+	}
+	double mass = pi0_invariant_mass(obj);
 
+	if (mass = PLACEHOLDERVALUE) return false;
+
+	return(mass>= params[0] && mass<params[1]);
+	}
+	REGISTER_CUT_SCOPE(RegistrationScope::Both, pi0_invariant_mass_cut, pi0_invariant_mass_cut);
+	
     /**
      * @brief Apply no cut; all interactions passed.
      * @details This is a placeholder function for a cut which does not apply
@@ -101,6 +124,10 @@ namespace cuts
     template<class T>
     bool no_cut(const T & obj) { return true; }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, no_cut, no_cut);
+
+
+
+
 
     /**
      * @brief Apply a cut to select neutrinos.
