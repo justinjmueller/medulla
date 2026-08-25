@@ -910,6 +910,28 @@ namespace vars
     REGISTER_VAR_SCOPE(RegistrationScope::Both, pion_multiplicity, pion_multiplicity);
 
     /**
+     * @brief Variable for the (true) pi0 multiplicity of the
+     * interaction.
+     * @details This function calculates the multiplicity of primary pions in
+     * the interaction by counting the number of primary particles that are
+     * identified as pions and have a kinetic energy above a threshold. The
+     * threshold is set by the `params` vector, which defaults to 25 MeV. The
+     * function returns the number of primary pions in the interaction.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * kinetic energy threshold for a pion to count towards the
+     * multiplicity. Defaults to 25 MeV.
+     * @return the multiplicity of true pi0s in the interaction.
+     */
+    template<class T>
+    double pi0_multiplicity(const T & obj, std::vector<double> params={25.0,})
+    {
+        return utilities::true_primary_pi0_multiplicity(obj, params);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, pi0_multiplicity, pi0_multiplicity);
+
+    /**
      * @brief Variable for the (primary) proton multiplicity of the
      * interaction.
      * @details This function calculates the multiplicity of primary protons in
