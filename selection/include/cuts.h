@@ -100,13 +100,10 @@ namespace cuts
 	template<class T>
 	bool pi0_invariant_mass_cut(const T & obj, std::vector<double> params = {})
 	{
-	if (params.size()<2){
-		throw std:: run_time_error("Error pi0_invariant_mass_cut")
-			
-	}
+	
 	double mass = pi0_invariant_mass(obj);
 
-	if (mass = PLACEHOLDERVALUE) return false;
+	if (mass == PLACEHOLDERVALUE) return false;
 
 	return(mass>= params[0] && mass<params[1]);
 	}
