@@ -111,7 +111,7 @@ namespace cuts::pi0ana
     bool single_pi0(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params = {0.0,})
     {
         double num_primary_pi0s = utilities::true_primary_pi0_multiplicity(obj, params);
-	      return num_primary_pi0s == 1;
+	    return num_primary_pi0s == 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::True, single_pi0, single_pi0);
 
