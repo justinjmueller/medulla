@@ -18,7 +18,7 @@
 #include "utilities_pi0ana.h" //from dan's analysis
 #include "framework.h"
 #include "selectors.h"
-#include "variables.h"
+
 
 /**
  * @namespace cuts
