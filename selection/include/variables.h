@@ -367,6 +367,30 @@ namespace vars
     REGISTER_VAR_SCOPE(RegistrationScope::Reco, flash_hypothesis, flash_hypothesis);
 
     /**
+     * @brief Variable for the validity of the flash match.
+     * @details A "valid" flash match is defined as a flash-interaction
+     * association with a flash time that is not NaN and a flash match
+     * status of 1. The upstream flash matching algorithm (OpT0Finder) has a
+     * flash filter that restricts candidate flashes to near the beam window,
+     * which means that the majority of cosmogenic interactions are not
+     * flash matched. If no flash match is found, the flash time is NaN. This
+     * cut is intended to be applied as a preselection cut to reduce comparisons
+     * to NaN values, which tend to be noisy on stderr.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction on which to place the flash validity cut.
+     * @return true if the interaction is flash matched and the time is valid.
+     */
+    template<class T>
+    double valid_flashmatch_var(const T & obj)
+    {
+        if (obj.flash_times.size() > 0 && obj.is_flash_matched == 1 && !std::isnan(obj.flash_times[0])) 
+            return 1.0;
+        else
+            return 0.0;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, valid_flashmatch_var, valid_flashmatch_var);
+
+    /**
      * @brief Variable for the x-coordinate of the interaction vertex.
      * @details The interaction vertex is 3D point in space where the neutrino
      * interacted to produce the primary particles in the interaction.
