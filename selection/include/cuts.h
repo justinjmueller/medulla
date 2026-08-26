@@ -29,6 +29,10 @@
  * be templated on the type of interaction object if the cut is intended to be
  * used on both true and reconstructed interactions.
  */
+namespace vars {
+    template<class T>
+    double pi0_invariant_mass(const T & obj);
+}
 namespace cuts
 {   
     /**
