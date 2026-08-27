@@ -19,6 +19,7 @@
 #include "framework.h"
 #include "selectors.h"
 
+
 /**
  * @namespace cuts
  * @brief Namespace for organizing generic cuts which act on interactions.
@@ -28,6 +29,10 @@
  * be templated on the type of interaction object if the cut is intended to be
  * used on both true and reconstructed interactions.
  */
+namespace vars {
+    template<class T>
+    double pi0_invariant_mass(const T & obj);
+}
 namespace cuts
 {   
     /**
@@ -100,13 +105,10 @@ namespace cuts
 	template<class T>
 	bool pi0_invariant_mass_cut(const T & obj, std::vector<double> params = {})
 	{
-	if (params.size()<2){
-		throw std:: run_time_error("Error pi0_invariant_mass_cut")
-			
-	}
-	double mass = pi0_invariant_mass(obj);
+	
+	double mass = vars::pi0_invariant_mass(obj);
 
-	if (mass = PLACEHOLDERVALUE) return false;
+	if (mass == PLACEHOLDERVALUE) return false;
 
 	return(mass>= params[0] && mass<params[1]);
 	}
