@@ -14,7 +14,7 @@ primary_softmax = 0.95#0.97
 electron_id = 1.0
 greater_than = 1.0
 pi0_mass_veto = 400.0
-pi0_mass_veto_low =   5 #10
+pi0_mass_veto_low = 5 #10
 pi0_mass_veto_high = 400
 [general]
 output = "output_nueCCInclusive_side"
