@@ -11,7 +11,6 @@ void copy_with_syst(cfg::ConfigurationTable config, cfg::ConfigurationTable tabl
 
 int main(int argc, char * argv[])
 {
-
   /////////////////////////////////////////////////////////////
   /// Config
   /////////////////////////////////////////////////////////////
@@ -19,7 +18,7 @@ int main(int argc, char * argv[])
   config.set_config(argv[1]);
   std::vector<cfg::ConfigurationTable> tables;
   tables = config.get_subtables("tree");
-  
+
   /////////////////////////////////////////////////////////////
   /// Input
   /////////////////////////////////////////////////////////////
@@ -33,8 +32,8 @@ int main(int argc, char * argv[])
   /// Syst trees
   /// To-do: Automate this
   TTree* multisigma_tree = (TTree*)input->Get("events/NuMIFull/selected_multisigmaTree");
-  //TTree* variation_tree = (TTree*)input->Get("events/NuMIFull/selected_variationTree");
-  TTree* multisim_tree = (TTree*)input->Get("events/NuMIFull/selected_multisimTree"); // TEST...delete if anything breaks
+  TTree* variation_tree = (TTree*)input->Get("events/NuMIFull/selected_variationTree");
+  // TTree* multisim_tree = (TTree*)input->Get("events/NuMIFull/selected_multisimTree"); // TEST...delete if anything breaks
   TTree* NuMIflux_tree = (TTree*)input->Get("events/NuMIFull/selected_NuMIfluxsimTree");
 
   /////////////////////////////////////////////////////////////
@@ -46,43 +45,45 @@ int main(int argc, char * argv[])
   // Loop over every tree in TOML config
   /////////////////////////////////////////////////////////////
   for(cfg::ConfigurationTable & table : tables)
-    {
+  {
+    //This tries to get all trees in toml file, but data will have no systematics, need to add a check for that in the future
+    // Grab input TTree
+    TTree* in_tree = (TTree*)input->Get(table.get_string_field("origin").c_str());
 
-      //This tries to get all trees in toml file, but data will have no systematics, need to add a check for that in the future
-      // Grab input TTree
-      TTree* in_tree = (TTree*)input->Get(table.get_string_field("origin").c_str());                                                                                                  
-      
-      std::cout << "Processing " << table.get_string_field("origin").c_str() << std::endl;
-                   
-      // Create output TTree
-      TDirectory * directory = (TDirectory *) output;
-      directory = create_directory(directory, table.get_string_field("destination").c_str());
-      directory->cd();
-      std::cout<<"0"<<std::endl;
-      TDirectory * parent = (TDirectory *) input;
-      parent = get_parent_directory(parent, table.get_string_field("destination").c_str());
-      TH1D * pot = (TH1D *) parent->Get("POT");
-      TH1D * livetime = (TH1D *) parent->Get("Livetime");
-      directory->WriteObject(pot, "POT");
-      directory->WriteObject(livetime, "Livetime");
-      TTree* out_tree = new TTree(table.get_string_field("name").c_str(), table.get_string_field("name").c_str());
-      copy_no_syst(table, out_tree, in_tree);
-      if(table.get_bool_field("gundam_store_syst") == true)
-        {
-          copy_with_syst(config, table, out_tree, in_tree, multisigma_tree, "multisigma");
-          std::cout<<"10"<<std::endl;
-          //copy_with_syst(config, table, out_tree, in_tree, variation_tree, "variation");
-          std::cout<<"11"<<std::endl;
-	        copy_with_syst(config, table, out_tree, in_tree, NuMIflux_tree, "NuMIfluxsim"); 
-          std::cout<<"12"<<std::endl;
-	}
-      out_tree->Write();
+    std::cout << "Processing " << table.get_string_field("origin").c_str() << std::endl;
+
+    // Create output TTree
+    TDirectory * directory = (TDirectory *) output;
+    directory = create_directory(directory, table.get_string_field("destination").c_str());
+    directory->cd();
+    std::cout << "0" << std::endl;
+    TDirectory * parent = (TDirectory *) input;
+    parent = get_parent_directory(parent, table.get_string_field("destination").c_str());
+    TH1D * pot = (TH1D *) parent->Get("POT");
+    TH1D * livetime = (TH1D *) parent->Get("Livetime");
+    directory->WriteObject(pot, "POT");
+    directory->WriteObject(livetime, "Livetime");
+    TTree* out_tree = new TTree(table.get_string_field("name").c_str(), table.get_string_field("name").c_str());
+    copy_no_syst(table, out_tree, in_tree);
+
+    std::cout << "copy the gundam systematics to output tree: " << table.get_bool_field("gundam_store_syst") << ", true: " << (table.get_bool_field("gundam_store_syst") == true) << std::endl;
+    if(table.get_bool_field("gundam_store_syst") == true)
+    {
+      std::cout << "copying gundam systematics to output tree" << std::endl;
+      copy_with_syst(config, table, out_tree, in_tree, multisigma_tree, "multisigma");
+      std::cout << "10" << std::endl;
+      copy_with_syst(config, table, out_tree, in_tree, variation_tree, "variation");
+      std::cout << "11" << std::endl;
+      copy_with_syst(config, table, out_tree, in_tree, NuMIflux_tree, "NuMIfluxsim");
+      std::cout << "12" << std::endl;
     }
+    out_tree->Write();
+  }
   // TEST: Copy multisim tree as-is...delete if anything breaks
-  output->cd();
-  TTree* multisim_tree_copy = multisim_tree->CloneTree(-1);
-  multisim_tree_copy->Write();
-  
+  // output->cd();
+  // TTree* multisim_tree_copy = multisim_tree->CloneTree(-1);
+  // multisim_tree_copy->Write();
+
   output->Close();
   input->Close();
 
@@ -91,36 +92,35 @@ int main(int argc, char * argv[])
 
 void copy_no_syst(cfg::ConfigurationTable table, TTree * out_tree, TTree * in_tree)
 {
-  
   // Input tree
-  std::cout<<"0.2"<<std::endl;
+  std::cout << "0.2" << std::endl;
   int run, subrun, event;
-  std::cout<<"Number of branches"<<in_tree<<std::endl;
+  std::cout << "Number of branches" << in_tree << std::endl;
   double br[in_tree->GetNbranches()-3];
-  std::cout<<"1"<<std::endl;
-  for (int i = 0; i < in_tree->GetNbranches()-3; i++)
+  std::cout << "1" << std::endl;
+  for(int i = 0; i < in_tree->GetNbranches()-3; i++)
     in_tree->SetBranchAddress(in_tree->GetListOfBranches()->At(i)->GetName(), br+i);
-  std::cout<<"1"<<std::endl;
+  std::cout << "1" << std::endl;
   in_tree->SetBranchAddress("Run", &run);
-  std::cout<<"2"<<std::endl;
+  std::cout << "2" << std::endl;
   in_tree->SetBranchAddress("Subrun", &subrun);
-  std::cout<<"3"<<std::endl;
+  std::cout << "3" << std::endl;
   in_tree->SetBranchAddress("Evt", &event);
-  
+
   // These are branches we wish to modify
   // double _cut_type, _is_nu, _is_data, _category;
   double _category;
-  std::cout<<"4"<<std::endl;
+  std::cout << "4" << std::endl;
   // in_tree->SetBranchAddress("reco_cut_type", &_cut_type);
-  // std::cout<<"5"<<std::endl;
+  // std::cout << "5" << std::endl;
   // in_tree->SetBranchAddress("reco_is_nu", &_is_nu);
-  // std::cout<<"6"<<std::endl;
+  // std::cout << "6" << std::endl;
   // in_tree->SetBranchAddress("reco_is_data", &_is_data);
-  std::cout<<"7"<<std::endl;
+  std::cout << "7" << std::endl;
   in_tree->SetBranchAddress("true_category", &_category);
-  
+
   // Output tree
-  for (int i = 0; i < in_tree->GetNbranches()-3; i++)
+  for(int i = 0; i < in_tree->GetNbranches()-3; i++)
     out_tree->Branch(in_tree->GetListOfBranches()->At(i)->GetName(), br+i);
   out_tree->Branch("Run", &run);
   out_tree->Branch("Subrun", &subrun);
@@ -134,96 +134,104 @@ void copy_no_syst(cfg::ConfigurationTable table, TTree * out_tree, TTree * in_tr
 
   // Copy entries from input tree to output tree
   for(int i(0); i < in_tree->GetEntries(); ++i)
+  {
+    in_tree->GetEntry(i);
+
+    // Any modifications happen here...
+
+    // Make "cut_type" an int
+    cut_type = 0; //(int)_cut_type;
+
+    // Replace dummy value for "is_nu" (currently -5)
+    if(table.get_bool_field("is_nu") == true)
+      is_nu = 1;
+    else
+      is_nu = 0;
+
+    // Replace dummy value for "is_data" (currently -5)
+    if(table.get_bool_field("is_data") == true)
     {
-      in_tree->GetEntry(i);
-      
-      // Any modifications happen here...
-
-      // Make "cut_type" an int
-      cut_type = 0; //(int)_cut_type;
-
-      // Replace dummy value for "is_nu" (currently -5)
-      if(table.get_bool_field("is_nu") == true)
-	is_nu = 1;
-      else
-	is_nu = 0;
-
-      // Replace dummy value for "is_data" (currently -5)
-      if(table.get_bool_field("is_data") == true)
-	{
-	  is_data = 1;
-	  category = (int)10;
-	}
-      else
-	{
-	  is_data = 0;
-	  category = (int)_category;
-	}
-      
-      out_tree->Fill();
+      is_data = 1;
+      category = (int)10;
     }
+    else
+    {
+      is_data = 0;
+      category = (int)_category;
+    }
+
+    out_tree->Fill();
+  }
 }
 
 void copy_with_syst(cfg::ConfigurationTable config, cfg::ConfigurationTable table, TTree * out_tree, TTree * in_tree, TTree* syst_in_tree, std::string syst_type)
 {
-
   // Get relevant syst branches from TOML
   int num_syst_branches(0);
-  
+
   std::vector<std::string> syst_branch_names;
-  std::cout<<"13"<<std::endl;
+  std::cout << "Looking for syst branches of type: " << syst_type << std::endl;
   for(cfg::ConfigurationTable & t : config.get_subtables("sys"))
+  {
+    if(!strcmp(t.get_string_field("type").c_str(), syst_type.c_str()))
     {
-      if(!strcmp(t.get_string_field("type").c_str(), syst_type.c_str()))
-        {
-          std::string tname = t.get_string_field("name_short", t.get_string_field("name"));
-          syst_branch_names.push_back(tname.c_str());
-          num_syst_branches++;
-        }
+      std::string tname = t.get_string_field("name_short", t.get_string_field("name"));
+      std::cout << "Found syst branch: " << tname.c_str() << std::endl;
+      syst_branch_names.push_back(tname.c_str());
+      std::cout << "Adding syst branch: " << tname.c_str() << std::endl;
+      num_syst_branches++;
     }
-  std::cout<<"14"<<std::endl;
-  // Initialize TClonesArray 
+  }
+  std::cout << "14" << std::endl;
+
+  // Initialize TClonesArray
   TClonesArray *arrSyst[num_syst_branches];
-  std::cout<<"15"<<std::endl;
+  std::cout << "15" << std::endl;
+
   // Get the list of branches from input syst tree
   std::cout << "Number of branches in syst tree: " << syst_in_tree->GetNbranches() << std::endl;
   TObjArray *branches = syst_in_tree->GetListOfBranches();
-  std::cout<<"16"<<std::endl;
+  std::cout << "16" << std::endl;
+
   // Create a map to store the addresses of the vectors
   std::map<std::string, std::vector<Float_t>*> branch_addresses_nsigmas;
   std::map<std::string, std::vector<Float_t>*> branch_addresses_weights;
   std::map<std::string, int> sys_idxs;
   std::vector<TString> relevant_branch_names;
-  // Loop through each branch and set its address 
+
+  // Loop through each branch and set its address
   int sysIdx(0);
-  for (int i = 0; i < branches->GetEntries(); ++i)
+  for(int i = 0; i < branches->GetEntries(); ++i)
+  {
+    TBranch *branch = (TBranch*)branches->At(i);
+    TString branch_name = branch->GetName();
+
+    if(std::find(syst_branch_names.begin(), syst_branch_names.end(), branch_name) != syst_branch_names.end())
     {
-      TBranch *branch = (TBranch*)branches->At(i);
-      TString branch_name = branch->GetName();
+      sys_idxs[branch_name.Data()] = sysIdx;
+      relevant_branch_names.push_back(branch_name);
+      std::cout << "Setting branch address for: " << branch_name.Data() << std::endl;
 
-      if(std::find(syst_branch_names.begin(), syst_branch_names.end(), branch_name) != syst_branch_names.end())
-        {
-          sys_idxs[branch_name.Data()] = sysIdx;
-	  relevant_branch_names.push_back(branch_name);
+      std::vector<Float_t> *vec2 = nullptr;
+      branch_addresses_weights[branch_name.Data()] = vec2;
+      syst_in_tree->SetBranchAddress(branch_name, &(branch_addresses_weights[branch_name.Data()]));
 
-	  std::vector<Float_t> *vec2 = nullptr;
-          branch_addresses_weights[branch_name.Data()] = vec2;
-	  syst_in_tree->SetBranchAddress(branch_name, &(branch_addresses_weights[branch_name.Data()]));
+      TString temp(branch_name);
+      // Remove a trailing "_v" if present
+      if(temp.EndsWith("_v"))
+        temp.Remove(temp.Length() - 2, 2);
+      TString dummy("_sigma");
+      TString branch_name_nsigma = temp + dummy;
 
-          TString temp(branch_name);
-          TString dummy("_sigma");
-	  TString branch_name_nsigma = temp + dummy;
+      std::vector<Float_t> *vec1 = nullptr;
+      branch_addresses_nsigmas[branch_name.Data()] = vec1;
+      syst_in_tree->SetBranchAddress(branch_name_nsigma, &(branch_addresses_nsigmas[branch_name.Data()]));
 
-	  std::vector<Float_t> *vec1 = nullptr;
- 	  branch_addresses_nsigmas[branch_name.Data()] = vec1;
-	  syst_in_tree->SetBranchAddress(branch_name_nsigma, &(branch_addresses_nsigmas[branch_name.Data()]));
-
-	
-    arrSyst[sysIdx] = new TClonesArray("TGraph", 1);
-	  out_tree->Branch(branch_name, &arrSyst[sysIdx], 32000, -1);
-          sysIdx++;
-        }
-    }  
+      arrSyst[sysIdx] = new TClonesArray("TGraph", 1);
+      out_tree->Branch(branch_name, &arrSyst[sysIdx], 32000, -1);
+      sysIdx++;
+    }
+  }
 
   // Define morph dial names for special handling
   // Morph dials identified by name_short (trees.cc now always writes branches under name_short).
@@ -234,95 +242,88 @@ void copy_with_syst(cfg::ConfigurationTable config, cfg::ConfigurationTable tabl
     "ThetaDelta2NRad"
   };
 
-    // Loop through the entries of the tree and access the data 
+  // Loop through the entries of the tree and access the data
   Long64_t nEntries = syst_in_tree->GetEntries();
-  for (Long64_t i = 0; i < nEntries; ++i) {
+  for(Long64_t i = 0; i < nEntries; ++i)
+  {
     syst_in_tree->GetEntry(i);
 
     // Loop over each systematic parameter
-    for (auto const& [name, y_vec_ptr] : branch_addresses_weights)
+    for(auto const& [name, y_vec_ptr] : branch_addresses_weights)
+    {
+      std::vector<Float_t>* x_vec_ptr = branch_addresses_nsigmas.at(name);
+      std::vector<Float_t> nsigmas;
+      std::vector<Float_t> weights;
+
+      // Check if this is a morph dial
+      bool is_morph = (!strcmp(syst_type.c_str(), "multisigma")) &&
+          (std::find(morph_names.begin(), morph_names.end(), name) != morph_names.end());
+
+      if(is_morph)
       {
+        // Build 5-point symmetric spline for morph dials
+        Float_t w1 = (y_vec_ptr && !y_vec_ptr->empty()) ? y_vec_ptr->front() : 1.f;
+        if(!std::isfinite(w1)) w1 = 1.f;
+        if(table.get_bool_field("is_nu") == false) w1 = 1.f;
 
-	std::vector<Float_t>* x_vec_ptr = branch_addresses_nsigmas.at(name);
-	std::vector<Float_t> nsigmas;
-  std::vector<Float_t> weights;
+        Float_t w05 = 1.f + 0.5f*(w1 - 1.f);
 
-	// Check if this is a morph dial
-	bool is_morph = (!strcmp(syst_type.c_str(), "multisigma")) &&
-	    (std::find(morph_names.begin(), morph_names.end(), name) != morph_names.end());
+        nsigmas.clear();
+        weights.clear();
 
-	if (is_morph)
-	{
+        nsigmas.push_back(-1.f);
+        nsigmas.push_back(-0.5f);
+        nsigmas.push_back(0.f);
+        nsigmas.push_back(0.5f);
+        nsigmas.push_back(1.f);
 
-    // Build 5-point symmetric spline for morph dials
-    Float_t w1 = (y_vec_ptr && !y_vec_ptr->empty()) ? y_vec_ptr->front() : 1.f;
-    if (!std::isfinite(w1)) w1 = 1.f;
-    if (table.get_bool_field("is_nu") == false) w1 = 1.f;
-
-    Float_t w05 = 1.f + 0.5f*(w1 - 1.f);
-
-    // Clear vectors (safety, though they're freshly declared)
-      nsigmas.clear();
-      weights.clear();
-
-    nsigmas.push_back(-1.f);
-    nsigmas.push_back(-0.5f);
-    nsigmas.push_back(0.f);
-    nsigmas.push_back(0.5f);
-    nsigmas.push_back(1.f);
-
-    weights.push_back(w1);
-    weights.push_back(w05);
-    weights.push_back(1.f);
-    weights.push_back(w05);
-    weights.push_back(w1);
-	}
-	else
-	{
-    // Original behavior for standard multisigma dials
-    for (Float_t val : *x_vec_ptr)
+        weights.push_back(w1);
+        weights.push_back(w05);
+        weights.push_back(1.f);
+        weights.push_back(w05);
+        weights.push_back(w1);
+      }
+      else
       {
-      nsigmas.push_back(val);
+        // Original behavior for standard multisigma dials
+        for(Float_t val : *x_vec_ptr)
+          nsigmas.push_back(val);
+
+        for(Float_t val : *y_vec_ptr)
+        {
+          if(table.get_bool_field("is_nu") == false)
+            weights.push_back(-5);
+          else
+            weights.push_back(val);
+        }
+
+        // weight = 1 for nsigma = 0
+        if(!strcmp(syst_type.c_str(), "multisigma"))
+        {
+          nsigmas.push_back(0);
+          if(table.get_bool_field("is_nu") == false)
+            weights.push_back(-5);
+          else
+            weights.push_back(1);
+        }
       }
 
-    for (Float_t val : *y_vec_ptr)
-    {
-      if(table.get_bool_field("is_nu") == false)
-        weights.push_back(-5);
-      else
-        weights.push_back(val);
-    }
+      // Create a TGraph for every event
+      TGraph *graph = new TGraph(nsigmas.size(), &nsigmas[0], &weights[0]);
+      graph->Sort();
+      new( (*arrSyst[sys_idxs[name]])[0]) TGraph(nsigmas.size(), graph->GetX(), graph->GetY());
+    } // end systematic parameter loop
 
-	  // weight = 1 for nsigma = 0
-	  if(!strcmp(syst_type.c_str(), "multisigma"))
-	  {
-	    nsigmas.push_back(0);
-	    if(table.get_bool_field("is_nu") == false)
-	      weights.push_back(-5);
-	    else
-	      weights.push_back(1);
-    }
-	}
-
-        // Create a TGraph for every event
-        TGraph *graph = new TGraph(nsigmas.size(), &nsigmas[0], &weights[0]);
-        graph->Sort();
-        new( (*arrSyst[sys_idxs[name]])[0]) TGraph(nsigmas.size(),graph->GetX(),graph->GetY());
-      } // end systematic parameter loop
-    
     // This is needed in order to not fill with output TTree with duplicates
     // (only fill specified systematic branches)
     TObjArray *branches = out_tree->GetListOfBranches();
-    for (int j = 0; j < branches->GetEntries(); ++j)
-      {
-        TBranch *branch = (TBranch*)branches->At(j);
-	TString branch_name = branch->GetName();
-	if(std::find(relevant_branch_names.begin(), relevant_branch_names.end(), branch_name) != relevant_branch_names.end())
-	  {
-	    branch->Fill();
-	  }
-      }
+    for(int j = 0; j < branches->GetEntries(); ++j)
+    {
+      TBranch *branch = (TBranch*)branches->At(j);
+      TString branch_name = branch->GetName();
+      if(std::find(relevant_branch_names.begin(), relevant_branch_names.end(), branch_name) != relevant_branch_names.end())
+        branch->Fill();
+    }
   } // end entry loop
 
 } // end function
-

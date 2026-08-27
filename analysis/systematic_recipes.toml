@@ -455,6 +455,79 @@ name = 'flux'
 label = 'Flux'
 pattern = '^(hysyst_beam_horm_2kA|hysyst_beam_horm1_x_3mm|hysyst_beam_horm1_y_3mm|hysyst_beam_spot_1_3mm|hysyst_beam_spot_1_7mm|hysyst_beam_horm2_x_3mm|hysyst_beam_horm2_y_3mm|hysyst_beam_horms_0mm_water|hysyst_beam_horms_2mm_water|hysyst_beam_Beam_shift_x_1mm|hysyst_beam_Beam_shift_y_1mm|hysyst_beam_Target_z_7mm|hysyst_hpc_0|hysyst_hpc_1|hysyst_hpc_2|hysyst_hpc_3|hysyst_hpc_4|hysyst_hpc_5|hysyst_hpc_6|hysyst_hpc_7|hysyst_hpc_8|hysyst_hpc_9|hysyst_hpc_10|hysyst_hpc_11|hysyst_hpc_12|hysyst_hpc_13|hysyst_hpc_14)$'
 
+#################################
+## Detector systematics recipes
+#################################
+
+[[systematic_recipe]]
+name = 'induction_high'
+label = 'Induction High'
+pattern = 'induction_high'
+
+[[systematic_recipe]]
+name = 'induction_low'
+label = 'Induction Low'
+pattern = 'induction_low'
+
+[[systematic_recipe]]
+name = 'coherent_high'
+label = 'Coherent High'
+pattern = 'coherent_high'
+
+[[systematic_recipe]]
+name = 'coherent_low'
+label = 'Coherent Low'
+pattern = 'coherent_low'
+
+[[systematic_recipe]]
+name = 'intrinsic_high'
+label = 'Intrinsic High'
+pattern = 'intrinsic_high'
+
+[[systematic_recipe]]
+name = 'intrinsic_low'
+label = 'Intrinsic Low'
+pattern = 'intrinsic_low'
+
+[[systematic_recipe]]
+name = 'lifetime_high'
+label = 'Lifetime High'
+pattern = 'lifetime_high'
+
+[[systematic_recipe]]
+name = 'lifetime_low'
+label = 'Lifetime Low'
+pattern = 'lifetime_low'
+
+[[systematic_recipe]]
+name = 'scintillation'
+label = 'Scintillation'
+pattern = 'scintillation'
+
+[[systematic_recipe]]
+name = 'wire_gap'
+label = 'Wire Gap'
+pattern = 'wire_gap'
+
+[[systematic_recipe]]
+name = 'yz_uniformity'
+label = 'YZ Uniformity'
+pattern = 'yz_uniformity'
+
+[[systematic_recipe]]
+name = 'recombination'
+label = 'Recombination'
+pattern = 'recombination'
+
+[[systematic_recipe]]
+name = 'detector'
+label = 'Detector'
+pattern = '^(induction_high|induction_low|coherent_high|coherent_low|intrinsic_high|intrinsic_low|lifetime_high|lifetime_low|scintillation|wire_gap|yz_uniformity|recombination)$'
+
+#####################
+## BNB flux recipes
+######################
+
 # [[systematic_recipe]]
 # name = 'flux_skin'
 # label = 'Exp Skin'
@@ -590,4 +663,4 @@ pattern = "statistical"
 [[systematic_recipe]]
 name = "total"
 label = "Total Uncertainty"
-pattern = "^(xsec_total|flux)$"
+pattern = "^(xsec_total|flux|detector)$"

@@ -14,7 +14,7 @@ primary_softmax = 0.95
 electron_id = 1.0
 greater_than = 1.0
 pi0_mass_veto = 400.0
-pi0_mass_veto_low = 10 #10
+pi0_mass_veto_low = 10   #10
 pi0_mass_veto_high = 400
 [general]
 output = "output_nueCCInclusive_side"
@@ -41,10 +41,10 @@ fsthresh = [
 # ICARUS MC NuMI Neutrino + Cosmics CV
 [[sample]]
 name = "NuMIFull"
-#path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_00.root"
+path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_00.root"
 #path = "/pnfs/icarus/persistent/users/nabrego/*.root"
 #path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/*.root" # 500k sample 
-path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p02_2/*.flat.root" # extended sample
+#path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p02_2/*.flat.root" # extended sample
 #path= "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p02_2/*.root"#muestra completa 
 #path = "/pnfs/icarus/persistent/users/dcarber/spine/combined_files/NuMI_CV_flat_cafs_2/NuMI_CV_flat_cafs_2_01.root"
 #path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p02_2/larcv_mc_20250724_092328_157902-0a30b0cc-ebbe-4234-8f7f-99601dd72bef.flat.root"
@@ -811,7 +811,7 @@ cut = [
     #{ name = "primary_softmax_cut",       type = "reco", parameters = [ "@primary_softmax", "@greater_than" ] },
     #{ name = "leading_ele_energy_cut",    type = "reco", parameters = [ "@electron_threshold" ] },
     #{name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto", 9999.9]}, 
-    #{name = "pi0_invariant_mass", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+    {name = "pi0_invariant_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
     {name = "two_photons",                type = "reco", parameters =["@photon_threshold"]},
     {name = "no_electrons",                type = "reco", parameters =[0]},
     

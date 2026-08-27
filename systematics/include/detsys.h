@@ -57,12 +57,16 @@ namespace sys::detsys
         std::map<std::string, std::vector<TSpline3 *>> splines;
         std::map<std::string, TH1D *> hdummies;
         std::string variable;
+        std::vector<std::string> variables;
         std::vector<std::string> variations;
         std::map<std::string, TH1D *> detsys_results1D;
         std::map<std::string, TH2D *> detsys_results2D;
         size_t nuniverses;
         double nominal_count;
         std::vector<double> random_zscores;
+
+        std::string make_hist_key(const std::string & variable_name, const std::string & variation_name) const;
+        std::string make_spline_key(const std::string & detsys_name, const std::string & variable_name) const;
 
     public:
         /**
@@ -78,6 +82,21 @@ namespace sys::detsys
          * @see cfg::ConfigurationTable
          */
         DetsysCalculator(cfg::ConfigurationTable & table, TFile * output, TFile * input);
+
+        /**
+         * @brief Spline-loading constructor for the DetsysCalculator class.
+         * @details This constructor initializes the DetsysCalculator class by
+         * loading pre-built splines from a prior phase-1 run rather than
+         * rebuilding them from variation histograms. The splines file should
+         * be the output produced by the full constructor. Variable configuration
+         * and z-scores are still read from the configuration table; only the
+         * variation histogram and spline building steps are skipped.
+         * @param table The configuration table.
+         * @param output The output file.
+         * @param splines_path Path to the ROOT file containing pre-built splines.
+         * @see cfg::ConfigurationTable
+         */
+        DetsysCalculator(cfg::ConfigurationTable & table, TFile * output, const std::string & splines_path);
 
         /**
          * @brief Default constructor for the DetsysCalculator class.
@@ -112,6 +131,14 @@ namespace sys::detsys
          * @return The variable name.
          */
         std::string get_variable();
+
+        /**
+         * @brief Accessor method for all configured detector-variation variables.
+         * @details This function returns the list of variables configured in
+         * [variations].
+         * @return A vector of variable names.
+         */
+        std::vector<std::string> get_variables();
 
         /**
          * @brief Get the number of universes.
@@ -196,7 +223,7 @@ namespace sys::detsys
          * @param value The value to be added to the histogram.
          * @return void
          */
-        void add_value(std::string varname, double binvar, std::string detsysname, double value);
+        void add_value(std::string varname, double binvar, std::string detsysname, const std::map<std::string, double> & values);
     };
 } // namespace sys::detsys
 #endif // DETSYS_H

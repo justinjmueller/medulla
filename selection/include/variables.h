@@ -55,6 +55,19 @@ namespace vars
 {
 
     /**
+     * @brief Variable for the detector of the interaction.
+     * @details The detector is set in the header of the parent
+     * StandardRecord. A value of 1 corresponds to SBND, 2 to ICARUS,
+     * 0 to unknown.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the detector of the interaction.
+     */
+    template<class T>
+    double detector(const T & obj) { return context::current_detector; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, detector, detector);
+
+    /**
      * @brief Variable for the neutrino ID of the interaction.
      * @details This variable is intended to provide a unique identifier for
      * each parent neutrino within the event record. This number is assigned
@@ -1127,5 +1140,54 @@ namespace vars
         return kNoMatchValue;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Matched, true_pdg_from_reco, true_pdg_from_reco);
+
+    template<class T>
+    double ele_beam_open_angle(const T & obj)
+    {
+        size_t i = selectors::leading_electron(obj);
+        if (i == kNoMatch) return PLACEHOLDERVALUE;
+        const auto & p = obj.particles[i];
+
+        utilities::three_vector p_dir = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+        utilities::three_vector vtx = {obj.vertex[0], obj.vertex[1], obj.vertex[2]};
+
+        p_dir = utilities::normalize(p_dir);
+        utilities::three_vector unit;
+        if constexpr(!BEAM_IS_NUMI)
+            unit = std::make_tuple(0, 0, 1);
+        else
+        {
+            utilities::three_vector beam = std::make_tuple(315.120380 + std::get<0>(vtx), 33.644912 + std::get<1>(vtx), 733.632532 + std::get<2>(vtx));
+            unit = utilities::normalize(beam);
+        }
+        double open_angle = std::get<0>(p_dir) * std::get<0>(unit) + std::get<1>(p_dir) * std::get<1>(unit) + std::get<2>(p_dir) * std::get<2>(unit);
+        return open_angle;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, ele_beam_open_angle, ele_beam_open_angle);
+    
+    template<class T>
+    double pi0_invariant_mass(const T & obj)
+    {
+        size_t i = selectors::leading_photon(obj);
+        size_t j = selectors::secondary_photon(obj);
+        if (i == kNoMatch || j == kNoMatch) return PLACEHOLDERVALUE;
+        const auto & p1 = obj.particles[i];
+        const auto & p2 = obj.particles[j];
+
+        double E1 = pvars::ke(p1);
+        double E2 = pvars::ke(p2);
+
+        utilities::three_vector p1_mom = {pvars::px(p1), pvars::py(p1), pvars::pz(p1)};
+        utilities::three_vector p2_mom = {pvars::px(p2), pvars::py(p2), pvars::pz(p2)};
+
+        double total_E = E1 + E2;
+        utilities::three_vector total_p = utilities::add(p1_mom, p2_mom);
+
+        double invariant_mass_squared = std::pow(total_E, 2) - std::pow(utilities::magnitude(total_p), 2);
+        if (invariant_mass_squared < 0) return PLACEHOLDERVALUE; // Unphysical result
+        return std::sqrt(invariant_mass_squared);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_invariant_mass, pi0_invariant_mass);
+
 }
 #endif // VARIABLES_H

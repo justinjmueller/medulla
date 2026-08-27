@@ -52,6 +52,7 @@ branch = [
     { name = "off_axis_angle_sbnd",            type = "both"    },
     { name = "off_axis_angle_icarus",          type = "both"    },
     { name = "category",                       type = "true"    },
+    { name = "containment_cut",                type = "both"    },
     { name = "visible_energy",                 type = "both"    },
     { name = "dpT",                            type = "both"    },
     { name = "dalphaT",                        type = "both"    },
@@ -68,6 +69,13 @@ branch = [
     { name = "proton_multiplicity",            type = "both",  parameters = [ "@proton_threshold"            ] },
     { name = "nonprimary_shower_multiplicity", type = "both",  parameters = [ "@nonprimary_shower_threshold" ] },
     { name = "single_michel",                  type = "both",  parameters = [ "@michel_threshold"            ] },
+
+    # Information for Neutrino 2026
+    { name = "cathode_crosser",       type = "both"    },
+    { name = "fiducialize_cathode",   type = "both"    },
+    { name = "veto_sbnd_highy_highz", type = "both"    },
+    { name = "neutrino2026_veto",     type = "both"    },
+    { name = "detector",              type = "true"    },
 
     # Leading ELECTRON interaction-level
     { name = "start_x",                        type = "both_particle", selector = "leading_electron" },
@@ -143,6 +151,7 @@ branch = [
     { name = "off_axis_angle_sbnd",            type = "both"    },
     { name = "off_axis_angle_icarus",          type = "both"    },
     { name = "category",                       type = "true"    },
+    { name = "containment_cut",                type = "both"    },
     { name = "visible_energy",                 type = "both"    },
     { name = "dpT",                            type = "both"    },
     { name = "dalphaT",                        type = "both"    },
@@ -159,6 +168,13 @@ branch = [
     { name = "proton_multiplicity",            type = "both",  parameters = [ "@proton_threshold"            ] },
     { name = "nonprimary_shower_multiplicity", type = "both",  parameters = [ "@nonprimary_shower_threshold" ] },
     { name = "single_michel",                  type = "both",  parameters = [ "@michel_threshold"            ] },
+
+    # Information for Neutrino 2026
+    { name = "cathode_crosser",       type = "both"    },
+    { name = "fiducialize_cathode",   type = "both"    },
+    { name = "veto_sbnd_highy_highz", type = "both"    },
+    { name = "neutrino2026_veto",     type = "both"    },
+    { name = "detector",              type = "true"    },
 
     # Leading ELECTRON interaction-level
     { name = "start_x",                        type = "both_particle", selector = "leading_electron" },

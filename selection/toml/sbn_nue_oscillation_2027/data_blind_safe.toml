@@ -39,6 +39,7 @@ cut = [
 
 branch = [
     # Interaction-level branches
+    { name = "containment_cut",                type = "both"    },
     { name = "dpT",                            type = "reco"    },
     { name = "dalphaT",                        type = "reco"    },
     { name = "dphiT",                          type = "reco"    },
@@ -53,6 +54,13 @@ branch = [
     { name = "muon_multiplicity",              type = "reco",  parameters = [ "@muon_threshold"              ] },
     { name = "proton_multiplicity",            type = "reco",  parameters = [ "@proton_threshold"            ] },
     { name = "nonprimary_shower_multiplicity", type = "reco",  parameters = [ "@nonprimary_shower_threshold" ] },
+
+    # Information for Neutrino 2026
+    { name = "cathode_crosser",       type = "both"    },
+    { name = "fiducialize_cathode",   type = "both"    },
+    { name = "veto_sbnd_highy_highz", type = "both"    },
+    { name = "neutrino2026_veto",     type = "both"    },
+    { name = "detector",              type = "reco"    },
 
     # Leading ELECTRON interaction-level
     { name = "azimuthal_angle",                type = "reco_particle", selector = "leading_electron" },

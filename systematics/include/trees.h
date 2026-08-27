@@ -64,5 +64,22 @@ namespace sys::trees
      * @return void
      */
     void copy_with_weight_systematics(cfg::ConfigurationTable & config, cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc);
+
+    /**
+     * @brief Apply pre-loaded detector variation weights without reading CAF files.
+     * @details Phase-2 counterpart to copy_with_weight_systematics. Loops
+     * directly over the input selection tree and evaluates pre-built splines
+     * from a DetsysCalculator loaded via the spline-loading constructor. No
+     * WeightReader is needed because detector variation weights depend only on
+     * the reconstructed variable value and the pre-rolled z-scores, both of
+     * which are available without re-reading the original CAF files.
+     * @param config The global configuration table.
+     * @param table The per-tree configuration sub-table.
+     * @param output The output TFile.
+     * @param input The input TFile (individual job selection output).
+     * @param calc A DetsysCalculator initialised with pre-built splines.
+     * @return void
+     */
+    void copy_with_detsys_weights(cfg::ConfigurationTable & config, cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc);
 }
 #endif

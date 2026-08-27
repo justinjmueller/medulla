@@ -12,6 +12,7 @@
 #include <map>
 #include <vector>
 #include <random>
+#include <algorithm>
 
 #include "detsys.h"
 #include "configuration.h"
@@ -21,6 +22,20 @@
 #include "TH2D.h"
 #include "TSpline.h"
 #include "TFile.h"
+
+std::string sys::detsys::DetsysCalculator::make_hist_key(const std::string & variable_name, const std::string & variation_name) const
+{
+    if(variables.size() == 1)
+        return variable_name;
+    return variation_name + "__" + variable_name;
+}
+
+std::string sys::detsys::DetsysCalculator::make_spline_key(const std::string & detsys_name, const std::string & variable_name) const
+{
+    if(variables.size() == 1)
+        return detsys_name;
+    return detsys_name + "__" + variable_name;
+}
 
 // Constructor for the DetsysCalculator class that initializes the class using
 // the configuration table, the output file, and the input file. 
@@ -39,13 +54,61 @@ sys::detsys::DetsysCalculator::DetsysCalculator(cfg::ConfigurationTable & table,
     histogram_directory = create_directory(output, table.get_string_field("output.histogram_destination"));
     result_directory = create_directory(output, table.get_string_field("variations.result_destination"));
     variations = table.get_string_vector("variations.keys");
-    variable = table.get_string_field("variations.variable");
+
+    if(table.has_field("variations.variables"))
+        variables = table.get_string_vector("variations.variables");
+    else if(table.has_field("variations.variable"))
+    {
+        try
+        {
+            variables = table.get_string_vector("variations.variable");
+        }
+        catch(const cfg::ConfigurationError &)
+        {
+            variables = {table.get_string_field("variations.variable")};
+        }
+    }
+    else
+        throw cfg::ConfigurationError("The field variations.variable or variations.variables must be present in the configuration file.");
+
+    if(variables.empty())
+        throw cfg::ConfigurationError("The field variations.variables must contain at least one variable.");
+
+    variable = variables.front();
+
+    std::vector<std::vector<double>> bins_by_variable;
+    if(table.has_field("variations.bins_list"))
+    {
+        bins_by_variable = table.get_double_matrix("variations.bins_list");
+        if(bins_by_variable.size() != variables.size())
+            throw cfg::ConfigurationError("variations.bins_list size must match variations.variables size.");
+    }
+    else if(table.has_field("variations.bins"))
+    {
+        try
+        {
+            bins_by_variable = table.get_double_matrix("variations.bins");
+        }
+        catch(const cfg::ConfigurationError &)
+        {
+            std::vector<double> shared_bins = table.get_double_vector("variations.bins");
+            bins_by_variable.assign(variables.size(), shared_bins);
+        }
+
+        if(bins_by_variable.size() != variables.size())
+            throw cfg::ConfigurationError("variations.bins size must match variations.variable size when using multi-variable mode.");
+    }
+    else
+        throw cfg::ConfigurationError("The field variations.bins or variations.bins_list must be present in the configuration file.");
+
+    bool variable_length = table.get_bool_field("variations.variable_length", false);
 
     // Loop over the variations and create the histograms. A "variation" is a
     // single sample that implements some change w.r.t. the nominal sample in
     // the detector model.
     for(std::string variation : variations)
     {
+        std::cout << "Processing variation: " << variation << std::endl;
         double pot(0);
         // Check if the variation has an exposure tree instead of a histogram.
         std::string exp_tree_name = table.get_string_field("variations.origin") + variation + "/" + table.get_string_field("variations.tree") + "_exposure";
@@ -74,19 +137,26 @@ sys::detsys::DetsysCalculator::DetsysCalculator(cfg::ConfigurationTable & table,
 
         std::string name = table.get_string_field("variations.origin") + variation + '/' + table.get_string_field("variations.tree");
         TTree * t = input->Get<TTree>(name.c_str());
-        double value;
-        t->SetBranchAddress(variable.c_str(), &value);
-        std::vector<double> bins = table.get_double_vector("variations.bins");
-        bool variable_length = table.get_bool_field("variations.variable_length", false);
-        if(!variable_length)
-            histograms[variation] = new TH1D(variation.c_str(), variation.c_str(), bins[0], bins[1], bins[2]);
-        else
-            histograms[variation] = new TH1D(variation.c_str(), variation.c_str(), bins.size() - 1, bins.data());
-        for(int i(0); i < t->GetEntries(); ++i)
+        for(size_t ivar(0); ivar < variables.size(); ++ivar)
         {
-            t->GetEntry(i);
-            histograms[variation]->Fill(value, 1.0 / pot);
+            const std::string & configured_variable = variables[ivar];
+            std::string hist_key = make_hist_key(configured_variable, variation);
+            const std::vector<double> & bins = bins_by_variable[ivar];
+
+            double value;
+            t->SetBranchAddress(configured_variable.c_str(), &value);
+            if(!variable_length && bins.size() == 3)
+                histograms[hist_key] = new TH1D(hist_key.c_str(), configured_variable.c_str(), bins[0], bins[1], bins[2]);
+            else
+                histograms[hist_key] = new TH1D(hist_key.c_str(), configured_variable.c_str(), bins.size() - 1, bins.data());
+
+            for(int i(0); i < t->GetEntries(); ++i)
+            {
+                t->GetEntry(i);
+                histograms[hist_key]->Fill(value, 1.0 / pot);
+            }
         }
+        std::cout << "Variation " << variation << " histogram filled." << std::endl;
     }
 
     // Loop over the detector systematics and create the splines. A single
@@ -112,43 +182,51 @@ sys::detsys::DetsysCalculator::DetsysCalculator(cfg::ConfigurationTable & table,
         // deviations the systematic parameter is from the nominal value).
         std::string name = t.get_string_field("name");
         zscores.insert(std::make_pair(name, t.get_double_vector("nsigma")));
-        TH1D * base = histograms[points[0]];
-        int nbins = base->GetXaxis()->GetNbins();
-        const double * xedges = base->GetXaxis()->GetXbins()->GetArray();
-        hdummies.insert(std::make_pair(name, new TH1D("hdummy", "hdummy", nbins, xedges)));
-
-        // This block creates a TH2D that will be used to store the input for
-        // the spline construction. The TH2D is filled with the ratio of the
-        // variations to the nominal sample (across the range of the variable)
-        // for each of the spline points. Each spline point is adjusted by the
-        // scale factor configured in the "detsys" block.
-        double ylow = *std::min_element(zscores[name].begin(), zscores[name].end());
-        double yup = *std::max_element(zscores[name].begin(), zscores[name].end());
-        TH2D * h = new TH2D("tmp", "tmp", nbins, xedges, points.size(), ylow, yup);
-        for(size_t i(0); i < points.size(); ++i)
+        for(const std::string & configured_variable : variables)
         {
-            hdummies[name]->Divide(histograms[points[i]], histograms[t.get_string_field("ordinate")]);
-            for(int j(0); j < hdummies[name]->GetNbinsX(); ++j)
-            {
-                if(hdummies[name]->GetBinContent(j + 1) != 0)
-                    h->SetBinContent(j + 1, i + 1,  1 + scale_factors[i] * (hdummies[name]->GetBinContent(j + 1) - 1));
-                else
-                    h->SetBinContent(j + 1, i + 1, 1);
-            }
-        }
+            std::string spline_key = make_spline_key(name, configured_variable);
+            TH1D * base = histograms[make_hist_key(configured_variable, points[0])];
+            int nbins = base->GetXaxis()->GetNbins();
+            const double * xedges = base->GetXaxis()->GetXbins()->GetArray();
+            hdummies.insert(std::make_pair(spline_key, new TH1D("hdummy", "hdummy", nbins, xedges)));
 
-        // This block creates the splines for the detector systematic parameter.
-        // The splines are created for each bin of the dummy histogram. The
-        splines.insert(std::make_pair(name, std::vector<TSpline3 *>()));
-        for(int j(0); j < hdummies[name]->GetNbinsX(); ++j)
-        {
-            std::vector<double> x, y;
+            // This block creates a TH2D that will be used to store the input for
+            // the spline construction. The TH2D is filled with the ratio of the
+            // variations to the nominal sample (across the range of the variable)
+            // for each of the spline points. Each spline point is adjusted by the
+            // scale factor configured in the "detsys" block.
+            double ylow = *std::min_element(zscores[name].begin(), zscores[name].end());
+            double yup = *std::max_element(zscores[name].begin(), zscores[name].end());
+            TH2D * h = new TH2D("tmp", "tmp", nbins, xedges, points.size(), ylow, yup);
             for(size_t i(0); i < points.size(); ++i)
             {
-                x.push_back(zscores[name][i]);
-                y.push_back(h->GetBinContent(j + 1, i + 1));
+                std::cout << "Creating spline input for systematic " << name << " variation " << points[i] << " with scale factor " << scale_factors[i] << " and z-score " << zscores[name][i] << std::endl;
+                std::cout << "Variation histogram: " << make_hist_key(configured_variable, points[i]) << ", entries: " << histograms[make_hist_key(configured_variable, points[i])]->GetEntries() << std::endl;
+                std::cout << "Nominal histogram: " << make_hist_key(configured_variable, t.get_string_field("ordinate")) << ", entries: " << histograms[make_hist_key(configured_variable, t.get_string_field("ordinate"))]->GetEntries() << std::endl;
+
+                hdummies[spline_key]->Divide(histograms[make_hist_key(configured_variable, points[i])], histograms[make_hist_key(configured_variable, t.get_string_field("ordinate"))]);
+                for(int j(0); j < hdummies[spline_key]->GetNbinsX(); ++j)
+                {
+                    if(hdummies[spline_key]->GetBinContent(j + 1) != 0)
+                        h->SetBinContent(j + 1, i + 1,  1 + scale_factors[i] * (hdummies[spline_key]->GetBinContent(j + 1) - 1));
+                    else
+                        h->SetBinContent(j + 1, i + 1, 1);
+                }
             }
-            splines[name].push_back(new TSpline3("spline", x.data(), y.data(), x.size()));
+
+            // This block creates the splines for the detector systematic parameter.
+            // The splines are created for each bin of the dummy histogram.
+            splines.insert(std::make_pair(spline_key, std::vector<TSpline3 *>()));
+            for(int j(0); j < hdummies[spline_key]->GetNbinsX(); ++j)
+            {
+                std::vector<double> x, y;
+                for(size_t i(0); i < points.size(); ++i)
+                {
+                    x.push_back(zscores[name][i]);
+                    y.push_back(h->GetBinContent(j + 1, i + 1));
+                }
+                splines[spline_key].push_back(new TSpline3("spline", x.data(), y.data(), x.size()));
+            }
         }
     }
 }
@@ -158,12 +236,119 @@ void sys::detsys::DetsysCalculator::add_variable(SysVariable & variable)
 {
     // Create the TH1D and TH2D that will be used to store the results of
     // the detector systematic universes.
-    for(auto & [key, value] : hdummies)
+    for(auto & [key, value] : zscores)
     {
-        std::string name = variable.name + "_" + key;
-        detsys_results1D[name] = new TH1D(name.c_str(), name.c_str(), 1000, -0.25, 0.25);
-        detsys_results2D[name] = new TH2D(name.c_str(), name.c_str(), variable.nbins, variable.min, variable.max, nuniverses, 0, nuniverses);
+        if(variables.size() == 1)
+        {
+            std::string name = variable.name + "_" + key;
+            detsys_results1D[name] = new TH1D(name.c_str(), name.c_str(), 1000, -0.25, 0.25);
+            detsys_results2D[name] = new TH2D(name.c_str(), name.c_str(), variable.nbins, variable.min, variable.max, nuniverses, 0, nuniverses);
+        }
+        else
+        {
+            for(const std::string & configured_variable : variables)
+            {
+                std::string name = variable.name + "_" + key + "_" + configured_variable;
+                detsys_results1D[name] = new TH1D(name.c_str(), name.c_str(), 1000, -0.25, 0.25);
+                detsys_results2D[name] = new TH2D(name.c_str(), name.c_str(), variable.nbins, variable.min, variable.max, nuniverses, 0, nuniverses);
+            }
+        }
     }
+}
+
+// Spline-loading constructor: reads pre-built splines from a prior phase-1 run
+// instead of rebuilding them from variation histograms. Variable configuration,
+// z-scores, and nuniverses are still taken from the configuration table.
+sys::detsys::DetsysCalculator::DetsysCalculator(cfg::ConfigurationTable & table, TFile * output, const std::string & splines_path)
+{
+    // Pre-roll the same number of random z-scores as the original run.
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::normal_distribution<double> dist(0, 1);
+    nuniverses = table.get_int_field("variations.nuniverses");
+    for(size_t n(0); n < nuniverses; ++n)
+        random_zscores.push_back(dist(gen));
+
+    // Create output directories.
+    histogram_directory = create_directory(output, table.get_string_field("output.histogram_destination"));
+    result_directory = create_directory(output, table.get_string_field("variations.result_destination"));
+
+    // Load variable configuration from the TOML.
+    if(table.has_field("variations.variables"))
+        variables = table.get_string_vector("variations.variables");
+    else if(table.has_field("variations.variable"))
+    {
+        try { variables = table.get_string_vector("variations.variable"); }
+        catch(const cfg::ConfigurationError &) { variables = {table.get_string_field("variations.variable")}; }
+    }
+    else
+        throw cfg::ConfigurationError("variations.variable or variations.variables must be present.");
+    if(variables.empty())
+        throw cfg::ConfigurationError("variations.variables must contain at least one variable.");
+    variable = variables.front();
+
+    // Open the splines file.
+    TFile * splines_file = TFile::Open(splines_path.c_str(), "READ");
+    if(!splines_file || splines_file->IsZombie())
+        throw cfg::ConfigurationError("Could not open splines file: " + splines_path);
+
+    std::string result_dest = table.get_string_field("variations.result_destination");
+    if(!result_dest.empty() && result_dest.back() == '/')
+        result_dest.pop_back();
+    TDirectory * spline_dir = (TDirectory *) splines_file->Get(result_dest.c_str());
+    if(!spline_dir)
+        throw cfg::ConfigurationError("result_destination '" + result_dest + "' not found in splines file.");
+
+    // For each variation-type systematic, load the splines and reconstruct
+    // the hdummy used for bin-finding in get_weight().
+    for(cfg::ConfigurationTable & t : table.get_subtables("sys"))
+    {
+        if(t.get_string_field("type") != "variation")
+            continue;
+
+        std::string name = t.get_string_field("name");
+        zscores.insert(std::make_pair(name, t.get_double_vector("nsigma")));
+        std::string ordinate = t.get_string_field("ordinate");
+
+        for(const std::string & configured_variable : variables)
+        {
+            std::string spline_key = make_spline_key(name, configured_variable);
+            std::string hist_key   = make_hist_key(configured_variable, ordinate);
+
+            // Load splines bin-by-bin until a named bin is missing.
+            TDirectory * sdir = (TDirectory *) spline_dir->Get((spline_key + "_splines").c_str());
+            if(!sdir)
+                throw cfg::ConfigurationError("Spline directory '" + spline_key + "_splines' not found in splines file.");
+
+            splines.insert(std::make_pair(spline_key, std::vector<TSpline3 *>()));
+            for(int i = 0; ; ++i)
+            {
+                TSpline3 * sp = (TSpline3 *) sdir->Get(("bin" + std::to_string(i)).c_str());
+                if(!sp) break;
+                splines[spline_key].push_back((TSpline3 *) sp->Clone());
+            }
+
+            if(splines[spline_key].empty())
+                throw cfg::ConfigurationError("No spline bins found for '" + spline_key + "' in splines file.");
+
+            // Reconstruct hdummy from the saved ordinate histogram to recover
+            // the bin boundaries needed by FindBin() inside get_weight().
+            TH1D * h = (TH1D *) spline_dir->Get(hist_key.c_str());
+            if(!h)
+                throw cfg::ConfigurationError("Ordinate histogram '" + hist_key + "' not found in splines file.");
+
+            int nbins = h->GetXaxis()->GetNbins();
+            const double * xedges = h->GetXaxis()->GetXbins()->GetArray();
+            hdummies.insert(std::make_pair(spline_key, new TH1D("hdummy", "hdummy", nbins, xedges)));
+        }
+
+        std::cout << "Loaded " << splines[make_spline_key(name, variable)].size()
+                  << " spline bins for systematic " << name << std::endl;
+    }
+
+    splines_file->Close();
+    initialized = true;
+    std::cout << "DetsysCalculator: loaded splines from " << splines_path << std::endl;
 }
 
 // Default constructor for the DetsysCalculator class.
@@ -181,6 +366,11 @@ bool sys::detsys::DetsysCalculator::is_initialized()
 std::string sys::detsys::DetsysCalculator::get_variable()
 {
     return variable;
+}
+
+std::vector<std::string> sys::detsys::DetsysCalculator::get_variables()
+{
+    return variables;
 }
 
 // Accessor method for the number of universes.
@@ -256,20 +446,46 @@ TH1D * sys::detsys::DetsysCalculator::operator[](std::string key)
 // of the binning variable, and z-score.
 double sys::detsys::DetsysCalculator::get_weight(std::string name, double value, double zscore)
 {
-    if(value < hdummies[name]->GetXaxis()->GetXmin() || value > hdummies[name]->GetXaxis()->GetXmax())
+    std::string spline_key = make_spline_key(name, variable);
+    if(value < hdummies[spline_key]->GetXaxis()->GetXmin() || value >= hdummies[spline_key]->GetXaxis()->GetXmax())
         return 1;
     else
     {
-        int bin = hdummies[name]->FindBin(value);
-        return splines[name][bin-1]->Eval(zscore);
+        int bin = hdummies[spline_key]->FindBin(value);
+        return splines[spline_key][bin-1]->Eval(zscore);
     }
 }
 
 // Method to add a value to the detector systematic parameter histogram
 // for all pre-roll z-scores (universes).
-void sys::detsys::DetsysCalculator::add_value(std::string varname, double binvar, std::string detsysname, double value)
+void sys::detsys::DetsysCalculator::add_value(std::string varname, double binvar, std::string detsysname, const std::map<std::string, double> & values)
 {
-    std::string name = varname + "_" + detsysname;
-    for(size_t i(0); i < nuniverses; ++i)
-        detsys_results2D[name]->Fill(binvar, i, get_weight(detsysname, value, random_zscores[i]));
+    if(variables.size() == 1)
+    {
+        auto it = values.find(variable);
+        if(it == values.end())
+            return;
+
+        std::string name = varname + "_" + detsysname;
+        for(size_t i(0); i < nuniverses; ++i)
+            detsys_results2D[name]->Fill(binvar, i, get_weight(detsysname, it->second, random_zscores[i]));
+        return;
+    }
+
+    for(const std::string & configured_variable : variables)
+    {
+        auto value_it = values.find(configured_variable);
+        if(value_it == values.end())
+            continue;
+
+        std::string spline_key = make_spline_key(detsysname, configured_variable);
+        double configured_value = value_it->second;
+        if(configured_value < hdummies[spline_key]->GetXaxis()->GetXmin() || configured_value >= hdummies[spline_key]->GetXaxis()->GetXmax())
+            continue;
+
+        int bin = hdummies[spline_key]->FindBin(configured_value);
+        std::string name = varname + "_" + detsysname + "_" + configured_variable;
+        for(size_t i(0); i < nuniverses; ++i)
+            detsys_results2D[name]->Fill(binvar, i, splines[spline_key][bin-1]->Eval(random_zscores[i]));
+    }
 }

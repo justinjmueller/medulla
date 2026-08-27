@@ -17,7 +17,7 @@ r.gStyle.SetOptStat(0)
 
 def main():
     # Load the analysis
-    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_analysis.toml', '/exp/icarus/data/users/micarrig/merged_outputAll.root')
+    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_analysis.toml', '/exp/icarus/data/users/micarrig/merged_all_v3.root')
     # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_recoInt.toml', '/exp/icarus/data/users/micarrig/merged_outputAll.root')
     #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/efficiency_analysis.toml', '/nashome/m/micarrig/icarus/nuESpine/output_nueCCInclusive2.root')
 
@@ -30,25 +30,25 @@ def main():
     with open(f'{output_dir}/selection_efficiency_table.pkl', 'wb') as f:
         pickle.dump(table, f)
 
-    # eff_nuE = ana.run_interactively('efficiency_vs_energy')
-    # plt.savefig(f'{output_dir}/efficiency_vs_energy.png', dpi=300)
-    # with open(f'{output_dir}/efficiency_vs_energy.pkl', 'wb') as f:
-    #     pickle.dump(eff_nuE, f)
+    eff_nuE = ana.run_interactively('efficiency_vs_energy')
+    plt.savefig(f'{output_dir}/efficiency_vs_energy.png', dpi=300)
+    with open(f'{output_dir}/efficiency_vs_energy.pkl', 'wb') as f:
+        pickle.dump(eff_nuE, f)
 
-    # eff_eleE = ana.run_interactively('efficiency_vs_electronEnergy')
-    # plt.savefig(f'{output_dir}/efficiency_vs_electronEnergy.png', dpi=300)
-    # with open (f'{output_dir}/efficiency_vs_electronEnergy.pkl', 'wb') as f:
-    #     pickle.dump(eff_eleE, f)
+    eff_eleE = ana.run_interactively('efficiency_vs_electronEnergy')
+    plt.savefig(f'{output_dir}/efficiency_vs_electronEnergy.png', dpi=300)
+    with open (f'{output_dir}/efficiency_vs_electronEnergy.pkl', 'wb') as f:
+        pickle.dump(eff_eleE, f)
 
-    # eff_eleAngle = ana.run_interactively('efficiency_vs_electronAngle')
-    # plt.savefig(f'{output_dir}/efficiency_vs_electronAngle.png', dpi=300)
-    # with open(f'{output_dir}/efficiency_vs_electronAngle.pkl', 'wb') as f:
-    #     pickle.dump(eff_eleAngle, f)
+    eff_eleAngle = ana.run_interactively('efficiency_vs_electronAngle')
+    plt.savefig(f'{output_dir}/efficiency_vs_electronAngle.png', dpi=300)
+    with open(f'{output_dir}/efficiency_vs_electronAngle.pkl', 'wb') as f:
+        pickle.dump(eff_eleAngle, f)
 
-    # eff_pTrans = ana.run_interactively('efficiency_vs_trueMomentumTransfer')
-    # plt.savefig(f'{output_dir}/efficiency_vs_trueMomentumTransfer.png', dpi=300)
-    # with open(f'{output_dir}/efficiency_vs_trueMomentumTransfer.pkl', 'wb') as f:
-    #     pickle.dump(eff_pTrans, f)
+    eff_pTrans = ana.run_interactively('efficiency_vs_trueMomentumTransfer')
+    plt.savefig(f'{output_dir}/efficiency_vs_trueMomentumTransfer.png', dpi=300)
+    with open(f'{output_dir}/efficiency_vs_trueMomentumTransfer.pkl', 'wb') as f:
+        pickle.dump(eff_pTrans, f)
 
     # eff_invMass = ana.run_interactively('efficiency_vs_trueInvariantMass')
     # plt.savefig(f'{output_dir}/efficiency_vs_trueInvMass.png', dpi=300)
@@ -70,10 +70,10 @@ def main():
     # with open('plots/efficiency_vs_recoFlashTime.pkl', 'wb') as f:
     #     pickle.dump(eff_flashTime, f)
 
-    eff_nu = ana.run_interactively('efficiency_vs_trueNu')
-    plt.savefig(f'{output_dir}/efficiency_vs_trueNu.png', dpi=300)
-    with open(f'{output_dir}/efficiency_vs_trueNu.pkl', 'wb') as f:
-        pickle.dump(eff_nu, f)
+    # eff_nu = ana.run_interactively('efficiency_vs_trueNu')
+    # plt.savefig(f'{output_dir}/efficiency_vs_trueNu.png', dpi=300)
+    # with open(f'{output_dir}/efficiency_vs_trueNu.pkl', 'wb') as f:
+    #     pickle.dump(eff_nu, f)
 
 
 if __name__ == "__main__":
