@@ -39,9 +39,11 @@ sys::WeightReader::WeightReader(const std::string & input)
         // Input is a .txt file containing a list of files
         std::ifstream infile(input);
         std::string line;
-        while(std::getline(infile, line))
+        isflat = true;
+        while(std::getline(infile, line)){
             chain.Add(line.c_str());
-        isflat = line.find("flat") != std::string::npos;
+            isflat = isflat && (line.find("flat") != std::string::npos);
+        }
     }
     else
     {
@@ -77,7 +79,7 @@ sys::WeightReader::WeightReader(const std::string & input)
     else
     {
         // MC-truth branches
-        nnu_structured = std::make_unique<TTreeReaderValue<uint64_t>>(*reader, "rec.mc.nnu");
+        nnu_structured = std::make_unique<TTreeReaderValue<unsigned long long>>(*reader, "rec.mc.nnu");
         mc = std::make_unique<TTreeReaderArray<caf::SRTrueInteraction>>(*reader, "rec.mc.nu");
         nu_energy_structured = std::make_unique<TTreeReaderArray<Float_t>>(*reader, "rec.mc.nu.E");
     }
@@ -119,6 +121,8 @@ uint32_t sys::WeightReader::get_nwgt(Int_t i) const
 // Accessor method for the number of universes.
 uint32_t sys::WeightReader::get_nuniv(size_t idn) const
 {
+    std::cout << "idn: " << idn << ", idx: " << idx << std::endl;
+    std::cout << "nnu: " << this->get_nnu() << ", nwgt: " << this->get_nwgt(idn) << std::endl;
     if(idn >= get_nnu() || idx >= get_nwgt(idn))
         throw std::out_of_range("WeightReader: Index out of range in 'get_nuniv()'");
 

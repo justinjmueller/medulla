@@ -173,7 +173,7 @@ namespace sys
 
         // Event-level indexing
         Int_t nnu; // Number of neutrinos
-        std::unique_ptr<TTreeReaderValue<uint64_t>> nnu_structured; // Number of neutrinos for structured CAF files
+        std::unique_ptr<TTreeReaderValue<unsigned long long>> nnu_structured; // Number of neutrinos for structured CAF files
 
         // Neutrino-level indexing
         Int_t nwgt[10]; // Number of weight groups for each neutrino

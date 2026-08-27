@@ -1,13 +1,13 @@
 
 [input]
 #path = '/exp/icarus/data/users/micarrig/merged_output.root'
-path = '/nashome/m/micarrig/scratch/nueCCInclusiveSpine22/output/merged_output.root'
-weights = '/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p02_2/*.flat.root'
-# weights = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p02_2/larcv_mc_20250908_042106_684590-ab806c2a-41ea-4e85-aeb8-c36f59582a1c.flat.root" # extended sample
+path = '/exp/icarus/app/users/micarrig/nuESpine/output_nueCCInclusive_nue.root'
+# weights = '/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p02_2/*.flat.root'
+weights = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p02_2/larcv_mc_20250908_042106_684590-ab806c2a-41ea-4e85-aeb8-c36f59582a1c.flat.root" # extended sample
 use_additional_hash = true
 
 [output]
-path = '/exp/icarus/data/users/micarrig/gundam_merged_v2.root'
+path = '/exp/icarus/data/users/micarrig/debug_nue.root'
 histogram_destination = 'variations/'
 
 [[sysvar]]

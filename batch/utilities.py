@@ -713,6 +713,8 @@ def run_variation_phase1_interactive(
         toml_path = tmpdir / 'variation_systematics_phase1.toml'
         with open(toml_path, 'w') as f:
             toml.dump(cfg, f)
+        print(f"{_INFO} -- copying {toml_path} -> /exp/icarus/app/users/micarrig/nuESpine/variation_systematics_phase1.toml")
+        os.system(f"cp {toml_path} /exp/icarus/app/users/micarrig/nuESpine/variation_systematics_phase1.toml")
 
         try:
             subprocess.run([str(binary), str(toml_path)], check=True, cwd=str(tmpdir))
@@ -978,7 +980,8 @@ def launch_variation_phase2_jobsub(
     splines_local.unlink()
     splines_tar = Path(tempfile.mkstemp(suffix='.tar.gz')[1])
     try:
-        subprocess.run(['ifdh', 'cp', str(splines_path), str(splines_local)], check=True)
+        _ifdh_cp(str(splines_path), str(splines_local))
+        #subprocess.run(['ifdh', 'cp', str(splines_path), str(splines_local)], check=True)
         with tarfile.open(str(splines_tar), 'w:gz') as tar:
             tar.add(str(splines_local), arcname='variation_splines.root')
     finally:
