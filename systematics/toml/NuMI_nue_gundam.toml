@@ -536,6 +536,34 @@ index = 51
 nsigma = [-1,1,-2,2,-3,3]
 
 [[sys]]
+name = "ZExpPCAWeighter_SBNNuSyst_ZExpPCA_multisigma_b1"
+name_short = 'ZExpPCAB1CCQE'
+type = "multisigma"
+nsigma = [-1,1,-2,2,-3,3]
+index = 130
+
+[[sys]]
+name = "ZExpPCAWeighter_SBNNuSyst_ZExpPCA_multisigma_b2"
+name_short = 'ZExpPCAB2CCQE'
+type = "multisigma"
+nsigma = [-1,1,-2,2,-3,3]
+index = 131
+
+[[sys]]
+name = "ZExpPCAWeighter_SBNNuSyst_ZExpPCA_multisigma_b3"
+name_short = 'ZExpPCAB3CCQE'
+type = "multisigma"
+nsigma = [-1,1,-2,2,-3,3]
+index = 132
+
+[[sys]]
+name = "ZExpPCAWeighter_SBNNuSyst_ZExpPCA_multisigma_b4"
+name_short = 'ZExpPCAB4CCQE'
+type = "multisigma"
+nsigma = [-1,1,-2,2,-3,3]
+index = 133
+
+[[sys]]
 name = 'GENIEReWeight_SBN_v1_multisim_ZExpAVariationResponse'
 type = 'multisim'
 index = 52
