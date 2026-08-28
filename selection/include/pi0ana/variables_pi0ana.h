@@ -272,57 +272,8 @@ namespace vars::pi0ana
 	    {
             // 0mu0pi1pi0 (in-phase, fiducial)
 	        if(cuts::pi0ana::single_pi0<caf::SRInteractionTruthDLPProxy>(obj, {params[4]}) && cuts::no_muons(obj, {params[2]}) && cuts::no_charged_pions(obj, {params[3]}) 
-			&& cuts::two_photons(obj, {params[0]}) && cuts::pi0ana::leading_photon_ke_cut(obj, {params[6]})
-			&& !cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 0;
-	        // NCpi0 non-signal background
-	        else if(num_primary_pi0s > 0 && !cuts::iscc(obj)) cat = 1;
-			// CCpi0
-	        else if(num_primary_pi0s > 0 && cuts::iscc(obj)) cat = 2;
-	        // Other nu without pi0
-	        else if(num_primary_pi0s == 0) cat = 3;
-	    }
-	    return cat;
-    }
-    REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_ncpi0_simple2, category_topology_ncpi0_simple2);
-
-	/**
-     * @brief Variable for enumerating interaction topologies.
-     * @details This variable provides a basic categorization of interactions
-     * using the following categories:
-     * 0: NCpi0 signal (in-phase, fiducial, 0mu0pi1pi0)
-     * 1: NCpi0 non-signal background
-     * 2: CCpi0
-	 * 3: Other nu without pi0.
-     * 10: Cosmic
-     * @param obj the interaction to apply the variable on.
-     * @return the enumerated topology of the interaction.
-     */
-    template<class T>
-    double category_topology_ncpi0_simple3(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params={})
-    {
-		double num_primary_pi0s = utilities::true_primary_pi0_multiplicity(obj, {0.0});
-
-		bool showers_in_fid_vol(false);
-        size_t phi = selectors::pi0_leading_shower(obj);
-		size_t dex = selectors::pi0_subleading_shower(obj);
-
-	    if(phi != kNoMatch && dex != kNoMatch) 
-		{
-			auto & lead(obj.particles[phi]);
-        	auto & sublead(obj.particles[dex]);
-			showers_in_fid_vol = (pcuts::containment_cut(lead) && pcuts::containment_cut(sublead));
-		}
-
-	    // Cosmic
-	    uint16_t cat(10);
-	
-	    // Neutrino
-	    if(cuts::neutrino(obj))
-	    {
-            // 0mu0pi1pi0 (in-phase, fiducial)
-	        if(cuts::pi0ana::single_pi0<caf::SRInteractionTruthDLPProxy>(obj, {params[4]}) && cuts::no_muons(obj, {params[2]}) && cuts::no_charged_pions(obj, {params[3]}) 
-			&& cuts::two_photons(obj, {params[0]}) && cuts::pi0ana::leading_photon_ke_cut(obj, {params[6]}) && showers_in_fid_vol
-			&& !cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 0;
+			&& cuts::two_photons(obj, {params[0]}) && cuts::pi0_leading_shower_containment_cut(obj) && cuts::pi0_subleading_shower_containment_cut(obj)
+			&& cuts::pi0ana::leading_photon_ke_cut(obj, {params[6]}) && !cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 0;
 	        // NCpi0 non-signal background
 	        else if(num_primary_pi0s > 0 && !cuts::iscc(obj)) cat = 1;
 			// CCpi0
@@ -348,7 +299,7 @@ namespace vars::pi0ana
      * @return the enumerated topology of the interaction.
      */
     template<class T>
-    double category_topology_single_shower(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params={})
+    double category_topology_single_photon(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params={})
     {
 		double num_primary_pi0s = utilities::true_primary_pi0_multiplicity(obj, {0.0});
 
@@ -359,11 +310,11 @@ namespace vars::pi0ana
 	    if(cuts::neutrino(obj))
 	    {
             // NCpi0 single shower signal
-	        if(cuts::no_muons(obj, {params[1]}) && cuts::no_charged_pions(obj, {params[2]}) && cuts::pi0ana::single_shower(obj, {params[0]}) 
-			&& cuts::fiducial_cut(obj) && !cuts::iscc(obj)) cat = 0;
+	        if(cuts::no_muons(obj, {params[1]}) && cuts::no_charged_pions(obj, {params[2]}) && cuts::single_photon(obj, {params[0]})
+			&& cuts::leading_primary_photon_containment_cut(obj) && cuts::fiducial_cut(obj) && !cuts::iscc(obj)) cat = 0;
 			// CCpi0 single shower signal
-			else if(cuts::no_muons(obj, {params[1]}) && cuts::no_charged_pions(obj, {params[2]}) && cuts::pi0ana::single_shower(obj, {params[0]}) 
-			&& cuts::fiducial_cut(obj) && cuts::iscc(obj)) cat = 1;
+			else if(cuts::no_muons(obj, {params[1]}) && cuts::no_charged_pions(obj, {params[2]}) && cuts::single_photon(obj, {params[0]})
+			&& cuts::leading_primary_photon_containment_cut(obj) && cuts::fiducial_cut(obj) && cuts::iscc(obj)) cat = 1;
 	        // NCpi0 non-signal background
 	        else if(num_primary_pi0s > 0 && !cuts::iscc(obj)) cat = 2;
 			// CCpi0
@@ -374,56 +325,6 @@ namespace vars::pi0ana
 	    return cat;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_single_shower, category_topology_single_shower);
-
-	/**
-     * @brief Variable for enumerating interaction topologies.
-     * @details This variable provides a basic categorization of interactions
-     * using the following categories:
-     * 0: NCpi0 single shower signal
-	 * 1: CCpi0 single shower signal
-     * 2: NCpi0 non-signal background
-     * 3: CCpi0 non-signal background
-	 * 4: Other nu without pi0.
-     * 10: Cosmic
-     * @param obj the interaction to apply the variable on.
-     * @return the enumerated topology of the interaction.
-     */
-    template<class T>
-    double category_topology_single_shower_v2(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params={})
-    {
-		double num_primary_pi0s = utilities::true_primary_pi0_multiplicity(obj, {0.0});
-
-		bool shower_in_fid_vol(false);
-        size_t phi = selectors::leading_primary_shower(obj);
-
-	    if(phi != kNoMatch)
-		{
-			auto & lead(obj.particles[phi]);
-			shower_in_fid_vol = pcuts::containment_cut(lead);
-		}
-
-	    // Cosmic
-	    uint16_t cat(10);
-	
-	    // Neutrino
-	    if(cuts::neutrino(obj))
-	    {
-            // NCpi0 single shower signal
-	        if(cuts::no_muons(obj, {params[1]}) && cuts::no_charged_pions(obj, {params[2]}) && cuts::pi0ana::single_shower(obj, {params[0]}) && shower_in_fid_vol
-			&& cuts::fiducial_cut(obj) && !cuts::iscc(obj)) cat = 0;
-			// CCpi0 single shower signal
-			else if(cuts::no_muons(obj, {params[1]}) && cuts::no_charged_pions(obj, {params[2]}) && cuts::pi0ana::single_shower(obj, {params[0]}) && shower_in_fid_vol
-			&& cuts::fiducial_cut(obj) && cuts::iscc(obj)) cat = 1;
-	        // NCpi0 non-signal background
-	        else if(num_primary_pi0s > 0 && !cuts::iscc(obj)) cat = 2;
-			// CCpi0
-	        else if(num_primary_pi0s > 0 && cuts::iscc(obj)) cat = 3;
-	        // Other nu without pi0
-	        else if(num_primary_pi0s == 0) cat = 4;
-	    }
-	    return cat;
-    }
-    REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_single_shower_v2, category_topology_single_shower_v2);
 
 	/**
      * @brief Variable for enumerating the effect of truth level cuts for NCpi0 interactions.
@@ -439,22 +340,6 @@ namespace vars::pi0ana
 	template<class T>
     double ncpi0_truth_cut_study(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params={})
     {
-		bool leading_shower_in_fid_vol(false);
-		bool subleading_shower_in_fid_vol(false);
-        size_t phi = selectors::pi0_leading_shower(obj);
-		size_t dex = selectors::pi0_subleading_shower(obj);
-
-	    if(phi != kNoMatch) 
-		{
-			auto & lead(obj.particles[phi]);
-			leading_shower_in_fid_vol = pcuts::containment_cut(lead);
-		}
-		if(dex != kNoMatch)
-		{
-        	auto & sublead(obj.particles[dex]);
-			subleading_shower_in_fid_vol = pcuts::containment_cut(sublead);
-		}
-
 	    // No cut
 	    double cut_results = 5.0;
 		bool run = true;
@@ -466,12 +351,6 @@ namespace vars::pi0ana
 		bool fiducial_cut = cuts::fiducial_cut(obj);
 		run = run && fiducial_cut;
 		cut_results = cut_results * 10 + fiducial_cut*2 + run;
-		// Leading in fiducial volume
-		run = run && leading_shower_in_fid_vol;
-		cut_results = cut_results * 10 + leading_shower_in_fid_vol*2 + run;
-		// Subleading in fiducial volume
-		run = run && subleading_shower_in_fid_vol;
-		cut_results = cut_results * 10 + subleading_shower_in_fid_vol*2 + run;
 		// No muons
 		bool no_muons_cut = cuts::no_muons(obj, {params[1]});
 		run = run && no_muons_cut;
@@ -484,6 +363,14 @@ namespace vars::pi0ana
 		bool two_photons_cut = cuts::two_photons(obj, {params[0]});
 		run = run && two_photons_cut;
 		cut_results = cut_results * 10 + two_photons_cut*2 + run;
+		// Leading in fiducial volume
+		bool leading_shower_in_fid_vol = cuts::pi0_leading_shower_containment_cut(obj);
+		run = run && leading_shower_in_fid_vol;
+		cut_results = cut_results * 10 + leading_shower_in_fid_vol*2 + run;
+		// Subleading in fiducial volume
+		bool subleading_shower_in_fid_vol = cuts::pi0_subleading_shower_containment_cut(obj);
+		run = run && subleading_shower_in_fid_vol;
+		cut_results = cut_results * 10 + subleading_shower_in_fid_vol*2 + run;
 		// Leading photon KE cut
 		bool leading_photon_ke_cut = cuts::pi0ana::leading_photon_ke_cut(obj, {params[5]});
 		run = run && leading_photon_ke_cut;
