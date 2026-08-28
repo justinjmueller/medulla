@@ -1057,5 +1057,54 @@ namespace cuts
     }
     REGISTER_CUT_SCOPE(RegistrationScope::True, neutrino_pdg, neutrino_pdg);
 
+        /**
+     * @brief Apply a containment cut on a selector-chosen particle.
+     * @details Runs the given selector on the interaction to identify a single
+     * particle of interest, then requires that particle to be contained. If the
+     * selector returns kNoMatch the cut fails (conservative). The selector name
+     * is passed at registration time via the template parameter, so one
+     * instantiation is created per selector you want to cut on.
+     * @tparam T the type of interaction (true or reco).
+     * @tparam SelectorFn a callable with signature size_t(const T&).
+     * @param obj the interaction to select on.
+     * @return true if the selected particle is contained.
+     */
+    template<class T, auto SelectorFn>
+    bool selected_particle_containment_cut(const T & obj)
+    {
+        size_t idx = SelectorFn(obj);
+        if(idx == kNoMatch) return false;
+        return obj.particles[idx].is_contained == 1;
+    }
+
+    // Concrete instantiations — one per selector you need.
+    template<class T>
+    bool pi0_leading_shower_containment_cut(const T & obj)
+    {
+        return selected_particle_containment_cut<T, selectors::pi0_leading_shower<T>>(obj);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, pi0_leading_shower_containment_cut, pi0_leading_shower_containment_cut);
+
+    template<class T>
+    bool pi0_subleading_shower_containment_cut(const T & obj)
+    {
+        return selected_particle_containment_cut<T, selectors::pi0_subleading_shower<T>>(obj);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, pi0_subleading_shower_containment_cut, pi0_subleading_shower_containment_cut);
+
+    template<class T>
+    bool leading_primary_shower_containment_cut(const T & obj)
+    {
+        return selected_particle_containment_cut<T, selectors::leading_primary_shower<T>>(obj);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, leading_primary_shower_containment_cut, leading_primary_shower_containment_cut);
+
+    template<class T>
+    bool leading_primary_photon_containment_cut(const T & obj)
+    {
+        return selected_particle_containment_cut<T, selectors::leading_primary_photon<T>>(obj);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, leading_primary_photon_containment_cut, leading_primary_photon_containment_cut);
+
 }
 #endif
