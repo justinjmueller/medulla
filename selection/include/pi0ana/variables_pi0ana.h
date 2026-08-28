@@ -283,7 +283,7 @@ namespace vars::pi0ana
 	    }
 	    return cat;
     }
-    REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_ncpi0_simple3, category_topology_ncpi0_simple3);
+    REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_ncpi0_simple2, category_topology_ncpi0_simple2);
 
 	/**
      * @brief Variable for enumerating interaction topologies.
@@ -324,7 +324,7 @@ namespace vars::pi0ana
 	    }
 	    return cat;
     }
-    REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_single_shower, category_topology_single_shower);
+    REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_single_photon, category_topology_single_photon);
 
 	/**
      * @brief Variable for enumerating the effect of truth level cuts for NCpi0 interactions.
