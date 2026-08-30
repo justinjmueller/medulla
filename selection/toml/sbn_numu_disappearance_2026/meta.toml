@@ -53,7 +53,10 @@ output_pattern = "spineosc_numu_%e_%t_detvar"
     "sbnd_intime_mc5e18", "sbnd_intime_mc1e20",
     "sbnd_detvar_cv", "sbnd_detvar_dent",
     "sbnd_detvar_sce0x", "sbnd_detvar_sce2x",
-    "sbnd_detvar_charge_scale",]
+    "sbnd_detvar_charge_scale",
+    "sbnd_detvar_p5_gain", "sbnd_detvar_m5_gain", "sbnd_detvar_smear15",
+    "sbnd_wiremod_xthetaxw", "sbnd_wiremod_yz",
+  ]
 
   [toml.enable.icarus]
   keys = [
