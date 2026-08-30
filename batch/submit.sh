@@ -1,28 +1,36 @@
 #!/bin/bash
 
 #######################################################################
-# Usage: submit.sh [--project=PROJECT] [--tag=TAG] [--sample=SAMPLE]
+# Usage: submit.sh [--project=PROJECT] [--tag=TAG] [--sample=SAMPLE] [--force]
 #
 # Arguments:
 #   --project=PROJECT   : Specify the project directory
 #   --tag=TAG           : Git ref to checkout on grid nodes (default: develop)
 #   --sample=SAMPLE     : Restrict job selection to the given sample
+#   --force              : Overwrite pre-existing output files at the
+#                          destination (e.g. left behind by a prior failed
+#                          or resubmitted attempt at the same job) instead
+#                          of failing the copy-back. Off by default so that
+#                          two jobs unexpectedly racing to write the same
+#                          output do not silently clobber one another.
 #######################################################################
 
 # Print usage information
 usage() {
-  echo "Usage: submit.sh [--project=PROJECT] [--tag=TAG] [--sample=SAMPLE]"
+  echo "Usage: submit.sh [--project=PROJECT] [--tag=TAG] [--sample=SAMPLE] [--force]"
   echo ""
   echo "Arguments:"
   echo "  --project=PROJECT   : Specify the project directory"
   echo "  --tag=TAG           : Git ref to checkout on grid nodes (default: develop)"
   echo "  --sample=SAMPLE     : Restrict job selection to the given sample"
+  echo "  --force              : Overwrite pre-existing output files at the destination"
 }
 
 # Initialize variables
 PROJECT=""
 TAG="develop"
 SAMPLE=""
+FORCE=""
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -50,6 +58,10 @@ while [[ $# -gt 0 ]]; do
     --sample)
       SAMPLE="$2"
       shift 2
+      ;;
+    --force)
+      FORCE=1
+      shift
       ;;
     -h|--help)
       usage
@@ -86,6 +98,22 @@ fi
 # IFDH options
 export IFDH_CP_MAXRETRIES=0
 export IFDH_WEB_TIMEOUT=100
+
+# Copy a local file to the given /pnfs destination. dCache does not allow
+# overwriting a file in place, so a stale destination left behind by a
+# prior failed or resubmitted attempt at this same job would otherwise
+# cause the copy to fail. With --force, remove any existing file at the
+# destination first; without it, leave a collision alone and let the copy
+# fail loudly (the default, since silently overwriting could mask two
+# jobs unexpectedly racing to write the same output).
+copy_output() {
+    local src="$1"
+    local dst="$2"
+    if [[ -n "$FORCE" ]]; then
+        ifdh rm "$dst" 2>/dev/null
+    fi
+    ifdh cp "$src" "$dst"
+}
 
 # Setup CVMFS area
 source /cvmfs/icarus.opensciencegrid.org/products/icarus/setup_icarus.sh
@@ -167,15 +195,19 @@ done
 ls -lrth data/
 
 # Modify the job_config.toml to use local paths for the surviving files, and
-# remove the array entries for any files that were dropped above. TOML
-# tolerates a trailing comma before the closing bracket, so deleting any one
-# entry's line leaves a syntactically valid array.
+# remove the array entries for any files that were dropped above. The path
+# array may be serialized on a single line, so a dropped entry must be
+# removed in place (its quoted string plus a trailing comma, if present) --
+# deleting the whole matching line would risk wiping out every other path
+# sharing that line. TOML tolerates a trailing comma before the closing
+# bracket, so removing just the "path", substring (or, for a trailing entry
+# with no comma of its own, just "path") leaves a syntactically valid array.
 for p in "${good_paths[@]}"; do
     b=$(basename "$p")
     sed -i "s#\"$p\"#\"data/$b\"#g" job_config.toml
 done
 for p in "${bad_files[@]}"; do
-    sed -i "\#\"$p\"#d" job_config.toml
+    sed -i -e "s#\"$p\",[[:space:]]*##g" -e "s#\"$p\"##g" job_config.toml
 done
 
 # If every input file for this job was dropped, fail explicitly rather than
@@ -189,7 +221,7 @@ fi
 if [[ ${#bad_files[@]} -gt 0 ]]; then
     printf '%s\n' "${bad_files[@]}" > bad_files.log
     printf -v BADNAME "bad_files_jobid%04d.log" "$JOBID"
-    ifdh cp bad_files.log $PROJECT/output/$BADNAME
+    copy_output bad_files.log $PROJECT/output/$BADNAME
 fi
 
 # Dump some info for debugging
@@ -207,7 +239,7 @@ ls -lrth
 
 # Copy output file to the output directory
 printf -v RAWNAME "output_jobid%04d.root" "$JOBID"
-ifdh cp output.root $PROJECT/output/$RAWNAME
+copy_output output.root $PROJECT/output/$RAWNAME
 
 # Run medulla (systematics)
 ./systematics/run_systematics systematics.toml
@@ -215,4 +247,4 @@ ls -lrth
 
 # Copy output file to the output directory
 printf -v SYSTNAME "output_systematics_jobid%04d.root" "$JOBID"
-ifdh cp output_sys.root $PROJECT/output/$SYSTNAME
+copy_output output_sys.root $PROJECT/output/$SYSTNAME

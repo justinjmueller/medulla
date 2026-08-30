@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 import sqlite3
+import tempfile
 import time
 import toml
 from catalog import resolve_samples
@@ -118,6 +119,44 @@ def safe_copy(src, dst):
     except OSError:
         dst.unlink(missing_ok=True)
         subprocess.run(['ifdh', 'cp', str(src), str(dst)], check=True)
+
+def safe_write_text(dst, content):
+    """
+    Write text to a file, working around dCache quirks: /pnfs does not
+    allow overwriting a file in place (a repeat write to an existing
+    destination fails, confirmed via gfal-copy's "DESTINATION OVERWRITE"
+    error), and even a fresh direct open()/write() can fail with EPERM the
+    way safe_copy() already works around for existing-file copies.
+
+    Deletes the destination first (matching the same "delete before
+    write" precaution already used for project.db/campaign.db elsewhere
+    in this codebase), then tries a plain direct write; on OSError, falls
+    back to writing a local temp file and moving it into place with
+    `ifdh cp`.
+
+    Parameters
+    ----------
+    dst : str | Path
+        Destination file path.
+    content : str
+        Text content to write.
+
+    Returns
+    -------
+    None.
+    """
+    dst = Path(dst)
+    dst.unlink(missing_ok=True)
+    try:
+        dst.write_text(content)
+    except OSError:
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.tmp') as f:
+            f.write(content)
+            tmp = Path(f.name)
+        try:
+            subprocess.run(['ifdh', 'cp', str(tmp), str(dst)], check=True)
+        finally:
+            tmp.unlink(missing_ok=True)
 
 def locate_samweb_files(defname : str, experiment : str) -> list:
     """
@@ -602,6 +641,7 @@ def launch_jobsub(
     disk : Optional[int] = None,
     lifetime : str = '1h',
     verbose : bool = False,
+    force : bool = False,
 ):
     """
     Launch jobs using jobsub for the given project directory. If njobs
@@ -643,6 +683,13 @@ def launch_jobsub(
         exit 0 while still failing to submit some individual jobs, and
         those failures are otherwise only visible in the full output,
         which is normally discarded down to a one-line summary.
+    force : bool
+        If True, pass --force through to submit.sh so that a job's output
+        copy-back overwrites any pre-existing file at the destination
+        (e.g. left behind by a prior failed or resubmitted attempt at the
+        same job) instead of failing. Off by default, since silently
+        overwriting could mask two jobs unexpectedly racing to write the
+        same output.
 
     Returns
     -------
@@ -741,7 +788,7 @@ def launch_jobsub(
             f'--memory={memory}MB',
             disk_flag,
             #f'--expected-lifetime={lifetime}',
-            f'--expected-lifetime=3h',
+            f'--expected-lifetime=6h',
             '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE',
             "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
             '--singularity-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest',
@@ -752,6 +799,8 @@ def launch_jobsub(
         ]
         if sample is not None:
             cmd.append(f'--sample={sample}')
+        if force:
+            cmd.append('--force')
         label = f" for sample '{sample}'" if sample is not None else ""
         submissions.append((cmd, count, label))
 

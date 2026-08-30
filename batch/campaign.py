@@ -18,7 +18,7 @@ from pathlib import Path
 
 from auth import authenticate
 from catalog import resolve_samples
-from utilities import create_new_project, check_project_status, launch_jobsub, safe_copy
+from utilities import create_new_project, check_project_status, launch_jobsub, safe_copy, safe_write_text
 
 # Repo root is two levels above this script (batch/ -> repo root).
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -694,7 +694,7 @@ def _run_one_scan(campaign_dir, project_name, project_dir, print_lock, timeout=1
     scan_dir.mkdir(parents=True, exist_ok=True)
     filelist_path = scan_dir / f"{project_name}_filelist.txt"
     report_path = scan_dir / f"{project_name}_report.txt"
-    filelist_path.write_text('\n'.join(str(f) for f in output_files) + '\n')
+    safe_write_text(filelist_path, '\n'.join(str(f) for f in output_files) + '\n')
     report_path.unlink(missing_ok=True)
 
     with print_lock:
@@ -761,7 +761,14 @@ def cmd_scan(args):
             results = {}
             for future in as_completed(future_to_row):
                 row = future_to_row[future]
-                results[row['project_id']] = future.result()
+                try:
+                    results[row['project_id']] = future.result()
+                except Exception as e:
+                    # Don't let one project's unexpected failure discard
+                    # every other project's already-completed scan.
+                    print(f"{_TAG_SCAN} {_A.RED}Error:{_A.RESET} scan crashed for "
+                          f"{row['analysis']}_{row['role']}_{row['experiment']}: {e}")
+                    results[row['project_id']] = {'n_checked': 0, 'bad_files': [], 'error': str(e)}
 
         table_rows = []
         for row in rows:
@@ -1197,7 +1204,7 @@ def cmd_launch(args):
                 print(f"\n[CAMPAIGN] Launching: {row['analysis']}/{row['role']}_{row['experiment']}")
                 try:
                     ok = launch_jobsub(proj_dir, exp=exp, njobs=njobs, njobs_per_sample=njobs_per_sample,
-                                       confirm=False, tag=tag, verbose=args.verbose)
+                                       confirm=False, tag=tag, verbose=args.verbose, force=args.force)
                 except Exception as e:
                     print(f"[CAMPAIGN] Launch failed for {proj_dir}: {e}")
                     if args.verbose:
@@ -1350,7 +1357,7 @@ def _run_one_hadd(campaign_dir, row, out_path, input_glob, label, print_lock):
     filelist_dir = campaign_dir / 'filelists'
     filelist_dir.mkdir(exist_ok=True)
     filelist_path = filelist_dir / f"{out_path.stem}.txt"
-    filelist_path.write_text('\n'.join(files) + '\n')
+    safe_write_text(filelist_path, '\n'.join(files) + '\n')
 
     with print_lock:
         print(f"{_TAG_FINALIZE} hadd → {_A.CYAN}{out_path.name}{_A.RESET} "
@@ -1450,12 +1457,21 @@ def cmd_finalize(args):
     print_lock = threading.Lock()
     n_workers = max(1, args.workers)
     with ThreadPoolExecutor(max_workers=n_workers) as executor:
-        futures = [
-            executor.submit(_run_one_hadd, campaign_dir, row, out_path, input_glob, label, print_lock)
+        future_to_task = {
+            executor.submit(_run_one_hadd, campaign_dir, row, out_path, input_glob, label, print_lock): out_path
             for row, out_path, input_glob, label in tasks
-        ]
-        for future in as_completed(futures):
-            ok, skipped = future.result()
+        }
+        for future in as_completed(future_to_task):
+            try:
+                ok, skipped = future.result()
+            except Exception as e:
+                # Don't let one merge's unexpected failure discard every
+                # other merge that already completed successfully.
+                out_path = future_to_task[future]
+                print(f"{_TAG_FINALIZE} {_A.RED}Error:{_A.RESET} hadd crashed for "
+                      f"{out_path.name}: {e}")
+                n_skipped += 1
+                continue
             if ok:
                 n_ok += 1
             else:
@@ -1602,6 +1618,12 @@ def main():
                           help='Show full jobsub_submit output (stdout/stderr) for every project, '
                                'including successful submissions -- use this to catch per-job '
                                'submission failures that do not fail the overall command')
+    p_launch.add_argument('--force', action='store_true',
+                          help='Overwrite pre-existing output files at the destination (e.g. left '
+                               'behind by a prior failed or resubmitted attempt at the same job) '
+                               'instead of failing the copy-back. Off by default, since silently '
+                               'overwriting could mask two jobs unexpectedly racing to write the '
+                               'same output.')
     launch_grp = p_launch.add_mutually_exclusive_group()
     launch_grp.add_argument('--test', action='store_true',
                             help='Submit one job per project to verify setup')

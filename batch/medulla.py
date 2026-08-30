@@ -18,6 +18,7 @@ def main(
     memory : int = 1800,
     disk : Optional[int] = None,
     lifetime : str = '1h',
+    force : bool = False,
 ):
     """
     Main function to run the medulla script.
@@ -54,7 +55,13 @@ def main(
     disk : int | None
         Amount of disk to request for each job in GB. If None, use default.
     lifetime : str
-        Expected lifetime of each job (e.g., '1h', '30m'). 
+        Expected lifetime of each job (e.g., '1h', '30m').
+    force : bool
+        If True, overwrite pre-existing output files at the destination
+        (e.g. left behind by a prior failed or resubmitted attempt at the
+        same job) instead of failing the copy-back. Off by default, since
+        silently overwriting could mask two jobs unexpectedly racing to
+        write the same output.
 
     Returns
     -------
@@ -85,19 +92,19 @@ def main(
     if test_job:
         if not project_exists:
             raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
-        launch_jobsub(project_dir, experiment, njobs=1, tag=tag, memory=memory, disk=disk, lifetime=lifetime)
+        launch_jobsub(project_dir, experiment, njobs=1, tag=tag, memory=memory, disk=disk, lifetime=lifetime, force=force)
 
     # If the user requested to launch jobs, do so.
     elif launch_jobs is not None:
         if not project_exists:
             raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
-        launch_jobsub(project_dir, experiment, njobs=launch_jobs, tag=tag, memory=memory, disk=disk, lifetime=lifetime)
+        launch_jobsub(project_dir, experiment, njobs=launch_jobs, tag=tag, memory=memory, disk=disk, lifetime=lifetime, force=force)
 
     # If the user requested to launch jobs per sample, do so.
     elif njobs_per_sample is not None:
         if not project_exists:
             raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
-        launch_jobsub(project_dir, experiment, njobs_per_sample=njobs_per_sample, tag=tag, memory=memory, disk=disk, lifetime=lifetime)
+        launch_jobsub(project_dir, experiment, njobs_per_sample=njobs_per_sample, tag=tag, memory=memory, disk=disk, lifetime=lifetime, force=force)
 
 if __name__ == '__main__':
     p = ArgumentParser(description='Run medulla.')
@@ -185,6 +192,14 @@ if __name__ == '__main__':
         help="Expected lifetime of each job (e.g., '1h', '30m') (default: '1h')."
     )
 
+    p.add_argument(
+        '--force', action='store_true',
+        help='Overwrite pre-existing output files at the destination (e.g. left behind by a '
+             'prior failed or resubmitted attempt at the same job) instead of failing the '
+             'copy-back. Off by default, since silently overwriting could mask two jobs '
+             'unexpectedly racing to write the same output.'
+    )
+
     args = p.parse_args()
 
     # Requirement: the experiment must be sbnd or icarus.
@@ -224,4 +239,5 @@ if __name__ == '__main__':
         memory=args.memory,
         disk=args.disk,
         lifetime=args.lifetime,
+        force=args.force,
     )
