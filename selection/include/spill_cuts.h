@@ -36,7 +36,7 @@ namespace scut
      */
     template<typename T>
     bool no_cut(const T & spill) { return true; }
-    REGISTER_CUT_SCOPE(RegistrationScope::Spill, no_cut, no_cut);
+    REGISTER_CUT_SCOPE(RegistrationScope::BNBSpill, no_cut, no_cut);
 
     /**
      * @brief Apply a cut on various spill properties.
@@ -72,6 +72,6 @@ namespace scut
             spill.THCURR > +173 && spill.THCURR < +175
         );
     }
-    REGISTER_CUT_SCOPE(RegistrationScope::Spill, beam_quality_cut, beam_quality_cut);
+    REGISTER_CUT_SCOPE(RegistrationScope::BNBSpill, beam_quality_cut, beam_quality_cut);
 } // namespace scut
 #endif // SPILL_CUTS_H

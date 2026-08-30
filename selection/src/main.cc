@@ -29,6 +29,7 @@
 #include "event_cuts.h"
 #include "event_variables.h"
 #include "spill_cuts.h"
+#include "spill_vars.h"
 #include "selectors.h"
 #include "biselectors.h"
 #include "analysis.h"
@@ -273,7 +274,9 @@ int main(int argc, char * argv[])
                             || var_type == "reco_particle"
                             || var_type == "true_bivar"
                             || var_type == "reco_bivar"
-                            || var_type == "event")
+                            || var_type == "event"
+                            || var.get_string_field("type") == "bnb_spill"
+                            || var.get_string_field("type") == "numi_spill")
                     {
                         if(var.get_string_field("name") == "category" && var_type == "true")
                         {

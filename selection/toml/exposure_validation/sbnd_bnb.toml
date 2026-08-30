@@ -1,0 +1,86 @@
+[general]
+output = "sbnd_bnb"
+
+[[sample]]
+name = "onbeam_run1_gen1"
+path = "defname:data_MCP2025C_Spring25_reprocess_FullData1e20_bnblight_v10_06_00_09_flatcaf_sbnd"
+ismc = false
+disable = false
+
+[[sample]]
+name = "onbeam_run1_gen2"
+path = "defname:data_SBND2026A_gen2_BNB-Run1_v10_14_02_02_flatcaf_sbnd"
+ismc = false
+disable = false
+
+[[sample]]
+name = "offbeam_run1_gen1"
+path = "defname:data_MCP2025C_Spring25_reprocess_Intime_offbeamlight_v10_06_00_09_flatcaf_sbnd"
+ismc = false
+disable = false
+
+[[sample]]
+name = "offbeam_run1_gen2"
+path = "defname:data_SBND2026A_gen2_InTime-Run1_v10_14_02_02_flatcaf_sbnd"
+ismc = false
+disable = false
+
+[[sample]]
+name = "offbeam_run2_gen1"
+path = "defname:data_MCP2025C_Spring25-Run2_InTimeCosmic_offbeamlight_v10_06_00_09_flatcaf_sbnd"
+ismc = false
+disable = false
+
+[[tree]]
+name = "events"
+sim_only = false
+mode = "event"
+cut = [
+    { name = "no_cut", type = "event" },
+]
+branch = [
+    { name = "is_first_in_subrun",      type = "event" },
+    { name = "nbnb",                    type = "event" },
+    { name = "bnb_fom",                 type = "event" },
+    { name = "noffbeambnb",             type = "event" },
+    { name = "unfolded_pot_bnb",        type = "event" },
+    { name = "unfolded_nbnb",           type = "event" },
+    { name = "global_trigger_time",     type = "event" },
+    { name = "trigger_within_gate",     type = "event" },
+    { name = "beam_time",               type = "event" },
+]
+
+[[tree]]
+name = "spills"
+sim_only = false
+mode = "event"
+cut = [
+    { name = "no_cut", type = "event" },
+]
+branch = [
+    { name = "event",           type = "bnb_spill" },
+    { name = "spill_time_sec",  type = "bnb_spill" },
+    { name = "spill_time_nsec", type = "bnb_spill" },
+    { name = "fom",             type = "bnb_spill" },
+    { name = "tor860",          type = "bnb_spill" },
+    { name = "tor875",          type = "bnb_spill" },
+    { name = "thcurr",          type = "bnb_spill" },
+    { name = "hp875",           type = "bnb_spill" },
+    { name = "vp875",           type = "bnb_spill" },
+    { name = "lm875a",          type = "bnb_spill" },
+    { name = "lm875b",          type = "bnb_spill" },
+    { name = "lm875c",          type = "bnb_spill" },
+    { name = "hp873",           type = "bnb_spill" },
+    { name = "vp873",           type = "bnb_spill" },
+    { name = "hp875",           type = "bnb_spill" },
+    { name = "vp875",           type = "bnb_spill" },
+    { name = "m875hs",          type = "bnb_spill" },
+    { name = "m875vs",          type = "bnb_spill" },
+    { name = "m876hs",          type = "bnb_spill" },
+    { name = "m876vs",          type = "bnb_spill" },
+    { name = "hptg1",           type = "bnb_spill" },
+    { name = "vptg1",           type = "bnb_spill" },
+    { name = "hptg2",           type = "bnb_spill" },
+    { name = "vptg2",           type = "bnb_spill" },
+    { name = "btjt2",           type = "bnb_spill" }
+]

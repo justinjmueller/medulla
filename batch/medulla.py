@@ -9,6 +9,7 @@ def main(
     experiment : str,
     create_project : bool,
     launch_jobs : int = None,
+    njobs_per_sample : int = None,
     test_job : bool = False,
     tml : str = None,
     batch_size : int = None,
@@ -17,6 +18,7 @@ def main(
     memory : int = 1800,
     disk : Optional[int] = None,
     lifetime : str = '1h',
+    force : bool = False,
 ):
     """
     Main function to run the medulla script.
@@ -32,6 +34,11 @@ def main(
         batch_size must be provided.
     launch_jobs : int
         Number of jobs to launch. If None, launch all pending jobs.
+    njobs_per_sample : int
+        Number of jobs to launch per sample. Mutually exclusive with
+        launch_jobs and test_job. Requires a project database created
+        with per-sample job tracking -- recreate the project if it
+        predates this option.
     test_job : bool
         Whether to run a single test job to verify the configuration.
     tml : str
@@ -48,7 +55,13 @@ def main(
     disk : int | None
         Amount of disk to request for each job in GB. If None, use default.
     lifetime : str
-        Expected lifetime of each job (e.g., '1h', '30m'). 
+        Expected lifetime of each job (e.g., '1h', '30m').
+    force : bool
+        If True, overwrite pre-existing output files at the destination
+        (e.g. left behind by a prior failed or resubmitted attempt at the
+        same job) instead of failing the copy-back. Off by default, since
+        silently overwriting could mask two jobs unexpectedly racing to
+        write the same output.
 
     Returns
     -------
@@ -67,7 +80,7 @@ def main(
             raise ValueError("Batch size must be provided when creating a new project.")
         if project_exists:
             raise FileExistsError(f"Project database {project_dir / 'project.db'} already exists.")
-        create_new_project(project_dir, tml, batch_size, systematic)
+        create_new_project(project_dir, tml, batch_size, systematic, experiment=experiment)
         print(f"[INFO] -- Created new project in {project_dir}")
 
     # If the project exists, do a check of the project status.
@@ -79,13 +92,19 @@ def main(
     if test_job:
         if not project_exists:
             raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
-        launch_jobsub(project_dir, experiment, njobs=1, tag=tag, memory=memory, disk=disk, lifetime=lifetime)
+        launch_jobsub(project_dir, experiment, njobs=1, tag=tag, memory=memory, disk=disk, lifetime=lifetime, force=force)
 
     # If the user requested to launch jobs, do so.
-    if launch_jobs is not None:
+    elif launch_jobs is not None:
         if not project_exists:
             raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
-        launch_jobsub(project_dir, experiment, njobs=launch_jobs, tag=tag, memory=memory, disk=disk, lifetime=lifetime)
+        launch_jobsub(project_dir, experiment, njobs=launch_jobs, tag=tag, memory=memory, disk=disk, lifetime=lifetime, force=force)
+
+    # If the user requested to launch jobs per sample, do so.
+    elif njobs_per_sample is not None:
+        if not project_exists:
+            raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
+        launch_jobsub(project_dir, experiment, njobs_per_sample=njobs_per_sample, tag=tag, memory=memory, disk=disk, lifetime=lifetime, force=force)
 
 if __name__ == '__main__':
     p = ArgumentParser(description='Run medulla.')
@@ -142,6 +161,17 @@ if __name__ == '__main__':
              'then all pending jobs will be launched.'
     )
 
+    # The --njobs-per-sample flag launches up to N jobs per sample rather
+    # than N jobs total, ensuring every sample gets jobs launched even
+    # when the project has an uneven sample mix.
+    p.add_argument(
+        '--njobs-per-sample', type=int, default=None, metavar='N',
+        help='Launch at most N jobs per sample (ensures every sample gets jobs launched '
+             'even when the project has an uneven sample mix). Mutually exclusive with '
+             '--launch-jobs/--test-job. Requires a project database created with '
+             'per-sample job tracking -- recreate the project if it predates this option.'
+    )
+
     p.add_argument(
         '--tag', type=str, default='develop',
         help='Tag to use for the medulla repository (defaults to develop).'
@@ -162,6 +192,14 @@ if __name__ == '__main__':
         help="Expected lifetime of each job (e.g., '1h', '30m') (default: '1h')."
     )
 
+    p.add_argument(
+        '--force', action='store_true',
+        help='Overwrite pre-existing output files at the destination (e.g. left behind by a '
+             'prior failed or resubmitted attempt at the same job) instead of failing the '
+             'copy-back. Off by default, since silently overwriting could mask two jobs '
+             'unexpectedly racing to write the same output.'
+    )
+
     args = p.parse_args()
 
     # Requirement: the experiment must be sbnd or icarus.
@@ -175,10 +213,11 @@ if __name__ == '__main__':
     if args.create_project and args.batch_size is None:
         p.error('--batch-size is required when --create-project is set.')
 
-    # Conditional requirement: flags --test-job and --launch-jobs are 
-    # mutually exclusive.
-    if args.test_job and args.launch_jobs is not None:
-        p.error('--test-job and --launch-jobs are mutually exclusive.')
+    # Conditional requirement: flags --test-job, --launch-jobs, and
+    # --njobs-per-sample are mutually exclusive.
+    exclusive_flags = [args.test_job, args.launch_jobs is not None, args.njobs_per_sample is not None]
+    if sum(bool(x) for x in exclusive_flags) > 1:
+        p.error('--test-job, --launch-jobs, and --njobs-per-sample are mutually exclusive.')
 
     if args.tag != 'develop':
         print(f"[INFO] -- Using tag '{args.tag}' for medulla repository.")
@@ -191,6 +230,7 @@ if __name__ == '__main__':
         experiment=args.experiment,
         create_project=args.create_project,
         launch_jobs=args.launch_jobs,
+        njobs_per_sample=args.njobs_per_sample,
         test_job=args.test_job,
         tml=args.toml,
         batch_size=args.batch_size,
@@ -199,4 +239,5 @@ if __name__ == '__main__':
         memory=args.memory,
         disk=args.disk,
         lifetime=args.lifetime,
+        force=args.force,
     )

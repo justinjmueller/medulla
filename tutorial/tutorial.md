@@ -25,7 +25,7 @@ source /cvmfs/sbnd.opensciencegrid.org/products/sbnd/setup_sbnd.sh
 source /cvmfs/icarus.opensciencegrid.org/products/icarus/setup_icarus.sh
 
 # Set up the required dependencies:
-setup sbnana v10_01_02_01 -q e26:prof
+setup sbnana v10_01_04 -q e26:prof
 setup cmake v3_27_4
 
 # Clone the medulla repository:
@@ -441,6 +441,14 @@ python3 medulla/batch/medulla.py -p <path_to_project> -e <experiment> --launch-j
 
 where `N` is some integer number of jobs to launch (e.g., `10` to launch 10 jobs). If no number is provided, all jobs will be launched. Each time this script is run, it will check for completed output files and only submit jobs that have not yet completed. This does not check for running jobs, so the user should be careful not to submit duplicate jobs.
 
+If a project contains multiple samples with very different numbers of input files, `--launch-jobs N` may only ever submit jobs from the largest sample, since it just takes the first `N` pending jobs regardless of which sample they belong to. To instead launch up to `N` jobs *per sample* (ensuring every sample gets some jobs submitted), use `--njobs-per-sample` instead:
+
+```bash
+python3 medulla/batch/medulla.py -p <path_to_project> -e <experiment> --njobs-per-sample N
+```
+
+`--njobs-per-sample` is mutually exclusive with `--test-job` and `--launch-jobs`, and requires a project created after this option was added (older projects should be recreated to use it).
+
 # Running a Campaign
 The single-project batch workflow described above works well for individual analyses, but a typical SBN physics analysis requires running the same selection over many different samples across two experiments (SBND and ICARUS), often with multiple selection roles (e.g., a primary MC selection, a data-blind-safe sample, and a data quality sample). The **campaign layer** automates this by coordinating all of those combinations in a single tracked operation.
 
@@ -500,6 +508,7 @@ The important fields are:
   * `file` — the selection TOML file for this role, relative to the `meta.toml` directory.
   * `experiments` — optional per-role override of the top-level experiment list.
   * `output_pattern` — optional filename stem used by the `finalize` subcommand when merging output files with `hadd`. The following tokens are substituted at finalize time: `%a` (analysis name), `%e` (experiment), `%t` (campaign tag), `%r` (role), `%d` (date in YYYYMMDD format). Without a trailing `#`, two merged files are produced per project: `<pattern>_nosyst.root` (plain selection output) and `<pattern>_wsyst.root` (output with systematics weights). A trailing `#` suppresses the suffix and produces only `<pattern>.root`, which is useful for data-like roles where no systematics are expected. If omitted, the default pattern `%a_%r_%e_%t_%d` is used.
+  * `sys_template` — optional path (relative to the `meta.toml` directory) to the systematics TOML template used for this role's `add_weights` trees. If omitted, the generic default template in `medulla/batch/sys_template.toml` is used. It can be a single path shared by every experiment, e.g. `sys_template = "sys.toml"`, or a `[toml.sys_template]` sub-table giving a different template per experiment, e.g. `sbnd = "sys_sbnd.toml"` / `icarus = "sys.toml"` — needed because the position-indexed systematic ordering stored in a CAF file's weight tables is not guaranteed to be the same between experiments (or productions), so a template built against one experiment's files can silently mislabel another's.
   * `[toml.enable.<experiment>]` — the sample catalog keys to activate for a given experiment. These are the keys defined in `selection/toml/common/samples.toml`. Samples whose keys are not in the `enable` list will have `disable = true` set automatically. If no `enable` block is provided for an experiment, the selection TOML is expected to contain inline `[[sample]]` blocks instead.
 
 Analyses whose selection TOMLs use inline `[[sample]]` blocks (no `[[include_samples]]`) are also fully supported — simply leave the `[toml.enable.*]` blocks empty or omit them entirely.
@@ -578,6 +587,14 @@ python3 batch/campaign.py launch --name v1.0_apr22
 
 If you want finer-grained control, `--njobs N` submits at most `N` jobs per project instead of all pending ones. `--test` and `--njobs` are mutually exclusive.
 
+A project can contain multiple samples with very different numbers of input files (e.g. a large MC sample alongside a small off-beam data sample). Because `--njobs N` just takes the first `N` pending jobs in a project regardless of sample, a small `--njobs` launch can end up submitting jobs from only the largest sample. `--njobs-per-sample N` submits at most `N` jobs *per sample* per project instead, so every sample gets some jobs launched:
+
+```bash
+python3 batch/campaign.py launch --name v1.0_apr22 --njobs-per-sample N
+```
+
+`--njobs-per-sample` is mutually exclusive with `--test` and `--njobs`, and requires projects created after this option was added — recreate the campaign (or affected projects) if they predate it.
+
 In all cases the command groups projects by experiment, authenticates once per experiment via `htgettoken` (including the OIDC browser prompt if required), and submits via `jobsub_submit`. A single confirmation prompt is shown before any jobs are submitted. After submission each project's status is updated to `submitted` in `campaign.db`.
 
 An optional `--experiment` flag restricts the launch to one experiment, which is useful if authentication for one experiment fails or needs to be deferred.
@@ -588,7 +605,7 @@ If a submission attempt fails (for example, due to an expired token), the projec
 python3 batch/campaign.py launch --name v1.0_apr22 --relaunch --test
 ```
 
-`--relaunch` expands the query to include projects with status `submitted` in addition to `created` and `partial`. It can be combined with `--test` or `--njobs`.
+`--relaunch` expands the query to include projects with status `submitted` in addition to `created` and `partial`. It can be combined with `--test`, `--njobs`, or `--njobs-per-sample`.
 
 ### Step 4 — Sync
 After the grid jobs run, use the `sync` subcommand to scan each project's output directory for completed files and update `campaign.db`:
@@ -605,7 +622,18 @@ Projects in a `partial` state are eligible for relaunch — running `launch` aga
 
 After scanning for completed files, `sync` also checks for **stub output files** — output files smaller than 1 KB that indicate a job exited before producing meaningful output. If any are found across all projects, they are listed and the user is prompted once to delete them. Stub files are excluded from the completion count regardless of whether they are deleted, so they will not block a project from reaching `completed` once the corresponding jobs are resubmitted and finish successfully.
 
-### Step 5 — Monitor
+### Step 5 — Scan (optional integrity check)
+`sync`'s completion check is size-only (`>= 1 KB`), which cannot catch a file that is large enough to pass but is still corrupt or truncated — for example a job that was killed mid-write after the ROOT header had already been flushed. The `scan` subcommand does a real integrity check by opening every completed output file with ROOT (`TFile::IsZombie()`):
+
+```bash
+python3 batch/campaign.py scan --name v1.0_apr22
+```
+
+This is a separate, deliberately-invoked command rather than part of `sync` itself — opening every file with ROOT is far more expensive than a size check, so it isn't run automatically on every sync. Only files `sync` already trusts as complete (`>= 1 KB`) are checked; anything smaller is already handled as a stub file by `sync`.
+
+If any files fail the check, they are listed once for the whole campaign and you are prompted before anything changes. On confirmation, each corrupt file is deleted and its job is reverted to `pending` in `project.db` — including updating `campaign.db`'s completion counts and status for the affected project — so it is automatically picked up the next time `launch` runs. Use `--dry-run` to see what would be flagged without deleting or reverting anything, and `--workers N` to scan multiple projects in parallel (each project's scan is independent). An optional `--experiment` flag restricts the scan to one experiment, matching `sync`/`launch`/`finalize`.
+
+### Step 6 — Monitor
 At any point, inspect the current state of the campaign with the `status` subcommand:
 
 ```bash
@@ -625,7 +653,7 @@ python3 batch/campaign.py status --name v1.0_apr22
 
 All subcommands also accept `--campaign /full/path/to/campaign` in place of `--name`, which is useful for campaigns created without `--name` or when running on a different machine where the registry is not available.
 
-### Step 6 — Finalize
+### Step 7 — Finalize
 Once the campaign is sufficiently complete, use the `finalize` subcommand to merge each project's per-job output files into a single combined ROOT file using `hadd`. The merged files are written directly into the campaign directory alongside `campaign.db`.
 
 ```bash
@@ -651,6 +679,14 @@ An optional `--experiment` flag restricts finalization to one experiment:
 
 ```bash
 python3 batch/campaign.py finalize --name v1.0_apr22 --experiment sbnd
+```
+
+Each merge's input file list is always written to a text file under `campaign_dir/filelists/` (one per merged output, kept as an audit trail) and passed to `hadd` as `hadd -f <output> @<filelist>` rather than listing every input file on the command line, which avoids hitting exec/argv length limits for projects with a large number of output files.
+
+Each project's merges are independent, so they can be run in parallel with `--workers N` (default: 1, sequential):
+
+```bash
+python3 batch/campaign.py finalize --name v1.0_apr22 --workers 4
 ```
 
 # Testing and Validation

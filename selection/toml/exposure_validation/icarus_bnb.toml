@@ -1,0 +1,80 @@
+[general]
+output = "icarus_bnb"
+
+[[sample]]
+name = "onbeam_run2"
+path = "defname:production_data_2026A_ICARUS_BNB_RUN2_reCAF_bnbmajority_BLIND_Run2_v10_06_00_12_flatcaf"
+ismc = false
+disable = false
+
+[[sample]]
+name = "onbeam_run4"
+path = "defname:icarus_recaf_2026_Run4BeamOnWF_flatcaf"
+ismc = false
+disable = false
+
+[[sample]]
+name = "offbeam_run2"
+path = "defname:production_data_2026A_ICARUS_BNB_RUN2_reCAF_offbeambnbmajority_UNBLIND_Run2_v10_06_00_12_flatcaf"
+ismc = false
+disable = false
+
+[[sample]]
+name = "offbeam_run4"
+path = "defname:icarus_recaf_2026_Run4BeamOffWF_flatcaf"
+ismc = false
+disable = false
+
+[[tree]]
+name = "events"
+sim_only = false
+mode = "event"
+cut = [
+    { name = "no_cut", type = "event" },
+]
+branch = [
+    { name = "is_first_in_subrun",      type = "event" },
+    { name = "nbnb",                    type = "event" },
+    { name = "bnb_fom",                 type = "event" },
+    { name = "noffbeambnb",             type = "event" },
+    { name = "unfolded_pot_bnb",        type = "event" },
+    { name = "unfolded_nbnb",           type = "event" },
+    { name = "global_trigger_time",     type = "event" },
+    { name = "trigger_within_gate",     type = "event" },
+    { name = "gate_delta",              type = "event" },
+]
+
+[[tree]]
+name = "spills"
+sim_only = false
+mode = "event"
+cut = [
+    { name = "no_cut", type = "event" },
+]
+branch = [
+    { name = "event",           type = "bnb_spill" },
+    { name = "spill_time_sec",  type = "bnb_spill" },
+    { name = "spill_time_nsec", type = "bnb_spill" },
+    { name = "fom",             type = "bnb_spill" },
+    { name = "tor860",          type = "bnb_spill" },
+    { name = "tor875",          type = "bnb_spill" },
+    { name = "thcurr",          type = "bnb_spill" },
+    { name = "hp875",           type = "bnb_spill" },
+    { name = "vp875",           type = "bnb_spill" },
+    { name = "lm875a",          type = "bnb_spill" },
+    { name = "lm875b",          type = "bnb_spill" },
+    { name = "lm875c",          type = "bnb_spill" },
+    { name = "hp873",           type = "bnb_spill" },
+    { name = "vp873",           type = "bnb_spill" },
+    { name = "hp875",           type = "bnb_spill" },
+    { name = "vp875",           type = "bnb_spill" },
+    { name = "m875hs",          type = "bnb_spill" },
+    { name = "m875vs",          type = "bnb_spill" },
+    { name = "m876hs",          type = "bnb_spill" },
+    { name = "m876vs",          type = "bnb_spill" },
+    { name = "hptg1",           type = "bnb_spill" },
+    { name = "vptg1",           type = "bnb_spill" },
+    { name = "hptg2",           type = "bnb_spill" },
+    { name = "vptg2",           type = "bnb_spill" },
+    { name = "btjt2",           type = "bnb_spill" }
+]

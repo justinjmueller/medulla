@@ -16,11 +16,16 @@ electron_threshold = 25.0
 muon_threshold = 143.425
 pion_threshold = 25.0
 proton_threshold = 50.0
+containment_threshold = 10.0
+cathode_fiducialization = 5.0
+intime_lb = -5.0
+intime_ub = 5.0
 
 [[include_samples]]
 file = "common/osc.toml"
 keys = [
     "sbnd_bnblight",
+    "icarus_bnblight_run2",
     "icarus_bnblight_run4",
 ]
 
@@ -29,7 +34,8 @@ name = "selected"
 sim_only = false
 mode = "reco"
 cut = [
-    { name = "fiducial_cut",          type = "reco" },
+    { name = "fiducial_cut_osc",      type = "reco" },
+    { name = "user_containment_cut",  type = "reco",  parameters = [ "@containment_threshold" ] },
     { name = "no_photons",            type = "reco",  parameters = [ "@photon_threshold"   ] },
     { name = "no_electrons",          type = "reco",  parameters = [ "@electron_threshold" ] },
     { name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold"     ] },
@@ -37,8 +43,11 @@ cut = [
     { name = "!no_protons",           type = "reco",  parameters = [ "@proton_threshold"   ] },
 ]
 branch = [
+    # Event-level branches
+    { name = "largest_flash_pe",      type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    { name = "largest_flash_time",    type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+
     # Interaction-level branches
-    { name = "containment_cut",       type = "both"    },
     { name = "dpT",                   type = "both"    },
     { name = "dalphaT",               type = "both"    },
     { name = "dphiT",                 type = "both"    },
@@ -53,12 +62,15 @@ branch = [
     { name = "muon_multiplicity",     type = "both",  parameters = [ "@muon_threshold"     ] },
     { name = "proton_multiplicity",   type = "both",  parameters = [ "@proton_threshold"   ] },
 
-    # Information for Neutrino 2026
-    { name = "cathode_crosser",       type = "both"    },
-    { name = "fiducialize_cathode",   type = "both"    },
+    # DENT Recommendations
+    { name = "fiducialize_cathode",   type = "both",  parameters = [ "@cathode_fiducialization" ] },
     { name = "veto_sbnd_highy_highz", type = "both"    },
     { name = "neutrino2026_veto",     type = "both"    },
+    { name = "cathode_crosser",       type = "both"    },
     { name = "detector",              type = "reco"    },
+
+    # Filter EE TPC (ICARUS Run 2 only)
+    { name = "user_containment_cut_filterEE",  type = "both",  parameters = [ "@containment_threshold" ] },
 
     # Leading MUON interaction-level
     { name = "start_x",               type = "both_particle", selector = "leading_muon" },
@@ -97,4 +109,27 @@ branch = [
     { name = "proton_softmax",    type = "reco_particle", selector = "leading_proton" },
     { name = "mip_softmax",       type = "reco_particle", selector = "leading_proton" },
     { name = "hadron_softmax",    type = "reco_particle", selector = "leading_proton" }
+]
+
+[[tree]]
+name = "events"
+sim_only = false
+mode = "event"
+cut = [
+    { name = "no_cut",             type = "event" },
+]
+branch = [
+    { name = "is_first_in_subrun", type = "event" },
+    { name = "pot",                type = "event" },
+    { name = "pot_from_spillinfo", type = "event" },
+    { name = "largest_flash_pe",   type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    { name = "largest_flash_time", type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    { name = "unfolded_pot_bnb",   type = "event" },
+    { name = "unfolded_nbnb",      type = "event" },
+    { name = "gate_delta",         type = "event" },
+    { name = "nbnb",               type = "event" },
+    { name = "noffbeambnb",        type = "event" },
+    { name = "ngenevt",            type = "event" },
+    { name = "nreco",              type = "event" },
+    { name = "ntrue",              type = "event" },
 ]

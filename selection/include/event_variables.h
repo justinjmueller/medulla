@@ -13,10 +13,10 @@
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
 #include "sbnanaobj/StandardRecord/SRBNBInfo.h"
 #include "sbnanaobj/StandardRecord/SRNuMIInfo.h"
-//#include "sbnana/SBNAna/Vars/BNBVars.h"
 
 #include "framework.h"
 #include "utilities.h"
+#include "spill_vars.h"
 
 /**
  * @brief Global vector to store BNB information across events.
@@ -359,6 +359,50 @@ namespace evar
     REGISTER_VAR_SCOPE(RegistrationScope::Event, gate_delta, gate_delta);
 
     /**
+     * @brief Variable for the total PE of the largest flash in the event
+     * within the configured time window.
+     * @details This variable retrieves the total PE of the largest flash in
+     * the event within the configured time window. The time window is defined
+     * by the parameters passed to the function.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @param params The time window in microseconds. The default is [-1.0, 1.0].
+     * @return the total PE of the largest flash in the event within the time
+     * window.
+     */
+    template<typename T>
+    double largest_flash_pe(const T & sr, std::vector<double> params)
+    {
+        size_t largest_flash_index = utilities::largest_opflash_index(sr, params);
+        if(largest_flash_index == kNoMatch)
+            return kNoMatchValue;
+        return sr.opflashes[largest_flash_index].totalpe;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, largest_flash_pe, largest_flash_pe);
+
+    /**
+     * @brief Variable for the time of the largest flash in the event within
+     * the configured time window.
+     * @details This variable retrieves the `firsttime` of the largest flash
+     * in the event within the configured time window. The time window is
+     * defined by the parameters passed to the function.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @param params The time window in microseconds. The default is [-1.0, 1.0].
+     * @return the time of the largest flash in the event within the time
+     * window.
+     */
+    template<typename T>
+    double largest_flash_time(const T & sr, std::vector<double> params)
+    {
+        size_t largest_flash_index = utilities::largest_opflash_index(sr, params);
+        if(largest_flash_index == kNoMatch)
+            return kNoMatchValue;
+        return sr.opflashes[largest_flash_index].firsttime;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, largest_flash_time, largest_flash_time);
+
+    /**
      * @brief Variable for time of the flash closest to the trigger time.
      * @details This variable is intended to provide the time of the flash
      * closest to the trigger time of the event. It is useful for producing a
@@ -423,23 +467,29 @@ namespace evar
     REGISTER_VAR_SCOPE(RegistrationScope::Event, time_of_flash_closest_to_trigger_rawtime, time_of_flash_closest_to_trigger_rawtime);
 
     /**
-     * @brief Variable (wrapper) for the FoM2 (Figure of Merit 2) in the event.
-     * @details This variable is a wrapper for the FoM2 variable, which is
+     * @brief Variable (wrapper) for the FoM (Figure of Merit) in the event.
+     * @details This variable is a wrapper for the FoM variable, which is
      * defined as a SpillVar in the usual CAFAna parlance. It is used as a
      * metric that roughly characterizes the overlap of the beam with the
      * target and can be used as a cut to reject events that correspond to bad
-     * beam conditions.
+     * beam conditions. Note: this is the version of the FoM that uses the
+     * multi-wire information.
      * @tparam T the top-level record.
      * @param sr the StandardRecord to apply the variable on.
-     * @return the FoM2 value for the event.
+     * @return the FoM value for the event.
      */
-    /*template<typename T>
-    double bnb_fom2(const T & sr)
+    template<typename T>
+    double bnb_fom(const T & sr)
     {
-        return ana::kSpillFoM2(&sr);
+        if(std::isnan(sr.hdr.spillbnbinfo.TOR860))
+        {
+            // This means that the spill information is not available for this
+            // event, so we return a placeholder value.
+            return PLACEHOLDERVALUE;
+        }
+        return svar::fom(sr.hdr.spillbnbinfo);
     }
-    REGISTER_VAR_SCOPE(RegistrationScope::Event, bnb_fom2, bnb_fom2);*/
-
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, bnb_fom, bnb_fom);
     /**
      * @brief Variable for the unfolded event POT (Protons on Target) for BNB.
      * @details This variable retrieves the unfolded event POT by summing up
@@ -605,6 +655,121 @@ namespace evar
         return nnumis;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Event, unfolded_nnumi, unfolded_nnumi);
+
+    /**
+     * @brief Variable for the raw DAQ header timestamp of the event.
+     * @details This variable returns the timestamp when the event is built by
+     * the event builder at DAQ-level, recorded in the SBND timing info.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the raw DAQ header timestamp.
+     */
+    template<typename T>
+    double raw_daq_header_timestamp(const T & sr) { return sr.sbnd_timings.rawDAQHeaderTimestamp; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, raw_daq_header_timestamp, raw_daq_header_timestamp);
+
+    /**
+     * @brief Variable for the SPEC-TDC timestamp of the BNB stream CRT T1 Reset.
+     * @details This variable returns the timestamp of the BNB stream CRT T1
+     * Reset recorded by the SPEC-TDC.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the SPEC-TDC CRT T1 Reset timestamp.
+     */
+    template<typename T>
+    double tdc_crtt1(const T & sr) { return sr.sbnd_timings.tdcCrtt1; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, tdc_crtt1, tdc_crtt1);
+
+    /**
+     * @brief Variable for the SPEC-TDC timestamp of the BES signal.
+     * @details This variable returns the timestamp of the BES signal sent by
+     * MFTU, recorded by the SPEC-TDC.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the SPEC-TDC BES timestamp.
+     */
+    template<typename T>
+    double tdc_bes(const T & sr) { return sr.sbnd_timings.tdcBes; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, tdc_bes, tdc_bes);
+
+    /**
+     * @brief Variable for the SPEC-TDC timestamp of the RWM signal.
+     * @details This variable returns the timestamp of the RWM signal recorded
+     * by the SPEC-TDC.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the SPEC-TDC RWM timestamp.
+     */
+    template<typename T>
+    double tdc_rwm(const T & sr) { return sr.sbnd_timings.tdcRwm; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, tdc_rwm, tdc_rwm);
+
+    /**
+     * @brief Variable for the SPEC-TDC timestamp of the Event Trigger (ETRIG).
+     * @details This variable returns the timestamp of the Event Trigger (ETRIG)
+     * sent by the PTB, recorded by the SPEC-TDC.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the SPEC-TDC ETRIG timestamp.
+     */
+    template<typename T>
+    double tdc_etrig(const T & sr) { return sr.sbnd_timings.tdcEtrig; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, tdc_etrig, tdc_etrig);
+
+    /**
+     * @brief Variable for the PTB HLT timestamp of the BNB and Offbeam stream
+     * CRT T1 Reset.
+     * @details This variable returns the timestamp of the BNB and Offbeam
+     * stream CRT T1 Reset High Level Trigger (HLT) created by the PTB.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the PTB HLT CRT T1 Reset timestamp.
+     */
+    template<typename T>
+    double hlt_crtt1(const T & sr) { return sr.sbnd_timings.hltCrtt1; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, hlt_crtt1, hlt_crtt1);
+
+    /**
+     * @brief Variable for the PTB HLT timestamp of the ETRIG.
+     * @details This variable returns the timestamp of the ETRIG High Level
+     * Trigger (HLT) created by the PTB.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the PTB HLT ETRIG timestamp.
+     */
+    template<typename T>
+    double hlt_etrig(const T & sr) { return sr.sbnd_timings.hltEtrig; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, hlt_etrig, hlt_etrig);
+
+    /**
+     * @brief Variable for the PTB HLT timestamp of the Beam Gate Acceptance.
+     * @details This variable returns the timestamp of the Beam Gate Acceptance
+     * High Level Trigger (HLT) created by the PTB.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the PTB HLT Beam Gate Acceptance timestamp.
+     */
+    template<typename T>
+    double hlt_beam_gate(const T & sr) { return sr.sbnd_timings.hltBeamGate; }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, hlt_beam_gate, hlt_beam_gate);
+
+    /**
+     * @brief Variable for the time of the trigger in the beam reference frame.
+     * @details This variable returns the time of the trigger in the beam 
+     * reference frame. Beam-related activity should appear as a "top hat"
+     * above the bath of cosmogenic activity.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the time of the trigger in the beam reference frame in
+     * nanoseconds.
+     */
+    template<typename T>
+    double beam_time(const T & sr)
+    {
+        return sr.sbnd_frames.frameHltBeamGate;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, beam_time, beam_time);
+
 }
 
 #endif

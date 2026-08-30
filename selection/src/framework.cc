@@ -200,13 +200,13 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             else
                 mctruth_cut_functions.push_back(factory(params));
         }
-        else if(cut.get_string_field("type") == "spill")
+        else if(cut.get_string_field("type") == "bnb_spill")
         {
-            std::string cut_name = "spill_" + name;
+            std::string cut_name = "bnb_spill_" + name;
             std::vector<double> params;
             if(cut.has_field("parameters"))
                 params = cut.get_double_vector("parameters");
-            auto factory = CutFactoryRegistry<SpillType>::instance().get(cut_name);
+            auto factory = CutFactoryRegistry<BNBSpillType>::instance().get(cut_name);
 
             // Transform this to a simple event-level cut.
             auto fn = [factory, params](const EventType & e) {
@@ -460,6 +460,22 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 mctruth_cut,
                 ismc));
         }
+        else if(var_type == "event")
+        {
+            // Event-level variable, duplicated once per interaction that
+            // survives the configured cuts.
+            var_name = "event_" + var_name;
+            auto factory = VarFactoryRegistry<EventType>::instance().get(var_name);
+            auto var_fn = factory(varPars);
+            return std::make_pair(var_name, spill_multivar_helper<TType, RType, TParticleType, EventType>(
+                true_cut,
+                reco_cut_functions.empty() ? std::nullopt : std::optional<CutFn<RType>>(reco_cut),
+                true_particle_cut,
+                var_fn,
+                event_cut,
+                mctruth_cut,
+                ismc));
+        }
         else
         {
             throw std::runtime_error("Illegal variable type '" + var_type + "' for variable " + var_name);
@@ -661,6 +677,22 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 mctruth_cut,
                 ismc));
         }
+        else if(var_type == "event")
+        {
+            // Event-level variable, duplicated once per interaction that
+            // survives the configured cuts.
+            var_name = "event_" + var_name;
+            auto factory = VarFactoryRegistry<EventType>::instance().get(var_name);
+            auto var_fn = factory(varPars);
+            return std::make_pair(var_name, spill_multivar_helper<RType, TType, TParticleType, EventType>(
+                reco_cut,
+                true_cut_functions.empty() ? std::nullopt : std::optional<CutFn<TType>>(true_cut),
+                true_particle_cut,
+                var_fn,
+                event_cut,
+                mctruth_cut,
+                ismc));
+        }
         else
         {
             throw std::runtime_error("Illegal variable type '" + var_type + "' for variable " + var_name);
@@ -686,6 +718,20 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             auto factory = VarFactoryRegistry<EventType>::instance().get(var_name);
             auto var_fn = factory(varPars);
             return std::make_pair(var_name, spill_multivar_helper(event_cut, var_fn));
+        }
+        else if(var_type == "bnb_spill")
+        {
+            var_name = "bnb_spill_" + var_name;
+            auto factory = VarFactoryRegistry<BNBSpillType>::instance().get(var_name);
+            auto var_fn = factory(varPars);
+            return std::make_pair(var_name, spill_collection_multivar_helper<BNBSpillType>(event_cut, var_fn));
+        }
+        else if(var_type == "numi_spill")
+        {
+            var_name = "numi_spill_" + var_name;
+            auto factory = VarFactoryRegistry<NuMISpillType>::instance().get(var_name);
+            auto var_fn = factory(varPars);
+            return std::make_pair(var_name, spill_collection_multivar_helper<NuMISpillType>(event_cut, var_fn));
         }
         else
         {
@@ -767,6 +813,16 @@ ana::SpillMultiVar spill_multivar_helper(
                             values.push_back(kNoMatchValue);
                     }
                 }
+                else if constexpr(std::is_same_v<VarOn, EventType>)
+                {
+                    // Event-level variable duplicated once per surviving
+                    // interaction: the value does not depend on i, only on
+                    // whether this interaction passes the configured cuts.
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))) && (!mctruth_cut || (i.nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[i.nu_id]))))
+                    {
+                        values.push_back(var(*sr));
+                    }
+                }
                 else if constexpr(std::is_same_v<VarOn, TParticleType> || std::is_same_v<VarOn, RParticleType>)
                 {
                     if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp[match_id]))) && (!mctruth_cut || (i.nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[i.nu_id]))))
@@ -845,6 +901,17 @@ ana::SpillMultiVar spill_multivar_helper(
                             int64_t nu_id = sr->dlp_true[match_id].nu_id;
                             values.push_back(nu_id >= 0 ? var(sr->mc.nu[nu_id]) : kNoMatchValue);
                         }
+                    }
+                }
+                else if constexpr(std::is_same_v<VarOn, EventType>)
+                {
+                    // Event-level variable duplicated once per surviving
+                    // interaction: the value does not depend on i, only on
+                    // whether this interaction passes the configured cuts.
+                    if(cuts(i) && (!comps || (match_id != kNoMatch && (*comps)(sr->dlp_true[match_id])) || !ismc)
+                        && (match_id == kNoMatch || (!mctruth_cut || (sr->dlp_true[match_id].nu_id >= 0 && (*mctruth_cut)(sr->mc.nu[sr->dlp_true[match_id].nu_id])))))
+                    {
+                        values.push_back(var(*sr));
                     }
                 }
                 else if constexpr(std::is_same_v<VarOn, TParticleType> || std::is_same_v<VarOn, RParticleType>)
@@ -1019,13 +1086,39 @@ NamedSpillMultiVar construct_category(
     ));
 }
 
+// Helper method for constructing a SpillMultiVar that loops over a spill-level
+// collection (BNB or NuMI), emitting one value per spill element.
+template<typename SpillT>
+ana::SpillMultiVar spill_collection_multivar_helper(
+    const CutFn<EventType> & event_cut,
+    const VarFn<SpillT> & var
+)
+{
+    return ana::SpillMultiVar([event_cut, var](const caf::Proxy<caf::StandardRecord> * sr) -> std::vector<double>
+    {
+        std::vector<double> values;
+        if(!event_cut(*sr)) return values;
+        if constexpr(std::is_same_v<SpillT, BNBSpillType>)
+        {
+            for(const auto & spill : sr->hdr.bnbinfo)
+                values.push_back(var(spill));
+        }
+        else if constexpr(std::is_same_v<SpillT, NuMISpillType>)
+        {
+            for(const auto & spill : sr->hdr.numiinfo)
+                values.push_back(var(spill));
+        }
+        return values;
+    });
+}
+
 // Helper method for constructing a set of SpillMultiVar objects that track the
 // exposure information for a given set of cuts.
 std::vector<NamedSpillMultiVar> construct_exposure_vars(const std::vector<cfg::ConfigurationTable> & cuts)
 {
     std::vector<NamedSpillMultiVar> exposure_vars;
     std::vector<CutFn<EventType>> cut_functions;
-    std::vector<CutFn<SpillType>> spill_cut_functions;
+    std::vector<CutFn<BNBSpillType>> spill_cut_functions;
 
     // Iterate over the cuts and construct the exposure variables.
     for(const auto & cut : cuts)
@@ -1048,10 +1141,10 @@ std::vector<NamedSpillMultiVar> construct_exposure_vars(const std::vector<cfg::C
                 auto cut_fn = factory(params);
                 cut_functions.push_back(cut_fn);
             }
-            else if(cut.get_string_field("type") == "spill")
+            else if(cut.get_string_field("type") == "bnb_spill")
             {
-                name = "spill_" + name;
-                auto factory = CutFactoryRegistry<SpillType>::instance().get(name);
+                name = "bnb_spill_" + name;
+                auto factory = CutFactoryRegistry<BNBSpillType>::instance().get(name);
                 auto cut_fn = factory(params);
 
                 // We do not transform this to an event-level cut because we
@@ -1072,7 +1165,7 @@ std::vector<NamedSpillMultiVar> construct_exposure_vars(const std::vector<cfg::C
     };
 
     // Compose a common spill cut function.
-    auto spill_cut = [spill_cut_functions](const SpillType & s) -> bool {
+    auto spill_cut = [spill_cut_functions](const BNBSpillType & s) -> bool {
         return std::all_of(spill_cut_functions.begin(), spill_cut_functions.end(), [&s](auto & f) { return f(s); });
     };
 
@@ -1111,7 +1204,8 @@ template class Registry<CutFactory<TParticleType>>;
 template class Registry<CutFactory<RParticleType>>;
 template class Registry<CutFactory<EventType>>;
 template class Registry<CutFactory<MCTruth>>;
-template class Registry<CutFactory<SpillType>>;
+template class Registry<CutFactory<BNBSpillType>>;
+template class Registry<CutFactory<NuMISpillType>>;
 
 // Var Registry
 template class Registry<VarFactory<TType>>;
@@ -1120,6 +1214,14 @@ template class Registry<VarFactory<MCTruth>>;
 template class Registry<VarFactory<TParticleType>>;
 template class Registry<VarFactory<RParticleType>>;
 template class Registry<VarFactory<EventType>>;
+template class Registry<VarFactory<BNBSpillType>>;
+template class Registry<VarFactory<NuMISpillType>>;
+
+// Explicit instantiations for the spill collection helper
+template ana::SpillMultiVar spill_collection_multivar_helper<BNBSpillType>(
+    const CutFn<EventType> &, const VarFn<BNBSpillType> &);
+template ana::SpillMultiVar spill_collection_multivar_helper<NuMISpillType>(
+    const CutFn<EventType> &, const VarFn<NuMISpillType> &);
 
 // Explicit instantiation for selector registries
 template class Registry<SelectorFactory<TType>>;

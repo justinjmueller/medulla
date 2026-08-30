@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <set>
 #include <string>
+#include <unordered_map>
 
 #include "configuration.h"
 #include "toml++/toml.h"
@@ -43,43 +44,20 @@ namespace cfg
     }
 
     // Resolve [[include_samples]] blocks by loading matching entries from the
-    // centralized sample catalog located at common/samples.toml in the parent
-    // of the configuration file's directory.
+    // centralized sample catalog. Each block may name its own catalog file
+    // (relative to the parent of the configuration file's directory) via a
+    // 'file' key; when omitted, it defaults to common/samples.toml.
     void ConfigurationTable::resolve_sample_includes(const std::string & config_path)
     {
         // If there are no [[include_samples]] entries, there is nothing to do.
         if (!doc.contains("include_samples"))
             return;
 
-        // Determine the catalog path: look for common/samples.toml in the
-        // parent of the directory containing the configuration file.
+        // Catalog files are resolved relative to the parent of the directory
+        // containing the configuration file (e.g. .../toml/<analysis>/foo.toml
+        // -> catalog files live under .../toml/).
         std::filesystem::path cfg(config_path);
-        std::filesystem::path catalog_path =
-            cfg.parent_path().parent_path() / "common" / "samples.toml";
-
-        if (!std::filesystem::exists(catalog_path))
-            throw ConfigurationError(
-                "Sample catalog not found at: " + catalog_path.string() +
-                ". The catalog (common/samples.toml) must be located in the "
-                "parent directory of the configuration file's directory.");
-
-        // Parse the catalog.
-        toml::table catalog;
-        try
-        {
-            catalog = toml::parse_file(catalog_path.string());
-        }
-        catch (const std::exception & e)
-        {
-            throw ConfigurationError(
-                "Failed to parse sample catalog: " + std::string(e.what()));
-        }
-
-        // Get the catalog's [[sample]] array.
-        const toml::array * catalog_samples = catalog["sample"].as_array();
-        if (!catalog_samples)
-            throw ConfigurationError(
-                "No [[sample]] entries found in the sample catalog.");
+        std::filesystem::path catalog_dir = cfg.parent_path().parent_path();
 
         // Get the [[include_samples]] array from the parsed document.
         const toml::array * include_arr = doc["include_samples"].as_array();
@@ -96,12 +74,46 @@ namespace cfg
             throw ConfigurationError(
                 "'sample' key in the configuration is not an array.");
 
+        // Cache parsed catalogs by resolved path so that multiple
+        // [[include_samples]] blocks referencing the same file only parse
+        // it once.
+        std::unordered_map<std::string, toml::table> catalog_cache;
+
         // Process each [[include_samples]] block independently, preserving
-        // its own 'keys' filter and 'enable' list.
+        // its own 'file', 'keys' filter, and 'enable' list.
         for (const auto & entry : *include_arr)
         {
             const toml::table * entry_tbl = entry.as_table();
             if (!entry_tbl) continue;
+
+            // Determine which catalog file this block resolves against,
+            // relative to catalog_dir, defaulting to common/samples.toml
+            // when the block does not specify its own 'file'.
+            auto file_opt = (*entry_tbl)["file"].value<std::string>();
+            std::filesystem::path catalog_path = catalog_dir /
+                (file_opt ? *file_opt : std::string("common/samples.toml"));
+            std::string catalog_key = catalog_path.lexically_normal().string();
+
+            if (catalog_cache.find(catalog_key) == catalog_cache.end())
+            {
+                if (!std::filesystem::exists(catalog_path))
+                    throw ConfigurationError(
+                        "Sample catalog not found at: " + catalog_path.string());
+                try
+                {
+                    catalog_cache.emplace(catalog_key, toml::parse_file(catalog_path.string()));
+                }
+                catch (const std::exception & e)
+                {
+                    throw ConfigurationError(
+                        "Failed to parse sample catalog: " + std::string(e.what()));
+                }
+            }
+
+            const toml::array * catalog_samples = catalog_cache.at(catalog_key)["sample"].as_array();
+            if (!catalog_samples)
+                throw ConfigurationError(
+                    "No [[sample]] entries found in the sample catalog: " + catalog_path.string());
 
             // Collect the requested keys for this include block.
             std::set<std::string> requested_keys;
@@ -167,7 +179,8 @@ namespace cfg
                 }
                 if (!found)
                     throw ConfigurationError(
-                        "Sample key '" + key + "' not found in the sample catalog.");
+                        "Sample key '" + key + "' not found in the sample catalog: " +
+                        catalog_path.string());
             }
         }
 

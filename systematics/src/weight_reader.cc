@@ -20,6 +20,7 @@
 #include "TTreeReaderArray.h"
 
 #include "sbnanaobj/StandardRecord/SRTrueInteraction.h"
+#include "SRProxy/BasicTypesProxy.h"
 
 // Constructor for the WeightReader class.
 sys::WeightReader::WeightReader(const std::string & input)
@@ -54,7 +55,6 @@ sys::WeightReader::WeightReader(const std::string & input)
     if(input.find("*") != std::string::npos)
     {
         // Input is a pattern for a set of files
-        isflat = input.find("flat") != std::string::npos;
         chain.Add(input.c_str());
     }
     else if(input.find(".txt") != std::string::npos)
@@ -65,16 +65,22 @@ sys::WeightReader::WeightReader(const std::string & input)
         while(std::getline(infile, line))
         {
             chain.Add(line.c_str());
-            isflat = line.find("flat") != std::string::npos;
         }
     }
     else
     {
         // Input is a single .root file
-        isflat = input.find("flat") != std::string::npos;
         chain.Add(input.c_str());
     }
-    
+
+    // Determine whether the input is a flat or structured (nested) CAF by
+    // inspecting the actual tree structure via SRProxy's GetCAFType(),
+    // rather than guessing from a "flat" substring in the file name/path.
+    // The substring heuristic silently mis-detects some ICARUS samples
+    // whose paths don't happen to contain "flat" despite being flat CAFs
+    // (or vice versa).
+    isflat = (caf::GetCAFType(&chain) == caf::kFlat);
+
     // Create the TTreeReader
     reader = std::make_unique<TTreeReader>(&chain);
     

@@ -190,41 +190,22 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::True, primary_lepton_from_antineutrino, primary_lepton_from_antineutrino);
 
     /**
-     * @brief Apply a fiducial volume cut; the interaction vertex must be
-     * reconstructed within the fiducial volume.
-     * @details The fiducial volume cut is applied on the reconstructed
-     * interaction vertex upstream in SPINE. The fiducial volume is defined
-     * (in a SPINE post-processor) as a 25 cm border around the x and y
-     * detector faces, a 50 cm border around the downstream (+) z face, and a
-     * 30 cm border around the upstream (-) z face. The fiducial volume is
-     * intended to reduce the impact of detector edge effects on the analysis.
+     * @brief Veto interactions whose vertex falls in the ICARUS dangling
+     * cable region.
+     * @details A region of ICARUS (x > 210.215 cm, y > 60 cm, 290 cm < z <
+     * 390 cm) contains a dangling cable that causes anomalous
+     * reconstruction. This cut rejects any interaction whose vertex falls
+     * in that region.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to select on.
-     * @return true if the vertex is in the fiducial volume.
+     * @return true if the vertex is outside the dangling cable region.
      */
     template<class T>
-    bool fiducial_cut(const T & obj)
+    bool avoid_icarus_dangling_cable(const T & obj)
     {
-        return obj.is_fiducial && !(obj.vertex[0] > 210.215 && obj.vertex[1] > 60 && (obj.vertex[2] > 290 && obj.vertex[2] < 390));
+        return !(obj.vertex[0] > 210.215 && obj.vertex[1] > 60 && (obj.vertex[2] > 290 && obj.vertex[2] < 390));
     }
-    REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut, fiducial_cut);
-
-    template<class T>
-    bool fiducial_cut_tmp(const T & obj)
-    {
-        return (
-            (abs(obj.vertex[0]) > 10) &&
-            (abs(obj.vertex[0]) < 190) &&
-            (obj.vertex[2] > 10) &&
-            (obj.vertex[2] < 450) &&
-            (
-                ((obj.vertex[2] > 250) && (obj.vertex[1] > -190) && (obj.vertex[1] < 100)) ||
-                ((obj.vertex[2] < 250) && (abs(obj.vertex[1]) < 190))
-            )
-
-        );
-    }
-    REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut_tmp, fiducial_cut_tmp);
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, avoid_icarus_dangling_cable, avoid_icarus_dangling_cable);
 
     /**
      * @brief Veto interactions whose vertex falls in the ICARUS z-gap region.
@@ -245,6 +226,33 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::Both, avoid_icarus_mystery_zgap, avoid_icarus_mystery_zgap);
 
     /**
+     * @brief Apply a fiducial volume cut; the interaction vertex must be
+     * reconstructed within the fiducial volume.
+     * @details The fiducial volume cut is applied on the reconstructed
+     * interaction vertex upstream in SPINE. The fiducial volume is defined
+     * (in a SPINE post-processor) as a 25 cm border around the x and y
+     * detector faces, a 50 cm border around the downstream (+) z face, and a
+     * 30 cm border around the upstream (-) z face. The fiducial volume is
+     * intended to reduce the impact of detector edge effects on the analysis.
+     * On ICARUS, the dangling cable region is additionally excluded (see
+     * avoid_icarus_dangling_cable).
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the vertex is in the fiducial volume.
+     */
+    template<class T>
+    bool fiducial_cut(const T & obj)
+    {
+        // ICARUS gets special treatment due to the dangling cable.
+        if(context::current_detector == caf::Det_t::kICARUS)
+            return obj.is_fiducial && avoid_icarus_dangling_cable(obj);
+        
+        // Standard fiducial cut for SBND.
+        return obj.is_fiducial;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut, fiducial_cut);
+
+    /**
      * @brief Apply a containment cut on the entire interaction.
      * @details The containment cut is applied on the entire interaction. The
      * interaction is considered contained if all particles and all spacepoints
@@ -260,6 +268,142 @@ namespace cuts
     template<class T>
     bool containment_cut(const T & obj) { return obj.is_contained; }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, containment_cut, containment_cut);
+
+    /**
+     * @brief Apply a user-defined containment cut on the entire interaction.
+     * @details The user-defined containment cut is applied on the entire
+     * interaction. It checks if all particles are contained within a specified
+     * distance from the detector edges. The distance is provided as a
+     * parameter.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @param params a vector containing a single parameter for the containment
+     * distance.
+     * @return true if the interaction is contained within the specified
+     * distance from the detector edges.
+     */
+    template<class T>
+    bool user_containment_cut(const T & obj, std::vector<double> params={})
+    {
+        if(params.size() != 1)
+            throw std::invalid_argument("user_containment_cut requires a single parameter for the containment distance.");
+
+        if(!obj.is_contained)
+            return false; // Always more strict than the upstream SPINE cut.
+
+        if(context::current_detector == caf::Det_t::kSBND)
+        {
+            // Bounds are [-200, 200], [-200, 200], [0, 500]
+            for(const auto & p : obj.particles)
+            {
+                if(!std::isnan(pvars::start_x(p)) && !std::isnan(pvars::end_x(p)))
+                {
+                    if(pvars::start_x(p) < -200 + params[0] || pvars::start_x(p) > 200 - params[0]
+                    || pvars::end_x(p) < -200 + params[0] || pvars::end_x(p) > 200 - params[0])
+                        return false;
+                }
+                if(!std::isnan(pvars::start_y(p)) && !std::isnan(pvars::end_y(p)))
+                {
+                    if(pvars::start_y(p) < -200 + params[0] || pvars::start_y(p) > 200 - params[0]
+                    || pvars::end_y(p) < -200 + params[0] || pvars::end_y(p) > 200 - params[0])
+                        return false;
+                }
+                if(!std::isnan(pvars::start_z(p)) && !std::isnan(pvars::end_z(p)))
+                {
+                    if(pvars::start_z(p) < 0 + params[0] || pvars::start_z(p) > 500 - params[0]
+                    || pvars::end_z(p) < 0 + params[0] || pvars::end_z(p) > 500 - params[0])
+                        return false;
+                }
+            }
+        }
+        else if(context::current_detector == caf::Det_t::kICARUS)
+        {
+            // Bounds are [61.12, 359.45], [-181.71, 130.59], [-894.95, 894.95]
+            // Two cryostats, one at positive x and one at negative x.
+            for(const auto & p : obj.particles)
+            {
+                if(!std::isnan(pvars::start_x(p)) && !std::isnan(pvars::end_x(p)))
+                {
+                    if((pvars::start_x(p) < 61.12 + params[0] || pvars::start_x(p) > 359.45 - params[0]
+                    || pvars::end_x(p) < 61.12 + params[0] || pvars::end_x(p) > 359.45 - params[0])
+                    && (pvars::start_x(p) < -359.45 + params[0] || pvars::start_x(p) > -61.12 - params[0]
+                    || pvars::end_x(p) < -359.45 + params[0] || pvars::end_x(p) > -61.12 - params[0]))
+                        return false;
+                }
+                if(!std::isnan(pvars::start_y(p)) && !std::isnan(pvars::end_y(p)))
+                {
+                    if(pvars::start_y(p) < -181.71 + params[0] || pvars::start_y(p) > 130.59 - params[0]
+                    || pvars::end_y(p) < -181.71 + params[0] || pvars::end_y(p) > 130.59 - params[0])
+                        return false;
+                }
+                if(!std::isnan(pvars::start_z(p)) && !std::isnan(pvars::end_z(p)))
+                {
+                    if(pvars::start_z(p) < -894.95 + params[0] || pvars::start_z(p) > 894.95 - params[0]
+                    || pvars::end_z(p) < -894.95 + params[0] || pvars::end_z(p) > 894.95 - params[0])
+                        return false;
+                }
+            }
+        }
+        // Else, return true.
+        return true;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, user_containment_cut, user_containment_cut);
+
+    /**
+     * @brief Apply a user-defined containment cut on the entire interaction,
+     * excluding the EE TPC.
+     * @details This applies user_containment_cut and then additionally
+     * rejects interactions with particles whose start or end point falls in
+     * the EE TPC (the ICARUS TPC pair at negative x, beyond the cathode at
+     * x = -210.215) -- i.e. the region between the cathode and the far wall
+     * (-359.45) that user_containment_cut alone still allows. On SBND, which
+     * has no cathode split of this kind, this is equivalent to
+     * user_containment_cut.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @param params a vector containing a single parameter for the containment
+     * distance.
+     * @return true if the interaction is contained within the specified
+     * distance from the detector edges, excluding the EE TPC.
+     */
+    template<class T>
+    bool user_containment_cut_filterEE(const T & obj, std::vector<double> params={})
+    {
+        if(params.size() != 1)
+            throw std::invalid_argument("user_containment_cut_filterEE requires a single parameter for the containment distance.");
+
+        if(!obj.is_contained)
+            return false; // Always more strict than the upstream SPINE cut.
+
+        if(context::current_detector == caf::Det_t::kSBND)
+        {
+            // Not relevant for SBND
+            return user_containment_cut(obj, params);
+        }
+        else if(context::current_detector == caf::Det_t::kICARUS)
+        {
+            // Start from the standard containment bounds, then additionally
+            // reject particles whose start or end point falls in the EE TPC:
+            // the region between the cathode (x = -210.215) and the far
+            // wall (x = -359.45) that user_containment_cut alone still
+            // allows.
+            if(!user_containment_cut(obj, params))
+                return false;
+
+            for(const auto & p : obj.particles)
+            {
+                if(!std::isnan(pvars::start_x(p)) && !std::isnan(pvars::end_x(p)))
+                {
+                    if((pvars::start_x(p) < 0 && pvars::start_x(p) < -210.215 + params[0])
+                    || (pvars::end_x(p) < 0 && pvars::end_x(p) < -210.215 + params[0]))
+                        return false;
+                }
+            }
+        }
+        // Else, return true.
+        return true;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, user_containment_cut_filterEE, user_containment_cut_filterEE);
 
     /**
      * @brief Apply a cut to select cathode-crossing interactions.
@@ -303,20 +447,26 @@ namespace cuts
      * vertex relative to the cathode position.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to select on.
+     * @param params a vector optionally containing a single parameter for the
+     * fiducialization distance from the cathode in cm. Defaults to 5 cm when
+     * not provided.
      * @return true if the interaction is fiducialized.
      */
     template<class T>
-    bool fiducialize_cathode(const T & obj)
+    bool fiducialize_cathode(const T & obj, std::vector<double> params={})
     {
+        double margin = params.empty() ? 5.0 : params[0];
         if(context::current_detector == caf::Det_t::kSBND)
         {
-            // Apply a cut to fiducialize 5 cm around the cathode of SBND.
-            return std::abs(obj.vertex[0]) > 5.0;
+            // Apply a cut to fiducialize the given distance around the
+            // cathode of SBND.
+            return std::abs(obj.vertex[0]) > margin;
         }
         else if(context::current_detector == caf::Det_t::kICARUS)
         {
-            // Apply a cut to fiducialize 5 cm around the cathode of ICARUS.
-            return std::abs(std::abs(obj.vertex[0]) - 210.215) > 5.0;
+            // Apply a cut to fiducialize the given distance around the
+            // cathode of ICARUS.
+            return std::abs(std::abs(obj.vertex[0]) - 210.215) > margin;
         }
         else
         {
@@ -325,6 +475,32 @@ namespace cuts
         }
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducialize_cathode, fiducialize_cathode);
+
+    template<class T>
+    bool fiducial_cut_osc(const T & obj)
+    {
+        // Apply a cut to within 10 cm of the detector edge in x and y,
+        // 15 cm in upstream z, and 100 cm in downstream z.
+        if(context::current_detector == caf::Det_t::kSBND)
+        {
+            // Just the regular fiducial cut for SBND
+            return std::abs(obj.vertex[0]) > 10.0 && std::abs(obj.vertex[0]) < 190.0
+                && std::abs(obj.vertex[1]) > 10.0 && std::abs(obj.vertex[1]) < 190.0
+                && obj.vertex[2] > 10.0 && obj.vertex[2] < 450.0;
+
+        }
+        else if(context::current_detector == caf::Det_t::kICARUS)
+        {
+            // Regular fiducial cut for ICARUS, plus the dangling cable cut.
+            return std::abs(obj.vertex[0]) > 61.12 + 10.0 && std::abs(obj.vertex[0]) < 359.45 - 10.0
+                && obj.vertex[1] > -181.71 + 10.0 && obj.vertex[1] < 130.59 - 10.0
+                && obj.vertex[2] > -894.95 + 10.0 && obj.vertex[2] < 894.95 - 50.0
+                && avoid_icarus_dangling_cable(obj);
+        }
+        // Else, return true.
+        return true;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut_osc, fiducial_cut_osc);
 
     /**
      * @brief Apply a cut to veto the high-y, high-z region of SBND.
