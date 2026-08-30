@@ -156,6 +156,76 @@ ismc = true
   spine_config = "full_chain_co_250901.yaml + modifier/charge_scale/mod_charge_scale_260813.yaml"
 
 [[sample]]
+key = "sbnd_detvar_p5_gain"
+name = "sbnd_detvar_p5_gain"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_run1_detvar_p5gain/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND Run 1 BNB +5% Gain DetVar"
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.17.1"
+  spine_config = "full_chain_co_250901.yaml + modifier/charge_scale/mod_gain_pos_scale_260818.yaml"
+
+[[sample]]
+key = "sbnd_detvar_m5_gain"
+name = "sbnd_detvar_m5_gain"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_run1_detvar_m5gain/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND Run 1 BNB -5% Gain DetVar"
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.17.1"
+  spine_config = "full_chain_co_250901.yaml + modifier/charge_scale/mod_gain_neg_scale_260818.yaml"
+
+[[sample]]
+key = "sbnd_detvar_smear15"
+name = "sbnd_detvar_smear15"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_run1_detvar_smear15/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND Run 1 BNB Smear 15% DetVar"
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.17.1"
+  spine_config = "full_chain_co_250901.yaml + modifier/smearing/mod_smearing_260818.yaml"
+
+[[sample]]
+key = "sbnd_detvar_wiremod_xthetaxw"
+name = "sbnd_detvar_wiremod_xthetaxw"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_run1_detvar_wiremod_xthetaxw/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND Run 1 BNB WireMod X-ThetaXW DetVar"
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_1002"
+  spine_production = "v0.17.1" # TODO: confirm version
+  spine_config = "full_chain_co_250901.yaml + modifier/data/mod_data_common.yaml"
+
+[[sample]]
+key = "sbnd_detvar_wiremod_yz"
+name = "sbnd_detvar_wiremod_yz"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_run1_detvar_wiremod_yz/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND Run 1 BNB WireMod YZ DetVar"
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_1002"
+  spine_production = "v0.17.1" # TODO: confirm version
+  spine_config = "full_chain_co_250901.yaml + modifier/data/mod_data_common.yaml"
+
+[[sample]]
 key = "sbnd_detvar_cv"
 name = "sbnd_detvar_cv"
 experiment = "sbnd"
