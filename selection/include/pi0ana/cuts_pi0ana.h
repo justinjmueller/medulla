@@ -85,13 +85,8 @@ namespace cuts::pi0ana
     template<class T>
     bool leading_photon_ke_cut(const T & obj, std::vector<double> params={})
     {
-      
-        bool passes(false);
         size_t phi = selectors::pi0_leading_shower(obj);
-	      if(phi == kNoMatch)
-	      {
-	          return false;
-	      }
+	      if(phi == kNoMatch) return false;
 	      else
 	      {
 	          auto & ph(obj.particles[phi]);
