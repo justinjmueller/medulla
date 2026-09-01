@@ -86,6 +86,7 @@ medulla/
 │   ├── campaign.py       # Multi-analysis campaign CLI
 │   ├── utilities.py      # Shared submission and sync utilities
 │   ├── submit.sh         # Grid worker script
+│   ├── sandbox.sh        # Interactive job staging for local debugging
 │   └── test_*.py         # Python unit tests for the batch layer
 ├── systematics/          # Systematic uncertainty evaluation
 ├── spineplot/            # Python plotting library
@@ -95,6 +96,42 @@ medulla/
 ├── conftest.py           # Root pytest fixture (framework validation environment)
 └── pytest.ini            # Test discovery configuration
 ```
+
+---
+
+## Interactive Job Debugging (Sandbox)
+
+`batch/sandbox.sh` stages all inputs for a single batch job into the current directory so it can be run interactively on a GPVM node. This is useful for diagnosing failures without submitting to the grid.
+
+```bash
+# Create a clean working directory and run the sandbox script:
+mkdir sandbox && cd sandbox
+bash ../medulla/batch/sandbox.sh \
+    --project=/pnfs/icarus/scratch/users/micarrig/<project> \
+    --jobid=73
+```
+
+This will:
+1. Set up the CVMFS environment and build medulla from the specified tag
+2. Copy `project.db` and extract the job's TOML configuration
+3. Copy `systematics.toml`
+4. Stage all input flat CAF files into `data/` and rewrite paths in the config
+
+Then run the job steps manually:
+
+```bash
+./selection/medulla job_config.toml
+./systematics/run_systematics systematics.toml
+```
+
+**Options:**
+
+| Flag | Description |
+|---|---|
+| `--project=PATH` | Path to the project directory (PNFS) — required |
+| `--jobid=N` | Job ID to stage — required |
+| `--tag=REF` | Medulla git ref to build (default: `develop`) |
+| `--no-build` | Skip cloning/building medulla (use an existing build in the current directory) |
 
 ---
 

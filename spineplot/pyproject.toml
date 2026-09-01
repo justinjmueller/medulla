@@ -1,0 +1,21 @@
+[project]
+name = "spineplot"
+version = "0.1.0"
+description = ""
+requires-python = ">=3.10"
+
+[tool.pixi.project]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.dependencies]
+python = ">=3.10"
+numpy = "*"
+scipy = "*"
+pandas = "*"
+matplotlib = "*"
+uproot = "*"
+toml = "*"
+scikit-learn = "*"
+root = "*"
+memory_profiler = ">=0.61.0,<0.62"

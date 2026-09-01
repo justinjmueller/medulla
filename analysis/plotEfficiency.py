@@ -17,11 +17,11 @@ r.gStyle.SetOptStat(0)
 
 def main():
     # Load the analysis
-    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_analysis.toml', '/exp/icarus/data/users/micarrig/merged_all_v3.root')
+    ana = Analysis('/exp/icarus/app/users/micarrig/nuESpine/medulla/analysis/efficiency_analysis.toml', '/exp/icarus/data/users/micarrig/merged_output_v26.root')
     # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_recoInt.toml', '/exp/icarus/data/users/micarrig/merged_outputAll.root')
     #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/efficiency_analysis.toml', '/nashome/m/micarrig/icarus/nuESpine/output_nueCCInclusive2.root')
 
-    output_dir = 'plots/efficiency_neutrino_interaction_trueTree/'
+    output_dir = '/exp/icarus/app/users/micarrig/nuESpine/plots_sept1/efficiency_neutrino_interaction_trueTree/'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 

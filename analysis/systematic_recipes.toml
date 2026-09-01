@@ -7,24 +7,24 @@
 ##################################
 
 [[systematic_recipe]]
-name = 'ZExpA1CCQE'
-label = 'ZExpA1CCQE'
-pattern = 'ZExpA1CCQE'
+name = 'ZExpB1CCQE'
+label = 'ZExpB1CCQE'
+pattern = 'ZExpB1CCQE'
 
 [[systematic_recipe]]
-name = 'ZExpA2CCQE'
-label = 'ZExpA2CCQE'
-pattern = 'ZExpA2CCQE'
+name = 'ZExpB2CCQE'
+label = 'ZExpB2CCQE'
+pattern = 'ZExpB2CCQE'
 
 [[systematic_recipe]]
-name = 'ZExpA3CCQE'
-label = 'ZExpA3CCQE'
-pattern = 'ZExpA3CCQE'
+name = 'ZExpB3CCQE'
+label = 'ZExpB3CCQE'
+pattern = 'ZExpB3CCQE'
 
 [[systematic_recipe]]
-name = 'ZExpA4CCQE'
-label = 'ZExpA4CCQE'
-pattern = 'ZExpA4CCQE'
+name = 'ZExpB4CCQE'
+label = 'ZExpB4CCQE'
+pattern = 'ZExpB4CCQE'
 
 [[systematic_recipe]]
 name = 'VecFFCCQEshape'
@@ -269,7 +269,7 @@ pattern = 'ThetaDelta2NRad'
 [[systematic_recipe]]
 name = 'xsec_ccqe'
 label = 'QE'
-pattern = '^(ZExpA1CCQE|ZExpA2CCQE|ZExpA3CCQE|ZExpA4CCQE|VecFFCCQEshape|RPA_CCQE|CoulombCCQE)$'
+pattern = '^(ZExpB1CCQE|ZExpB2CCQE|ZExpB3CCQE|ZExpB4CCQE|VecFFCCQEshape|RPA_CCQE|CoulombCCQE)$'
 
 [[systematic_recipe]]
 name = 'xsec_mec'
@@ -605,7 +605,7 @@ pattern = '^(induction_high|induction_low|coherent_high|coherent_low|intrinsic_h
 # [[systematic_recipe]]
 # name = 'xsec_sim_ccqe'
 # label = 'QE'
-# pattern = '\bGENIEReWeight_SBN_v1_multisim_(ZExpAVariationResponse|RPA_CCQE|CoulombCCQE)\b'
+# pattern = '\bGENIEReWeight_SBN_v1_multisim_(ZExpBVariationResponse|RPA_CCQE|CoulombCCQE)\b'
 
 # [[systematic_recipe]]
 # name = 'xsec_sim_mec'

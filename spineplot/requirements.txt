@@ -6,3 +6,4 @@ uproot
 toml
 uproot
 scikit-learn
+ROOT

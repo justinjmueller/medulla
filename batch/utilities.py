@@ -399,10 +399,17 @@ def check_project_status(
     stub_jobs = sorted(set(stub_jobs).union(stub_sys_jobs))
 
     if check_zombies:
+        command(curs, "SELECT jobid, cfg FROM configuration")
+        det_var_jobids = {
+            jobid for jobid, cfg_str in curs.fetchall()
+            if any(s.get('tag') == 'detector_variation' for s in toml.loads(cfg_str).get('sample', []))
+        }
         candidates = [
             (f, False) for f in output_files if Path(f).stat().st_size >= 1024
         ] + [
-            (f, True) for f in output_files_sys if Path(f).stat().st_size >= 1024
+            (f, True) for f in output_files_sys
+            if Path(f).stat().st_size >= 1024
+            and int(Path(f).stem.split('jobid')[-1]) not in det_var_jobids
         ]
         total = len(candidates)
         print(f"[INFO] -- Checking {total} ROOT file(s) for zombies and recovered files...")
