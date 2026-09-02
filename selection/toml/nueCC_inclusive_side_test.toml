@@ -16,6 +16,8 @@ greater_than = 1.0
 pi0_mass_veto = 400.0
 pi0_mass_veto_low = 10   #10
 pi0_mass_veto_high = 400
+pi0_mass_veto_low_selection = 110
+pi0_mass_veto_high_selection = 150
 [general]
 output = "output_nueCCInclusive_side"
 primfn = "default_primary_classification"
@@ -35,6 +37,8 @@ fsthresh = [
     "@pi0_mass_veto",
     "@pi0_mass_veto_low",
     "@pi0_mass_veto_high",
+    "@pi0_mass_veto_low_selection",
+    "@pi0_mass_veto_high_selection",
 
 ]
 
@@ -413,7 +417,7 @@ cut = [
     { name = "electron_softmax_cut",      type = "reco", parameters = [ "@electron_softmax", "@greater_than" ] },
     { name = "primary_softmax_cut",       type = "reco", parameters = [ "@primary_softmax", "@greater_than" ] },
     { name = "leading_ele_energy_cut",    type = "reco", parameters = [ "@electron_threshold" ] },
-    #{name = "pi0_invariant_mass", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+    {name = "pi0_invariant_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low_selection", "@pi0_mass_veto_high_selection"]},
 
 ]
 branch = [
@@ -560,7 +564,7 @@ branch = [
     { name = "p",                        type = "true_particle", selector = "leading_electron" },
     { name = "energy",                   type = "true_particle", selector = "leading_pion" },
         #pions mass
-    {name = "pi0_invariant_mass", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+    {name = "pi0_invariant_mass", type = "reco", parameters = ["@pi0_mass_veto_low_selection", "@pi0_mass_veto_high_selection"]},
     #{name = "pi0_momentum", type = "both"},
 ]
 

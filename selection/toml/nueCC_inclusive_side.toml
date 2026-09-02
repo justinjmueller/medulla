@@ -72,7 +72,7 @@ disable = false# Optional: default = false
 [[tree]]
 name = "all"
 sim_only = false
-issignal = true
+issignal = false
 #isdata = false
 isdata = true
 mode = "reco"
@@ -637,7 +637,8 @@ cut = [
     #{ name = "primary_softmax_cut",       type = "reco", parameters = [ "@primary_softmax", "@greater_than" ] },
     #{ name = "leading_ele_energy_cut",    type = "reco", parameters = [ "@electron_threshold" ] },
     #{name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto", 9999.9]}, 
-    {name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+    #{name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+    {name = "pi0_invariant_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
     {name = "two_photons",                type = "reco", parameters =["@photon_threshold"]},
     {name = "no_electrons",                type = "reco", parameters =[0]},
     
@@ -787,8 +788,10 @@ branch = [
     { name = "p",                        type = "true_particle", selector = "leading_electron" },
     { name = "energy",                   type = "true_particle", selector = "leading_pion" },
     #pions mass
-    {name = "pi0_mass", type = "both"},
-    {name = "pi0_momentum", type = "both"},
+    #{name = "pi0_mass", type = "both"},
+    {name = "pi0_invariant_mass", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+    #{name = "pi0_momentum", type = "both"},
+    #{name = "pi0_momentum", type = "both"},
     #particle identification 
     #{ name = "true_pdg_from_reco",       type = "matched"},
 
