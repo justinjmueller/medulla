@@ -770,6 +770,23 @@ namespace evar
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Event, beam_time, beam_time);
 
+    /**
+     * @brief Variable for the energy of the first neutrino in the event.
+     * @details This variable returns the energy of the first neutrino in the
+     * using the first entry in the SRTruthBranch's `mc.nu` vector.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the energy of the first neutrino in the event in GeV.
+     */
+    template<typename T>
+    double first_neutrino_energy(const T & sr)
+    {
+        if(sr.mc.nu.empty())
+            return kNoMatchValue;
+        return sr.mc.nu[0].E;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, first_neutrino_energy, first_neutrino_energy);
+
 }
 
 #endif
