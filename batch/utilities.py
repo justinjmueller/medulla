@@ -850,6 +850,7 @@ def launch_variation_phase2_jobsub(
     lifetime: str = '4h',
     njobs: int = -1,
     dataset_tag: Optional[str] = None,
+    check_zombies: bool = False,
 ):
     """
     Submit one batch job per completed selection output file to apply
@@ -882,6 +883,10 @@ def launch_variation_phase2_jobsub(
         If provided, only submit jobs whose sample carries this tag in the
         selection TOML (e.g. "nominal", "data", "detector_variation").
         Requires project.db to be present in project_dir.
+    check_zombies : bool
+        If True, open each existing varsys ROOT file that passes the size
+        check and flag it as bad if ROOT reports it as a zombie or recovered.
+        Bad files are offered for deletion so they will be resubmitted.
 
     Returns
     -------
@@ -929,10 +934,61 @@ def launch_variation_phase2_jobsub(
         print(f"{_ERROR} -- No systematics output files found in {project_dir}/output/")
         return False
 
+    all_varsys_files = glob(str(project_dir / 'output' / 'output_varsys_jobid*.root'))
     already_done = {
         int(Path(f).stem.split('jobid')[-1])
-        for f in glob(str(project_dir / 'output' / 'output_varsys_jobid*.root'))
+        for f in all_varsys_files
     }
+
+    # Check existing varsys files for stubs and optionally zombies.
+    stub_varsys_ids = {
+        int(Path(f).stem.split('jobid')[-1])
+        for f in all_varsys_files
+        if Path(f).stat().st_size < 1024
+    }
+    if check_zombies:
+        non_stub_varsys = [f for f in all_varsys_files if Path(f).stat().st_size >= 1024]
+        total_check = len(non_stub_varsys)
+        if total_check:
+            print(f"{_INFO} -- Checking {total_check} varsys ROOT file(s) for zombies...")
+            for i, f in enumerate(non_stub_varsys, start=1):
+                if i % 100 == 0 or i == total_check:
+                    print(f"{_INFO} -- Zombie check: {i}/{total_check}", flush=True)
+                is_zombie, is_recovered = _check_root_file(Path(f))
+                if is_zombie or is_recovered:
+                    stub_varsys_ids.add(int(Path(f).stem.split('jobid')[-1]))
+
+    if stub_varsys_ids:
+        label = "stub/zombie" if check_zombies else "stub"
+        bad_paths = []
+        for jid in stub_varsys_ids:
+            p = project_dir / 'output' / f'output_varsys_jobid{jid:04d}.root'
+            if p.exists():
+                bad_paths.append(p)
+        print(f"{_INFO} -- Found {len(stub_varsys_ids)} {label} varsys file(s).")
+        resp_list = input(f"{_INFO} -- Print file details before deleting? [Y/N] ")
+        if resp_list.strip().lower() == 'y':
+            import datetime
+            col_w = max((len(p.name) for p in bad_paths), default=10)
+            print(f"\n  {'File':<{col_w}}  {'Size (bytes)':>14}  {'Created'}")
+            print(f"  {'-'*col_w}  {'-'*14}  {'-'*19}")
+            for p in bad_paths:
+                st = p.stat()
+                created = datetime.datetime.fromtimestamp(st.st_ctime).strftime('%Y-%m-%d %H:%M:%S')
+                print(f"  {p.name:<{col_w}}  {st.st_size:>14,}  {created}")
+            print()
+        resp = input("Delete these varsys outputs and resubmit? [Y/N] ")
+        if resp.strip().lower() == 'y':
+            for p in bad_paths:
+                p.unlink()
+            already_done -= stub_varsys_ids
+            print(f"{_INFO} -- Deleted {len(bad_paths)} {label} varsys file(s); they will be resubmitted.")
+        else:
+            print(f"{_INFO} -- Keeping {label} varsys files; they will not be resubmitted.")
+
+    n_sys = len(all_output_files)
+    n_done = len(already_done)
+    print(f"{_INFO} -- Varsys status: {n_done}/{n_sys} complete, {n_sys - n_done} pending/missing.")
 
     pending_files = [
         f for f in all_output_files

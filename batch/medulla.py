@@ -27,7 +27,6 @@ def main(
     variation_phase1 : bool = False,
     variation_phase2 : bool = False,
     variation_interactive : bool = False,
-    variation_test : bool = False,
     check_zombies : bool = False,
     dataset_tag : str = None,
 ):
@@ -107,8 +106,9 @@ def main(
         check_project_status(project_dir, check_zombies=check_zombies)
 
     # If the user requested a test job, run a single job to test the
-    # configuration.
-    if test_job:
+    # configuration. When --variation-phase2 is active, --test-job acts as
+    # --variation-test (handled below) rather than launching a selection job.
+    if test_job and not variation_phase2:
         if not project_exists:
             raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
         launch_jobsub(project_dir, experiment, njobs=1, tag=tag, memory=memory, disk=disk, lifetime=lifetime, relaunch_missing=relaunch_missing)
@@ -153,8 +153,9 @@ def main(
             memory=memory,
             disk=disk,
             lifetime=lifetime,
-            njobs=1 if variation_test else -1,
+            njobs=1 if test_job else -1,
             dataset_tag=dataset_tag,
+            check_zombies=check_zombies,
         )
 
 if __name__ == '__main__':
@@ -277,12 +278,6 @@ if __name__ == '__main__':
     )
 
     p.add_argument(
-        '--variation-test', action='store_true',
-        help='Submit only one Phase 2 job as a test (only valid with '
-             '--variation-phase2).'
-    )
-
-    p.add_argument(
         '--dataset-tag', type=str, default=None,
         help='Only submit Phase 2 jobs for samples with this tag in the '
              'selection TOML (e.g. "nominal", "data", "detector_variation"). '
@@ -318,8 +313,6 @@ if __name__ == '__main__':
         p.error('--variation-systematics is required with --variation-phase2.')
     if args.variation_interactive and not args.variation_phase1:
         p.error('--variation-interactive is only valid with --variation-phase1.')
-    if args.variation_test and not args.variation_phase2:
-        p.error('--variation-test is only valid with --variation-phase2.')
     if args.dataset_tag is not None and not args.variation_phase2:
         p.error('--dataset-tag is only valid with --variation-phase2.')
 
@@ -348,7 +341,6 @@ if __name__ == '__main__':
         variation_phase1=args.variation_phase1,
         variation_phase2=args.variation_phase2,
         variation_interactive=args.variation_interactive,
-        variation_test=args.variation_test,
         check_zombies=args.check_zombies,
         dataset_tag=args.dataset_tag,
     )

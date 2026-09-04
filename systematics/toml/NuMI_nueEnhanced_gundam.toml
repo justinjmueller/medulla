@@ -15,7 +15,7 @@ name = 'reco_leading_electron_energy'
 bins = [300, 390, 490, 600, 730, 870, 1030, 1240, 1500, 2000, 5000]
 
 [variations]
-keys = ['NuMIFull', 'induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination', 'null']
+keys = ['NuMI_nue', 'induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination', 'null', 'cathode_bend', 'cv']
 origin = 'events/'
 tree = 'selected'
 result_destination = 'detsys_results/'
@@ -25,8 +25,8 @@ nuniverses = 1000
 variable_length = false
 
 # [[tree]]
-# origin = 'events/NuMIFull/true_signal'
-# destination = 'events/NuMIFull/'
+# origin = 'events/NuMI_nue/true_signal'
+# destination = 'events/NuMI_nue/'
 # name = 'true_signal'
 # action = 'add_weights'
 # table_types = ['multisim', 'multisigma', 'variation', 'NuMIfluxsim']
@@ -35,8 +35,8 @@ variable_length = false
 # is_data = false
 
 [[tree]]
-origin = 'events/NuMIFull/selected'
-destination = 'events/NuMIFull/'
+origin = 'events/NuMI_nue/selected'
+destination = 'events/NuMI_nue/'
 name = 'selected'
 action = 'add_weights'
 table_types = ['multisim', 'multisigma', 'variation', 'NuMIfluxsim']
@@ -69,8 +69,8 @@ type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1 ,2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
-ordinate = 'NuMIFull'
-points = ['induction_high', 'induction_high', 'induction_high', 'NuMIFull', 'induction_high', 'induction_high', 'induction_high']
+ordinate = 'NuMI_nue'
+points = ['induction_high', 'induction_high', 'induction_high', 'NuMI_nue', 'induction_high', 'induction_high', 'induction_high']
 
 [[sys]]
 name = 'induction_low'
@@ -78,8 +78,8 @@ type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1 ,2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
-ordinate = 'NuMIFull'
-points = ['induction_low', 'induction_low', 'induction_low', 'NuMIFull', 'induction_low', 'induction_low', 'induction_low']
+ordinate = 'NuMI_nue'
+points = ['induction_low', 'induction_low', 'induction_low', 'NuMI_nue', 'induction_low', 'induction_low', 'induction_low']
 
 [[sys]]
 name = 'coherent_high'
@@ -87,8 +87,8 @@ type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1 ,2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
-ordinate = 'NuMIFull'
-points = ['coherent_high', 'coherent_high', 'coherent_high', 'NuMIFull', 'coherent_high', 'coherent_high', 'coherent_high']
+ordinate = 'NuMI_nue'
+points = ['coherent_high', 'coherent_high', 'coherent_high', 'NuMI_nue', 'coherent_high', 'coherent_high', 'coherent_high']
 
 [[sys]]
 name = 'coherent_low'
@@ -96,8 +96,8 @@ type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1 ,2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
-ordinate = 'NuMIFull'
-points = ['coherent_low', 'coherent_low', 'coherent_low', 'NuMIFull', 'coherent_low', 'coherent_low', 'coherent_low']
+ordinate = 'NuMI_nue'
+points = ['coherent_low', 'coherent_low', 'coherent_low', 'NuMI_nue', 'coherent_low', 'coherent_low', 'coherent_low']
 
 [[sys]]
 name = 'intrinsic_high'
@@ -105,8 +105,8 @@ type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1 ,2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
-ordinate = 'NuMIFull'
-points = ['intrinsic_high', 'intrinsic_high', 'intrinsic_high', 'NuMIFull', 'intrinsic_high', 'intrinsic_high', 'intrinsic_high']
+ordinate = 'NuMI_nue'
+points = ['intrinsic_high', 'intrinsic_high', 'intrinsic_high', 'NuMI_nue', 'intrinsic_high', 'intrinsic_high', 'intrinsic_high']
 
 [[sys]]
 name = 'intrinsic_low'
@@ -114,8 +114,8 @@ type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1 ,2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
-ordinate = 'NuMIFull'
-points = ['intrinsic_low', 'intrinsic_low', 'intrinsic_low', 'NuMIFull', 'intrinsic_low', 'intrinsic_low', 'intrinsic_low']
+ordinate = 'NuMI_nue'
+points = ['intrinsic_low', 'intrinsic_low', 'intrinsic_low', 'NuMI_nue', 'intrinsic_low', 'intrinsic_low', 'intrinsic_low']
 
 [[sys]]
 name = 'lifetime_high'
@@ -123,8 +123,8 @@ type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1 ,2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
-ordinate = 'NuMIFull'
-points = ['lifetime_high', 'lifetime_high', 'lifetime_high', 'NuMIFull', 'lifetime_high', 'lifetime_high', 'lifetime_high']
+ordinate = 'NuMI_nue'
+points = ['lifetime_high', 'lifetime_high', 'lifetime_high', 'NuMI_nue', 'lifetime_high', 'lifetime_high', 'lifetime_high']
 
 [[sys]] 
 name = 'lifetime_low'
@@ -132,8 +132,8 @@ type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1 ,2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
-ordinate = 'NuMIFull'
-points = ['lifetime_low', 'lifetime_low', 'lifetime_low', 'NuMIFull', 'lifetime_low', 'lifetime_low', 'lifetime_low']
+ordinate = 'NuMI_nue'
+points = ['lifetime_low', 'lifetime_low', 'lifetime_low', 'NuMI_nue', 'lifetime_low', 'lifetime_low', 'lifetime_low']
 
 [[sys]] 
 name = 'scintillation'
@@ -141,8 +141,8 @@ type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1 ,2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
-ordinate = 'NuMIFull'
-points = ['scintillation', 'scintillation', 'scintillation', 'NuMIFull', 'scintillation', 'scintillation', 'scintillation']
+ordinate = 'NuMI_nue'
+points = ['scintillation', 'scintillation', 'scintillation', 'NuMI_nue', 'scintillation', 'scintillation', 'scintillation']
 
 [[sys]] 
 name = 'wire_gap'
@@ -150,8 +150,8 @@ type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1 ,2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
-ordinate = 'NuMIFull'
-points = ['wire_gap', 'wire_gap', 'wire_gap', 'NuMIFull', 'wire_gap', 'wire_gap', 'wire_gap']
+ordinate = 'NuMI_nue'
+points = ['wire_gap', 'wire_gap', 'wire_gap', 'NuMI_nue', 'wire_gap', 'wire_gap', 'wire_gap']
 
 [[sys]] 
 name = 'yz_uniformity'
@@ -159,8 +159,8 @@ type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1 ,2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
-ordinate = 'NuMIFull'
-points = ['yz_uniformity', 'yz_uniformity', 'yz_uniformity', 'NuMIFull', 'yz_uniformity', 'yz_uniformity', 'yz_uniformity']
+ordinate = 'NuMI_nue'
+points = ['yz_uniformity', 'yz_uniformity', 'yz_uniformity', 'NuMI_nue', 'yz_uniformity', 'yz_uniformity', 'yz_uniformity']
 
 [[sys]]
 name = 'recombination'
@@ -168,8 +168,8 @@ type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1 ,2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
-ordinate = 'NuMIFull'
-points = ['recombination', 'recombination', 'recombination', 'NuMIFull', 'recombination', 'recombination', 'recombination']
+ordinate = 'NuMI_nue'
+points = ['recombination', 'recombination', 'recombination', 'NuMI_nue', 'recombination', 'recombination', 'recombination']
 
 [[sys]]
 name = 'null'
@@ -177,8 +177,26 @@ type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1 ,2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
-ordinate = 'NuMIFull'
-points = ['null', 'null', 'null', 'NuMIFull', 'null', 'null', 'null']
+ordinate = 'NuMI_nue'
+points = ['null', 'null', 'null', 'NuMI_nue', 'null', 'null', 'null']
+
+[[sys]]
+name = 'cathode_bend'
+type = 'variation'
+index = -1
+nsigma = [-3, -2, -1, 0, 1 ,2, 3]
+scale = [-3, -2, -1, 1, 1, 2, 3]
+ordinate = 'NuMI_nue'
+points = ['cathode_bend', 'cathode_bend', 'cathode_bend', 'NuMI_nue', 'cathode_bend', 'cathode_bend', 'cathode_bend']
+
+[[sys]]
+name = 'cv'
+type = 'variation'
+index = -1
+nsigma = [-3, -2, -1, 0, 1 ,2, 3]
+scale = [-3, -2, -1, 1, 1, 2, 3]
+ordinate = 'NuMI_nue'
+points = ['cv', 'cv', 'cv', 'NuMI_nue', 'cv', 'cv', 'cv']
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_ZExpA1CCQE'
