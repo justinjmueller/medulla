@@ -202,7 +202,7 @@ key = "sbnd_detvar_wiremod_xthetaxw"
 name = "sbnd_detvar_wiremod_xthetaxw"
 experiment = "sbnd"
 path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_run1_detvar_wiremod_xthetaxw/*/*/*.root"
-ismc = true
+ismc = false
 
   [sample.metadata]
   description = "SBND Run 1 BNB WireMod X-ThetaXW DetVar"
@@ -216,7 +216,7 @@ key = "sbnd_detvar_wiremod_yz"
 name = "sbnd_detvar_wiremod_yz"
 experiment = "sbnd"
 path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_run1_detvar_wiremod_yz/*/*/*.root"
-ismc = true
+ismc = false
 
   [sample.metadata]
   description = "SBND Run 1 BNB WireMod YZ DetVar"
