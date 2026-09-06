@@ -9,6 +9,7 @@ histogram_destination = 'variations/'
 
 [general]
 weight_clip = [0.0, 10.0]
+store_genie_evt_rec = true
 
 [[sysvar]]
 name = "reco_visible_energy"
