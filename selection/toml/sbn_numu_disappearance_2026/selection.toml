@@ -60,6 +60,8 @@ branch = [
     # Event-level branches
     { name = "largest_flash_pe",      type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
     { name = "largest_flash_time",    type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    { name = "first_neutrino_energy", type = "event" },
+    { name = "max_neutrino_energy",   type = "event" },
 
     # Interaction-level branches
     { name = "neutrino_id",           type = "true"    },
@@ -165,6 +167,8 @@ branch = [
     # Event-level branches
     { name = "largest_flash_pe",      type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
     { name = "largest_flash_time",    type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    { name = "first_neutrino_energy", type = "event" },
+    { name = "max_neutrino_energy",   type = "event" },
     
     # Interaction-level branches
     { name = "neutrino_id",           type = "true"    },
@@ -268,22 +272,24 @@ name = "events"
 sim_only = false
 mode = "event"
 cut = [
-    { name = "no_cut",             type = "event" },
+    { name = "no_cut",                type = "event" },
 ]
 branch = [
-    { name = "is_first_in_subrun", type = "event" },
-    { name = "pot",                type = "event" },
-    { name = "pot_from_spillinfo", type = "event" },
-    { name = "largest_flash_pe",   type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
-    { name = "largest_flash_time", type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
-    { name = "unfolded_pot_bnb",   type = "event" },
-    { name = "unfolded_nbnb",      type = "event" },
-    { name = "gate_delta",         type = "event" },
-    { name = "nbnb",               type = "event" },
-    { name = "noffbeambnb",        type = "event" },
-    { name = "ngenevt",            type = "event" },
-    { name = "nreco",              type = "event" },
-    { name = "ntrue",              type = "event" },
+    { name = "is_first_in_subrun",    type = "event" },
+    { name = "pot",                   type = "event" },
+    { name = "pot_from_spillinfo",    type = "event" },
+    { name = "largest_flash_pe",      type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    { name = "largest_flash_time",    type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    { name = "unfolded_pot_bnb",      type = "event" },
+    { name = "unfolded_nbnb",         type = "event" },
+    { name = "gate_delta",            type = "event" },
+    { name = "nbnb",                  type = "event" },
+    { name = "noffbeambnb",           type = "event" },
+    { name = "ngenevt",               type = "event" },
+    { name = "nreco",                 type = "event" },
+    { name = "ntrue",                 type = "event" },
+    { name = "first_neutrino_energy", type = "event" },
+    { name = "max_neutrino_energy",   type = "event" },
 ]
 
 [[category]] # 0 : Fiducial, contained, single muon, single proton
