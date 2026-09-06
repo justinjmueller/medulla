@@ -787,6 +787,29 @@ namespace evar
     }
     REGISTER_VAR_SCOPE(RegistrationScope::Event, first_neutrino_energy, first_neutrino_energy);
 
+    /**
+     * @brief Variable for the maximum energy of the neutrinos in the event.
+     * @details This variable returns the maximum energy of the neutrinos in
+     * the event using the `mc.nu` vector in the SRTruthBranch.
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return the maximum energy of the neutrinos in the event in GeV.
+     */
+    template<typename T>
+    double max_neutrino_energy(const T & sr)
+    {
+        if(sr.mc.nu.empty())
+            return kNoMatchValue;
+        double max_energy = sr.mc.nu[0].E;
+        for(const auto & nu : sr.mc.nu)
+        {
+            if(nu.E > max_energy)
+                max_energy = nu.E;
+        }
+        return max_energy;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, max_neutrino_energy, max_neutrino_energy);
+
 }
 
 #endif
