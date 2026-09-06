@@ -8,6 +8,7 @@
  * candidates and the configured systematics.
  * @author mueller@fnal.gov
  */
+#include <cmath>
 #include <iostream>
 
 #include "trees.h"
@@ -503,11 +504,18 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
         // The primary use case for the non-matched TTree is to capture cosmics
         // and failed truth matching. We explicitly write all entries of the
         // input tree that have a neutrino ID less than 0 to the non-matched
-        // TTree to capture these cases.
+        // TTree to capture these cases. An unmatched reco interaction (no
+        // corresponding entry in sr->dlp_true -- the common case for a
+        // cosmic in an overlay sample) is given true_neutrino_id = NaN by
+        // the selection framework's kNoMatchValue convention, not a
+        // negative number, so it must be checked for explicitly: NaN
+        // compares false against both "< 0" and ">= 0" (IEEE 754), so
+        // without this check these entries would silently be dropped from
+        // both this tree and the matched candidates map above.
         for(int i(0); i < input_tree->GetEntries(); ++i)
         {
             input_tree->GetEntry(i);
-            if(nu_id < 0)
+            if(nu_id < 0 || std::isnan(nu_id))
             {
                 run = reader.get_run();
                 subrun = reader.get_subrun();
