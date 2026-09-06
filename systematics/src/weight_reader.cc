@@ -131,8 +131,7 @@ sys::WeightReader::WeightReader(const std::string & input)
             : "mc.nu.genie_evtrec_idx";
         has_evtrec = (find_branch(chain.GetTree()->GetListOfBranches(), idx_branch) != nullptr);
     }
-    update_genie_tree();
-    if(genie_tree == nullptr)
+    if(find_genie_tree() == nullptr)
         has_evtrec = false;
 
     // Create the TTreeReader
@@ -176,7 +175,6 @@ sys::WeightReader::WeightReader(const std::string & input)
             evtrec_idx_structured = std::make_unique<TTreeReaderArray<ULong64_t>>(*reader, "rec.mc.nu.genie_evtrec_idx");
     }
     reader->Next();
-    update_genie_tree();
 }
 
 // Advance to the next entry in the TChain.
@@ -187,21 +185,20 @@ bool sys::WeightReader::next()
     if(entry >= (size_t)chain.GetEntries()) return false;
     if(!reader->Next()) return false;
     chain.GetEntry(++entry);
-    update_genie_tree();
     return true;
 }
 
-// Refresh the cached GENIE event record tree.
-void sys::WeightReader::update_genie_tree()
+// Look up the GENIE event record tree of the current file.
+TTree * sys::WeightReader::find_genie_tree()
 {
-    // Each file in the chain carries its own "GenieEvtRecTree", and the indices
-    // stored in the CAF record are relative to it, so the cached tree has to be
-    // refreshed whenever the chain rolls over to a new file.
-    if(chain.GetTreeNumber() == current_tree_number)
-        return;
-    current_tree_number = chain.GetTreeNumber();
     TFile * file = chain.GetFile();
-    genie_tree = file != nullptr ? (TTree *) file->Get("GenieEvtRecTree") : nullptr;
+    return file != nullptr ? (TTree *) file->Get("GenieEvtRecTree") : nullptr;
+}
+
+// Accessor method for the GENIE event record tree.
+TTree * sys::WeightReader::get_genie_tree()
+{
+    return has_evtrec ? find_genie_tree() : nullptr;
 }
 
 // Accessor method for the GENIE event record index.

@@ -282,20 +282,24 @@ void sys::GenieRecordWriter::connect(TTree * source, int file_index)
 
         // Force the input branches to be pointed at our storage below.
         connected = -1;
+        connected_tree = nullptr;
     }
 
     /**
      * @brief Point the branches of the input tree at our own storage.
-     * @details This has to be redone every time the TChain moves on to a new
-     * file, since each file carries its own instance of the GENIE event record
-     * tree. The comparison is made on the file index rather than on the tree
-     * pointer because a newly opened file may well reuse the address of the tree
-     * that was just deleted.
+     * @details This has to be redone every time the source tree changes, which
+     * happens whenever the TChain moves on to a new file -- and also, less
+     * obviously, whenever it revisits a file it had already read, since it
+     * re-reads that file's trees and the previous TTree object is replaced. The
+     * tree number alone therefore does not capture it: the chain can hand back a
+     * different tree for the same file index. Both are compared, so that a new
+     * source object is always reconnected.
      */
-    if(file_index != connected)
+    if(file_index != connected || source != connected_tree)
     {
         output->CopyAddresses(source);
         connected = file_index;
+        connected_tree = source;
     }
 }
 

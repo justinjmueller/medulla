@@ -182,7 +182,7 @@ namespace sys
          * @return The GENIE event record tree of the currently loaded file, or
          * nullptr if that file does not have one.
          */
-        TTree * get_genie_tree() const { return genie_tree; }
+        TTree * get_genie_tree();
 
         /**
          * @brief Accessor method for the index of the currently loaded file.
@@ -192,20 +192,28 @@ namespace sys
          * has gone stale.
          * @return The index of the currently loaded file within the TChain.
          */
-        int get_file_index() const { return current_tree_number; }
+        int get_file_index() const { return chain.GetTreeNumber(); }
 
         private:
 
         /**
-         * @brief Refresh the cached GENIE event record tree.
-         * @details This method re-reads the "GenieEvtRecTree" from the file that
-         * the TChain currently has loaded, if the chain has moved on to a new
-         * file since the last call. Each file in the chain carries its own
-         * instance of this tree, and the indices stored in the CAF record are
-         * relative to it, so the tree must be tracked alongside the chain.
-         * @return void
+         * @brief Look up the GENIE event record tree of the current file.
+         * @details This method reads the "GenieEvtRecTree" from whichever file
+         * the TChain currently has loaded. Each file in the chain carries its
+         * own instance of the tree, and the indices stored in the CAF record are
+         * relative to it, so the right one has to be used for every entry.
+         * @note The result is deliberately not cached. A TChain re-reads a
+         * file's trees whenever it revisits that file, which it does more often
+         * than the tree number suggests: TChain::GetEntries() walks the whole
+         * chain, so a caller that asks for the entry count between two entries
+         * of the same file (as the progress bar does) leaves the tree number
+         * unchanged while the previously returned TTree has been replaced.
+         * Caching on the tree number -- or on the TFile pointer, which the chain
+         * reuses -- therefore hands back a dangling pointer.
+         * @return The GENIE event record tree of the currently loaded file, or
+         * nullptr if that file does not have one.
          */
-        void update_genie_tree();
+        TTree * find_genie_tree();
 
         /**
          * @brief A simple progress bar for the TChain.
@@ -251,8 +259,6 @@ namespace sys
         bool has_evtrec{false}; // Flag to indicate if the GENIE event records are available
         ULong64_t evtrec_idx[10]{}; // GENIE event record index for each neutrino
         std::unique_ptr<TTreeReaderArray<ULong64_t>> evtrec_idx_structured; // GENIE event record index for structured CAF files
-        Int_t current_tree_number{-1}; // Index of the file currently loaded by the TChain
-        TTree * genie_tree{nullptr}; // GENIE event record tree of the currently loaded file (not owned)
 
         // Progress bar timestamp
         mutable std::chrono::steady_clock::time_point progress_start_time; // Start time for the progress bar

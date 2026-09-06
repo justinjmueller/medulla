@@ -180,6 +180,7 @@ namespace sys
         TDirectory * directory{nullptr}; ///< The output directory.
         TTree * output{nullptr}; ///< The output TTree.
         int connected{-1}; ///< The file the input branches are currently pointed at.
+        TTree * connected_tree{nullptr}; ///< The source tree the branches are pointed at.
         std::vector<Slot> slots; ///< The storage backing the output branches.
         size_t pending{0}; ///< Default entries owed from before the tree existed.
         size_t nfilled{0}; ///< The number of entries that have been requested.
