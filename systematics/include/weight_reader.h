@@ -148,7 +148,64 @@ namespace sys
          */
         float get_energy(size_t idn) const;
 
+        /**
+         * @brief Check whether the GENIE event records are available.
+         * @details This method reports whether the input files carry both the
+         * per-neutrino index branch ("rec.mc.nu.genie_evtrec_idx") and the
+         * "GenieEvtRecTree" that it indexes. Both are required in order to
+         * associate a GENIE event record with a neutrino, and neither is
+         * present in every CAF sample.
+         * @return True if the GENIE event records are available, false
+         * otherwise.
+         */
+        bool has_genie_evtrec() const { return has_evtrec; }
+
+        /**
+         * @brief Accessor method for the GENIE event record index.
+         * @details This method returns the index of the GENIE event record
+         * associated with the specified neutrino. It handles both structured
+         * and flat CAF files.
+         * @param idn The index of the neutrino.
+         * @return The index of the GENIE event record within the
+         * "GenieEvtRecTree" of the file that is currently loaded.
+         * @note The index is relative to the file that the record lives in, not
+         * to the position within the TChain. It must therefore only ever be used
+         * against the tree returned by @ref get_genie_tree().
+         */
+        int64_t get_genie_evtrec_idx(size_t idn) const;
+
+        /**
+         * @brief Accessor method for the GENIE event record tree.
+         * @details This method returns the "GenieEvtRecTree" belonging to the
+         * file that is currently loaded by the TChain, which is the tree that
+         * the index returned by @ref get_genie_evtrec_idx() refers to.
+         * @return The GENIE event record tree of the currently loaded file, or
+         * nullptr if that file does not have one.
+         */
+        TTree * get_genie_tree() const { return genie_tree; }
+
+        /**
+         * @brief Accessor method for the index of the currently loaded file.
+         * @details This method returns the index of the file that the TChain
+         * currently has loaded. It is used by consumers that cache per-file
+         * state (such as the GENIE event record tree) to detect when that state
+         * has gone stale.
+         * @return The index of the currently loaded file within the TChain.
+         */
+        int get_file_index() const { return current_tree_number; }
+
         private:
+
+        /**
+         * @brief Refresh the cached GENIE event record tree.
+         * @details This method re-reads the "GenieEvtRecTree" from the file that
+         * the TChain currently has loaded, if the chain has moved on to a new
+         * file since the last call. Each file in the chain carries its own
+         * instance of this tree, and the indices stored in the CAF record are
+         * relative to it, so the tree must be tracked alongside the chain.
+         * @return void
+         */
+        void update_genie_tree();
 
         /**
          * @brief A simple progress bar for the TChain.
@@ -189,6 +246,13 @@ namespace sys
 
         // MC-truth branch
         std::unique_ptr<TTreeReaderArray<caf::SRTrueInteraction>> mc; // MC-truth data for structured CAF files
+
+        // GENIE event record indexing
+        bool has_evtrec{false}; // Flag to indicate if the GENIE event records are available
+        ULong64_t evtrec_idx[10]{}; // GENIE event record index for each neutrino
+        std::unique_ptr<TTreeReaderArray<ULong64_t>> evtrec_idx_structured; // GENIE event record index for structured CAF files
+        Int_t current_tree_number{-1}; // Index of the file currently loaded by the TChain
+        TTree * genie_tree{nullptr}; // GENIE event record tree of the currently loaded file (not owned)
 
         // Progress bar timestamp
         mutable std::chrono::steady_clock::time_point progress_start_time; // Start time for the progress bar

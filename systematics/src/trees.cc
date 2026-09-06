@@ -14,6 +14,7 @@
 #include "detsys.h"
 #include "utilities.h"
 #include "configuration.h"
+#include "genie_record.h"
 #include "systematic.h"
 #include "weight_reader.h"
 
@@ -162,6 +163,29 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     input_tree->SetBranchAddress("Subrun", &subrun);
     input_tree->SetBranchAddress("Evt", &event);
 
+    /**
+     * @brief Check whether the GENIE event records have been requested, and
+     * whether the inputs can actually supply them.
+     * @details The GENIE event records are only copied to the output file if the
+     * "general.store_genie_evt_rec" field is set in the configuration file. The
+     * feature rests on three foundations that are not present in every input:
+     * the "true_neutrino_id" branch of the selected candidate tree, which
+     * indexes "rec.mc.nu"; the "rec.mc.nu.genie_evtrec_idx" branch of the CAF
+     * files, which indexes the GENIE event record tree; and the
+     * "GenieEvtRecTree" itself. The first is checked here, and the remaining two
+     * are checked below once the CAF files have been opened. If any of them is
+     * missing the request is downgraded to a warning rather than an error, so
+     * that a configuration file shared across samples does not fail on the
+     * samples that happen to lack the records.
+     */
+    bool store_genie = config.get_bool_field("general.store_genie_evt_rec", false);
+    if(store_genie && input_tree->GetBranch("true_neutrino_id") == nullptr)
+    {
+        std::cerr << "Warning: 'general.store_genie_evt_rec' is set, but the tree "
+                  << table.get_string_field("origin") << " has no 'true_neutrino_id' branch. "
+                  << "The GENIE event records will not be stored." << std::endl;
+        store_genie = false;
+    }
 
     /**
      * @brief Create the output TTree with the name specified in the
@@ -310,6 +334,45 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     }
 
     sys::WeightReader reader(config.get_string_field("input.weights"));
+
+    /**
+     * @brief Configure the copying of the GENIE event records.
+     * @details This block completes the checks begun above, now that the CAF
+     * files have been opened: the reader reports whether both the
+     * "rec.mc.nu.genie_evtrec_idx" branch and the "GenieEvtRecTree" that it
+     * indexes were found. The records are written to a tree that is filled in
+     * lockstep with the output TTree, in the manner of the systematic trees
+     * above, so that entry N of the record tree belongs to entry N of the
+     * selected candidate tree.
+     */
+    if(store_genie && !reader.has_genie_evtrec())
+    {
+        std::cerr << "Warning: 'general.store_genie_evt_rec' is set, but the input CAF files "
+                  << "do not carry both 'rec.mc.nu.genie_evtrec_idx' and 'GenieEvtRecTree'. "
+                  << "The GENIE event records will not be stored." << std::endl;
+        store_genie = false;
+    }
+
+    /**
+     * @brief Confirm that the GENIE classes can be written before copying any
+     * record.
+     * @details Writing a record requires ROOT to stream a TObject-derived class.
+     * Without a compiled dictionary ROOT emulates the class well enough to read
+     * it, but writing it dispatches a virtual call against an object that has no
+     * vtable, which is a segmentation fault rather than a recoverable error. The
+     * check is therefore made up front, and the feature is disabled rather than
+     * risking a crash partway through a long job.
+     */
+    std::string reason;
+    if(store_genie && !sys::records_are_writable(reader.get_genie_tree(), reason))
+    {
+        std::cerr << "Warning: 'general.store_genie_evt_rec' is set, but the GENIE event records "
+                  << "cannot be written: " << reason << ". "
+                  << "The GENIE event records will not be stored." << std::endl;
+        store_genie = false;
+    }
+    sys::GenieRecordWriter genie_writer(table.get_string_field("name") + "_genieTree", directory);
+
     std::vector<index_t> saved_indices;
     double nominal_count(0);
     while(reader.next())
@@ -346,6 +409,21 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
                 calc.increment_nominal_count(1.0);
                 nominal_count += 1.0;
                 output_tree->Fill();
+
+                /**
+                 * @brief Store the GENIE event record for the parent neutrino.
+                 * @details The loop index "idn" is the position of the parent
+                 * neutrino within "rec.mc.nu", which is exactly what the
+                 * "true_neutrino_id" branch of the selected candidate tree holds
+                 * and what the candidates map was keyed on. The record index
+                 * that it yields is relative to the CAF file that is currently
+                 * loaded, so it is resolved against that file's own record tree.
+                 * Exactly one entry is appended per selected candidate, so the
+                 * record tree stays aligned with the output TTree even for
+                 * candidates whose record is missing.
+                 */
+                if(store_genie)
+                    genie_writer.fill(reader.get_genie_tree(), reader.get_file_index(), reader.get_genie_evtrec_idx(idn));
 
                 /**
                  * @brief Store the universe weights in the output TTree.
@@ -446,6 +524,10 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     directory->WriteObject(output_tree, table.get_string_field("name").c_str());
     for(auto & [key, value] : systrees)
         directory->WriteObject(value, (key+"Tree").c_str());
+
+    // Write the GENIE event records to the output file.
+    if(store_genie)
+        genie_writer.write();
     
     // Write the systematic histograms to the output file.
     std::string destination = config.get_string_field("output.histogram_destination", "");
