@@ -1166,6 +1166,123 @@ class TestFinalizeHadd:
         assert active["max"] <= 3, "must never exceed the configured worker limit"
 
 
+class TestFinalizeCatalogSplit:
+    """A project's jobs may carry more than one catalog-level 'experiment'
+    tag (e.g. icarus_run2/icarus_run4 sharing one campaign-level 'icarus'
+    project). _project_catalog_tags groups jobs by that tag, and
+    _run_one_hadd(job_ids=...) restricts a merge to just one group's
+    files instead of globbing the whole project output directory."""
+
+    def _make_project_db(self, proj_dir, rows):
+        """rows: list of (jobid, sample, catalog_experiment)."""
+        (proj_dir / "output").mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(proj_dir / "project.db")
+        conn.execute(
+            "CREATE TABLE jobs (jobid INTEGER PRIMARY KEY, status TEXT, "
+            "sample TEXT, catalog_experiment TEXT)"
+        )
+        conn.executemany(
+            "INSERT INTO jobs (jobid, status, sample, catalog_experiment) VALUES (?, ?, ?, ?)",
+            [(jid, "completed", sample, tag) for jid, sample, tag in rows],
+        )
+        conn.commit()
+        conn.close()
+
+    def test_groups_jobs_by_catalog_experiment(self, tmp_path):
+        proj_dir = tmp_path / "proj"
+        self._make_project_db(proj_dir, [
+            (0, "icarus_run2", "icarus_run2"),
+            (1, "icarus_dirt_run2", "icarus_run2"),
+            (2, "icarus_run4", "icarus_run4"),
+        ])
+
+        groups = campaign._project_catalog_tags(proj_dir)
+
+        assert set(groups.keys()) == {"icarus_run2", "icarus_run4"}
+        assert sorted(groups["icarus_run2"]) == [0, 1]
+        assert groups["icarus_run4"] == [2]
+
+    def test_single_tag_is_not_a_split(self, tmp_path):
+        proj_dir = tmp_path / "proj"
+        self._make_project_db(proj_dir, [
+            (0, "sbnd", None),
+            (1, "sbnd_dirt", None),
+        ])
+
+        groups = campaign._project_catalog_tags(proj_dir)
+
+        # Both untagged -> one group. Caller decides "don't split" via
+        # len(groups) <= 1, regardless of what the single key is.
+        assert len(groups) == 1
+
+    def test_missing_column_reports_as_unsplit(self, tmp_path):
+        """A project.db predating the catalog_experiment column (no
+        migration is performed) must not be treated as having zero jobs
+        to merge -- it must fall back to the old glob-based behavior."""
+        proj_dir = tmp_path / "proj"
+        (proj_dir / "output").mkdir(parents=True)
+        conn = sqlite3.connect(proj_dir / "project.db")
+        curs = conn.cursor()
+        curs.execute("CREATE TABLE jobs (jobid INTEGER PRIMARY KEY, status TEXT, sample TEXT)")
+        curs.execute("INSERT INTO jobs VALUES (0, 'completed', 'sbnd')")
+        conn.commit()
+        conn.close()
+
+        groups = campaign._project_catalog_tags(proj_dir)
+
+        assert len(groups) == 1
+
+    def test_run_one_hadd_with_job_ids_only_picks_matching_files(self, tmp_path):
+        proj_dir = tmp_path / "proj"
+        (proj_dir / "output").mkdir(parents=True)
+        for jid in range(4):
+            (proj_dir / "output" / f"output_jobid{jid:04d}.root").write_bytes(b"fake")
+
+        row = {"analysis": "eps", "role": "primary", "experiment": "icarus", "project_dir": str(proj_dir)}
+        campaign_dir = tmp_path / "campaign"
+        campaign_dir.mkdir()
+        out_path = campaign_dir / "run4.root"
+
+        calls = []
+        with mock.patch("subprocess.run", side_effect=lambda cmd, **kw: calls.append(cmd)):
+            ok, skipped = campaign._run_one_hadd(
+                campaign_dir, row, out_path, None, "nosyst", threading.Lock(),
+                job_ids=[2, 3],
+            )
+
+        assert ok is True
+        filelist_path = Path(calls[0][3][1:])
+        lines = sorted(filelist_path.read_text().splitlines())
+        assert lines == [
+            str(proj_dir / "output" / "output_jobid0002.root"),
+            str(proj_dir / "output" / "output_jobid0003.root"),
+        ]
+
+    def test_run_one_hadd_job_ids_ignores_missing_files(self, tmp_path):
+        """A jobid in the group with no output file on disk yet (e.g. not
+        completed) is simply omitted, not an error."""
+        proj_dir = tmp_path / "proj"
+        (proj_dir / "output").mkdir(parents=True)
+        (proj_dir / "output" / "output_jobid0000.root").write_bytes(b"fake")
+
+        row = {"analysis": "eps", "role": "primary", "experiment": "icarus", "project_dir": str(proj_dir)}
+        campaign_dir = tmp_path / "campaign"
+        campaign_dir.mkdir()
+
+        calls = []
+        with mock.patch("subprocess.run", side_effect=lambda cmd, **kw: calls.append(cmd)):
+            ok, skipped = campaign._run_one_hadd(
+                campaign_dir, row, campaign_dir / "out.root", None, "nosyst", threading.Lock(),
+                job_ids=[0, 1],  # jobid 1 has no file
+            )
+
+        assert ok is True
+        filelist_path = Path(calls[0][3][1:])
+        assert filelist_path.read_text().splitlines() == [
+            str(proj_dir / "output" / "output_jobid0000.root"),
+        ]
+
+
 # ===================================================================
 # scan: real ROOT-level output-file validation (goes beyond sync's
 # size-only heuristic; TFile::IsZombie() via a batched ROOT subprocess)

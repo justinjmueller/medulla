@@ -86,6 +86,8 @@ def resolve_samples(cfg, catalog_path=None, enable_keys=None):
                 'ismc': sample['ismc'],
                 'disable': (not active_keys) or (key not in active_keys),
             }
+            if 'experiment' in sample:
+                entry['experiment'] = sample['experiment']
             resolved.append(entry)
 
     cfg['sample'] = resolved

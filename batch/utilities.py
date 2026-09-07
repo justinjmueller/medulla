@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     jobid INTEGER PRIMARY KEY,
     status TEXT,
     sample TEXT,
+    catalog_experiment TEXT,
     FOREIGN KEY (jobid) REFERENCES configuration(jobid)
 );
 """
@@ -463,11 +464,11 @@ def create_new_project(
         job_tml['sample'] = [sample,]
 
         ins_configurations.append((si, toml.dumps(job_tml),))
-        ins_jobs.append((si, 'pending', sample['name']))
+        ins_jobs.append((si, 'pending', sample['name'], sample.get('experiment')))
 
     # Insert the job configuration into the database.
     command(curs, "INSERT INTO configuration (jobid, cfg) VALUES (?, ?)", ins_configurations)
-    command(curs, "INSERT INTO jobs (jobid, status, sample) VALUES (?, ?, ?)", ins_jobs)
+    command(curs, "INSERT INTO jobs (jobid, status, sample, catalog_experiment) VALUES (?, ?, ?, ?)", ins_jobs)
     conn.commit()
     conn.close()
 
@@ -787,9 +788,9 @@ def launch_jobsub(
             '-N', str(count),
             f'--memory={memory}MB',
             disk_flag,
-            #f'--expected-lifetime={lifetime}',
-            f'--expected-lifetime=6h',
-            '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE',
+            f'--expected-lifetime={lifetime}',
+            '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC',
+            '--site=FermiGrid',
             "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
             '--singularity-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest',
             f'file://{Path(__file__).resolve().parent / "submit.sh"}',
