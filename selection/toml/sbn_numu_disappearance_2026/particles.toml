@@ -1,0 +1,124 @@
+[general]
+output = "particles"
+primfn = "lax_primary_classification"
+pidfn = "boosted_muon_pid"
+fsthresh = [
+    "@photon_threshold",
+    "@electron_threshold",
+    "@muon_threshold",
+    "@pion_threshold",
+    "@proton_threshold",
+]
+
+[parameters]
+photon_threshold = 25.0
+electron_threshold = 25.0
+muon_threshold = 143.425
+pion_threshold = 25.0
+proton_threshold = 50.0
+containment_threshold = 10.0
+cathode_fiducialization = 5.0
+intime_lb = -5.0
+intime_ub = 5.0
+
+[[include_samples]]
+file = "common/osc.toml"
+keys = [
+    "sbnd_ar23p_mc5e18", "sbnd_ar23p_mc1e20",
+    "sbnd_detvar_cv", "sbnd_detvar_dent",
+    "sbnd_detvar_sce0x", "sbnd_detvar_sce2x", "sbnd_detvar_charge_scale",
+    "sbnd_detvar_p5_gain", "sbnd_detvar_m5_gain", "sbnd_detvar_smear15",
+    "sbnd_detvar_wiremod_xthetaxw", "sbnd_detvar_wiremod_yz",
+    "icarus_ar23p_run2", "icarus_ar23p_run4",
+    "icarus_detvar_sce0x_run4", "icarus_detvar_sce2x_run4", "icarus_detvar_charge_scale_run4",
+    "icarus_wiremod_xthetaxw_run2", "icarus_wiremod_xthetaxw_run4",
+    "icarus_wiremod_yz_run2", "icarus_wiremod_yz_run4",
+]
+# For interactive debugging, uncomment:
+enable = ["sbnd_ar23p_mc5e18"]
+
+[[tree]]
+name = "sideband_particles_true"
+sim_only = true
+mode = "true"
+cut = [
+    { name = "fiducial_cut_osc",      type = "true" },
+    { name = "user_containment_cut",  type = "true",  parameters = [ "@containment_threshold" ] },
+    { name = "no_photons",            type = "true",  parameters = [ "@photon_threshold"      ] },
+    { name = "no_electrons",          type = "true",  parameters = [ "@electron_threshold"    ] },
+]
+branch = [
+    { name = "interaction_id",         type = "both_particle" },
+    { name = "ke",                     type = "both_particle" },
+    { name = "length",                 type = "reco_particle" },
+    { name = "csda_ke",                type = "reco_particle" },
+    { name = "mcs_ke",                 type = "reco_particle" },
+    { name = "calo_ke",                type = "reco_particle" },
+    { name = "primary_classification", type = "both_particle" },
+    { name = "pid",                    type = "both_particle" },
+    { name = "primary_softmax",        type = "reco_particle" },
+    { name = "secondary_softmax",      type = "reco_particle" },
+    { name = "photon_softmax",         type = "reco_particle" },
+    { name = "electron_softmax",       type = "reco_particle" },
+    { name = "muon_softmax",           type = "reco_particle" },
+    { name = "pion_softmax",           type = "reco_particle" },
+    { name = "proton_softmax",         type = "reco_particle" },
+    { name = "polar_angle",            type = "both_particle" },
+    { name = "azimuthal_angle",        type = "both_particle" },
+    { name = "semantic_type",          type = "both_particle" },
+    { name = "start_x",                type = "both_particle" },
+    { name = "start_y",                type = "both_particle" },
+    { name = "start_z",                type = "both_particle" },
+    { name = "start_dir_x",            type = "both_particle" },
+    { name = "start_dir_y",            type = "both_particle" },
+    { name = "start_dir_z",            type = "both_particle" },
+    { name = "end_x",                  type = "both_particle" },
+    { name = "end_y",                  type = "both_particle" },
+    { name = "end_z",                  type = "both_particle" },
+    { name = "end_dir_x",              type = "both_particle" },
+    { name = "end_dir_y",              type = "both_particle" },
+    { name = "end_dir_z",              type = "both_particle" },
+]
+
+[[tree]]
+name = "sideband_particles_reco"
+sim_only = false
+mode = "reco"
+cut = [
+    { name = "fiducial_cut_osc",      type = "reco" },
+    { name = "user_containment_cut",  type = "reco",  parameters = [ "@containment_threshold" ] },
+    { name = "no_photons",            type = "reco",  parameters = [ "@photon_threshold"      ] },
+    { name = "no_electrons",          type = "reco",  parameters = [ "@electron_threshold"    ] },
+]
+branch = [
+    { name = "interaction_id",         type = "both_particle" },
+    { name = "ke",                     type = "both_particle" },
+    { name = "length",                 type = "reco_particle" },
+    { name = "csda_ke",                type = "reco_particle" },
+    { name = "mcs_ke",                 type = "reco_particle" },
+    { name = "calo_ke",                type = "reco_particle" },
+    { name = "primary_classification", type = "both_particle" },
+    { name = "pid",                    type = "both_particle" },
+    { name = "primary_softmax",        type = "reco_particle" },
+    { name = "secondary_softmax",      type = "reco_particle" },
+    { name = "photon_softmax",         type = "reco_particle" },
+    { name = "electron_softmax",       type = "reco_particle" },
+    { name = "muon_softmax",           type = "reco_particle" },
+    { name = "pion_softmax",           type = "reco_particle" },
+    { name = "proton_softmax",         type = "reco_particle" },
+    { name = "polar_angle",            type = "both_particle" },
+    { name = "azimuthal_angle",        type = "both_particle" },
+    { name = "semantic_type",          type = "both_particle" },
+    { name = "start_x",                type = "both_particle" },
+    { name = "start_y",                type = "both_particle" },
+    { name = "start_z",                type = "both_particle" },
+    { name = "start_dir_x",            type = "both_particle" },
+    { name = "start_dir_y",            type = "both_particle" },
+    { name = "start_dir_z",            type = "both_particle" },
+    { name = "end_x",                  type = "both_particle" },
+    { name = "end_y",                  type = "both_particle" },
+    { name = "end_z",                  type = "both_particle" },
+    { name = "end_dir_x",              type = "both_particle" },
+    { name = "end_dir_y",              type = "both_particle" },
+    { name = "end_dir_z",              type = "both_particle" },
+]
