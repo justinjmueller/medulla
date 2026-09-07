@@ -105,6 +105,14 @@ output_pattern = "spineosc_numu_%e_%t_bnblight#"
   ]
 
 [[toml]]
+role = "sbnd_data_access"
+file = "sbnd_data_access.toml"
+output_pattern = "spineosc_numu_%e_%t_sbnd_access_DONOTLOOK#"
+
+  [toml.enable.sbnd]
+  keys = ["sbnd_bnblight"]
+
+[[toml]]
 role = "data_quality"
 file = "data_quality.toml"
 experiments = ["sbnd"]
