@@ -280,6 +280,78 @@ class TestSysTemplateResolution:
 
 
 # ===================================================================
+# lifetime resolution: [defaults].lifetime in meta.toml flows through to
+# ProjectUnit.lifetime exactly like batch_size does, so that launch_jobsub's
+# --expected-lifetime can be set per-analysis instead of always falling back
+# to its hardcoded '1h' default (the walltime-hold root cause found by the
+# failure_ana study, which held ~25% of one campaign's processes).
+# ===================================================================
+
+@skip_expand
+class TestLifetimeDefault:
+    """[defaults].lifetime in meta.toml flows through to ProjectUnit.lifetime."""
+
+    def _make_analysis(self, toml_root, defaults_block):
+        d = toml_root / "zeta_2026"
+        d.mkdir(parents=True)
+        (d / "meta.toml").write_text(textwrap.dedent(f"""\
+            [meta]
+            analysis = "zeta"
+            experiments = ["sbnd"]
+
+            [defaults]
+            {defaults_block}
+
+            [[toml]]
+            role = "primary"
+            file = "selection.toml"
+              [toml.enable.sbnd]
+              keys = ["sbnd_mc_nominal"]
+        """))
+        (d / "selection.toml").write_text(textwrap.dedent("""\
+            [general]
+            output = "zeta_2026"
+
+            [[include_samples]]
+            keys = ["sbnd_mc_nominal"]
+
+            [[tree]]
+            name = "selected"
+            sim_only = false
+            mode = "reco"
+            cut = []
+            branch = []
+        """))
+        return d
+
+    def test_lifetime_default_flows_into_project_unit(self, tmp_path):
+        toml_root = tmp_path / "selection" / "toml"
+        toml_root.mkdir(parents=True)
+        self._make_analysis(toml_root, 'batch_size = 50\nlifetime = "4h"')
+
+        analyses = discover_analyses(toml_root)
+        assert analyses[0].defaults["lifetime"] == "4h"
+
+        units = expand_campaign(analyses, catalog_path=None)
+        assert units[0].lifetime == "4h"
+
+    def test_missing_lifetime_default_is_none_not_a_hardcoded_fallback(self, tmp_path):
+        """
+        ProjectUnit.lifetime must be None (not e.g. '1h') when unconfigured,
+        so create_campaign stores NULL and launch_jobsub's own default -- not
+        a value duplicated here -- is what actually applies.
+        """
+        toml_root = tmp_path / "selection" / "toml"
+        toml_root.mkdir(parents=True)
+        self._make_analysis(toml_root, 'batch_size = 50')
+
+        analyses = discover_analyses(toml_root)
+        assert "lifetime" not in analyses[0].defaults
+        units = expand_campaign(analyses, catalog_path=None)
+        assert units[0].lifetime is None
+
+
+# ===================================================================
 # T3.2 — CLI filters in expand_campaign()
 # ===================================================================
 
@@ -492,6 +564,87 @@ class TestCampaignOverrides:
 
         assert len(rows) == 1
         assert rows[0][0] == 100
+
+    def test_lifetime_override_in_campaign_cfg(self, workspace):
+        """
+        campaign_cfg can set a per-project --expected-lifetime, the same
+        way it can override batch_size. Unlike batch_size there is no
+        global lifetime_override parameter -- see create_campaign's
+        docstring for why: lifetime has no bearing on project.db content,
+        so there is no need to force it uniformly across every project the
+        way batch_size sometimes must be.
+        """
+        analyses = discover_analyses(workspace["toml_root"])
+        units = expand_campaign(
+            analyses, workspace["catalog"],
+            analysis_filter=["alpha"], roles=["primary"],
+        )
+        campaign_dir = workspace["root"] / "campaign_lifetime"
+        campaign_cfg = {
+            "overrides": [{
+                "analysis": "alpha", "role": "primary",
+                "experiment": "sbnd", "lifetime": "8h",
+            }]
+        }
+
+        fake_sample = {"name": "fake", "path": ["/fake/file.root"], "ismc": True, "disable": False}
+        with mock.patch("utilities.get_samples", return_value=[fake_sample]):
+            create_campaign(
+                campaign_dir=campaign_dir,
+                project_units=units,
+                catalog_path=workspace["catalog"],
+                name="test_campaign",
+                tag="v0.1.0",
+                campaign_cfg=campaign_cfg,
+            )
+
+        conn = sqlite3.connect(str(campaign_dir / "campaign.db"))
+        curs = conn.cursor()
+        curs.execute(
+            "SELECT lifetime FROM projects "
+            "WHERE analysis = 'alpha' AND role = 'primary' AND experiment = 'sbnd'"
+        )
+        rows = curs.fetchall()
+        conn.close()
+
+        assert len(rows) == 1
+        assert rows[0][0] == "8h"
+
+    def test_unconfigured_lifetime_is_stored_as_null(self, workspace):
+        """
+        alpha's meta.toml sets no [defaults].lifetime, so absent an
+        override the stored column must be NULL -- not a hardcoded string
+        duplicating launch_jobsub's own default, which would silently
+        desync from it if that default ever changed.
+        """
+        analyses = discover_analyses(workspace["toml_root"])
+        units = expand_campaign(
+            analyses, workspace["catalog"],
+            analysis_filter=["alpha"], roles=["primary"],
+        )
+        campaign_dir = workspace["root"] / "campaign_no_lifetime"
+
+        fake_sample = {"name": "fake", "path": ["/fake/file.root"], "ismc": True, "disable": False}
+        with mock.patch("utilities.get_samples", return_value=[fake_sample]):
+            create_campaign(
+                campaign_dir=campaign_dir,
+                project_units=units,
+                catalog_path=workspace["catalog"],
+                name="test_campaign",
+                tag="v0.1.0",
+            )
+
+        conn = sqlite3.connect(str(campaign_dir / "campaign.db"))
+        curs = conn.cursor()
+        curs.execute(
+            "SELECT lifetime FROM projects "
+            "WHERE analysis = 'alpha' AND role = 'primary' AND experiment = 'sbnd'"
+        )
+        rows = curs.fetchall()
+        conn.close()
+
+        assert len(rows) == 1
+        assert rows[0][0] is None
 
 
 # ===================================================================
