@@ -1,7 +1,7 @@
 [general]
 output = "sbn_numu_disappearance_2026"
 primfn = "lax_primary_classification"
-pidfn = "default_pid"
+pidfn = "boosted_muon_pid"
 fsthresh = [
     "@photon_threshold",
     "@electron_threshold",
