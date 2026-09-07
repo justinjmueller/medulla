@@ -268,6 +268,51 @@ branch = [
 ]
 
 [[tree]]
+name = "purity"
+sim_only = false
+mode = "reco"
+cut = [
+    { name = "no_cut",                type = "reco" },
+]
+branch = [
+    # Generic interaction-level information
+    { name = "category",              type = "true" },
+    { name = "neutrino_id",           type = "true" },
+    { name = "neutrino_energy",       type = "mctruth" },
+    { name = "cc",                    type = "mctruth" },
+    { name = "pdg",                   type = "mctruth" },
+    { name = "interaction_mode",      type = "mctruth" },
+    { name = "interaction_type",      type = "mctruth" },
+    { name = "W",                     type = "mctruth" },
+    { name = "q0",                    type = "mctruth" },
+    { name = "q3",                    type = "mctruth" },
+
+    # Quantities for building differential plots
+    { name = "vertex_x",              type = "both" },
+    { name = "vertex_y",              type = "both" },
+    { name = "vertex_z",              type = "both" },
+    { name = "pn",                    type = "both" },
+    { name = "dpT",                   type = "both" },
+    { name = "dalphaT",               type = "both" },
+    { name = "dphiT",                 type = "both" },
+    { name = "dpL",                   type = "both" },
+    { name = "visible_energy",        type = "both" },
+    { name = "energy_qel",            type = "both" },
+
+    # Selection cuts (for calculating purity)
+    { name = "fiducial_cut_osc",      type = "reco" },
+    { name = "user_containment_cut",  type = "reco",  parameters = [ "@containment_threshold" ] },
+    { name = "no_photons",            type = "reco",  parameters = [ "@photon_threshold"      ] },
+    { name = "no_electrons",          type = "reco",  parameters = [ "@electron_threshold"    ] },
+    { name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold"        ] },
+    { name = "no_charged_pions",      type = "reco",  parameters = [ "@pion_threshold"        ] },
+    { name = "single_proton",         type = "reco",  parameters = [ "@proton_threshold"      ] },
+
+    # Special cut for ICARUS Run 2 EE TPC (for calculating purity)
+    { name = "user_containment_cut_filterEE",  type = "reco",  parameters = [ "@containment_threshold" ] },
+]
+
+[[tree]]
 name = "events"
 sim_only = false
 mode = "event"
