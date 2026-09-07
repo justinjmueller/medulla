@@ -79,6 +79,7 @@ branch = [
     { name = "off_axis_angle_icarus", type = "both"    },
     { name = "category",              type = "true"    },
     { name = "visible_energy",        type = "both"    },
+    { name = "energy_qel",            type = "both"    },
     { name = "dpT",                   type = "both"    },
     { name = "dalphaT",               type = "both"    },
     { name = "dphiT",                 type = "both"    },
@@ -134,7 +135,7 @@ branch = [
     { name = "end_y",             type = "both_particle", selector = "leading_proton" },
     { name = "end_z",             type = "both_particle", selector = "leading_proton" },
     { name = "ke",                type = "both_particle", selector = "leading_proton" },
-    { name = "mcs_csda_diff",     type = "reco_particle", selector = "leading_proton" },
+    { name = "p",                 type = "both_particle", selector = "leading_proton" },
     { name = "calo_csda_diff",    type = "reco_particle", selector = "leading_proton" },
     { name = "length",            type = "both_particle", selector = "leading_proton" },
     { name = "dpT",               type = "both_particle", selector = "leading_proton" },
@@ -147,7 +148,10 @@ branch = [
     { name = "pion_softmax",      type = "reco_particle", selector = "leading_proton" },
     { name = "proton_softmax",    type = "reco_particle", selector = "leading_proton" },
     { name = "mip_softmax",       type = "reco_particle", selector = "leading_proton" },
-    { name = "hadron_softmax",    type = "reco_particle", selector = "leading_proton" }
+    { name = "hadron_softmax",    type = "reco_particle", selector = "leading_proton" },
+
+    # Muon-Proton
+    { name = "opening_angle",     type = "reco_bivar",    biselector = "muon_proton"  },
 ]
 
 [[tree]]
@@ -186,6 +190,7 @@ branch = [
     { name = "off_axis_angle_icarus", type = "both"    },
     { name = "category",              type = "true"    },
     { name = "visible_energy",        type = "both"    },
+    { name = "energy_qel",            type = "both"    },
     { name = "dpT",                   type = "both"    },
     { name = "dalphaT",               type = "both"    },
     { name = "dphiT",                 type = "both"    },
@@ -242,7 +247,7 @@ branch = [
     { name = "end_y",             type = "both_particle", selector = "leading_proton" },
     { name = "end_z",             type = "both_particle", selector = "leading_proton" },
     { name = "ke",                type = "both_particle", selector = "leading_proton" },
-    { name = "mcs_csda_diff",     type = "reco_particle", selector = "leading_proton" },
+    { name = "p",                 type = "both_particle", selector = "leading_proton" },
     { name = "calo_csda_diff",    type = "reco_particle", selector = "leading_proton" },
     { name = "length",            type = "both_particle", selector = "leading_proton" },
     { name = "dpT",               type = "both_particle", selector = "leading_proton" },
@@ -256,6 +261,9 @@ branch = [
     { name = "proton_softmax",    type = "reco_particle", selector = "leading_proton" },
     { name = "mip_softmax",       type = "reco_particle", selector = "leading_proton" },
     { name = "hadron_softmax",    type = "reco_particle", selector = "leading_proton" },
+
+    # Muon-Proton
+    { name = "opening_angle",     type = "both_bivar",    biselector = "muon_proton"  },
 
     # Cuts (for efficiency studies)
     { name = "fiducial_cut_osc",      type = "reco"    },
