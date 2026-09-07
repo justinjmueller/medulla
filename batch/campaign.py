@@ -1307,7 +1307,46 @@ def _apply_pattern(pattern, analysis, role, experiment, tag, date_str):
     )
 
 
-def _run_one_hadd(campaign_dir, row, out_path, input_glob, label, print_lock):
+def _project_catalog_tags(project_dir):
+    """
+    Group a project's jobs by their catalog-level 'experiment' tag (the
+    per-sample metadata field from the sample catalog, e.g. distinguishing
+    'icarus_run2' from 'icarus_run4' within one shared campaign-level
+    'icarus' project). Used by cmd_finalize to decide whether a project's
+    merged output should be split into separate branches.
+
+    Jobs with no tag set (either because the sample didn't set one, or
+    because this project.db predates the catalog_experiment column) are
+    grouped under the key None.
+
+    Returns
+    -------
+    dict[str | None, list[int]]
+        Mapping of tag -> list of jobids carrying that tag. A dict with a
+        single key (whatever it is) means "do not split" -- the caller
+        checks len() > 1, not the key's value.
+    """
+    project_dir = Path(project_dir)
+    with tempfile.TemporaryDirectory() as tmp:
+        local_db = Path(tmp) / 'project.db'
+        safe_copy(project_dir / 'project.db', local_db)
+        conn = sqlite3.connect(local_db)
+        conn.row_factory = sqlite3.Row
+        curs = conn.cursor()
+        curs.execute("PRAGMA table_info(jobs)")
+        columns = {r[1] for r in curs.fetchall()}
+        if 'catalog_experiment' not in columns:
+            conn.close()
+            return {None: []}
+        curs.execute("SELECT jobid, catalog_experiment FROM jobs")
+        groups = {}
+        for r in curs.fetchall():
+            groups.setdefault(r['catalog_experiment'], []).append(r['jobid'])
+        conn.close()
+        return groups
+
+
+def _run_one_hadd(campaign_dir, row, out_path, input_glob, label, print_lock, job_ids=None):
     """
     Run a single hadd invocation for one (project, output) pair.
 
@@ -1328,13 +1367,20 @@ def _run_one_hadd(campaign_dir, row, out_path, input_glob, label, print_lock):
     out_path : Path
         Path to the merged output file to create.
     input_glob : str
-        Glob pattern for this task's input files.
+        Glob pattern for this task's input files. Ignored when job_ids is
+        given.
     label : str
         'nosyst' or 'wsyst', used only to phrase the "no files" warning.
     print_lock : threading.Lock
         Lock guarding this function's own status prints, so that output
         from concurrent workers doesn't interleave mid-line. Does not (and
         cannot) serialize hadd's own subprocess output.
+    job_ids : list[int] | None
+        If given, restrict this merge to exactly these jobids' output
+        files instead of globbing the whole project output directory --
+        used when a project's jobs are split into separate catalog-tag
+        branches (see _project_catalog_tags) and each branch must only
+        pick up its own jobs' files.
 
     Returns
     -------
@@ -1342,7 +1388,13 @@ def _run_one_hadd(campaign_dir, row, out_path, input_glob, label, print_lock):
         ok is True if hadd ran successfully. skipped is True if there were
         no input files to merge (not treated as an error).
     """
-    files = sorted(glob(input_glob))
+    if job_ids is not None:
+        name_fmt = 'output_systematics_jobid{:04d}.root' if label == 'wsyst' else 'output_jobid{:04d}.root'
+        proj_dir = Path(row['project_dir'])
+        candidates = (proj_dir / 'output' / name_fmt.format(jid) for jid in job_ids)
+        files = sorted(str(f) for f in candidates if f.exists())
+    else:
+        files = sorted(glob(input_glob))
     tag_str = f"{row['analysis']}/{row['role']}_{row['experiment']}"
     if not files:
         with print_lock:
@@ -1397,7 +1449,7 @@ def cmd_finalize(args):
         return
 
     # Build the task list: one entry per hadd invocation.
-    # task = (row, out_path, input_glob, label)
+    # task = (row, out_path, input_glob, label, job_ids)
     tasks = []
     W_AN, W_RO, W_EX, W_OUT = 28, 18, 10, 44
     table_rows = []
@@ -1407,34 +1459,49 @@ def cmd_finalize(args):
         if pattern is None:
             pattern = '%a_%r_%e_%t_%d'
 
-        name = _apply_pattern(pattern, row['analysis'], row['role'],
-                              row['experiment'], tag, date_str)
-
-        single_output = name.endswith('#')
-        if single_output:
-            name = name[:-1]
-
         proj_dir    = Path(row['project_dir'])
         nosyst_glob = str(proj_dir / 'output' / 'output_jobid*.root')
         syst_glob   = str(proj_dir / 'output' / 'output_systematics_jobid*.root')
 
-        if single_output:
-            out_nosyst = campaign_dir / f"{name}.root"
-            tasks.append((row, out_nosyst, nosyst_glob, 'nosyst'))
-            out_label = f"{name}.root"
+        # A project's jobs may carry more than one catalog-level 'experiment'
+        # tag (e.g. icarus_run2/icarus_run4 sharing one campaign-level
+        # 'icarus' project). When that happens, merge each tag separately
+        # rather than lumping every job's output into one file.
+        tag_groups = _project_catalog_tags(proj_dir)
+        splitting = len(tag_groups) > 1
+        if splitting:
+            # A None tag (untagged samples mixed in with tagged ones) falls
+            # back to the project's own experiment label so _apply_pattern
+            # always gets a real string.
+            branches = [(subtag or row['experiment'], job_ids) for subtag, job_ids in tag_groups.items()]
         else:
-            out_nosyst = campaign_dir / f"{name}_nosyst.root"
-            out_wsyst  = campaign_dir / f"{name}_wsyst.root"
-            tasks.append((row, out_nosyst, nosyst_glob, 'nosyst'))
-            tasks.append((row, out_wsyst,  syst_glob,   'wsyst'))
-            out_label = f"{name}_[no|w]syst.root"
+            branches = [(row['experiment'], None)]
 
-        table_rows.append([
-            _cell(row['analysis'],   W_AN, color=_A.MAGENTA),
-            _cell(row['role'],       W_RO),
-            _cell(row['experiment'], W_EX),
-            _cell(out_label,         W_OUT),
-        ])
+        for exp_for_name, job_ids in branches:
+            name = _apply_pattern(pattern, row['analysis'], row['role'],
+                                  exp_for_name, tag, date_str)
+
+            single_output = name.endswith('#')
+            if single_output:
+                name = name[:-1]
+
+            if single_output:
+                out_nosyst = campaign_dir / f"{name}.root"
+                tasks.append((row, out_nosyst, nosyst_glob, 'nosyst', job_ids))
+                out_label = f"{name}.root"
+            else:
+                out_nosyst = campaign_dir / f"{name}_nosyst.root"
+                out_wsyst  = campaign_dir / f"{name}_wsyst.root"
+                tasks.append((row, out_nosyst, nosyst_glob, 'nosyst', job_ids))
+                tasks.append((row, out_wsyst,  syst_glob,   'wsyst', job_ids))
+                out_label = f"{name}_[no|w]syst.root"
+
+            table_rows.append([
+                _cell(row['analysis'],  W_AN, color=_A.MAGENTA),
+                _cell(row['role'],      W_RO),
+                _cell(exp_for_name,     W_EX),
+                _cell(out_label,        W_OUT),
+            ])
 
     _print_table(
         ['Analysis', 'Role', 'Experiment', 'Output'],
@@ -1458,8 +1525,8 @@ def cmd_finalize(args):
     n_workers = max(1, args.workers)
     with ThreadPoolExecutor(max_workers=n_workers) as executor:
         future_to_task = {
-            executor.submit(_run_one_hadd, campaign_dir, row, out_path, input_glob, label, print_lock): out_path
-            for row, out_path, input_glob, label in tasks
+            executor.submit(_run_one_hadd, campaign_dir, row, out_path, input_glob, label, print_lock, job_ids): out_path
+            for row, out_path, input_glob, label, job_ids in tasks
         }
         for future in as_completed(future_to_task):
             try:
