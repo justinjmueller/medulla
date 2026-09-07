@@ -172,6 +172,8 @@ class ProjectUnit:
     enable_keys: list = field(default_factory=list)
     batch_size: int = 50
     sys_template: str = None     # absolute path to a systematics TOML template, or None for the default
+    lifetime: str = None         # --expected-lifetime for jobsub_submit (e.g. "4h"), or None
+                                  # to fall back to launch_jobsub's own default
 
 
 # ---------------------------------------------------------------------------
@@ -195,6 +197,7 @@ CREATE TABLE IF NOT EXISTS projects (
     toml_file TEXT NOT NULL,
     project_dir TEXT NOT NULL,
     batch_size INTEGER NOT NULL,
+    lifetime TEXT,
     n_jobs INTEGER DEFAULT 0,
     n_completed INTEGER DEFAULT 0,
     status TEXT DEFAULT 'created',
@@ -223,10 +226,18 @@ def _open_db(campaign_dir):
     curs = conn.cursor()
     # Migration: add n_completed column if this DB was created before Stage 5.
     curs.execute("PRAGMA table_info(projects)")
-    if 'n_completed' not in {row[1] for row in curs.fetchall()}:
+    existing_cols = {row[1] for row in curs.fetchall()}
+    if 'n_completed' not in existing_cols:
         curs.execute(
             "ALTER TABLE projects ADD COLUMN n_completed INTEGER DEFAULT 0"
         )
+        conn.commit()
+    # Migration: add lifetime column for campaigns created before it existed.
+    # NULL here means "no per-project default was ever configured" and is
+    # distinct from an empty string; cmd_launch falls back to
+    # launch_jobsub's own default in that case.
+    if 'lifetime' not in existing_cols:
+        curs.execute("ALTER TABLE projects ADD COLUMN lifetime TEXT")
         conn.commit()
     try:
         yield conn, curs
@@ -337,6 +348,7 @@ def expand_campaign(analyses, catalog_path,
                     enable_keys=t.enable.get(exp, []),
                     batch_size=a.defaults.get('batch_size', 50),
                     sys_template=sys_template,
+                    lifetime=a.defaults.get('lifetime'),
                 ))
     return units
 
@@ -364,9 +376,17 @@ def create_campaign(campaign_dir, project_units, catalog_path,
         When set, overrides every project's batch size.
     campaign_cfg : dict | None
         Optional config dict.  ``campaign_cfg["overrides"]`` is a list of
-        dicts with keys (analysis, role, experiment, batch_size) that provide
-        per-project batch size overrides, taking precedence over
-        batch_size_override.
+        dicts with keys (analysis, role, experiment, batch_size, lifetime)
+        that provide per-project overrides. batch_size overrides take
+        precedence over batch_size_override; there is no analogous global
+        override for lifetime (see the `lifetime` field of ProjectUnit --
+        it comes only from meta.toml's [defaults] and this per-project
+        override, since it has no bearing on project.db content the way
+        batch_size does and so does not need to be fixed at creation time
+        for every project uniformly). A lifetime of "4h" is passed to
+        jobsub_submit as --expected-lifetime=4h at launch time; omitted
+        entirely (None, the default) lets launch_jobsub fall back to its
+        own default.
 
     Raises
     ------
@@ -410,6 +430,15 @@ def create_campaign(campaign_dir, project_units, catalog_path,
             if 'batch_size' in ov:
                 batch_size = ov['batch_size']
 
+            # lifetime has no bearing on project.db content (unlike
+            # batch_size, which determines how files are grouped into a
+            # job), so it has no separate global-override parameter --
+            # there is nothing here a flat CLI flag would need to reach
+            # past a per-project cfg override for. Precedence is simply
+            # per-project cfg override > meta.toml [defaults] > None
+            # (meaning: let launch_jobsub use its own built-in default).
+            lifetime = ov.get('lifetime', u.lifetime)
+
             create_new_project(
                 project_dir=proj_dir_stage,
                 tml=u.toml_path,
@@ -427,10 +456,11 @@ def create_campaign(campaign_dir, project_units, catalog_path,
 
             curs.execute(
                 "INSERT INTO projects "
-                "(analysis, role, experiment, toml_file, project_dir, batch_size, n_jobs) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "(analysis, role, experiment, toml_file, project_dir, batch_size, "
+                "lifetime, n_jobs) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 (u.analysis, u.role, u.experiment,
-                 u.toml_path, str(proj_dir_final), batch_size, n_jobs),
+                 u.toml_path, str(proj_dir_final), batch_size, lifetime, n_jobs),
             )
             conn.commit()
 
@@ -984,7 +1014,7 @@ def cmd_create(args):
         'projects': [
             {'analysis': u.analysis, 'role': u.role, 'experiment': u.experiment,
              'toml_path': u.toml_path, 'batch_size': u.batch_size,
-             'sys_template': u.sys_template or ''}
+             'sys_template': u.sys_template or '', 'lifetime': u.lifetime or ''}
             for u in all_units
         ],
     }
@@ -1073,10 +1103,12 @@ def cmd_list(args):
 
     for a in analyses:
         owners = ', '.join(a.owners) if a.owners else '—'
-        batch  = a.defaults.get('batch_size', '(default)')
+        batch    = a.defaults.get('batch_size', '(default)')
+        lifetime = a.defaults.get('lifetime', '(launch_jobsub default)')
         print(
             f"\n  {_A.MAGENTA}{_A.BOLD}{a.analysis}{_A.RESET}"
-            f"  {_A.DIM}owners: {owners}  batch_size: {batch}{_A.RESET}"
+            f"  {_A.DIM}owners: {owners}  batch_size: {batch}  "
+            f"lifetime: {lifetime}{_A.RESET}"
         )
         _print_table(
             ['Role', 'Experiments', 'Enable keys'],
@@ -1202,9 +1234,18 @@ def cmd_launch(args):
             for row in projects:
                 proj_dir = Path(row['project_dir'])
                 print(f"\n[CAMPAIGN] Launching: {row['analysis']}/{row['role']}_{row['experiment']}")
+                # Precedence: --lifetime on this launch call > the project's
+                # own stored default (set at creation time from meta.toml's
+                # [defaults] or a manifest override) > launch_jobsub's own
+                # built-in default. Passed as a kwarg only when something
+                # resolved, so "nothing configured anywhere" still reaches
+                # launch_jobsub's default rather than a hardcoded fallback here.
+                lifetime = args.lifetime or row['lifetime']
+                lifetime_kwargs = {'lifetime': lifetime} if lifetime else {}
                 try:
                     ok = launch_jobsub(proj_dir, exp=exp, njobs=njobs, njobs_per_sample=njobs_per_sample,
-                                       confirm=False, tag=tag, verbose=args.verbose, force=args.force)
+                                       confirm=False, tag=tag, verbose=args.verbose, force=args.force,
+                                       **lifetime_kwargs)
                 except Exception as e:
                     print(f"[CAMPAIGN] Launch failed for {proj_dir}: {e}")
                     if args.verbose:
@@ -1691,6 +1732,14 @@ def main():
                                'instead of failing the copy-back. Off by default, since silently '
                                'overwriting could mask two jobs unexpectedly racing to write the '
                                'same output.')
+    p_launch.add_argument('--lifetime', metavar='DURATION',
+                          help="jobsub_submit --expected-lifetime for every project launched "
+                               "this call (e.g. '4h', '30m'). Overrides each project's own "
+                               "stored default (set at creation time from meta.toml's "
+                               "[defaults] or a manifest override); falls back to "
+                               "launch_jobsub's built-in default ('1h') when neither is set. "
+                               "Unlike --batch-size, this has no effect on project.db content "
+                               "and is always safe to change, including on a --relaunch.")
     launch_grp = p_launch.add_mutually_exclusive_group()
     launch_grp.add_argument('--test', action='store_true',
                             help='Submit one job per project to verify setup')
