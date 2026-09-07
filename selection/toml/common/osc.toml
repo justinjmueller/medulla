@@ -466,3 +466,45 @@ ismc = true
   production_version = "v10_06_00_12"
   spine_production = "v0.10.9"
   spine_config = "full_chain_co_260501.yaml"
+
+[[sample]]
+key = "icarus_detvar_sce0x_run2"
+name = "icarus_detvar_sce0x_run2"
+experiment = "icarus_run2"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_detvar_sce0x/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "ICARUS DetVar SCE0X for Run 2."
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_12"
+  spine_production = "v0.10.9"
+  spine_config = "full_chain_co_260501.yaml + modifier/sce_backward/mod_sce_backward_260813.yaml"
+
+[[sample]]
+key = "icarus_detvar_sce2x_run2"
+name = "icarus_detvar_sce2x_run2"
+experiment = "icarus_run2"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_detvar_sce2x/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "ICARUS DetVar SCE2X for Run 2."
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_12"
+  spine_production = "v0.10.9"
+  spine_config = "full_chain_co_260501.yaml + modifier/sce_forward/mod_sce_forward_260813.yaml"
+
+[[sample]]
+key = "icarus_detvar_charge_scale_run2"
+name = "icarus_detvar_charge_scale_run2"
+experiment = "icarus_run2"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_detvar_charge_scale/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "ICARUS DetVar Charge Scale for Run 2."
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_12"
+  spine_production = "v0.10.9"
+  spine_config = "full_chain_co_260501.yaml + modifier/charge_scale/mod_charge_scale_260813.yaml"
