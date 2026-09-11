@@ -65,6 +65,7 @@ Run with:
 """
 
 import re
+import shlex
 import sqlite3
 import subprocess
 import textwrap
@@ -1317,6 +1318,209 @@ class TestFinalizeHadd:
         assert all(ok for ok, skipped in results)
         assert active["max"] > 1, "expected real parallelism with 3 workers"
         assert active["max"] <= 3, "must never exceed the configured worker limit"
+
+
+@skip_finalize
+class TestFinalizeDryRun:
+    """_write_hadd_dryrun() resolves a hadd task's inputs and writes its
+    @<filelist> plus a standalone runnable script, without invoking hadd --
+    the building block behind `finalize --dry-run`. It must agree with
+    _run_one_hadd on exactly which files a task would merge, since the two
+    share _resolve_hadd_files/_write_hadd_filelist."""
+
+    def _make_task(self, tmp_path, n_files, name="proj"):
+        proj_dir = tmp_path / name
+        (proj_dir / "output").mkdir(parents=True)
+        for i in range(n_files):
+            (proj_dir / "output" / f"output_jobid{i:04d}.root").write_bytes(b"fake")
+        row = {"analysis": "eps", "role": "primary", "experiment": "sbnd"}
+        out_path = tmp_path / "campaign" / f"{name}.root"
+        out_path.parent.mkdir(exist_ok=True)
+        input_glob = str(proj_dir / "output" / "output_jobid*.root")
+        return row, out_path, input_glob
+
+    def test_writes_filelist_and_script_without_running_hadd(self, tmp_path):
+        row, out_path, input_glob = self._make_task(tmp_path, n_files=5)
+        campaign_dir = out_path.parent
+
+        with mock.patch("subprocess.run") as mocked_run:
+            n_files, script_path = campaign._write_hadd_dryrun(
+                campaign_dir, row, out_path, input_glob, "nosyst"
+            )
+
+        mocked_run.assert_not_called()
+        assert n_files == 5
+        assert script_path == campaign_dir / "filelists" / f"{out_path.stem}.sh"
+        assert script_path.exists()
+
+        filelist_path = campaign_dir / "filelists" / f"{out_path.stem}.txt"
+        assert filelist_path.exists()
+        lines = filelist_path.read_text().splitlines()
+        assert len(lines) == 5
+
+    def test_script_content_is_directly_runnable(self, tmp_path):
+        row, out_path, input_glob = self._make_task(tmp_path, n_files=2)
+        campaign_dir = out_path.parent
+
+        _, script_path = campaign._write_hadd_dryrun(
+            campaign_dir, row, out_path, input_glob, "nosyst"
+        )
+        text = script_path.read_text()
+        filelist_path = campaign_dir / "filelists" / f"{out_path.stem}.txt"
+
+        assert text.startswith("#!/bin/bash\n")
+        assert "set -e" in text
+        assert f"hadd -f {shlex.quote(str(out_path))} @{shlex.quote(str(filelist_path))}" in text
+
+    def test_paths_with_spaces_are_shell_quoted(self, tmp_path):
+        """A campaign directory (or, less plausibly, an analysis name) with
+        a space must not silently split into extra shell words."""
+        spaced_root = tmp_path / "has space"
+        row, out_path, input_glob = self._make_task(spaced_root, n_files=1)
+        campaign_dir = out_path.parent
+
+        _, script_path = campaign._write_hadd_dryrun(
+            campaign_dir, row, out_path, input_glob, "nosyst"
+        )
+        text = script_path.read_text()
+        assert shlex.quote(str(out_path)) in text
+        # A naive unquoted embed would put the raw path (with its literal
+        # space) in the script; make sure that did NOT happen instead.
+        assert str(out_path) not in text.replace(shlex.quote(str(out_path)), "")
+
+    def test_no_input_files_writes_nothing(self, tmp_path):
+        row, out_path, _ = self._make_task(tmp_path, n_files=0)
+        campaign_dir = out_path.parent
+        empty_glob = str(tmp_path / "proj" / "output" / "output_jobid*.root")
+
+        with mock.patch("subprocess.run") as mocked_run:
+            n_files, script_path = campaign._write_hadd_dryrun(
+                campaign_dir, row, out_path, empty_glob, "wsyst"
+            )
+
+        mocked_run.assert_not_called()
+        assert (n_files, script_path) == (0, None)
+        assert not (campaign_dir / "filelists").exists()
+
+    def test_dryrun_and_real_run_agree_on_the_same_filelist(self, tmp_path):
+        """The dry-run's @<filelist> must be identical to what a real
+        _run_one_hadd call would write for the same task -- otherwise the
+        dry-run's script would not accurately preview the real merge."""
+        row, out_path, input_glob = self._make_task(tmp_path, n_files=3)
+        campaign_dir = out_path.parent
+
+        _, script_path = campaign._write_hadd_dryrun(
+            campaign_dir, row, out_path, input_glob, "nosyst"
+        )
+        dryrun_filelist = (campaign_dir / "filelists" / f"{out_path.stem}.txt").read_text()
+
+        # Remove the dry-run's filelist so the real run writes its own
+        # (safe_write_text deletes-then-writes, but /pnfs quirks aside this
+        # keeps the comparison honest rather than reading back the same file).
+        (campaign_dir / "filelists" / f"{out_path.stem}.txt").unlink()
+
+        with mock.patch("subprocess.run"):
+            campaign._run_one_hadd(
+                campaign_dir, row, out_path, input_glob, "nosyst", threading.Lock()
+            )
+        real_filelist = (campaign_dir / "filelists" / f"{out_path.stem}.txt").read_text()
+
+        assert dryrun_filelist == real_filelist
+
+
+@skip_finalize
+class TestFinalizePrefix:
+    """cmd_finalize's --prefix prepends to every merged output filename (and
+    so to its @filelist / dry-run script too, since those are named from the
+    output stem), to avoid colliding with files left by a previous
+    finalize run in the same campaign directory."""
+
+    def _make_campaign(self, workspace, name="prefix"):
+        """Create a single-project campaign for the beta analysis with one
+        completed job, so cmd_finalize has real output to plan a merge over."""
+        analyses = discover_analyses(workspace["toml_root"])
+        units = expand_campaign(
+            analyses, workspace["catalog"], analysis_filter=["beta"]
+        )
+        campaign_dir = workspace["root"] / f"campaign_{name}"
+        fake_sample = {"name": "sbnd_mc", "path": ["/fake/0.root"],
+                       "ismc": True, "disable": False}
+        with mock.patch("utilities.get_samples", return_value=[fake_sample]):
+            create_campaign(
+                campaign_dir=campaign_dir,
+                project_units=units,
+                catalog_path=workspace["catalog"],
+                name=f"campaign_{name}",
+                tag="v1.0",
+            )
+        proj_dir = [p for p in campaign_dir.iterdir()
+                   if p.is_dir() and (p / "project.db").exists()][0]
+        (proj_dir / "output" / "output_jobid0000.root").write_bytes(b"x" * 2048)
+        return campaign_dir
+
+    class _Args:
+        experiment = None
+        dry_run = True
+        workers = 1
+        prefix = ''
+
+        def __init__(self, campaign_dir, prefix=''):
+            self.campaign = str(campaign_dir)
+            self.name = None
+            self.prefix = prefix
+
+    def test_prefix_is_prepended_to_output_filenames(self, workspace):
+        campaign_dir = self._make_campaign(workspace, name="prefixed")
+
+        with mock.patch("builtins.input",
+                        side_effect=AssertionError("must not prompt in dry-run")):
+            campaign.cmd_finalize(self._Args(campaign_dir, prefix="retry2_"))
+
+        names = [p.name for p in (campaign_dir / "filelists").iterdir()]
+        assert names, "expected filelist/script files to be written"
+        assert all(n.startswith("retry2_") for n in names), names
+
+    def test_no_prefix_is_unaffected(self, workspace):
+        """The default ('' prefix) must reproduce the pre-existing naming."""
+        campaign_dir = self._make_campaign(workspace, name="unprefixed")
+
+        with mock.patch("builtins.input",
+                        side_effect=AssertionError("must not prompt in dry-run")):
+            campaign.cmd_finalize(self._Args(campaign_dir, prefix=""))
+
+        names = [p.name for p in (campaign_dir / "filelists").iterdir()]
+        assert names
+        assert not any(n.startswith("retry2_") for n in names)
+
+    def test_prefix_containing_slash_is_sanitized(self, workspace):
+        """A '/' in --prefix must not be interpreted as a subdirectory."""
+        campaign_dir = self._make_campaign(workspace, name="slashprefix")
+
+        with mock.patch("builtins.input",
+                        side_effect=AssertionError("must not prompt in dry-run")):
+            campaign.cmd_finalize(self._Args(campaign_dir, prefix="sub/dir_"))
+
+        names = [p.name for p in (campaign_dir / "filelists").iterdir()]
+        assert any(n.startswith("sub-dir_") for n in names), names
+        assert not (campaign_dir / "sub").exists()
+
+    def test_prefix_distinguishes_two_finalize_runs_in_one_campaign_dir(self, workspace):
+        """The actual motivating case: finalize twice into the same
+        campaign directory (e.g. after adding more jobs) without the
+        second run's outputs (or scripts/filelists) colliding with the
+        first's."""
+        campaign_dir = self._make_campaign(workspace, name="tworuns")
+
+        with mock.patch("builtins.input",
+                        side_effect=AssertionError("must not prompt in dry-run")):
+            campaign.cmd_finalize(self._Args(campaign_dir, prefix="run1_"))
+            campaign.cmd_finalize(self._Args(campaign_dir, prefix="run2_"))
+
+        names = {p.name for p in (campaign_dir / "filelists").iterdir()}
+        run1 = {n for n in names if n.startswith("run1_")}
+        run2 = {n for n in names if n.startswith("run2_")}
+        assert run1 and run2
+        assert run1.isdisjoint(run2)
 
 
 class TestFinalizeCatalogSplit:
