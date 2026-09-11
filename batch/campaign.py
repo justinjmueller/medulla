@@ -2,6 +2,7 @@
 import argparse
 import contextlib
 import re
+import shlex
 import shutil
 import sqlite3
 import subprocess
@@ -1387,16 +1388,75 @@ def _project_catalog_tags(project_dir):
         return groups
 
 
+def _resolve_hadd_files(row, input_glob, label, job_ids=None):
+    """
+    Resolve the input files for one hadd task.
+
+    Shared between the real run (_run_one_hadd) and `finalize --dry-run`
+    (_write_hadd_dryrun) so the two can never disagree about which files a
+    given task would actually merge.
+
+    Parameters
+    ----------
+    row : sqlite3.Row
+        The project row this task belongs to.
+    input_glob : str
+        Glob pattern for this task's input files. Ignored when job_ids is
+        given.
+    label : str
+        'nosyst' or 'wsyst' -- selects the output filename convention when
+        job_ids is given.
+    job_ids : list[int] | None
+        If given, restrict this merge to exactly these jobids' output
+        files instead of globbing the whole project output directory --
+        used when a project's jobs are split into separate catalog-tag
+        branches (see _project_catalog_tags) and each branch must only
+        pick up its own jobs' files.
+
+    Returns
+    -------
+    list[str]
+        Sorted input file paths (possibly empty).
+    """
+    if job_ids is not None:
+        name_fmt = 'output_systematics_jobid{:04d}.root' if label == 'wsyst' else 'output_jobid{:04d}.root'
+        proj_dir = Path(row['project_dir'])
+        candidates = (proj_dir / 'output' / name_fmt.format(jid) for jid in job_ids)
+        return sorted(str(f) for f in candidates if f.exists())
+    return sorted(glob(input_glob))
+
+
+def _write_hadd_filelist(campaign_dir, out_path, files):
+    """
+    Write the @<filelist> hadd reads its inputs from, under
+    campaign_dir/filelists/, and return its path.
+
+    Passing files this way (rather than every file on the command line)
+    avoids bumping into exec/argv length limits for projects with a large
+    number of output files. The file list is kept (not deleted) as an
+    audit trail of exactly what went into each merge -- and, for
+    `finalize --dry-run`, as the artifact a user actually asked to see.
+    """
+    filelist_dir = campaign_dir / 'filelists'
+    filelist_dir.mkdir(exist_ok=True)
+    filelist_path = filelist_dir / f"{out_path.stem}.txt"
+    safe_write_text(filelist_path, '\n'.join(files) + '\n')
+    return filelist_path
+
+
+def _no_files_warning(tag_str, label):
+    """The "nothing to merge" message shared by the real run and dry-run."""
+    if label == 'wsyst':
+        print(f"{_TAG_FINALIZE} {_A.YELLOW}Warning:{_A.RESET} "
+              f"no systematics files for {tag_str}, skipping _wsyst.")
+    else:
+        print(f"{_TAG_FINALIZE} {_A.YELLOW}Warning:{_A.RESET} "
+              f"no output files for {tag_str}, skipping.")
+
+
 def _run_one_hadd(campaign_dir, row, out_path, input_glob, label, print_lock, job_ids=None):
     """
     Run a single hadd invocation for one (project, output) pair.
-
-    The input file list is written to a text file under
-    campaign_dir/filelists/ and passed to hadd via the '@<filelist>' syntax
-    (hadd -f <output> @<filelist>) instead of passing every file on the
-    command line, which avoids bumping into exec/argv length limits for
-    projects with a large number of output files. The file list is kept
-    (not deleted) as an audit trail of exactly what went into each merge.
 
     Parameters
     ----------
@@ -1417,11 +1477,7 @@ def _run_one_hadd(campaign_dir, row, out_path, input_glob, label, print_lock, jo
         from concurrent workers doesn't interleave mid-line. Does not (and
         cannot) serialize hadd's own subprocess output.
     job_ids : list[int] | None
-        If given, restrict this merge to exactly these jobids' output
-        files instead of globbing the whole project output directory --
-        used when a project's jobs are split into separate catalog-tag
-        branches (see _project_catalog_tags) and each branch must only
-        pick up its own jobs' files.
+        See _resolve_hadd_files.
 
     Returns
     -------
@@ -1429,28 +1485,14 @@ def _run_one_hadd(campaign_dir, row, out_path, input_glob, label, print_lock, jo
         ok is True if hadd ran successfully. skipped is True if there were
         no input files to merge (not treated as an error).
     """
-    if job_ids is not None:
-        name_fmt = 'output_systematics_jobid{:04d}.root' if label == 'wsyst' else 'output_jobid{:04d}.root'
-        proj_dir = Path(row['project_dir'])
-        candidates = (proj_dir / 'output' / name_fmt.format(jid) for jid in job_ids)
-        files = sorted(str(f) for f in candidates if f.exists())
-    else:
-        files = sorted(glob(input_glob))
+    files = _resolve_hadd_files(row, input_glob, label, job_ids=job_ids)
     tag_str = f"{row['analysis']}/{row['role']}_{row['experiment']}"
     if not files:
         with print_lock:
-            if label == 'wsyst':
-                print(f"{_TAG_FINALIZE} {_A.YELLOW}Warning:{_A.RESET} "
-                      f"no systematics files for {tag_str}, skipping _wsyst.")
-            else:
-                print(f"{_TAG_FINALIZE} {_A.YELLOW}Warning:{_A.RESET} "
-                      f"no output files for {tag_str}, skipping.")
+            _no_files_warning(tag_str, label)
         return False, True
 
-    filelist_dir = campaign_dir / 'filelists'
-    filelist_dir.mkdir(exist_ok=True)
-    filelist_path = filelist_dir / f"{out_path.stem}.txt"
-    safe_write_text(filelist_path, '\n'.join(files) + '\n')
+    filelist_path = _write_hadd_filelist(campaign_dir, out_path, files)
 
     with print_lock:
         print(f"{_TAG_FINALIZE} hadd → {_A.CYAN}{out_path.name}{_A.RESET} "
@@ -1465,10 +1507,60 @@ def _run_one_hadd(campaign_dir, row, out_path, input_glob, label, print_lock, jo
         return False, False
 
 
+def _write_hadd_dryrun(campaign_dir, row, out_path, input_glob, label, job_ids=None):
+    """
+    Resolve one hadd task's inputs and write its file list plus a
+    standalone, directly runnable script -- without invoking hadd itself.
+    Used by `finalize --dry-run` so the exact merge plan can be inspected
+    (and, if desired, executed later or off of this node) before committing
+    to it.
+
+    Writes the same @<filelist> file _run_one_hadd would (so a later real
+    run and this dry-run agree byte-for-byte on the input list), plus a
+    sibling <out_path.stem>.sh next to it invoking hadd with that exact
+    file list.
+
+    Returns
+    -------
+    (n_files, script_path) | (0, None)
+        Number of input files found and the generated script's path, or
+        (0, None) if there were no input files -- mirroring
+        _run_one_hadd's skip behavior, nothing is written for an empty task.
+    """
+    files = _resolve_hadd_files(row, input_glob, label, job_ids=job_ids)
+    tag_str = f"{row['analysis']}/{row['role']}_{row['experiment']}"
+    if not files:
+        _no_files_warning(tag_str, label)
+        return 0, None
+
+    filelist_path = _write_hadd_filelist(campaign_dir, out_path, files)
+
+    script_dir = campaign_dir / 'filelists'
+    script_path = script_dir / f"{out_path.stem}.sh"
+    script_text = (
+        "#!/bin/bash\n"
+        f"# hadd invocation for {tag_str} ({label}).\n"
+        f"# Generated by 'campaign.py finalize --dry-run'; not run automatically.\n"
+        f"# {len(files)} input file(s) -- see {filelist_path.name} in this "
+        "directory for the full list.\n"
+        "set -e\n"
+        f"hadd -f {shlex.quote(str(out_path))} @{shlex.quote(str(filelist_path))}\n"
+    )
+    # Not chmod'd executable: campaign_dir (and so this script) can live on
+    # /pnfs, where dCache does not reliably support setting Unix permission
+    # bits. Run it with `bash <script>` instead.
+    safe_write_text(script_path, script_text)
+    return len(files), script_path
+
+
 def cmd_finalize(args):
     """Merge per-project ROOT outputs into combined files using hadd."""
     campaign_dir = _resolve_campaign(args)
     date_str = datetime.now(timezone.utc).strftime('%Y%m%d')
+    # Sanitized the same way pattern tokens are (see _apply_pattern): a
+    # prefix containing '/' must not be interpretable as introducing a
+    # subdirectory under campaign_dir.
+    prefix = _sanitize_path_component(args.prefix) if args.prefix else ''
 
     with _open_db(campaign_dir) as (conn, curs):
         curs.execute("SELECT tag FROM campaign_meta LIMIT 1")
@@ -1521,6 +1613,8 @@ def cmd_finalize(args):
         for exp_for_name, job_ids in branches:
             name = _apply_pattern(pattern, row['analysis'], row['role'],
                                   exp_for_name, tag, date_str)
+            if prefix:
+                name = f"{prefix}{name}"
 
             single_output = name.endswith('#')
             if single_output:
@@ -1552,7 +1646,25 @@ def cmd_finalize(args):
     print(f"\n{_TAG_FINALIZE} {len(rows)} project(s), {len(tasks)} hadd invocation(s).")
 
     if args.dry_run:
-        print(f"{_TAG_FINALIZE} Dry-run: no files created.")
+        # No hadd output is produced, but the actual merge plan is: the
+        # resolved input file list and a standalone runnable script per
+        # invocation, so the plan can be inspected (and, if desired, run
+        # later or off of this node) without committing to it here.
+        print(f"\n{_TAG_FINALIZE} Dry-run: resolving inputs, no hadd output will be created.")
+        n_written = 0
+        for row, out_path, input_glob, label, job_ids in tasks:
+            n_files, script_path = _write_hadd_dryrun(
+                campaign_dir, row, out_path, input_glob, label, job_ids=job_ids
+            )
+            if script_path is None:
+                continue
+            n_written += 1
+            print(f"{_TAG_FINALIZE} {_A.CYAN}{out_path.name}{_A.RESET}: "
+                  f"{n_files} input file(s) -> {script_path}")
+        print(f"\n{_TAG_FINALIZE} Dry-run complete. {n_written} script(s) written "
+              f"under {campaign_dir / 'filelists'}.")
+        if n_written:
+            print(f"{_TAG_FINALIZE} Run one with: bash <script>.sh")
         return
 
     resp = input(f"\n{_TAG_FINALIZE} Proceed with merging? [Y/N] ")
@@ -1671,8 +1783,18 @@ def main():
                               help='Registered short name (see campaigns subcommand)')
     p_finalize.add_argument('--experiment', metavar='EXP',
                             help='Restrict finalization to one experiment')
+    p_finalize.add_argument('--prefix', metavar='PREFIX', default='',
+                            help='Prepend PREFIX to every merged output filename '
+                                 '(and its @filelist / dry-run script), to avoid '
+                                 'colliding with files from a previous finalize run '
+                                 'in the same campaign directory. Sanitized like a '
+                                 'pattern token -- a "/" cannot be used to place '
+                                 'output under a subdirectory.')
     p_finalize.add_argument('--dry-run', action='store_true',
-                            help='Print what would be merged without running hadd')
+                            help='Resolve inputs and write the @filelist plus a standalone '
+                                 'runnable script for every hadd invocation, under '
+                                 'campaign_dir/filelists/, without running hadd or creating '
+                                 'any merged output')
     p_finalize.add_argument('--workers', type=int, default=1, metavar='N',
                             help='Number of hadd merges to run in parallel '
                                  '(default: 1, sequential). Each project\'s merges '
