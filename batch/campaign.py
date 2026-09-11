@@ -19,7 +19,8 @@ from pathlib import Path
 
 from auth import authenticate
 from catalog import resolve_samples
-from utilities import create_new_project, check_project_status, launch_jobsub, safe_copy, safe_write_text
+from utilities import (create_new_project, check_project_status, launch_jobsub,
+                       safe_copy, safe_write_text, survey_project_output)
 
 # Repo root is two levels above this script (batch/ -> repo root).
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -505,41 +506,45 @@ def _sync_project_status(project_dir, revert_ids=None):
     Inspect output files for a single project, update its project.db, and
     return completion counts.
 
-    A job is considered complete when its output file exists and is at least
-    1 KB — the same criterion used by utilities.check_project_status.
+    A job is considered complete when *both* its selection and its
+    systematics output exist and are at least 1 KB — the same criterion
+    used by utilities.check_project_status, via the shared
+    utilities.survey_project_output. Requiring the pair is what stops a job
+    whose systematics step failed from sitting permanently 'completed' and
+    never being resubmitted.
 
     Parameters
     ----------
     project_dir : str | Path
     revert_ids : list[int] | None
         Job IDs to explicitly revert to 'pending' before recomputing status
-        (used by `scan` after deleting a corrupt output file — this is the
-        only way a job ever moves backward from 'completed', since the
-        size-based completion check below only ever moves jobs forward).
-        The caller is responsible for having already deleted the
-        corresponding output file(s); otherwise the completion check below
-        would just re-mark them 'completed' again as part of this same
-        call.
+        (used by `scan` after deleting a corrupt output file). The caller is
+        responsible for having already deleted the corresponding output
+        file(s); otherwise the completion check below would just re-mark
+        them 'completed' again as part of this same call.
+
+        Jobs found to have a selection output but no usable systematics
+        partner are reverted too, without the caller asking and without
+        anything needing to be deleted first — see the note at the revert
+        itself.
 
     Returns
     -------
-    dict with keys ``n_jobs`` and ``n_completed``, or None if project.db
-    does not exist.
+    dict with keys ``n_jobs``, ``n_completed``, ``stub_files`` and
+    ``orphan_ids``, or None if project.db does not exist.
     """
     project_dir = Path(project_dir)
     db_path = project_dir / 'project.db'
     if not db_path.exists():
         return None
 
-    output_files = glob(str(project_dir / 'output' / 'output_jobid*.root'))
-    completed_ids = [
-        int(Path(f).stem.split('jobid')[-1])
-        for f in output_files
-        if Path(f).stat().st_size >= 1024
-    ]
-    stub_files = [
-        Path(f) for f in output_files if Path(f).stat().st_size < 1024
-    ]
+    # Completion is keyed on the output *pair*, so a job whose systematics
+    # step failed does not sit permanently 'completed' and unresubmitted.
+    # Orphans are folded into revert_ids below.
+    survey = survey_project_output(project_dir)
+    completed_ids = survey['completed']
+    stub_files = survey['stub_files']
+    orphan_ids = survey['orphaned']
 
     # Copy to a local temp file to avoid /pnfs locking failures.
     with tempfile.NamedTemporaryFile(
@@ -550,10 +555,15 @@ def _sync_project_status(project_dir, revert_ids=None):
         safe_copy(db_path, tmp)
         conn = sqlite3.connect(tmp)
         curs = conn.cursor()
-        if revert_ids:
+        # Orphans join the caller's explicit reverts. Unlike those, they
+        # need no file deleted first: an orphan is by construction absent
+        # from completed_ids, so the completion update below cannot undo
+        # this revert.
+        to_revert = sorted(set(revert_ids or []) | set(orphan_ids))
+        if to_revert:
             curs.executemany(
                 "UPDATE jobs SET status = 'pending' WHERE jobid = ?",
-                [(jid,) for jid in revert_ids],
+                [(jid,) for jid in to_revert],
             )
             conn.commit()
         if completed_ids:
@@ -575,6 +585,7 @@ def _sync_project_status(project_dir, revert_ids=None):
         'n_jobs':      sum(counts.values()),
         'n_completed': counts.get('completed', 0),
         'stub_files':  stub_files,
+        'orphan_ids':  orphan_ids,
     }
 
 
@@ -588,6 +599,7 @@ def cmd_sync(args):
     W_AN, W_RO, W_EX, W_ST, W_JB = 28, 18, 10, 12, 10
     synced = 0
     all_stubs = []
+    all_orphans = []
 
     with _open_db(campaign_dir) as (conn, curs):
         curs.execute(
@@ -614,6 +626,8 @@ def cmd_sync(args):
             n_jobs      = result['n_jobs']
             n_completed = result['n_completed']
             all_stubs.extend(result['stub_files'])
+            if result['orphan_ids']:
+                all_orphans.append((row, result['orphan_ids']))
 
             new_status = _compute_project_status(row['status'], n_jobs, n_completed)
 
@@ -641,6 +655,19 @@ def cmd_sync(args):
             ]))
 
     print(f"\n{_TAG_SYNC} Synced {synced} project(s).")
+
+    # Orphans are reverted automatically, but say so loudly: these are jobs
+    # that looked complete and were not, and they are about to be
+    # resubmitted.
+    if all_orphans:
+        n_total = sum(len(ids) for _, ids in all_orphans)
+        print(f"{_TAG_SYNC} {_A.YELLOW}Reverted {n_total} job(s) to pending "
+              f"(selection output with no usable systematics partner):{_A.RESET}")
+        for row, ids in all_orphans:
+            preview = ', '.join(str(i) for i in ids[:10])
+            more = f" (+{len(ids) - 10} more)" if len(ids) > 10 else ''
+            print(f"  {_A.DIM}{row['analysis']}/{row['role']}/{row['experiment']}:"
+                  f"{_A.RESET} {preview}{more}")
 
     if all_stubs:
         print(f"{_TAG_SYNC} {_A.YELLOW}Found {len(all_stubs)} stub output file(s) < 1 KB:{_A.RESET}")

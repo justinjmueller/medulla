@@ -1023,6 +1023,26 @@ skip_sync = pytest.mark.skipif(
 )
 
 
+def _write_output_pair(out_dir, jobid, size=2048, syst_size=None):
+    """
+    Create the complete output pair for *jobid*: both the selection file
+    and its systematics partner.
+
+    Completion is defined on the pair, so a test that means "this job
+    finished" has to produce both files -- a lone selection output is an
+    orphan and is reverted to 'pending', which is the whole point of that
+    rule. Pass syst_size=None to omit the partner and build an orphan
+    deliberately.
+    """
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / f"output_jobid{jobid:04d}.root").write_bytes(b"x" * size)
+    if syst_size is not None:
+        (out_dir / f"output_systematics_jobid{jobid:04d}.root").write_bytes(
+            b"x" * syst_size)
+    return out_dir
+
+
 @skip_sync
 class TestStatusSync:
     """n_jobs is populated at creation; sync updates completion counts and
@@ -1062,9 +1082,12 @@ class TestStatusSync:
         return dirs[0]
 
     def _write_output(self, proj_dir, jobid, size=2048):
-        """Create a fake output file for *jobid* with *size* bytes."""
-        out = proj_dir / "output" / f"output_jobid{jobid:04d}.root"
-        out.write_bytes(b"x" * size)
+        """Create a fake output pair for *jobid*, each file *size* bytes.
+
+        A stub selection file (size < 1 KB) is still paired: what these
+        tests exercise is the size floor, not the missing-partner case.
+        """
+        _write_output_pair(proj_dir / "output", jobid, size=size, syst_size=size)
 
     # ------------------------------------------------------------------
     # n_jobs at creation
@@ -1757,10 +1780,10 @@ class TestSyncProjectStatusRevert:
 
     def test_revert_ids_moves_job_back_to_pending(self, tmp_path):
         proj_dir = self._make_project_db(tmp_path, {0: "completed", 1: "completed", 2: "pending"})
-        # Job 1 still has a valid (undeleted) output file; job 0's was
+        # Job 1 still has a valid (undeleted) output pair; job 0's was
         # already removed by the caller before this call, per scan's
         # required ordering.
-        (proj_dir / "output" / "output_jobid0001.root").write_bytes(b"x" * 2000)
+        _write_output_pair(proj_dir / "output", 1, size=2000, syst_size=2000)
 
         result = _sync_project_status(proj_dir, revert_ids=[0])
 
@@ -1775,9 +1798,67 @@ class TestSyncProjectStatusRevert:
     def test_default_revert_ids_is_backward_compatible(self, tmp_path):
         """Existing sync call sites (no revert_ids) must be unaffected."""
         proj_dir = self._make_project_db(tmp_path, {0: "pending"})
-        (proj_dir / "output" / "output_jobid0000.root").write_bytes(b"x" * 2000)
+        _write_output_pair(proj_dir / "output", 0, size=2000, syst_size=2000)
         result = _sync_project_status(proj_dir)
         assert result["n_completed"] == 1
+
+    # ------------------------------------------------------------------
+    # Completion is defined on the output *pair*
+    # ------------------------------------------------------------------
+
+    def test_selection_output_alone_is_not_complete(self, tmp_path):
+        """A job whose systematics step failed leaves a lone selection
+        file. Counting that as complete is what let such jobs sit
+        permanently 'completed' and never be resubmitted."""
+        proj_dir = self._make_project_db(tmp_path, {0: "pending"})
+        _write_output_pair(proj_dir / "output", 0, size=2000, syst_size=None)
+
+        result = _sync_project_status(proj_dir)
+
+        assert result["n_completed"] == 0
+        assert result["orphan_ids"] == [0]
+
+    def test_orphan_is_reverted_from_completed(self, tmp_path):
+        """The backlog case: a job already marked complete under the old
+        criterion must move back to 'pending' so it is resubmitted."""
+        proj_dir = self._make_project_db(tmp_path, {0: "completed", 1: "completed"})
+        _write_output_pair(proj_dir / "output", 0, size=2000, syst_size=2000)
+        _write_output_pair(proj_dir / "output", 1, size=2000, syst_size=None)
+
+        result = _sync_project_status(proj_dir)
+
+        conn = sqlite3.connect(proj_dir / "project.db")
+        statuses = dict(conn.execute("SELECT jobid, status FROM jobs").fetchall())
+        conn.close()
+        assert statuses[0] == "completed"
+        assert statuses[1] == "pending"
+        assert result["n_completed"] == 1
+        assert result["orphan_ids"] == [1]
+
+    def test_stub_systematics_partner_does_not_complete_a_job(self, tmp_path):
+        """The size floor applies to both halves, not just the selection
+        file -- a truncated systematics output is not a partner."""
+        proj_dir = self._make_project_db(tmp_path, {0: "pending"})
+        _write_output_pair(proj_dir / "output", 0, size=2000, syst_size=10)
+
+        result = _sync_project_status(proj_dir)
+
+        assert result["n_completed"] == 0
+        assert result["orphan_ids"] == [0]
+        assert [p.name for p in result["stub_files"]] == [
+            "output_systematics_jobid0000.root"]
+
+    def test_systematics_output_without_selection_is_not_complete(self, tmp_path):
+        """The reverse asymmetry: the copy-back order means this should not
+        happen, but it must not be counted as progress if it does."""
+        proj_dir = self._make_project_db(tmp_path, {0: "pending"})
+        (proj_dir / "output" / "output_systematics_jobid0000.root").write_bytes(
+            b"x" * 2000)
+
+        result = _sync_project_status(proj_dir)
+
+        assert result["n_completed"] == 0
+        assert result["orphan_ids"] == []
 
 
 @skip_scan
@@ -1819,8 +1900,8 @@ class TestCmdScan:
         pconn.commit()
         pconn.close()
 
-        (proj_dir / "output" / "output_jobid0000.root").write_bytes(b"x" * 2000)
-        (proj_dir / "output" / f"output_jobid{second_jobid:04d}.root").write_bytes(b"x" * 2000)
+        _write_output_pair(proj_dir / "output", 0, size=2000, syst_size=2000)
+        _write_output_pair(proj_dir / "output", second_jobid, size=2000, syst_size=2000)
         return campaign_dir, proj_dir
 
     class _Args:
