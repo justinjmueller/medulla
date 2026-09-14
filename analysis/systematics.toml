@@ -9,7 +9,7 @@ file = '/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/systematic_recipes.
 [samples.NuMIFull]
 key = "NuMIFull"
 exposure_type = "pot"
-trees = ['selected']
+trees = ['nc_sideband']
 print_sys = true
 # Comment this to avoid systematics when plotting (usually done for testing plots)
 systematics = ['selected_multisigmaTree'] # , 'selected_NuMIfluxsimTree', 'selected_variationTree' ]
