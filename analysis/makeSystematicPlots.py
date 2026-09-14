@@ -3,7 +3,7 @@ import os
 import sys
 import pickle
 os.environ['MEDULLA_PLOT_DIR'] =  '/nashome/m/micarrig/icarus/nuESpine/medulla/spineplot/'
-sys.path.append('/nashome/m/micarrig/icarus/nuESpine/medulla/spineplot/')
+sys.path.append('/exp/icarus/app/users/nabrego/medulla_dev/medulla/spineplot/')
 from efficiency import SpineEfficiency
 from analysis import Analysis
 
