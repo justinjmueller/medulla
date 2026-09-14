@@ -38,7 +38,9 @@ if __name__ == "__main__":
         'sys_trueEleCosThetaNUMI'
     ]
 
-    outputDir = f'/nashome/m/micarrig/icarus/nuESpine/plots/{plot_category}/'
+    #outputDir = f'/nashome/m/micarrig/icarus/nuESpine/plots/{plot_category}/'
+    outputDir = f'/exp/icarus/app/users/nabrego/medulla_dev/medulla/plots/{plot_category}/'
+    
     if not os.path.exists(outputDir):
         os.makedirs(outputDir)
 
