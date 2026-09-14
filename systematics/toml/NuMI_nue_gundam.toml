@@ -15,7 +15,7 @@ name = 'reco_leading_electron_energy'
 bins = [300, 390, 490, 600, 730, 870, 1030, 1240, 1500, 2000, 5000]
 
 [variations]
-keys = ['NuMIFull', 'induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination', 'null']
+keys = ['NuMIFull', 'induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination']#, 'null']
 origin = 'events/'
 tree = 'selected'
 result_destination = 'detsys_results/'
@@ -171,14 +171,14 @@ scale = [-3, -2, -1, 1, 1, 2, 3]
 ordinate = 'NuMIFull'
 points = ['recombination', 'recombination', 'recombination', 'NuMIFull', 'recombination', 'recombination', 'recombination']
 
-[[sys]]
-name = 'null'
-type = 'variation'
-index = -1
-nsigma = [-3, -2, -1, 0, 1 ,2, 3]
-scale = [-3, -2, -1, 1, 1, 2, 3]
-ordinate = 'NuMIFull'
-points = ['null', 'null', 'null', 'NuMIFull', 'null', 'null', 'null']
+# [[sys]]
+# name = 'null'
+# type = 'variation'
+# index = -1
+# nsigma = [-3, -2, -1, 0, 1 ,2, 3]
+# scale = [-3, -2, -1, 1, 1, 2, 3]
+# ordinate = 'NuMIFull'
+# points = ['null', 'null', 'null', 'NuMIFull', 'null', 'null', 'null']
 
 [[sys]]
 name = 'GENIEReWeight_SBN_v1_multisigma_ZExpA1CCQE'

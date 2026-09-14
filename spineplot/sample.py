@@ -39,7 +39,7 @@ class Sample:
     def __init__(self, name, rf, category_branch, key, exposure_type, trees,
                  fillna=None, systematics=None, override_exposure=None, precompute=None,
                  presel=None, override_category=None, print_sys=False, branches=None, area_scale=None,
-                 scale_systematics_with_exposure=None) -> None:
+                 scale_systematics_with_exposure=None, weight_branch=None) -> None:
         """
         Initializes the Sample object with the given name and key.
 
@@ -78,12 +78,18 @@ class Sample:
         override_category : int
             The category to override the category branch with if it is
             configured. Else, the category branch is left as is.
+        weight_branch : str, optional
+            The name of a per-event branch to use as an additional
+            multiplicative weight on top of the exposure scale factor.
+            The branch must be present in the loaded data. The default
+            is None (no per-event reweighting).
 
         Returns
         -------
         None.
         """
         self._name = name
+        self._weight_branch = weight_branch
         self._exposure_type = exposure_type
         # Whether this sample should participate in exposure_type='area' scaling
         # when it is *not* the ordinate sample. Defaults to True.
@@ -234,7 +240,12 @@ class Sample:
             scale = target._exposure_livetime / self._exposure_livetime
 
         print(f"Setting weight for {self._name} to {scale:.2e}")
-        self._data['weight'] = scale
+        if self._weight_branch is not None:
+            if self._weight_branch not in self._data.columns:
+                raise ValueError(f"weight_branch '{self._weight_branch}' not found in sample '{self._name}'.")
+            self._data['weight'] = scale * self._data[self._weight_branch]
+        else:
+            self._data['weight'] = scale
         for syst in self._systematics.values():
             if getattr(self, "_scale_systematics_with_exposure", True):
                 syst.set_weight(scale)        
@@ -297,8 +308,12 @@ class Sample:
         -------
         None.
         """
+        cv_weights = None
+        if self._weight_branch is not None and self._weight_branch in self._data.columns:
+            cv_weights = self._data[self._weight_branch].to_numpy()
+
         for syst in self._systematics.values():
-            syst.process(self, self._presel_mask)
+            syst.process(self, self._presel_mask, cv_weights=cv_weights)
                 
         # Each recipe has a name, which is used to identify the
         # combination of systematic uncertainties, and a pattern,

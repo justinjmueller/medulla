@@ -86,10 +86,10 @@ xlabel = 'True Momentum Transfer ($Q^{2}$) [GeV$^{2}$]'
 
 [variables.true_leading_electron_energy]
 key = 'true_leading_electron_energy'
-nbins = 9
-range = [225.0, 5000.0]
+nbins = 10
+range = [300.0, 5000.0]
 binning_scheme = 'custom_bins'
-custom_bins = [225, 350, 500, 650, 800, 1000, 1250, 1500, 2000, 5000]
+custom_bins = [300, 390, 490, 600, 730, 870, 1030, 1240, 1500, 2000, 5000]
 xlabel = 'True Leading Electron Energy [MeV]'
 
 [variables.true_ele_beam_open_angle]
@@ -109,8 +109,8 @@ style = 'basic_icarus'
 [[figure.artists]]
 type     = "SpineSystematics"
 variable = "reco_leading_electron_energy"
-systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
-# systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
+# systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
+# systematics = ['ZExpB1CCQE', 'ZExpB2CCQE', 'ZExpB3CCQE', 'ZExpB4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
 #                'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
 #                'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
 #                'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
@@ -123,7 +123,7 @@ systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+            systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
 # systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
@@ -141,8 +141,8 @@ style = 'basic_icarus'
 [[figure.artists]]
 type     = "SpineSystematics"
 variable = "true_neutrino_energy"
-systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
-# systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
+# systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
+# systematics = ['ZExpB1CCQE', 'ZExpB2CCQE', 'ZExpB3CCQE', 'ZExpB4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
 #                'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
 #                'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
 #                'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
@@ -155,7 +155,7 @@ systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
 # systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
@@ -174,8 +174,8 @@ style = 'basic_icarus'
 type     = "SpineSystematics"
 variable = "reco_ele_beam_open_angle"
 # Uncomment to restrict to specific recipes:
-systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
-# systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
+# systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
+# systematics = ['ZExpB1CCQE', 'ZExpB2CCQE', 'ZExpB3CCQE', 'ZExpB4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
 #                'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
 #                'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
 #                'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
@@ -188,7 +188,7 @@ systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
 # systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
@@ -207,8 +207,8 @@ style = 'basic_icarus'
 type     = "SpineSystematics"
 variable = "true_leading_electron_energy"
 # Uncomment to restrict to specific recipes:
-systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
-# systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
+# systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
+# systematics = ['ZExpB1CCQE', 'ZExpB2CCQE', 'ZExpB3CCQE', 'ZExpB4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
 #                'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
 #                'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
 #                'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
@@ -221,7 +221,7 @@ systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
 # systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
@@ -240,8 +240,8 @@ style = 'basic_icarus'
 type     = "SpineSystematics"
 variable = "true_ele_beam_open_angle"
 # Uncomment to restrict to specific recipes:
-systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
-# systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
+# systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
+# systematics = ['ZExpB1CCQE', 'ZExpB2CCQE', 'ZExpB3CCQE', 'ZExpB4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
 #                'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
 #                'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
 #                'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
@@ -254,7 +254,7 @@ systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
 # systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]

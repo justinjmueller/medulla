@@ -108,7 +108,7 @@ class Systematic:
         """
         self._variables[variable._key] = variable
 
-    def process(self, sample, mask, nuniv=1000) -> np.ndarray:
+    def process(self, sample, mask, nuniv=1000, cv_weights=None) -> np.ndarray:
         """
         Processes the systematic uncertainty for the given sample for
         all configured Variables.
@@ -122,6 +122,11 @@ class Systematic:
             `presel` mask applied to the sample.
         nuniv : int, optional
             The number of universes to generate. The default is 1000.
+        cv_weights : np.ndarray, optional
+            Per-event weights to apply to both the CV histogram and each
+            universe histogram (e.g. PPFX corrections). Shape must match
+            the number of selected events after applying mask. If None,
+            raw event counts are used (original behavior).
 
         Returns
         -------
@@ -150,15 +155,21 @@ class Systematic:
                 bin_indices = np.digitize(data, bin_edges) - 1
                 valid_indices = (bin_indices >= 0) & (bin_indices < len(bin_edges) - 1)
                 bin_indices = bin_indices[valid_indices]
-                
-                # Universes
+
+                # Per-event CV weights (e.g. PPFX), restricted to valid bins.
+                if cv_weights is not None:
+                    ev_w = np.asarray(cv_weights, dtype=float)[valid_indices]
+                else:
+                    ev_w = np.ones(valid_indices.sum(), dtype=float)
+
+                # Universes — each event's universe weights are scaled by its CV weight.
                 histogram = np.zeros((len(bin_edges) - 1, self._universe_weights.shape[1]))
-                filtered_weights = self._universe_weights[valid_indices, :]
+                filtered_weights = self._universe_weights[valid_indices, :] * ev_w[:, np.newaxis]
                 np.add.at(histogram, bin_indices, filtered_weights)
 
-                # Central value
+                # Central value — weighted by the same per-event CV weight.
                 cv_histogram = np.zeros(len(bin_edges) - 1)
-                np.add.at(cv_histogram, bin_indices, 1)
+                np.add.at(cv_histogram, bin_indices, ev_w)
 
                 # Covariance matrix calculated with respect to the central
                 # value.
@@ -184,9 +195,14 @@ class Systematic:
                 bin_indices = np.digitize(data, bin_edges) - 1
                 valid_indices = (bin_indices >= 0) & (bin_indices < len(bin_edges) - 1)
                 bin_indices = bin_indices[valid_indices]
-                
+
+                if cv_weights is not None:
+                    ev_w = np.asarray(cv_weights, dtype=float)[valid_indices]
+                else:
+                    ev_w = np.ones(valid_indices.sum(), dtype=float)
+
                 histogram = np.zeros(len(bin_edges) - 1)
-                np.add.at(histogram, bin_indices, 1)
+                np.add.at(histogram, bin_indices, ev_w)
 
                 self._covariances[f'{self._name}_{name}'] = np.diag(histogram)
                 self._std = np.sqrt(histogram.sum())
