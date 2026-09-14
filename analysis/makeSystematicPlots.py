@@ -25,7 +25,7 @@ def makePlot(var, dir):
 if __name__ == "__main__":
 
     # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/nue_plots.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine12/merged_output.root')
-    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/systematics.toml', '/exp/icarus/data/users/micarrig/merged_all_v3.root')
+    ana = Analysis('/exp/icarus/app/users/nabrego/medulla_dev/medulla/analysis/systematics.toml', '/exp/icarus/app/users/nabrego/medulla_dev/medulla/build/output_nueCCInclusive_sys.root')
 
     plot_category = 'systematics_xsec'
 
