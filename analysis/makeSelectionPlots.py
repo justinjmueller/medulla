@@ -25,7 +25,7 @@ def makePlot(var, dir):
 if __name__ == "__main__":
 
     #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/nue_plots.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine16/merged_output.root')
-    ana = Analysis('/exp/icarus/app/users/nabrego/medulla_dev/medulla/analysis/nue_plots.toml', '/exp/icarus/app/users/nabrego/dirWork/medulla/build/output_nueCCInclusive_sys.root')
+    ana = Analysis('/exp/icarus/app/users/nabrego/medulla_dev/medulla/analysis/nue_plots.toml', '/exp/icarus/app/users/nabrego/dirWork/medulla/build/output_nueCCInclusive_new.root')
     # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/nue_plots_reco.toml', '/exp/icarus/data/users/micarrig/merged_outputAll.root')
     # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/cutflow_plots.toml', '/exp/icarus/data/users/micarrig/merged_outputAll.root')
 
