@@ -12,7 +12,7 @@ exposure_type = "pot"
 trees = ['nc_sideband']
 print_sys = true
 # Comment this to avoid systematics when plotting (usually done for testing plots)
-systematics = ['selected_multisigmaTree'] # , 'selected_NuMIfluxsimTree', 'selected_variationTree' ]
+systematics = ['nc_sideband_multisigmaTree'] # , 'selected_NuMIfluxsimTree', 'selected_variationTree' ]
 precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "reco_category" = "np.where(true_cc == 1, true_interaction_mode, -1)"}
 
 # DATA SAMPLE
