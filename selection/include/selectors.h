@@ -428,7 +428,7 @@ namespace selectors
      * @brief Selects the leading and subleading photon forming the best pi0 candidate.
      * Helper function. Not registered.
      * @details
-     * Reco branch: iterates all ordered primary-photon pairs above a 25 MeV
+     * Reco branch: iterates all ordered primary-photon pairs above a 3 MeV
      * per-shower threshold, computes the diphoton invariant mass using the
      * vertex-to-shower-start opening angle, and selects the pair whose mass
      * is closest to PI0_MASS (135 MeV). Leading photon has higher calo KE.
@@ -470,7 +470,7 @@ namespace selectors
         }
         else
         {
-            constexpr double threshold = 25.0;
+            constexpr double threshold = 0.0;
             double vx = obj.vertex[0], vy = obj.vertex[1], vz = obj.vertex[2];
 
             std::vector<std::pair<std::pair<size_t,size_t>, double>> candidates;
