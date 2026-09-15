@@ -270,6 +270,14 @@ Each entry in the `branch` list defines a variable to be extracted from the sele
     { name = "p", type = "both_particle" },
     ```
     will extract the momentum of *all* particles in the interaction.
+* `selector_parameters` - an optional list of parameters passed to the selector function itself (as opposed to `parameters`, which go to the branch variable). Only selectors written to accept a `std::vector<double>` use them; the rest ignore the field. As with `parameters`, entries may be floats or `"@name"` references to the `parameters` block. For example, the `pi0_leading_shower` selector takes a per-shower calo KE threshold used when forming the photon pair:
+    ```toml
+    { name = "ke", type = "both_particle", selector = "pi0_leading_shower", selector_parameters = ["@pi0_pair_threshold"] },
+    ```
+* `biselector_parameters` - the same, for a `biselector` (see below):
+    ```toml
+    { name = "pi0_invariant_mass", type = "both_bivar", biselector = "pi0_photon_pair", biselector_parameters = ["@pi0_pair_threshold"] },
+    ```
 
 The user has the duty to ensure that all branch variables are of the same length. Particle-level and interaction-level branches cannot be mixed in the same tree, as this will lead to a mismatch in the number of entries and a thrown exception.
 

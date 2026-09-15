@@ -424,26 +424,36 @@ namespace selectors
     }
     REGISTER_SELECTOR(target_michel, target_michel);
 
+    /// Default per-shower reco calo KE threshold (MeV) used by pi0_photon_pair
+    /// when no parameter is supplied.
+    constexpr double kDefaultPi0PairThreshold = 0.0;
+
     /**
      * @brief Selects the leading and subleading photon forming the best pi0 candidate.
      * Helper function. Not registered.
      * @details
-     * Reco branch: iterates all ordered primary-photon pairs above a 3 MeV
-     * per-shower threshold, computes the diphoton invariant mass using the
-     * vertex-to-shower-start opening angle, and selects the pair whose mass
-     * is closest to PI0_MASS (135 MeV). Leading photon has higher calo KE.
+     * Reco branch: iterates all ordered primary-photon pairs whose calo KE is
+     * at or above a per-shower threshold, computes the diphoton invariant mass
+     * using the vertex-to-shower-start opening angle, and selects the pair
+     * whose mass is closest to PI0_MASS (135 MeV). Leading photon has higher
+     * calo KE.
      *
      * True branch: groups photon daughters by parent pi0 track ID via
      * utilities::get_true_pi0s, requires exactly two photon daughters, and
-     * orders them by true KE.
+     * orders them by true KE. The threshold is not applied in truth.
      *
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to operate on.
+     * @param params optional parameters: params[0] is the per-shower calo KE
+     *        threshold in MeV for the reco branch. Defaults to
+     *        kDefaultPi0PairThreshold when empty. Set from the toml through
+     *        `selector_parameters` / `biselector_parameters` on a branch, or
+     *        through the parameters of the cuts that use this pair.
      * @return pair of indices {leading_photon, subleading_photon}, or
      *         {kNoMatch, kNoMatch} if no valid pair is found.
      */
     template<class T>
-    std::pair<size_t, size_t> pi0_photon_pair(const T & obj)
+    std::pair<size_t, size_t> pi0_photon_pair(const T & obj, std::vector<double> params = {})
     {
         if constexpr (std::is_same_v<T, caf::SRInteractionTruthDLPProxy>)
         {
@@ -470,7 +480,7 @@ namespace selectors
         }
         else
         {
-            constexpr double threshold = 0.0;
+            const double threshold = params.empty() ? kDefaultPi0PairThreshold : params[0];
             double vx = obj.vertex[0], vy = obj.vertex[1], vz = obj.vertex[2];
 
             std::vector<std::pair<std::pair<size_t,size_t>, double>> candidates;
@@ -533,11 +543,13 @@ namespace selectors
      * shower with the highest kinetic energy.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to operate on.
+     * @param params optional parameters forwarded to pi0_photon_pair
+     *        (params[0] = per-shower calo KE threshold in MeV).
      */
     template<class T>
-    size_t pi0_leading_shower(const T & obj)
+    size_t pi0_leading_shower(const T & obj, std::vector<double> params = {})
     {
-        return pi0_photon_pair(obj).first;
+        return pi0_photon_pair(obj, params).first;
     }
     REGISTER_SELECTOR(pi0_leading_shower, pi0_leading_shower);
 
@@ -547,11 +559,13 @@ namespace selectors
      * shower with the lowest kinetic energy.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to operate on.
+     * @param params optional parameters forwarded to pi0_photon_pair
+     *        (params[0] = per-shower calo KE threshold in MeV).
      */
     template<class T>
-    size_t pi0_subleading_shower(const T & obj)
+    size_t pi0_subleading_shower(const T & obj, std::vector<double> params = {})
     {
-        return pi0_photon_pair(obj).second;
+        return pi0_photon_pair(obj, params).second;
     }
     REGISTER_SELECTOR(pi0_subleading_shower, pi0_subleading_shower);
 }

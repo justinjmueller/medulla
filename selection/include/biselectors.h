@@ -79,8 +79,9 @@ namespace biselectors
     /**
      * @brief Selects the leading and subleading photon forming the best pi0 candidate.
      * @details
-     * Reco branch: iterates all ordered primary-photon pairs above a 25 MeV
-     * per-shower threshold, computes the diphoton invariant mass using the
+     * Reco branch: iterates all ordered primary-photon pairs at or above a
+     * per-shower calo KE threshold (params[0], MeV; set from the toml with
+     * `biselector_parameters`), computes the diphoton invariant mass using the
      * vertex-to-shower-start opening angle, and selects the pair whose mass
      * is closest to PI0_MASS (135 MeV). Leading photon has higher calo KE.
      *
@@ -94,9 +95,9 @@ namespace biselectors
      *         {kNoMatch, kNoMatch} if no valid pair is found.
      */
     template<class T>
-    std::pair<size_t, size_t> pi0_photon_pair(const T & obj)
+    std::pair<size_t, size_t> pi0_photon_pair(const T & obj, std::vector<double> params = {})
     {
-        return selectors::pi0_photon_pair(obj);
+        return selectors::pi0_photon_pair(obj, params);
     }
     REGISTER_BISELECTOR(pi0_photon_pair, pi0_photon_pair);
 }

@@ -79,13 +79,18 @@ namespace cuts::pi0ana
      * requiring its kinetic energy to be above a specified threshold.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to select on.
-     * @param params the kinetic enregy threshold applied.
+     * @param params params[0] the kinetic energy threshold applied to the
+     *        leading photon. Optional params[1] is the per-shower calo KE
+     *        threshold used when forming the photon pair
+     *        (see selectors::pi0_photon_pair).
      * @return true if the interaction contains a photon with kinetic energy above specifed theshold.
      */
     template<class T>
     bool leading_photon_ke_cut(const T & obj, std::vector<double> params={})
     {
-        size_t phi = selectors::pi0_leading_shower(obj);
+        std::vector<double> pair_params;
+        if(params.size() > 1) pair_params = {params[1]};
+        size_t phi = selectors::pi0_leading_shower(obj, pair_params);
 	      if(phi == kNoMatch) return false;
 	      else
 	      {

@@ -563,13 +563,17 @@ namespace cuts
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to select on.
      * @param params params[0] lower mass bound (MeV), params[1] upper mass bound (MeV).
-     *               Defaults to [60, 300) MeV.
+     *               Defaults to [60, 300) MeV. Optional params[2] is the
+     *               per-shower calo KE threshold used when forming the pair
+     *               (see selectors::pi0_photon_pair).
      * @return true if a valid photon pair exists and its invariant mass is in [params[0], params[1]).
      */
     template<class T>
     bool valid_pi0_mass_cut(const T & obj, std::vector<double> params={60.0, 300.0})
     {
-        auto [i0, i1] = biselectors::pi0_photon_pair(obj);
+        std::vector<double> pair_params;
+        if(params.size() > 2) pair_params = {params[2]};
+        auto [i0, i1] = biselectors::pi0_photon_pair(obj, pair_params);
         if(i0 == kNoMatch || i1 == kNoMatch) return false;
         const auto & p0 = obj.particles[i0];
         const auto & p1 = obj.particles[i1];
@@ -1078,17 +1082,36 @@ namespace cuts
     }
 
     // Concrete instantiations — one per selector you need.
+
+    /**
+     * @brief Require the leading pi0-candidate shower to be contained.
+     * @param obj the interaction to select on.
+     * @param params optional: params[0] is the per-shower calo KE threshold
+     *        used when forming the photon pair (see selectors::pi0_photon_pair).
+     * @return true if a pair exists and its leading shower is contained.
+     */
     template<class T>
-    bool pi0_leading_shower_containment_cut(const T & obj)
+    bool pi0_leading_shower_containment_cut(const T & obj, std::vector<double> params={})
     {
-        return selected_particle_containment_cut<T, selectors::pi0_leading_shower<T>>(obj);
+        size_t idx = selectors::pi0_leading_shower(obj, params);
+        if(idx == kNoMatch) return false;
+        return obj.particles[idx].is_contained == 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, pi0_leading_shower_containment_cut, pi0_leading_shower_containment_cut);
 
+    /**
+     * @brief Require the subleading pi0-candidate shower to be contained.
+     * @param obj the interaction to select on.
+     * @param params optional: params[0] is the per-shower calo KE threshold
+     *        used when forming the photon pair (see selectors::pi0_photon_pair).
+     * @return true if a pair exists and its subleading shower is contained.
+     */
     template<class T>
-    bool pi0_subleading_shower_containment_cut(const T & obj)
+    bool pi0_subleading_shower_containment_cut(const T & obj, std::vector<double> params={})
     {
-        return selected_particle_containment_cut<T, selectors::pi0_subleading_shower<T>>(obj);
+        size_t idx = selectors::pi0_subleading_shower(obj, params);
+        if(idx == kNoMatch) return false;
+        return obj.particles[idx].is_contained == 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, pi0_subleading_shower_containment_cut, pi0_subleading_shower_containment_cut);
 

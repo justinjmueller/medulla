@@ -277,6 +277,14 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
         if(var.has_field("parameters"))
             varPars = var.get_double_vector("parameters");
 
+        // Optional parameters for the (bi)selector that picks the particle(s)
+        // the variable is evaluated on, e.g. a KE threshold for pairing.
+        std::vector<double> selPars;
+        if(var.has_field("selector_parameters"))
+            selPars = var.get_double_vector("selector_parameters");
+        if(var.has_field("biselector_parameters"))
+            selPars = var.get_double_vector("biselector_parameters");
+
         if(var_type == "true" || (var.has_field("selector") && var_type == "true_particle") || (var.has_field("biselector") && var_type == "true_bivar"))
         {
             if(var.has_field("biselector"))
@@ -284,7 +292,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 std::string full_name = "true_bivar_" + var.get_string_field("biselector") + "_" + var_name;
                 std::string biselector_name = "true_biselector_" + var.get_string_field("biselector");
                 auto biselector_factory = BiSelectorFactoryRegistry<TType>::instance().get(biselector_name);
-                auto biselector = biselector_factory(std::vector<double>{});
+                auto biselector = biselector_factory(selPars);
                 var_name = "true_bivar_" + var_name;
                 auto factory = BiVarFactoryRegistry<TParticleType>::instance().get(var_name);
                 auto bivar_fn = factory(varPars);
@@ -308,7 +316,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 // Retrieve the selector function.
                 std::string selector_name = "true_" + var.get_string_field("selector");
                 auto selector_factory = SelectorFactoryRegistry<TType>::instance().get(selector_name);
-                auto selector = selector_factory(std::vector<double>{});
+                auto selector = selector_factory(selPars);
 
                 // Retrieve the particle-level variable function.
                 var_name = "true_particle_" + var_name;
@@ -355,7 +363,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 std::string full_name = "reco_bivar_" + var.get_string_field("biselector") + "_" + var_name;
                 std::string biselector_name = "reco_biselector_" + var.get_string_field("biselector");
                 auto biselector_factory = BiSelectorFactoryRegistry<RType>::instance().get(biselector_name);
-                auto biselector = biselector_factory(std::vector<double>{});
+                auto biselector = biselector_factory(selPars);
                 var_name = "reco_bivar_" + var_name;
                 auto factory = BiVarFactoryRegistry<RParticleType>::instance().get(var_name);
                 auto bivar_fn = factory(varPars);
@@ -379,7 +387,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 // Retrieve the selector function.
                 std::string selector_name = "reco_" + var.get_string_field("selector");
                 auto selector_factory = SelectorFactoryRegistry<RType>::instance().get(selector_name);
-                auto selector = selector_factory(std::vector<double>{});
+                auto selector = selector_factory(selPars);
 
                 // Retrieve the particle-level variable function.
                 var_name = "reco_particle_" + var_name;
@@ -479,6 +487,14 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
         if(var.has_field("parameters"))
             varPars = var.get_double_vector("parameters");
 
+        // Optional parameters for the (bi)selector that picks the particle(s)
+        // the variable is evaluated on, e.g. a KE threshold for pairing.
+        std::vector<double> selPars;
+        if(var.has_field("selector_parameters"))
+            selPars = var.get_double_vector("selector_parameters");
+        if(var.has_field("biselector_parameters"))
+            selPars = var.get_double_vector("biselector_parameters");
+
         if(var_type == "true" || (var.has_field("selector") && var_type == "true_particle") || (var.has_field("biselector") && var_type == "true_bivar"))
         {
             if(var.has_field("biselector"))
@@ -486,7 +502,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 std::string full_name = "true_bivar_" + var.get_string_field("biselector") + "_" + var_name;
                 std::string biselector_name = "true_biselector_" + var.get_string_field("biselector");
                 auto biselector_factory = BiSelectorFactoryRegistry<TType>::instance().get(biselector_name);
-                auto biselector = biselector_factory(std::vector<double>{});
+                auto biselector = biselector_factory(selPars);
                 var_name = "true_bivar_" + var_name;
                 auto factory = BiVarFactoryRegistry<TParticleType>::instance().get(var_name);
                 auto bivar_fn = factory(varPars);
@@ -510,7 +526,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 // Retrieve the selector function.
                 std::string selector_name = "true_" + var.get_string_field("selector");
                 auto selector_factory = SelectorFactoryRegistry<TType>::instance().get(selector_name);
-                auto selector = selector_factory(std::vector<double>{});
+                auto selector = selector_factory(selPars);
 
                 // Retrieve the particle-level variable function.
                 var_name = "true_particle_" + var_name;
@@ -556,7 +572,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 std::string full_name = "reco_bivar_" + var.get_string_field("biselector") + "_" + var_name;
                 std::string biselector_name = "reco_biselector_" + var.get_string_field("biselector");
                 auto biselector_factory = BiSelectorFactoryRegistry<RType>::instance().get(biselector_name);
-                auto biselector = biselector_factory(std::vector<double>{});
+                auto biselector = biselector_factory(selPars);
                 var_name = "reco_bivar_" + var_name;
                 auto factory = BiVarFactoryRegistry<RParticleType>::instance().get(var_name);
                 auto bivar_fn = factory(varPars);
@@ -580,7 +596,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
                 // Retrieve the selector function.
                 std::string selector_name = "reco_" + var.get_string_field("selector");
                 auto selector_factory = SelectorFactoryRegistry<RType>::instance().get(selector_name);
-                auto selector = selector_factory(std::vector<double>{});
+                auto selector = selector_factory(selPars);
 
                 // Retrieve the particle-level variable function.
                 var_name = "reco_particle_" + var_name;
