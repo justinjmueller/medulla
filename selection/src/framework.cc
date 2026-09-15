@@ -352,7 +352,7 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
         {
             if(var.has_field("biselector"))
             {
-                std::string full_name = "reco_biselector_" + var.get_string_field("biselector") + "_" + var_name;
+                std::string full_name = "reco_bivar_" + var.get_string_field("biselector") + "_" + var_name;
                 std::string biselector_name = "reco_biselector_" + var.get_string_field("biselector");
                 auto biselector_factory = BiSelectorFactoryRegistry<RType>::instance().get(biselector_name);
                 auto biselector = biselector_factory(std::vector<double>{});
