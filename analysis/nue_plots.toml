@@ -14,7 +14,7 @@ exposure_type = 'pot'
 # pot_exposure_override = 1.0e21
 trees = ['nc_sideband']
 print_sys = true
-systematics = ['selected_multisigmaTree'  ] #, 'selected_NuMIfluxsimTree', 'selected_variationTree']
+systematics = ['nc_sideband_multisigmaTree'  ] #, 'selected_NuMIfluxsimTree', 'selected_variationTree']
 precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "true_mode_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_category" = "np.where(true_category == 0, reco_reco_interaction_type, -1)", "true_nu" = "true_visible_energy - true_leading_electron_energy/1000", "reco_nu" = "reco_visible_energy - reco_leading_electron_energy/1000", "nu_diff" = "reco_nu - true_nu"}
 area_scale = false
 
@@ -23,7 +23,7 @@ key = "NuMIFull"
 exposure_type = "pot"
 # Optional: set this to use a config POT value instead of ROOT file POT
 # pot_exposure_override = 1.0e21
-trees = ['selected_nonmatched']
+trees = ['nc_sideband_nonmatched']
 print_sys = true
 systematics = []
 precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "true_mode_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_category" = "np.where(true_category == 0, reco_reco_interaction_type, -1)", "true_nu" = "true_visible_energy - true_leading_electron_energy/1000", "reco_nu" = "reco_visible_energy - reco_leading_electron_energy/1000", "nu_diff" = "reco_nu - true_nu"}
@@ -32,7 +32,7 @@ area_scale = false
 [samples.data]
 key = "data"
 exposure_type = "pot"
-trees = ['selected']
+trees = ['nc_sideband']
 print_sys = true
 systematics = []
 precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "true_mode_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_category" = "np.where(true_category == 0, reco_reco_interaction_type, -1)", "true_nu" = "true_visible_energy - true_leading_electron_energy/1000", "reco_nu" = "reco_visible_energy - reco_leading_electron_energy/1000", "nu_diff" = "reco_nu - true_nu", "true_category" = "-1"}
@@ -41,7 +41,7 @@ override_exposure = 2.36e19 # 10% data from Guadalupe's studies https://sbn-docd
 [samples.dataBeamOff]
 key = "dataBeamOff"
 exposure_type = "livetime"
-trees = ['selected']
+trees = ['nc_sideband']
 systematics = []
 precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "true_mode_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_category" = "np.where(true_category == 0, reco_reco_interaction_type, -1)", "true_nu" = "true_visible_energy - true_leading_electron_energy/1000", "reco_nu" = "reco_visible_energy - reco_leading_electron_energy/1000", "nu_diff" = "reco_nu - true_nu", "true_category" = "5"}
 
