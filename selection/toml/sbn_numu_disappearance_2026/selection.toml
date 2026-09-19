@@ -62,6 +62,7 @@ branch = [
     { name = "largest_flash_time",    type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
     { name = "first_neutrino_energy", type = "event" },
     { name = "max_neutrino_energy",   type = "event" },
+    { name = "mc_nnu",                type = "event" },
 
     # Interaction-level branches
     { name = "neutrino_id",           type = "true"    },
@@ -69,6 +70,16 @@ branch = [
     { name = "baseline",              type = "mctruth" },
     { name = "cc",                    type = "mctruth" },
     { name = "pdg",                   type = "mctruth" },
+
+    # Flux ancestry (flux-reweighting maps: flavour, parent, E, parent |p| and angle)
+    { name = "initpdg",               type = "mctruth" },
+    { name = "parent_pdg",            type = "mctruth" },
+    { name = "parent_dcy_mom_x",      type = "mctruth" },
+    { name = "parent_dcy_mom_y",      type = "mctruth" },
+    { name = "parent_dcy_mom_z",      type = "mctruth" },
+    { name = "parent_dcy_p",          type = "mctruth" },
+    { name = "parent_dcy_theta",      type = "mctruth" },
+
     { name = "interaction_mode",      type = "mctruth" },
     { name = "interaction_type",      type = "mctruth" },
     { name = "off_axis_angle",        type = "mctruth" },
@@ -173,6 +184,7 @@ branch = [
     { name = "largest_flash_time",    type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
     { name = "first_neutrino_energy", type = "event" },
     { name = "max_neutrino_energy",   type = "event" },
+    { name = "mc_nnu",                type = "event" },
     
     # Interaction-level branches
     { name = "neutrino_id",           type = "true"    },
@@ -180,6 +192,16 @@ branch = [
     { name = "baseline",              type = "mctruth" },
     { name = "cc",                    type = "mctruth" },
     { name = "pdg",                   type = "mctruth" },
+
+    # Flux ancestry (flux-reweighting maps: flavour, parent, E, parent |p| and angle)
+    { name = "initpdg",               type = "mctruth" },
+    { name = "parent_pdg",            type = "mctruth" },
+    { name = "parent_dcy_mom_x",      type = "mctruth" },
+    { name = "parent_dcy_mom_y",      type = "mctruth" },
+    { name = "parent_dcy_mom_z",      type = "mctruth" },
+    { name = "parent_dcy_p",          type = "mctruth" },
+    { name = "parent_dcy_theta",      type = "mctruth" },
+
     { name = "interaction_mode",      type = "mctruth" },
     { name = "interaction_type",      type = "mctruth" },
     { name = "off_axis_angle",        type = "mctruth" },
@@ -343,6 +365,7 @@ branch = [
     { name = "ntrue",                 type = "event" },
     { name = "first_neutrino_energy", type = "event" },
     { name = "max_neutrino_energy",   type = "event" },
+    { name = "mc_nnu",                type = "event" },
 ]
 
 [[category]] # 0 : Fiducial, contained, single muon, single proton

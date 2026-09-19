@@ -106,6 +106,103 @@ namespace mctruth
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, parent_pdg, parent_pdg);
 
     /**
+     * @brief Variable for the initial (pre-oscillation) PDG code of the
+     * neutrino.
+     * @details This variable is intended to provide the flavour the neutrino
+     * was produced with, which is what selects the flux map for flux
+     * reweighting. Samples in which the initial PDG code was not filled
+     * carry 0 here; the neutrino's PDG code is used instead in that case,
+     * which is the same thing for a sample without oscillations applied.
+     * @tparam T the type of the object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the initial PDG code of the neutrino.
+     */
+    template<typename T>
+    double initpdg(const T & obj)
+    {
+        int init = obj.initpdg;
+        return init != 0 ? init : static_cast<int>(obj.pdg);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, initpdg, initpdg);
+
+    /**
+     * @brief Variable for the x-component of the neutrino parent's momentum
+     * at decay.
+     * @details This variable is intended to provide the momentum of the
+     * hadron (or muon) that decayed to produce the neutrino, as recorded in
+     * the flux ancestry. It is in beam coordinates, not detector
+     * coordinates.
+     * @tparam T the type of the object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the x-component of the parent momentum at decay in GeV.
+     */
+    template<typename T>
+        double parent_dcy_mom_x(const T & obj) { return obj.parent_dcy_mom.x; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, parent_dcy_mom_x, parent_dcy_mom_x);
+
+    /**
+     * @brief Variable for the y-component of the neutrino parent's momentum
+     * at decay.
+     * @details See @ref parent_dcy_mom_x. Beam coordinates.
+     * @tparam T the type of the object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the y-component of the parent momentum at decay in GeV.
+     */
+    template<typename T>
+        double parent_dcy_mom_y(const T & obj) { return obj.parent_dcy_mom.y; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, parent_dcy_mom_y, parent_dcy_mom_y);
+
+    /**
+     * @brief Variable for the z-component of the neutrino parent's momentum
+     * at decay.
+     * @details See @ref parent_dcy_mom_x. Beam coordinates, so z is along the
+     * beam axis.
+     * @tparam T the type of the object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the z-component of the parent momentum at decay in GeV.
+     */
+    template<typename T>
+        double parent_dcy_mom_z(const T & obj) { return obj.parent_dcy_mom.z; }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, parent_dcy_mom_z, parent_dcy_mom_z);
+
+    /**
+     * @brief Variable for the magnitude of the neutrino parent's momentum at
+     * decay.
+     * @details This variable is intended to provide |p| of the decaying
+     * parent, one of the two axes of the parent-kinematics flux maps.
+     * @tparam T the type of the object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the magnitude of the parent momentum at decay in GeV.
+     */
+    template<typename T>
+    double parent_dcy_p(const T & obj)
+    {
+        const auto & p = obj.parent_dcy_mom;
+        return std::sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, parent_dcy_p, parent_dcy_p);
+
+    /**
+     * @brief Variable for the polar angle of the neutrino parent's momentum at
+     * decay with respect to the beam axis.
+     * @details This variable is intended to provide the angle of the decaying
+     * parent, the other axis of the parent-kinematics flux maps, computed as
+     * atan2(sqrt(px^2 + py^2), pz) in beam coordinates. atan2 rather than
+     * acos(pz/|p|) keeps the result well-defined and accurate near 0, where
+     * nearly all BNB parents are.
+     * @tparam T the type of the object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the polar angle of the parent momentum at decay in radians.
+     */
+    template<typename T>
+    double parent_dcy_theta(const T & obj)
+    {
+        const auto & p = obj.parent_dcy_mom;
+        return std::atan2(std::sqrt(p.x * p.x + p.y * p.y), static_cast<double>(p.z));
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, parent_dcy_theta, parent_dcy_theta);
+
+    /**
      * @brief Variable for the true neutrino current value.
      * @details This variable is intended to provide the true current value of
      * the parent neutrino that produced the interaction.
