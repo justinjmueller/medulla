@@ -125,6 +125,21 @@ namespace pvars
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, id, id);
 
     /**
+     * @brief Variable for the SPINE interaction index of the parent interaction.
+     * @details The interaction index is assigned upstream in the SPINE reconstruction and is
+     * unique within a given event.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the interaction index of the parent interaction.
+     */
+    template<class T>
+    double interaction_id(const T & p)
+    {
+        return p.interaction_id;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, interaction_id, interaction_id);
+
+    /**
      * @brief Variable for the best-match particle index in the counterpart collection.
      * @details Returns the index of the highest-overlap matched particle
      * (reco→true or true→reco) as assigned by the SPINE post-processor.

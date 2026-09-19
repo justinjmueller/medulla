@@ -150,14 +150,21 @@ class TestBasicResolution:
         assert "include_samples" not in result
 
     def test_catalog_only_fields_excluded(self, tmp_path, catalog):
-        """Catalog-internal fields (key, experiment, metadata) must not
-        leak into the resolved sample entries."""
+        """'key' and 'metadata' are catalog-internal bookkeeping and must
+        not leak into the resolved sample entries. 'experiment' is the one
+        catalog-only field that IS deliberately passed through when
+        present -- it flows into project.db's per-job catalog_experiment
+        column so `finalize` can split a project's merged output by this
+        tag (e.g. distinguishing icarus_run2 from icarus_run4 within one
+        shared campaign-level 'icarus' project) -- see cmd_finalize's
+        catalog-tag splitting in campaign.py."""
         cfg = _make_config_with_includes(tmp_path, keys=["sbnd_mc_nominal"])
         result = resolve_samples(cfg, catalog)
 
         for s in result["sample"]:
             assert "key" not in s
-            assert "experiment" not in s
+            assert "metadata" not in s
+            assert s.get("experiment") == "sbnd"
 
 
 # ===================================================================

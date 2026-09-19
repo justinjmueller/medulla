@@ -132,6 +132,37 @@ namespace pvars
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, lax_muon_pid, lax_muon_pid);
 
     /**
+     * @brief Variable for assigning PID with the muon softmax score boosted.
+     * @details Nominally the PID is the argmax of the five softmax scores.
+     * This variable scales the muon score by a constant factor before the
+     * argmax, loosening the requirement to assign a muon type PID.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the PID of the particle.
+     */
+    template<class T>
+    double boosted_muon_pid(const T & p)
+    {
+        static constexpr double kMuonBoost = 2.0;
+        static constexpr std::array<double, 5> scale_factors =
+            {1.0, 1.0, kMuonBoost, 1.0, 1.0};
+
+        size_t high_index(0);
+        double high_score(-std::numeric_limits<double>::infinity());
+        for(size_t i(0); i < scale_factors.size(); ++i)
+        {
+            const double score = p.pid_scores[i] * scale_factors[i];
+            if(score > high_score)
+            {
+                high_score = score;
+                high_index = i;
+            }
+        }
+        return static_cast<double>(high_index);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, boosted_muon_pid, boosted_muon_pid);
+
+    /**
      * @brief Variable for assigning primary classification based on the
      * particle's softmax scores.
      * @details This variable assigns a primary classification based on the

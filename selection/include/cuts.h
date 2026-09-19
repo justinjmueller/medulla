@@ -484,8 +484,8 @@ namespace cuts
         if(context::current_detector == caf::Det_t::kSBND)
         {
             // Just the regular fiducial cut for SBND
-            return std::abs(obj.vertex[0]) > 10.0 && std::abs(obj.vertex[0]) < 190.0
-                && std::abs(obj.vertex[1]) > 10.0 && std::abs(obj.vertex[1]) < 190.0
+            return std::abs(obj.vertex[0]) < 190.0
+                && std::abs(obj.vertex[1]) < 190.0
                 && obj.vertex[2] > 10.0 && obj.vertex[2] < 450.0;
 
         }

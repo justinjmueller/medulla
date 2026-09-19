@@ -1,7 +1,7 @@
 [general]
 output = "sbn_numu_disappearance_2026"
 primfn = "lax_primary_classification"
-pidfn = "default_pid"
+pidfn = "boosted_muon_pid"
 fsthresh = [
     "@photon_threshold",
     "@electron_threshold",
@@ -30,6 +30,8 @@ keys = [
     "sbnd_intime_mc5e18", "sbnd_intime_mc1e20",
     "sbnd_detvar_cv", "sbnd_detvar_dent",
     "sbnd_detvar_sce0x", "sbnd_detvar_sce2x", "sbnd_detvar_charge_scale",
+    "sbnd_detvar_p5_gain", "sbnd_detvar_m5_gain", "sbnd_detvar_smear15",
+    "sbnd_detvar_wiremod_xthetaxw", "sbnd_detvar_wiremod_yz",
     "icarus_ar23p_run2", "icarus_ar23p_run4",
     "icarus_ar23p_dirt_run2", "icarus_ar23p_dirt_run4",
     "icarus_offbeam_run2", "icarus_offbeam_run4",
@@ -58,6 +60,8 @@ branch = [
     # Event-level branches
     { name = "largest_flash_pe",      type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
     { name = "largest_flash_time",    type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    { name = "first_neutrino_energy", type = "event" },
+    { name = "max_neutrino_energy",   type = "event" },
 
     # Interaction-level branches
     { name = "neutrino_id",           type = "true"    },
@@ -75,6 +79,7 @@ branch = [
     { name = "off_axis_angle_icarus", type = "both"    },
     { name = "category",              type = "true"    },
     { name = "visible_energy",        type = "both"    },
+    { name = "energy_qel",            type = "both"    },
     { name = "dpT",                   type = "both"    },
     { name = "dalphaT",               type = "both"    },
     { name = "dphiT",                 type = "both"    },
@@ -130,7 +135,7 @@ branch = [
     { name = "end_y",             type = "both_particle", selector = "leading_proton" },
     { name = "end_z",             type = "both_particle", selector = "leading_proton" },
     { name = "ke",                type = "both_particle", selector = "leading_proton" },
-    { name = "mcs_csda_diff",     type = "reco_particle", selector = "leading_proton" },
+    { name = "p",                 type = "both_particle", selector = "leading_proton" },
     { name = "calo_csda_diff",    type = "reco_particle", selector = "leading_proton" },
     { name = "length",            type = "both_particle", selector = "leading_proton" },
     { name = "dpT",               type = "both_particle", selector = "leading_proton" },
@@ -143,7 +148,10 @@ branch = [
     { name = "pion_softmax",      type = "reco_particle", selector = "leading_proton" },
     { name = "proton_softmax",    type = "reco_particle", selector = "leading_proton" },
     { name = "mip_softmax",       type = "reco_particle", selector = "leading_proton" },
-    { name = "hadron_softmax",    type = "reco_particle", selector = "leading_proton" }
+    { name = "hadron_softmax",    type = "reco_particle", selector = "leading_proton" },
+
+    # Muon-Proton
+    { name = "opening_angle",     type = "reco_bivar",    biselector = "muon_proton"  },
 ]
 
 [[tree]]
@@ -163,6 +171,8 @@ branch = [
     # Event-level branches
     { name = "largest_flash_pe",      type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
     { name = "largest_flash_time",    type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    { name = "first_neutrino_energy", type = "event" },
+    { name = "max_neutrino_energy",   type = "event" },
     
     # Interaction-level branches
     { name = "neutrino_id",           type = "true"    },
@@ -180,6 +190,7 @@ branch = [
     { name = "off_axis_angle_icarus", type = "both"    },
     { name = "category",              type = "true"    },
     { name = "visible_energy",        type = "both"    },
+    { name = "energy_qel",            type = "both"    },
     { name = "dpT",                   type = "both"    },
     { name = "dalphaT",               type = "both"    },
     { name = "dphiT",                 type = "both"    },
@@ -236,7 +247,7 @@ branch = [
     { name = "end_y",             type = "both_particle", selector = "leading_proton" },
     { name = "end_z",             type = "both_particle", selector = "leading_proton" },
     { name = "ke",                type = "both_particle", selector = "leading_proton" },
-    { name = "mcs_csda_diff",     type = "reco_particle", selector = "leading_proton" },
+    { name = "p",                 type = "both_particle", selector = "leading_proton" },
     { name = "calo_csda_diff",    type = "reco_particle", selector = "leading_proton" },
     { name = "length",            type = "both_particle", selector = "leading_proton" },
     { name = "dpT",               type = "both_particle", selector = "leading_proton" },
@@ -251,6 +262,9 @@ branch = [
     { name = "mip_softmax",       type = "reco_particle", selector = "leading_proton" },
     { name = "hadron_softmax",    type = "reco_particle", selector = "leading_proton" },
 
+    # Muon-Proton
+    { name = "opening_angle",     type = "both_bivar",    biselector = "muon_proton"  },
+
     # Cuts (for efficiency studies)
     { name = "fiducial_cut_osc",      type = "reco"    },
     { name = "user_containment_cut",  type = "reco",  parameters = [ "@containment_threshold" ] },
@@ -262,26 +276,73 @@ branch = [
 ]
 
 [[tree]]
+name = "purity"
+sim_only = false
+mode = "reco"
+cut = [
+    { name = "no_cut",                type = "reco" },
+]
+branch = [
+    # Generic interaction-level information
+    { name = "category",              type = "true" },
+    { name = "neutrino_id",           type = "true" },
+    { name = "neutrino_energy",       type = "mctruth" },
+    { name = "cc",                    type = "mctruth" },
+    { name = "pdg",                   type = "mctruth" },
+    { name = "interaction_mode",      type = "mctruth" },
+    { name = "interaction_type",      type = "mctruth" },
+    { name = "W",                     type = "mctruth" },
+    { name = "q0",                    type = "mctruth" },
+    { name = "q3",                    type = "mctruth" },
+
+    # Quantities for building differential plots
+    { name = "vertex_x",              type = "both" },
+    { name = "vertex_y",              type = "both" },
+    { name = "vertex_z",              type = "both" },
+    { name = "pn",                    type = "both" },
+    { name = "dpT",                   type = "both" },
+    { name = "dalphaT",               type = "both" },
+    { name = "dphiT",                 type = "both" },
+    { name = "dpL",                   type = "both" },
+    { name = "visible_energy",        type = "both" },
+    { name = "energy_qel",            type = "both" },
+
+    # Selection cuts (for calculating purity)
+    { name = "fiducial_cut_osc",      type = "reco" },
+    { name = "user_containment_cut",  type = "reco",  parameters = [ "@containment_threshold" ] },
+    { name = "no_photons",            type = "reco",  parameters = [ "@photon_threshold"      ] },
+    { name = "no_electrons",          type = "reco",  parameters = [ "@electron_threshold"    ] },
+    { name = "single_muon",           type = "reco",  parameters = [ "@muon_threshold"        ] },
+    { name = "no_charged_pions",      type = "reco",  parameters = [ "@pion_threshold"        ] },
+    { name = "single_proton",         type = "reco",  parameters = [ "@proton_threshold"      ] },
+
+    # Special cut for ICARUS Run 2 EE TPC (for calculating purity)
+    { name = "user_containment_cut_filterEE",  type = "reco",  parameters = [ "@containment_threshold" ] },
+]
+
+[[tree]]
 name = "events"
 sim_only = false
 mode = "event"
 cut = [
-    { name = "no_cut",             type = "event" },
+    { name = "no_cut",                type = "event" },
 ]
 branch = [
-    { name = "is_first_in_subrun", type = "event" },
-    { name = "pot",                type = "event" },
-    { name = "pot_from_spillinfo", type = "event" },
-    { name = "largest_flash_pe",   type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
-    { name = "largest_flash_time", type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
-    { name = "unfolded_pot_bnb",   type = "event" },
-    { name = "unfolded_nbnb",      type = "event" },
-    { name = "gate_delta",         type = "event" },
-    { name = "nbnb",               type = "event" },
-    { name = "noffbeambnb",        type = "event" },
-    { name = "ngenevt",            type = "event" },
-    { name = "nreco",              type = "event" },
-    { name = "ntrue",              type = "event" },
+    { name = "is_first_in_subrun",    type = "event" },
+    { name = "pot",                   type = "event" },
+    { name = "pot_from_spillinfo",    type = "event" },
+    { name = "largest_flash_pe",      type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    { name = "largest_flash_time",    type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    { name = "unfolded_pot_bnb",      type = "event" },
+    { name = "unfolded_nbnb",         type = "event" },
+    { name = "gate_delta",            type = "event" },
+    { name = "nbnb",                  type = "event" },
+    { name = "noffbeambnb",           type = "event" },
+    { name = "ngenevt",               type = "event" },
+    { name = "nreco",                 type = "event" },
+    { name = "ntrue",                 type = "event" },
+    { name = "first_neutrino_energy", type = "event" },
+    { name = "max_neutrino_energy",   type = "event" },
 ]
 
 [[category]] # 0 : Fiducial, contained, single muon, single proton

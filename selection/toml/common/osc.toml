@@ -11,6 +11,12 @@
 #
 # The 'key' and 'experiment' fields are metadata for the Python
 # campaign tooling and are ignored by the C++ selection executable.
+# 'experiment' may be finer-grained than the campaign system's own
+# top-level experiment (e.g. "icarus_run2"/"icarus_run4" rather than
+# "icarus"); `finalize` groups a project's merged output by this tag,
+# so several catalog experiments can share one campaign-level project
+# (and one grid submission identity) while still landing in separate
+# output files.
 # ══════════════════════════════════════════════════════════════════════
 
 # ─── SBND Run 1 Samples ───────────────────────────────────────────────
@@ -19,7 +25,7 @@
 key = "sbnd_ar23p_mc5e18"
 name = "sbnd"
 experiment = "sbnd"
-path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/mc_MCP2025B_5e18_v10_06_00_09_prodgenie_corsika_proton_rockbox_sbnd_CV_caf_sbnd/*/00/*ar23p.flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/mc_MCP2025B_5e18_v10_06_00_09_prodgenie_corsika_proton_rockbox_sbnd_CV_caf_sbnd/*/*/*ar23p.flat.caf.root"
 ismc = true
 
   [sample.metadata]
@@ -156,6 +162,76 @@ ismc = true
   spine_config = "full_chain_co_250901.yaml + modifier/charge_scale/mod_charge_scale_260813.yaml"
 
 [[sample]]
+key = "sbnd_detvar_p5_gain"
+name = "sbnd_detvar_p5_gain"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_run1_detvar_p5gain/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND Run 1 BNB +5% Gain DetVar"
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.17.1"
+  spine_config = "full_chain_co_250901.yaml + modifier/charge_scale/mod_gain_pos_scale_260818.yaml"
+
+[[sample]]
+key = "sbnd_detvar_m5_gain"
+name = "sbnd_detvar_m5_gain"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_run1_detvar_m5gain/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND Run 1 BNB -5% Gain DetVar"
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.17.1"
+  spine_config = "full_chain_co_250901.yaml + modifier/charge_scale/mod_gain_neg_scale_260818.yaml"
+
+[[sample]]
+key = "sbnd_detvar_smear15"
+name = "sbnd_detvar_smear15"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_run1_detvar_smear15/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND Run 1 BNB Smear 15% DetVar"
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.17.1"
+  spine_config = "full_chain_co_250901.yaml + modifier/smearing/mod_smearing_260818.yaml"
+
+[[sample]]
+key = "sbnd_detvar_wiremod_xthetaxw"
+name = "sbnd_detvar_wiremod_xthetaxw"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_run1_detvar_wiremod_xthetaxw/*/*/*.root"
+ismc = false
+
+  [sample.metadata]
+  description = "SBND Run 1 BNB WireMod X-ThetaXW DetVar"
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_1002"
+  spine_production = "v0.17.1" # TODO: confirm version
+  spine_config = "full_chain_co_250901.yaml + modifier/data/mod_data_common.yaml"
+
+[[sample]]
+key = "sbnd_detvar_wiremod_yz"
+name = "sbnd_detvar_wiremod_yz"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_run1_detvar_wiremod_yz/*/*/*.root"
+ismc = false
+
+  [sample.metadata]
+  description = "SBND Run 1 BNB WireMod YZ DetVar"
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_1002"
+  spine_production = "v0.17.1" # TODO: confirm version
+  spine_config = "full_chain_co_250901.yaml + modifier/data/mod_data_common.yaml"
+
+[[sample]]
 key = "sbnd_detvar_cv"
 name = "sbnd_detvar_cv"
 experiment = "sbnd"
@@ -188,7 +264,7 @@ ismc = true
 [[sample]]
 key = "icarus_ar23p_run4"
 name = "icarus_run4"
-experiment = "icarus"
+experiment = "icarus_run4"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run4_cvmc/*/*/*.root"
 ismc = true
 
@@ -202,7 +278,7 @@ ismc = true
 [[sample]]
 key = "icarus_ar23p_dirt_run4"
 name = "icarus_dirt_run4"
-experiment = "icarus"
+experiment = "icarus_run4"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4_DirtMC_ReCAF2026_BNB/*/*/*.root"
 ismc = true
 
@@ -216,7 +292,7 @@ ismc = true
 [[sample]]
 key = "icarus_offbeam_run4"
 name = "icarus_offbeam_run4"
-experiment = "icarus"
+experiment = "icarus_run4"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4BeamOffWF_BNB_data_ReCAF2026_20p/*/*/*.root"
 ismc = false
 
@@ -230,7 +306,7 @@ ismc = false
 [[sample]]
 key = "icarus_bnblight_run4"
 name = "icarus_bnblight_run4"
-experiment = "icarus"
+experiment = "icarus_run4"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4BeamOnWF_BNB_data_ReCAF2026/*/*/*.root"
 ismc = false
 
@@ -244,7 +320,7 @@ ismc = false
 [[sample]]
 key = "icarus_wiremod_xthetaxw_run4"
 name = "icarus_wiremod_xthetaxw_run4"
-experiment = "icarus"
+experiment = "icarus_run4"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run4_WM_ReCAF2026/*/*/*.root"
 ismc = true
 
@@ -258,7 +334,7 @@ ismc = true
 [[sample]]
 key = "icarus_wiremod_yz_run4"
 name = "icarus_wiremod_yz_run4"
-experiment = "icarus"
+experiment = "icarus_run4"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run4_wiremod_yz/*/*/*.root"
 ismc = true
 
@@ -272,7 +348,7 @@ ismc = true
 [[sample]]
 key = "icarus_detvar_sce0x_run4"
 name = "icarus_detvar_sce0x_run4"
-experiment = "icarus"
+experiment = "icarus_run4"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run4_detvar_sce0x/*/*/*.root"
 ismc = true
 
@@ -286,7 +362,7 @@ ismc = true
 [[sample]]
 key = "icarus_detvar_sce2x_run4"
 name = "icarus_detvar_sce2x_run4"
-experiment = "icarus"
+experiment = "icarus_run4"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run4_detvar_sce2x/*/*/*.root"
 ismc = true
 
@@ -300,7 +376,7 @@ ismc = true
 [[sample]]
 key = "icarus_detvar_charge_scale_run4"
 name = "icarus_detvar_charge_scale_run4"
-experiment = "icarus"
+experiment = "icarus_run4"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run4_detvar_charge_scale/*/*/*.root"
 ismc = true
 
@@ -316,7 +392,7 @@ ismc = true
 [[sample]]
 key = "icarus_ar23p_run2"
 name = "icarus_run2"
-experiment = "icarus"
+experiment = "icarus_run2"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_cvmc/*/*/*.root"
 ismc = true
 
@@ -330,7 +406,7 @@ ismc = true
 [[sample]]
 key = "icarus_ar23p_dirt_run2"
 name = "icarus_dirt_run2"
-experiment = "icarus"
+experiment = "icarus_run2"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_dirt/*/*/*.root"
 ismc = true
 
@@ -344,7 +420,7 @@ ismc = true
 [[sample]]
 key = "icarus_offbeam_run2"
 name = "icarus_offbeam_run2"
-experiment = "icarus"
+experiment = "icarus_run2"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/ICARUS_Run2BeamOffWF_BNB_data_ReCAF2026/*/*/*.root"
 ismc = false
 
@@ -358,7 +434,7 @@ ismc = false
 [[sample]]
 key = "icarus_bnblight_run2"
 name = "icarus_bnblight_run2"
-experiment = "icarus"
+experiment = "icarus_run2"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_onbeam_10p/*/*/*.root"
 ismc = false
 
@@ -372,7 +448,7 @@ ismc = false
 [[sample]]
 key = "icarus_wiremod_xthetaxw_run2"
 name = "icarus_wiremod_xthetaxw_run2"
-experiment = "icarus"
+experiment = "icarus_run2"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_wiremod/*/*/*.root"
 ismc = true
 
@@ -386,7 +462,7 @@ ismc = true
 [[sample]]
 key = "icarus_wiremod_yz_run2"
 name = "icarus_wiremod_yz_run2"
-experiment = "icarus"
+experiment = "icarus_run2"
 path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_wiremod_yz/*/*/*.root"
 ismc = true
 
@@ -396,3 +472,45 @@ ismc = true
   production_version = "v10_06_00_12"
   spine_production = "v0.10.9"
   spine_config = "full_chain_co_260501.yaml"
+
+[[sample]]
+key = "icarus_detvar_sce0x_run2"
+name = "icarus_detvar_sce0x_run2"
+experiment = "icarus_run2"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_detvar_sce0x/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "ICARUS DetVar SCE0X for Run 2."
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_12"
+  spine_production = "v0.10.9"
+  spine_config = "full_chain_co_260501.yaml + modifier/sce_backward/mod_sce_backward_260813.yaml"
+
+[[sample]]
+key = "icarus_detvar_sce2x_run2"
+name = "icarus_detvar_sce2x_run2"
+experiment = "icarus_run2"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_detvar_sce2x/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "ICARUS DetVar SCE2X for Run 2."
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_12"
+  spine_production = "v0.10.9"
+  spine_config = "full_chain_co_260501.yaml + modifier/sce_forward/mod_sce_forward_260813.yaml"
+
+[[sample]]
+key = "icarus_detvar_charge_scale_run2"
+name = "icarus_detvar_charge_scale_run2"
+experiment = "icarus_run2"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_detvar_charge_scale/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "ICARUS DetVar Charge Scale for Run 2."
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_12"
+  spine_production = "v0.10.9"
+  spine_config = "full_chain_co_260501.yaml + modifier/charge_scale/mod_charge_scale_260813.yaml"

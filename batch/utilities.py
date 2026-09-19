@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     jobid INTEGER PRIMARY KEY,
     status TEXT,
     sample TEXT,
+    catalog_experiment TEXT,
     FOREIGN KEY (jobid) REFERENCES configuration(jobid)
 );
 """
@@ -382,6 +383,57 @@ def create_systematics_cfg(
     syst_cfg['tree'] = list(syst_trees.values())
     return syst_cfg
 
+# Field separator for validation_manifest.txt. Chosen because it cannot
+# appear in a ROOT directory or tree name, so the worker-side parser in
+# validate_pair.C can split on it without quoting rules.
+MANIFEST_SEP = '|'
+
+def write_validation_manifest(
+    syst_cfg : dict,
+    dst : Path,
+):
+    """
+    Write the manifest that validate_pair.C checks a job's output pair
+    against, describing what the systematics step is *expected* to have
+    produced for every tree.
+
+    This is derived from the same syst_cfg object that is dumped to
+    systematics.toml, rather than recomputed, so the manifest and the
+    configuration the job actually runs cannot drift apart.
+
+    The manifest covers every sample in the project, not just one job's;
+    each line is keyed by an 'origin' of the form
+    "events/<sample>/<tree>", and the worker selects the lines matching
+    its own sample. One line per tree:
+
+        origin|name|action|table_types
+
+    where table_types is a comma-separated list (empty for a 'copy'
+    action, which produces no systematics trees).
+
+    Parameters
+    ----------
+    syst_cfg : dict
+        The systematics configuration as returned by
+        create_systematics_cfg.
+    dst : Path
+        Path to write the manifest to.
+
+    Returns
+    -------
+    None.
+    """
+    lines = []
+    for tree in syst_cfg.get('tree', []):
+        table_types = ','.join(tree.get('table_types', []))
+        lines.append(MANIFEST_SEP.join([
+            tree['origin'],
+            tree['name'],
+            tree['action'],
+            table_types,
+        ]))
+    Path(dst).write_text('\n'.join(lines) + ('\n' if lines else ''))
+
 def create_new_project(
     project_dir : Path,
     tml : str,
@@ -449,6 +501,11 @@ def create_new_project(
     with open(project_dir / 'systematics.toml', 'w') as f:
         toml.dump(sys, f)
 
+    # Write the companion manifest describing what each job's systematics
+    # output must contain, so the grid node can validate its output pair
+    # before transferring anything back. See write_validation_manifest.
+    write_validation_manifest(sys, project_dir / 'validation_manifest.txt')
+
     # Form a "batch" config for each sample: i.e., each sample gets a
     # copy of the TOML configuration with the [[tree]] list preserved,
     # the [general] section modified to set the 'output' key to its
@@ -463,13 +520,89 @@ def create_new_project(
         job_tml['sample'] = [sample,]
 
         ins_configurations.append((si, toml.dumps(job_tml),))
-        ins_jobs.append((si, 'pending', sample['name']))
+        ins_jobs.append((si, 'pending', sample['name'], sample.get('experiment')))
 
     # Insert the job configuration into the database.
     command(curs, "INSERT INTO configuration (jobid, cfg) VALUES (?, ?)", ins_configurations)
-    command(curs, "INSERT INTO jobs (jobid, status, sample) VALUES (?, ?, ?)", ins_jobs)
+    command(curs, "INSERT INTO jobs (jobid, status, sample, catalog_experiment) VALUES (?, ?, ?, ?)", ins_jobs)
     conn.commit()
     conn.close()
+
+# Minimum size for an output file to count as real rather than a stub
+# left behind by a job that failed after creating its output.
+MIN_OUTPUT_BYTES = 1024
+
+def survey_project_output(
+    project_dir : Path,
+):
+    """
+    Classify a project's job output by *pair*: a job is complete only when
+    both its selection and its systematics output are present and
+    non-stub.
+
+    Keying completion on the selection file alone -- which is what this
+    replaces -- means a job whose systematics step failed or silently
+    produced nothing is still marked 'completed'. Such a job never returns
+    to 'pending', so it is never resubmitted, and the gap only surfaces at
+    merge time when the two file sets are cross-checked. submit.sh now
+    refuses to transfer a half-good pair at all, but projects predating
+    that still contain orphans, and this is what finds them.
+
+    Parameters
+    ----------
+    project_dir : Path
+        Path to the project directory (containing output/).
+
+    Returns
+    -------
+    dict with keys:
+        completed : list[int]
+            Job IDs with both outputs present and >= MIN_OUTPUT_BYTES.
+        orphaned : list[int]
+            Job IDs with a good selection output but no usable
+            systematics partner. These must be reverted to 'pending'.
+        stub_files : list[Path]
+            Output files (either kind) below MIN_OUTPUT_BYTES.
+    """
+    project_dir = Path(project_dir)
+    out_dir = project_dir / 'output'
+
+    def _by_id(pattern):
+        found = {}
+        for f in glob(str(out_dir / pattern)):
+            path = Path(f)
+            try:
+                jid = int(path.stem.split('jobid')[-1])
+            except ValueError:
+                continue
+            found[jid] = path
+        return found
+
+    # 'output_jobid*' cannot match 'output_systematics_jobid*', so the two
+    # globs stay disjoint without further filtering.
+    nosyst = _by_id('output_jobid*.root')
+    wsyst = _by_id('output_systematics_jobid*.root')
+
+    def _ok(path):
+        return path is not None and path.stat().st_size >= MIN_OUTPUT_BYTES
+
+    completed, orphaned = [], []
+    for jid, path in nosyst.items():
+        if not _ok(path):
+            continue
+        if _ok(wsyst.get(jid)):
+            completed.append(jid)
+        else:
+            orphaned.append(jid)
+
+    stub_files = [p for p in list(nosyst.values()) + list(wsyst.values())
+                  if p.stat().st_size < MIN_OUTPUT_BYTES]
+
+    return {
+        'completed':  sorted(completed),
+        'orphaned':   sorted(orphaned),
+        'stub_files': sorted(stub_files),
+    }
 
 def check_project_status(
     project_dir : str,
@@ -496,28 +629,30 @@ def check_project_status(
     conn = sqlite3.connect('./project.db')
     curs = conn.cursor()
 
-    # Get the list of job outputs in the output directory. We require
-    # that the output file be at least 1 KB in size to be considered
-    # complete. This helps avoid marking jobs as complete if they
-    # failed and produced an empty output file.
-    output_files = glob(str(project_dir / 'output' / 'output_jobid*.root'))
-    completed_jobs = [
-        int(Path(f).stem.split('jobid')[-1])
-        for f in output_files if Path(f).stat().st_size >= 1024
-    ]
+    # Classify the output by pair: a job counts as complete only when both
+    # its selection and systematics outputs are present and non-stub. The
+    # size floor avoids marking a job complete on an empty file left
+    # behind by a failure.
+    survey = survey_project_output(project_dir)
+    completed_jobs = survey['completed']
+    orphaned_jobs = survey['orphaned']
+
     ins = [('completed', jid) for jid in completed_jobs]
     command(curs, "UPDATE jobs SET status = ? WHERE jobid = ?", ins)
+
+    # A job previously marked complete on its selection output alone, but
+    # with no usable systematics partner, has to move backward so it is
+    # resubmitted. This is the only place status regresses.
+    if orphaned_jobs:
+        command(curs, "UPDATE jobs SET status = 'pending' WHERE jobid = ?",
+                [(jid,) for jid in orphaned_jobs])
     conn.commit()
     conn.close()
 
-    stub_jobs = [
-        int(Path(f).stem.split("jobid")[-1])
-        for f in output_files
-        if Path(f).stat().st_size < 1024
-    ]
-    if stub_jobs:
+    stub_files = survey['stub_files']
+    if stub_files:
         resp = input(
-            f"[INFO] -- Found {len(stub_jobs)} stub output file(s) <"
+            f"[INFO] -- Found {len(stub_files)} stub output file(s) <"
             f" 1024 bytes.\nDelete these stub outputs? [Y/N] "
         )
         if resp.strip().lower() != 'y':
@@ -527,16 +662,18 @@ def check_project_status(
                 " outputs or if the jobs need to be resubmitted."
             )
         else:
-            for jid in stub_jobs:
-                stub_file = project_dir / 'output' / f'output_jobid{jid:04d}.root'
+            for stub_file in stub_files:
                 if stub_file.exists():
                     stub_file.unlink()
-            print(f"[INFO] -- Deleted {len(stub_jobs)} stub output file(s).")
+            print(f"[INFO] -- Deleted {len(stub_files)} stub output file(s).")
 
     # Replace the project database copy with the updated version.
     subprocess.run(['mv', './project.db', project_dir / 'project.db'], check=True)
 
     print(f"[INFO] -- Found {len(completed_jobs)} completed jobs.")
+    if orphaned_jobs:
+        print(f"[INFO] -- Reverted {len(orphaned_jobs)} job(s) to pending: "
+              f"selection output present but no usable systematics output.")
 
 def _submit_jobsub_once(
     cmd : list,
@@ -787,9 +924,9 @@ def launch_jobsub(
             '-N', str(count),
             f'--memory={memory}MB',
             disk_flag,
-            #f'--expected-lifetime={lifetime}',
-            f'--expected-lifetime=6h',
-            '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE',
+            f'--expected-lifetime={lifetime}',
+            '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC',
+            '--site=FermiGrid',
             "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
             '--singularity-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest',
             f'file://{Path(__file__).resolve().parent / "submit.sh"}',

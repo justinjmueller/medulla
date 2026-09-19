@@ -121,6 +121,7 @@ source /cvmfs/icarus.opensciencegrid.org/products/icarus/setup_icarus.sh
 # Setup the required dependencies
 setup sbnana v10_01_04 -q e26:prof
 setup cmake v3_27_4
+setup genie v3_04_02a -q e26:prof
 
 ups active
 

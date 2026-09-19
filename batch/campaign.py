@@ -2,6 +2,7 @@
 import argparse
 import contextlib
 import re
+import shlex
 import shutil
 import sqlite3
 import subprocess
@@ -18,7 +19,8 @@ from pathlib import Path
 
 from auth import authenticate
 from catalog import resolve_samples
-from utilities import create_new_project, check_project_status, launch_jobsub, safe_copy, safe_write_text
+from utilities import (create_new_project, check_project_status, launch_jobsub,
+                       safe_copy, safe_write_text, survey_project_output)
 
 # Repo root is two levels above this script (batch/ -> repo root).
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -172,6 +174,8 @@ class ProjectUnit:
     enable_keys: list = field(default_factory=list)
     batch_size: int = 50
     sys_template: str = None     # absolute path to a systematics TOML template, or None for the default
+    lifetime: str = None         # --expected-lifetime for jobsub_submit (e.g. "4h"), or None
+                                  # to fall back to launch_jobsub's own default
 
 
 # ---------------------------------------------------------------------------
@@ -195,6 +199,7 @@ CREATE TABLE IF NOT EXISTS projects (
     toml_file TEXT NOT NULL,
     project_dir TEXT NOT NULL,
     batch_size INTEGER NOT NULL,
+    lifetime TEXT,
     n_jobs INTEGER DEFAULT 0,
     n_completed INTEGER DEFAULT 0,
     status TEXT DEFAULT 'created',
@@ -223,10 +228,18 @@ def _open_db(campaign_dir):
     curs = conn.cursor()
     # Migration: add n_completed column if this DB was created before Stage 5.
     curs.execute("PRAGMA table_info(projects)")
-    if 'n_completed' not in {row[1] for row in curs.fetchall()}:
+    existing_cols = {row[1] for row in curs.fetchall()}
+    if 'n_completed' not in existing_cols:
         curs.execute(
             "ALTER TABLE projects ADD COLUMN n_completed INTEGER DEFAULT 0"
         )
+        conn.commit()
+    # Migration: add lifetime column for campaigns created before it existed.
+    # NULL here means "no per-project default was ever configured" and is
+    # distinct from an empty string; cmd_launch falls back to
+    # launch_jobsub's own default in that case.
+    if 'lifetime' not in existing_cols:
+        curs.execute("ALTER TABLE projects ADD COLUMN lifetime TEXT")
         conn.commit()
     try:
         yield conn, curs
@@ -337,6 +350,7 @@ def expand_campaign(analyses, catalog_path,
                     enable_keys=t.enable.get(exp, []),
                     batch_size=a.defaults.get('batch_size', 50),
                     sys_template=sys_template,
+                    lifetime=a.defaults.get('lifetime'),
                 ))
     return units
 
@@ -364,9 +378,17 @@ def create_campaign(campaign_dir, project_units, catalog_path,
         When set, overrides every project's batch size.
     campaign_cfg : dict | None
         Optional config dict.  ``campaign_cfg["overrides"]`` is a list of
-        dicts with keys (analysis, role, experiment, batch_size) that provide
-        per-project batch size overrides, taking precedence over
-        batch_size_override.
+        dicts with keys (analysis, role, experiment, batch_size, lifetime)
+        that provide per-project overrides. batch_size overrides take
+        precedence over batch_size_override; there is no analogous global
+        override for lifetime (see the `lifetime` field of ProjectUnit --
+        it comes only from meta.toml's [defaults] and this per-project
+        override, since it has no bearing on project.db content the way
+        batch_size does and so does not need to be fixed at creation time
+        for every project uniformly). A lifetime of "4h" is passed to
+        jobsub_submit as --expected-lifetime=4h at launch time; omitted
+        entirely (None, the default) lets launch_jobsub fall back to its
+        own default.
 
     Raises
     ------
@@ -410,6 +432,15 @@ def create_campaign(campaign_dir, project_units, catalog_path,
             if 'batch_size' in ov:
                 batch_size = ov['batch_size']
 
+            # lifetime has no bearing on project.db content (unlike
+            # batch_size, which determines how files are grouped into a
+            # job), so it has no separate global-override parameter --
+            # there is nothing here a flat CLI flag would need to reach
+            # past a per-project cfg override for. Precedence is simply
+            # per-project cfg override > meta.toml [defaults] > None
+            # (meaning: let launch_jobsub use its own built-in default).
+            lifetime = ov.get('lifetime', u.lifetime)
+
             create_new_project(
                 project_dir=proj_dir_stage,
                 tml=u.toml_path,
@@ -427,10 +458,11 @@ def create_campaign(campaign_dir, project_units, catalog_path,
 
             curs.execute(
                 "INSERT INTO projects "
-                "(analysis, role, experiment, toml_file, project_dir, batch_size, n_jobs) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "(analysis, role, experiment, toml_file, project_dir, batch_size, "
+                "lifetime, n_jobs) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 (u.analysis, u.role, u.experiment,
-                 u.toml_path, str(proj_dir_final), batch_size, n_jobs),
+                 u.toml_path, str(proj_dir_final), batch_size, lifetime, n_jobs),
             )
             conn.commit()
 
@@ -474,41 +506,45 @@ def _sync_project_status(project_dir, revert_ids=None):
     Inspect output files for a single project, update its project.db, and
     return completion counts.
 
-    A job is considered complete when its output file exists and is at least
-    1 KB — the same criterion used by utilities.check_project_status.
+    A job is considered complete when *both* its selection and its
+    systematics output exist and are at least 1 KB — the same criterion
+    used by utilities.check_project_status, via the shared
+    utilities.survey_project_output. Requiring the pair is what stops a job
+    whose systematics step failed from sitting permanently 'completed' and
+    never being resubmitted.
 
     Parameters
     ----------
     project_dir : str | Path
     revert_ids : list[int] | None
         Job IDs to explicitly revert to 'pending' before recomputing status
-        (used by `scan` after deleting a corrupt output file — this is the
-        only way a job ever moves backward from 'completed', since the
-        size-based completion check below only ever moves jobs forward).
-        The caller is responsible for having already deleted the
-        corresponding output file(s); otherwise the completion check below
-        would just re-mark them 'completed' again as part of this same
-        call.
+        (used by `scan` after deleting a corrupt output file). The caller is
+        responsible for having already deleted the corresponding output
+        file(s); otherwise the completion check below would just re-mark
+        them 'completed' again as part of this same call.
+
+        Jobs found to have a selection output but no usable systematics
+        partner are reverted too, without the caller asking and without
+        anything needing to be deleted first — see the note at the revert
+        itself.
 
     Returns
     -------
-    dict with keys ``n_jobs`` and ``n_completed``, or None if project.db
-    does not exist.
+    dict with keys ``n_jobs``, ``n_completed``, ``stub_files`` and
+    ``orphan_ids``, or None if project.db does not exist.
     """
     project_dir = Path(project_dir)
     db_path = project_dir / 'project.db'
     if not db_path.exists():
         return None
 
-    output_files = glob(str(project_dir / 'output' / 'output_jobid*.root'))
-    completed_ids = [
-        int(Path(f).stem.split('jobid')[-1])
-        for f in output_files
-        if Path(f).stat().st_size >= 1024
-    ]
-    stub_files = [
-        Path(f) for f in output_files if Path(f).stat().st_size < 1024
-    ]
+    # Completion is keyed on the output *pair*, so a job whose systematics
+    # step failed does not sit permanently 'completed' and unresubmitted.
+    # Orphans are folded into revert_ids below.
+    survey = survey_project_output(project_dir)
+    completed_ids = survey['completed']
+    stub_files = survey['stub_files']
+    orphan_ids = survey['orphaned']
 
     # Copy to a local temp file to avoid /pnfs locking failures.
     with tempfile.NamedTemporaryFile(
@@ -519,10 +555,15 @@ def _sync_project_status(project_dir, revert_ids=None):
         safe_copy(db_path, tmp)
         conn = sqlite3.connect(tmp)
         curs = conn.cursor()
-        if revert_ids:
+        # Orphans join the caller's explicit reverts. Unlike those, they
+        # need no file deleted first: an orphan is by construction absent
+        # from completed_ids, so the completion update below cannot undo
+        # this revert.
+        to_revert = sorted(set(revert_ids or []) | set(orphan_ids))
+        if to_revert:
             curs.executemany(
                 "UPDATE jobs SET status = 'pending' WHERE jobid = ?",
-                [(jid,) for jid in revert_ids],
+                [(jid,) for jid in to_revert],
             )
             conn.commit()
         if completed_ids:
@@ -544,6 +585,7 @@ def _sync_project_status(project_dir, revert_ids=None):
         'n_jobs':      sum(counts.values()),
         'n_completed': counts.get('completed', 0),
         'stub_files':  stub_files,
+        'orphan_ids':  orphan_ids,
     }
 
 
@@ -557,6 +599,7 @@ def cmd_sync(args):
     W_AN, W_RO, W_EX, W_ST, W_JB = 28, 18, 10, 12, 10
     synced = 0
     all_stubs = []
+    all_orphans = []
 
     with _open_db(campaign_dir) as (conn, curs):
         curs.execute(
@@ -583,6 +626,8 @@ def cmd_sync(args):
             n_jobs      = result['n_jobs']
             n_completed = result['n_completed']
             all_stubs.extend(result['stub_files'])
+            if result['orphan_ids']:
+                all_orphans.append((row, result['orphan_ids']))
 
             new_status = _compute_project_status(row['status'], n_jobs, n_completed)
 
@@ -610,6 +655,19 @@ def cmd_sync(args):
             ]))
 
     print(f"\n{_TAG_SYNC} Synced {synced} project(s).")
+
+    # Orphans are reverted automatically, but say so loudly: these are jobs
+    # that looked complete and were not, and they are about to be
+    # resubmitted.
+    if all_orphans:
+        n_total = sum(len(ids) for _, ids in all_orphans)
+        print(f"{_TAG_SYNC} {_A.YELLOW}Reverted {n_total} job(s) to pending "
+              f"(selection output with no usable systematics partner):{_A.RESET}")
+        for row, ids in all_orphans:
+            preview = ', '.join(str(i) for i in ids[:10])
+            more = f" (+{len(ids) - 10} more)" if len(ids) > 10 else ''
+            print(f"  {_A.DIM}{row['analysis']}/{row['role']}/{row['experiment']}:"
+                  f"{_A.RESET} {preview}{more}")
 
     if all_stubs:
         print(f"{_TAG_SYNC} {_A.YELLOW}Found {len(all_stubs)} stub output file(s) < 1 KB:{_A.RESET}")
@@ -984,7 +1042,7 @@ def cmd_create(args):
         'projects': [
             {'analysis': u.analysis, 'role': u.role, 'experiment': u.experiment,
              'toml_path': u.toml_path, 'batch_size': u.batch_size,
-             'sys_template': u.sys_template or ''}
+             'sys_template': u.sys_template or '', 'lifetime': u.lifetime or ''}
             for u in all_units
         ],
     }
@@ -1073,10 +1131,12 @@ def cmd_list(args):
 
     for a in analyses:
         owners = ', '.join(a.owners) if a.owners else '—'
-        batch  = a.defaults.get('batch_size', '(default)')
+        batch    = a.defaults.get('batch_size', '(default)')
+        lifetime = a.defaults.get('lifetime', '(launch_jobsub default)')
         print(
             f"\n  {_A.MAGENTA}{_A.BOLD}{a.analysis}{_A.RESET}"
-            f"  {_A.DIM}owners: {owners}  batch_size: {batch}{_A.RESET}"
+            f"  {_A.DIM}owners: {owners}  batch_size: {batch}  "
+            f"lifetime: {lifetime}{_A.RESET}"
         )
         _print_table(
             ['Role', 'Experiments', 'Enable keys'],
@@ -1202,9 +1262,18 @@ def cmd_launch(args):
             for row in projects:
                 proj_dir = Path(row['project_dir'])
                 print(f"\n[CAMPAIGN] Launching: {row['analysis']}/{row['role']}_{row['experiment']}")
+                # Precedence: --lifetime on this launch call > the project's
+                # own stored default (set at creation time from meta.toml's
+                # [defaults] or a manifest override) > launch_jobsub's own
+                # built-in default. Passed as a kwarg only when something
+                # resolved, so "nothing configured anywhere" still reaches
+                # launch_jobsub's default rather than a hardcoded fallback here.
+                lifetime = args.lifetime or row['lifetime']
+                lifetime_kwargs = {'lifetime': lifetime} if lifetime else {}
                 try:
                     ok = launch_jobsub(proj_dir, exp=exp, njobs=njobs, njobs_per_sample=njobs_per_sample,
-                                       confirm=False, tag=tag, verbose=args.verbose, force=args.force)
+                                       confirm=False, tag=tag, verbose=args.verbose, force=args.force,
+                                       **lifetime_kwargs)
                 except Exception as e:
                     print(f"[CAMPAIGN] Launch failed for {proj_dir}: {e}")
                     if args.verbose:
@@ -1307,16 +1376,114 @@ def _apply_pattern(pattern, analysis, role, experiment, tag, date_str):
     )
 
 
-def _run_one_hadd(campaign_dir, row, out_path, input_glob, label, print_lock):
+def _project_catalog_tags(project_dir):
+    """
+    Group a project's jobs by their catalog-level 'experiment' tag (the
+    per-sample metadata field from the sample catalog, e.g. distinguishing
+    'icarus_run2' from 'icarus_run4' within one shared campaign-level
+    'icarus' project). Used by cmd_finalize to decide whether a project's
+    merged output should be split into separate branches.
+
+    Jobs with no tag set (either because the sample didn't set one, or
+    because this project.db predates the catalog_experiment column) are
+    grouped under the key None.
+
+    Returns
+    -------
+    dict[str | None, list[int]]
+        Mapping of tag -> list of jobids carrying that tag. A dict with a
+        single key (whatever it is) means "do not split" -- the caller
+        checks len() > 1, not the key's value.
+    """
+    project_dir = Path(project_dir)
+    with tempfile.TemporaryDirectory() as tmp:
+        local_db = Path(tmp) / 'project.db'
+        safe_copy(project_dir / 'project.db', local_db)
+        conn = sqlite3.connect(local_db)
+        conn.row_factory = sqlite3.Row
+        curs = conn.cursor()
+        curs.execute("PRAGMA table_info(jobs)")
+        columns = {r[1] for r in curs.fetchall()}
+        if 'catalog_experiment' not in columns:
+            conn.close()
+            return {None: []}
+        curs.execute("SELECT jobid, catalog_experiment FROM jobs")
+        groups = {}
+        for r in curs.fetchall():
+            groups.setdefault(r['catalog_experiment'], []).append(r['jobid'])
+        conn.close()
+        return groups
+
+
+def _resolve_hadd_files(row, input_glob, label, job_ids=None):
+    """
+    Resolve the input files for one hadd task.
+
+    Shared between the real run (_run_one_hadd) and `finalize --dry-run`
+    (_write_hadd_dryrun) so the two can never disagree about which files a
+    given task would actually merge.
+
+    Parameters
+    ----------
+    row : sqlite3.Row
+        The project row this task belongs to.
+    input_glob : str
+        Glob pattern for this task's input files. Ignored when job_ids is
+        given.
+    label : str
+        'nosyst' or 'wsyst' -- selects the output filename convention when
+        job_ids is given.
+    job_ids : list[int] | None
+        If given, restrict this merge to exactly these jobids' output
+        files instead of globbing the whole project output directory --
+        used when a project's jobs are split into separate catalog-tag
+        branches (see _project_catalog_tags) and each branch must only
+        pick up its own jobs' files.
+
+    Returns
+    -------
+    list[str]
+        Sorted input file paths (possibly empty).
+    """
+    if job_ids is not None:
+        name_fmt = 'output_systematics_jobid{:04d}.root' if label == 'wsyst' else 'output_jobid{:04d}.root'
+        proj_dir = Path(row['project_dir'])
+        candidates = (proj_dir / 'output' / name_fmt.format(jid) for jid in job_ids)
+        return sorted(str(f) for f in candidates if f.exists())
+    return sorted(glob(input_glob))
+
+
+def _write_hadd_filelist(campaign_dir, out_path, files):
+    """
+    Write the @<filelist> hadd reads its inputs from, under
+    campaign_dir/filelists/, and return its path.
+
+    Passing files this way (rather than every file on the command line)
+    avoids bumping into exec/argv length limits for projects with a large
+    number of output files. The file list is kept (not deleted) as an
+    audit trail of exactly what went into each merge -- and, for
+    `finalize --dry-run`, as the artifact a user actually asked to see.
+    """
+    filelist_dir = campaign_dir / 'filelists'
+    filelist_dir.mkdir(exist_ok=True)
+    filelist_path = filelist_dir / f"{out_path.stem}.txt"
+    safe_write_text(filelist_path, '\n'.join(files) + '\n')
+    return filelist_path
+
+
+def _no_files_warning(tag_str, label):
+    """The "nothing to merge" message shared by the real run and dry-run."""
+    if label == 'wsyst':
+        print(f"{_TAG_FINALIZE} {_A.YELLOW}Warning:{_A.RESET} "
+              f"no systematics files for {tag_str}, skipping _wsyst.")
+    else:
+        print(f"{_TAG_FINALIZE} {_A.YELLOW}Warning:{_A.RESET} "
+              f"no output files for {tag_str}, skipping.")
+
+
+def _run_one_hadd(campaign_dir, row, out_path, input_glob, label, print_lock, job_ids=None):
     """
     Run a single hadd invocation for one (project, output) pair.
-
-    The input file list is written to a text file under
-    campaign_dir/filelists/ and passed to hadd via the '@<filelist>' syntax
-    (hadd -f <output> @<filelist>) instead of passing every file on the
-    command line, which avoids bumping into exec/argv length limits for
-    projects with a large number of output files. The file list is kept
-    (not deleted) as an audit trail of exactly what went into each merge.
 
     Parameters
     ----------
@@ -1328,13 +1495,16 @@ def _run_one_hadd(campaign_dir, row, out_path, input_glob, label, print_lock):
     out_path : Path
         Path to the merged output file to create.
     input_glob : str
-        Glob pattern for this task's input files.
+        Glob pattern for this task's input files. Ignored when job_ids is
+        given.
     label : str
         'nosyst' or 'wsyst', used only to phrase the "no files" warning.
     print_lock : threading.Lock
         Lock guarding this function's own status prints, so that output
         from concurrent workers doesn't interleave mid-line. Does not (and
         cannot) serialize hadd's own subprocess output.
+    job_ids : list[int] | None
+        See _resolve_hadd_files.
 
     Returns
     -------
@@ -1342,22 +1512,14 @@ def _run_one_hadd(campaign_dir, row, out_path, input_glob, label, print_lock):
         ok is True if hadd ran successfully. skipped is True if there were
         no input files to merge (not treated as an error).
     """
-    files = sorted(glob(input_glob))
+    files = _resolve_hadd_files(row, input_glob, label, job_ids=job_ids)
     tag_str = f"{row['analysis']}/{row['role']}_{row['experiment']}"
     if not files:
         with print_lock:
-            if label == 'wsyst':
-                print(f"{_TAG_FINALIZE} {_A.YELLOW}Warning:{_A.RESET} "
-                      f"no systematics files for {tag_str}, skipping _wsyst.")
-            else:
-                print(f"{_TAG_FINALIZE} {_A.YELLOW}Warning:{_A.RESET} "
-                      f"no output files for {tag_str}, skipping.")
+            _no_files_warning(tag_str, label)
         return False, True
 
-    filelist_dir = campaign_dir / 'filelists'
-    filelist_dir.mkdir(exist_ok=True)
-    filelist_path = filelist_dir / f"{out_path.stem}.txt"
-    safe_write_text(filelist_path, '\n'.join(files) + '\n')
+    filelist_path = _write_hadd_filelist(campaign_dir, out_path, files)
 
     with print_lock:
         print(f"{_TAG_FINALIZE} hadd → {_A.CYAN}{out_path.name}{_A.RESET} "
@@ -1372,10 +1534,60 @@ def _run_one_hadd(campaign_dir, row, out_path, input_glob, label, print_lock):
         return False, False
 
 
+def _write_hadd_dryrun(campaign_dir, row, out_path, input_glob, label, job_ids=None):
+    """
+    Resolve one hadd task's inputs and write its file list plus a
+    standalone, directly runnable script -- without invoking hadd itself.
+    Used by `finalize --dry-run` so the exact merge plan can be inspected
+    (and, if desired, executed later or off of this node) before committing
+    to it.
+
+    Writes the same @<filelist> file _run_one_hadd would (so a later real
+    run and this dry-run agree byte-for-byte on the input list), plus a
+    sibling <out_path.stem>.sh next to it invoking hadd with that exact
+    file list.
+
+    Returns
+    -------
+    (n_files, script_path) | (0, None)
+        Number of input files found and the generated script's path, or
+        (0, None) if there were no input files -- mirroring
+        _run_one_hadd's skip behavior, nothing is written for an empty task.
+    """
+    files = _resolve_hadd_files(row, input_glob, label, job_ids=job_ids)
+    tag_str = f"{row['analysis']}/{row['role']}_{row['experiment']}"
+    if not files:
+        _no_files_warning(tag_str, label)
+        return 0, None
+
+    filelist_path = _write_hadd_filelist(campaign_dir, out_path, files)
+
+    script_dir = campaign_dir / 'filelists'
+    script_path = script_dir / f"{out_path.stem}.sh"
+    script_text = (
+        "#!/bin/bash\n"
+        f"# hadd invocation for {tag_str} ({label}).\n"
+        f"# Generated by 'campaign.py finalize --dry-run'; not run automatically.\n"
+        f"# {len(files)} input file(s) -- see {filelist_path.name} in this "
+        "directory for the full list.\n"
+        "set -e\n"
+        f"hadd -f {shlex.quote(str(out_path))} @{shlex.quote(str(filelist_path))}\n"
+    )
+    # Not chmod'd executable: campaign_dir (and so this script) can live on
+    # /pnfs, where dCache does not reliably support setting Unix permission
+    # bits. Run it with `bash <script>` instead.
+    safe_write_text(script_path, script_text)
+    return len(files), script_path
+
+
 def cmd_finalize(args):
     """Merge per-project ROOT outputs into combined files using hadd."""
     campaign_dir = _resolve_campaign(args)
     date_str = datetime.now(timezone.utc).strftime('%Y%m%d')
+    # Sanitized the same way pattern tokens are (see _apply_pattern): a
+    # prefix containing '/' must not be interpretable as introducing a
+    # subdirectory under campaign_dir.
+    prefix = _sanitize_path_component(args.prefix) if args.prefix else ''
 
     with _open_db(campaign_dir) as (conn, curs):
         curs.execute("SELECT tag FROM campaign_meta LIMIT 1")
@@ -1397,7 +1609,7 @@ def cmd_finalize(args):
         return
 
     # Build the task list: one entry per hadd invocation.
-    # task = (row, out_path, input_glob, label)
+    # task = (row, out_path, input_glob, label, job_ids)
     tasks = []
     W_AN, W_RO, W_EX, W_OUT = 28, 18, 10, 44
     table_rows = []
@@ -1407,34 +1619,51 @@ def cmd_finalize(args):
         if pattern is None:
             pattern = '%a_%r_%e_%t_%d'
 
-        name = _apply_pattern(pattern, row['analysis'], row['role'],
-                              row['experiment'], tag, date_str)
-
-        single_output = name.endswith('#')
-        if single_output:
-            name = name[:-1]
-
         proj_dir    = Path(row['project_dir'])
         nosyst_glob = str(proj_dir / 'output' / 'output_jobid*.root')
         syst_glob   = str(proj_dir / 'output' / 'output_systematics_jobid*.root')
 
-        if single_output:
-            out_nosyst = campaign_dir / f"{name}.root"
-            tasks.append((row, out_nosyst, nosyst_glob, 'nosyst'))
-            out_label = f"{name}.root"
+        # A project's jobs may carry more than one catalog-level 'experiment'
+        # tag (e.g. icarus_run2/icarus_run4 sharing one campaign-level
+        # 'icarus' project). When that happens, merge each tag separately
+        # rather than lumping every job's output into one file.
+        tag_groups = _project_catalog_tags(proj_dir)
+        splitting = len(tag_groups) > 1
+        if splitting:
+            # A None tag (untagged samples mixed in with tagged ones) falls
+            # back to the project's own experiment label so _apply_pattern
+            # always gets a real string.
+            branches = [(subtag or row['experiment'], job_ids) for subtag, job_ids in tag_groups.items()]
         else:
-            out_nosyst = campaign_dir / f"{name}_nosyst.root"
-            out_wsyst  = campaign_dir / f"{name}_wsyst.root"
-            tasks.append((row, out_nosyst, nosyst_glob, 'nosyst'))
-            tasks.append((row, out_wsyst,  syst_glob,   'wsyst'))
-            out_label = f"{name}_[no|w]syst.root"
+            branches = [(row['experiment'], None)]
 
-        table_rows.append([
-            _cell(row['analysis'],   W_AN, color=_A.MAGENTA),
-            _cell(row['role'],       W_RO),
-            _cell(row['experiment'], W_EX),
-            _cell(out_label,         W_OUT),
-        ])
+        for exp_for_name, job_ids in branches:
+            name = _apply_pattern(pattern, row['analysis'], row['role'],
+                                  exp_for_name, tag, date_str)
+            if prefix:
+                name = f"{prefix}{name}"
+
+            single_output = name.endswith('#')
+            if single_output:
+                name = name[:-1]
+
+            if single_output:
+                out_nosyst = campaign_dir / f"{name}.root"
+                tasks.append((row, out_nosyst, nosyst_glob, 'nosyst', job_ids))
+                out_label = f"{name}.root"
+            else:
+                out_nosyst = campaign_dir / f"{name}_nosyst.root"
+                out_wsyst  = campaign_dir / f"{name}_wsyst.root"
+                tasks.append((row, out_nosyst, nosyst_glob, 'nosyst', job_ids))
+                tasks.append((row, out_wsyst,  syst_glob,   'wsyst', job_ids))
+                out_label = f"{name}_[no|w]syst.root"
+
+            table_rows.append([
+                _cell(row['analysis'],  W_AN, color=_A.MAGENTA),
+                _cell(row['role'],      W_RO),
+                _cell(exp_for_name,     W_EX),
+                _cell(out_label,        W_OUT),
+            ])
 
     _print_table(
         ['Analysis', 'Role', 'Experiment', 'Output'],
@@ -1444,7 +1673,25 @@ def cmd_finalize(args):
     print(f"\n{_TAG_FINALIZE} {len(rows)} project(s), {len(tasks)} hadd invocation(s).")
 
     if args.dry_run:
-        print(f"{_TAG_FINALIZE} Dry-run: no files created.")
+        # No hadd output is produced, but the actual merge plan is: the
+        # resolved input file list and a standalone runnable script per
+        # invocation, so the plan can be inspected (and, if desired, run
+        # later or off of this node) without committing to it here.
+        print(f"\n{_TAG_FINALIZE} Dry-run: resolving inputs, no hadd output will be created.")
+        n_written = 0
+        for row, out_path, input_glob, label, job_ids in tasks:
+            n_files, script_path = _write_hadd_dryrun(
+                campaign_dir, row, out_path, input_glob, label, job_ids=job_ids
+            )
+            if script_path is None:
+                continue
+            n_written += 1
+            print(f"{_TAG_FINALIZE} {_A.CYAN}{out_path.name}{_A.RESET}: "
+                  f"{n_files} input file(s) -> {script_path}")
+        print(f"\n{_TAG_FINALIZE} Dry-run complete. {n_written} script(s) written "
+              f"under {campaign_dir / 'filelists'}.")
+        if n_written:
+            print(f"{_TAG_FINALIZE} Run one with: bash <script>.sh")
         return
 
     resp = input(f"\n{_TAG_FINALIZE} Proceed with merging? [Y/N] ")
@@ -1458,8 +1705,8 @@ def cmd_finalize(args):
     n_workers = max(1, args.workers)
     with ThreadPoolExecutor(max_workers=n_workers) as executor:
         future_to_task = {
-            executor.submit(_run_one_hadd, campaign_dir, row, out_path, input_glob, label, print_lock): out_path
-            for row, out_path, input_glob, label in tasks
+            executor.submit(_run_one_hadd, campaign_dir, row, out_path, input_glob, label, print_lock, job_ids): out_path
+            for row, out_path, input_glob, label, job_ids in tasks
         }
         for future in as_completed(future_to_task):
             try:
@@ -1563,8 +1810,18 @@ def main():
                               help='Registered short name (see campaigns subcommand)')
     p_finalize.add_argument('--experiment', metavar='EXP',
                             help='Restrict finalization to one experiment')
+    p_finalize.add_argument('--prefix', metavar='PREFIX', default='',
+                            help='Prepend PREFIX to every merged output filename '
+                                 '(and its @filelist / dry-run script), to avoid '
+                                 'colliding with files from a previous finalize run '
+                                 'in the same campaign directory. Sanitized like a '
+                                 'pattern token -- a "/" cannot be used to place '
+                                 'output under a subdirectory.')
     p_finalize.add_argument('--dry-run', action='store_true',
-                            help='Print what would be merged without running hadd')
+                            help='Resolve inputs and write the @filelist plus a standalone '
+                                 'runnable script for every hadd invocation, under '
+                                 'campaign_dir/filelists/, without running hadd or creating '
+                                 'any merged output')
     p_finalize.add_argument('--workers', type=int, default=1, metavar='N',
                             help='Number of hadd merges to run in parallel '
                                  '(default: 1, sequential). Each project\'s merges '
@@ -1624,6 +1881,14 @@ def main():
                                'instead of failing the copy-back. Off by default, since silently '
                                'overwriting could mask two jobs unexpectedly racing to write the '
                                'same output.')
+    p_launch.add_argument('--lifetime', metavar='DURATION',
+                          help="jobsub_submit --expected-lifetime for every project launched "
+                               "this call (e.g. '4h', '30m'). Overrides each project's own "
+                               "stored default (set at creation time from meta.toml's "
+                               "[defaults] or a manifest override); falls back to "
+                               "launch_jobsub's built-in default ('1h') when neither is set. "
+                               "Unlike --batch-size, this has no effect on project.db content "
+                               "and is always safe to change, including on a --relaunch.")
     launch_grp = p_launch.add_mutually_exclusive_group()
     launch_grp.add_argument('--test', action='store_true',
                             help='Submit one job per project to verify setup')
