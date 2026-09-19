@@ -35,6 +35,7 @@ keys = [
     "icarus_ar23p_run2", "icarus_ar23p_run4",
     "icarus_ar23p_dirt_run2", "icarus_ar23p_dirt_run4",
     "icarus_offbeam_run2", "icarus_offbeam_run4",
+    "icarus_detvar_sce0x_run2", "icarus_detvar_sce2x_run2", "icarus_detvar_charge_scale_run2",
     "icarus_detvar_sce0x_run4", "icarus_detvar_sce2x_run4", "icarus_detvar_charge_scale_run4",
     "icarus_wiremod_xthetaxw_run2", "icarus_wiremod_xthetaxw_run4",
     "icarus_wiremod_yz_run2", "icarus_wiremod_yz_run4",
