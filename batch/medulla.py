@@ -19,6 +19,7 @@ def main(
     disk : Optional[int] = None,
     lifetime : str = '1h',
     force : bool = False,
+    jobs_per_process : int = 1,
 ):
     """
     Main function to run the medulla script.
@@ -62,6 +63,13 @@ def main(
         same job) instead of failing the copy-back. Off by default, since
         silently overwriting could mask two jobs unexpectedly racing to
         write the same output.
+    jobs_per_process : int
+        Number of job IDs each grid process takes on (default 1). The
+        build and environment setup are paid once per process rather than
+        once per job ID. launch_jobs and njobs_per_sample still count job
+        IDs; the number of processes submitted is that count divided by
+        jobs_per_process, rounded up. A test job is one process of this
+        many job IDs. Raise lifetime to cover them.
 
     Returns
     -------
@@ -87,24 +95,25 @@ def main(
     if project_exists:
         check_project_status(project_dir)
 
-    # If the user requested a test job, run a single job to test the
-    # configuration.
+    # If the user requested a test job, run a single grid process to test
+    # the configuration. With jobs_per_process > 1 that process takes that
+    # many job IDs, which is what exercises the hand-off between them.
     if test_job:
         if not project_exists:
             raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
-        launch_jobsub(project_dir, experiment, njobs=1, tag=tag, memory=memory, disk=disk, lifetime=lifetime, force=force)
+        launch_jobsub(project_dir, experiment, njobs=jobs_per_process, tag=tag, memory=memory, disk=disk, lifetime=lifetime, force=force, jobs_per_process=jobs_per_process)
 
     # If the user requested to launch jobs, do so.
     elif launch_jobs is not None:
         if not project_exists:
             raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
-        launch_jobsub(project_dir, experiment, njobs=launch_jobs, tag=tag, memory=memory, disk=disk, lifetime=lifetime, force=force)
+        launch_jobsub(project_dir, experiment, njobs=launch_jobs, tag=tag, memory=memory, disk=disk, lifetime=lifetime, force=force, jobs_per_process=jobs_per_process)
 
     # If the user requested to launch jobs per sample, do so.
     elif njobs_per_sample is not None:
         if not project_exists:
             raise FileNotFoundError(f"Project database {project_dir / 'project.db'} does not exist. Please create a new project first.")
-        launch_jobsub(project_dir, experiment, njobs_per_sample=njobs_per_sample, tag=tag, memory=memory, disk=disk, lifetime=lifetime, force=force)
+        launch_jobsub(project_dir, experiment, njobs_per_sample=njobs_per_sample, tag=tag, memory=memory, disk=disk, lifetime=lifetime, force=force, jobs_per_process=jobs_per_process)
 
 if __name__ == '__main__':
     p = ArgumentParser(description='Run medulla.')
@@ -200,7 +209,20 @@ if __name__ == '__main__':
              'unexpectedly racing to write the same output.'
     )
 
+    # Long option only: -f is already taken by --lifetime.
+    p.add_argument(
+        '--jobs-per-process', type=int, default=1, metavar='M',
+        help='Pack M job IDs into each grid process (default: 1). The build and environment '
+             'setup are paid once per process instead of once per job ID. --launch-jobs and '
+             '--njobs-per-sample still count job IDs; the number of processes submitted is that '
+             'count divided by M, rounded up. --test-job submits one process of M job IDs. '
+             'Raise --lifetime to cover M job IDs.'
+    )
+
     args = p.parse_args()
+
+    if args.jobs_per_process < 1:
+        p.error('--jobs-per-process must be at least 1.')
 
     # Requirement: the experiment must be sbnd or icarus.
     if args.experiment not in ['sbnd', 'icarus']:
@@ -240,4 +262,5 @@ if __name__ == '__main__':
         disk=args.disk,
         lifetime=args.lifetime,
         force=args.force,
+        jobs_per_process=args.jobs_per_process,
     )

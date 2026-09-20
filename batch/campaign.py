@@ -1188,11 +1188,22 @@ def cmd_launch(args):
     """Authenticate per experiment and launch pending projects."""
     W_AN, W_RO, W_EX = 28, 18, 10
 
+    # Checked before the confirmation prompt and authentication, rather
+    # than left to fail inside launch_jobsub once per project.
+    jobs_per_process = args.jobs_per_process
+    if jobs_per_process is not None and jobs_per_process < 1:
+        print("[CAMPAIGN] --jobs-per-process must be at least 1.")
+        return
+
     # Resolve how many jobs to submit per project.
     njobs_per_sample = None
     if args.test:
-        njobs = 1
-        mode_label = " (test: 1 job per project)"
+        # One grid process. With --jobs-per-process M that process takes M
+        # job IDs, which is the configuration most worth testing: it is the
+        # only one that exercises the hand-off from one job ID to the next.
+        njobs = jobs_per_process or 1
+        mode_label = (" (test: 1 job per project)" if njobs == 1
+                      else f" (test: 1 process of {njobs} job IDs per project)")
     elif args.njobs is not None:
         njobs = args.njobs
         mode_label = f" (--njobs {njobs} per project)"
@@ -1203,6 +1214,8 @@ def cmd_launch(args):
     else:
         njobs = -1  # launch_jobsub default: all pending
         mode_label = ""
+    if jobs_per_process and jobs_per_process > 1 and not args.test:
+        mode_label += f" [{jobs_per_process} job IDs per process]"
 
     with _open_db(_resolve_campaign(args)) as (conn, curs):
         # Read the tag recorded at campaign creation time.
@@ -1270,10 +1283,13 @@ def cmd_launch(args):
                 # launch_jobsub's default rather than a hardcoded fallback here.
                 lifetime = args.lifetime or row['lifetime']
                 lifetime_kwargs = {'lifetime': lifetime} if lifetime else {}
+                # Same pattern: passed only when given, so launch_jobsub's own
+                # default (one job ID per process) applies otherwise.
+                jpp_kwargs = {'jobs_per_process': jobs_per_process} if jobs_per_process else {}
                 try:
                     ok = launch_jobsub(proj_dir, exp=exp, njobs=njobs, njobs_per_sample=njobs_per_sample,
                                        confirm=False, tag=tag, verbose=args.verbose, force=args.force,
-                                       **lifetime_kwargs)
+                                       **lifetime_kwargs, **jpp_kwargs)
                 except Exception as e:
                     print(f"[CAMPAIGN] Launch failed for {proj_dir}: {e}")
                     if args.verbose:
@@ -1889,6 +1905,16 @@ def main():
                                "launch_jobsub's built-in default ('1h') when neither is set. "
                                "Unlike --batch-size, this has no effect on project.db content "
                                "and is always safe to change, including on a --relaunch.")
+    p_launch.add_argument('--jobs-per-process', type=int, metavar='M',
+                          help="Pack M job IDs into each grid process (default 1). The "
+                               "build and environment setup are paid once per process "
+                               "instead of once per job ID, so this cuts submission "
+                               "overhead for short jobs. --njobs/--njobs-per-sample "
+                               "still count job IDs; the number of processes submitted "
+                               "is that count divided by M, rounded up. Raise --lifetime "
+                               "to cover M job IDs -- the STAGE times in each job's "
+                               "validation record give the per-job-ID cost. Like "
+                               "--lifetime, this has no effect on project.db content.")
     launch_grp = p_launch.add_mutually_exclusive_group()
     launch_grp.add_argument('--test', action='store_true',
                             help='Submit one job per project to verify setup')

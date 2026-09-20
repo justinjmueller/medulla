@@ -767,6 +767,14 @@ def _submit_jobsub_once(
         print(f"{_CAMPAIGN} Submitted {njobs} job(s){label}. Job ID: {job_id}")
     return True
 
+# The worker-side output validator. It is transferred with every job
+# (jobsub_submit -f dropbox://) rather than read out of the checkout the
+# job builds, because that checkout is whatever --tag names: a release tag
+# that predates the validator would otherwise fail validation on every job
+# and copy nothing back. Shipping it from here keeps the validator in step
+# with the submit.sh it is shipped alongside.
+VALIDATE_MACRO_PATH = Path(__file__).resolve().parent / 'validate_pair.C'
+
 def launch_jobsub(
     project_dir : str,
     exp : str = 'sbnd',
@@ -779,6 +787,7 @@ def launch_jobsub(
     lifetime : str = '1h',
     verbose : bool = False,
     force : bool = False,
+    jobs_per_process : int = 1,
 ):
     """
     Launch jobs using jobsub for the given project directory. If njobs
@@ -827,6 +836,15 @@ def launch_jobsub(
         same job) instead of failing. Off by default, since silently
         overwriting could mask two jobs unexpectedly racing to write the
         same output.
+    jobs_per_process : int
+        Number of job IDs each grid process takes on (default 1). njobs
+        and njobs_per_sample still count job IDs; the number of processes
+        submitted is that count divided by jobs_per_process, rounded up.
+        submit.sh is also told the job-ID total, so the last process stops
+        at the requested count instead of claiming a full jobs_per_process.
+        The build and environment setup are paid once per process, so this
+        trades submission overhead against the lifetime each process needs:
+        raise lifetime to cover jobs_per_process job IDs.
 
     Returns
     -------
@@ -836,6 +854,16 @@ def launch_jobsub(
     """
     if njobs_per_sample is not None and njobs != -1:
         raise ValueError("njobs and njobs_per_sample are mutually exclusive.")
+    if jobs_per_process < 1:
+        raise ValueError("jobs_per_process must be at least 1.")
+
+    # Refuse before touching anything if the validator cannot be shipped.
+    # Discovering it on the grid would cost every job its full event loop.
+    if not VALIDATE_MACRO_PATH.is_file():
+        raise FileNotFoundError(
+            f"Output validator {VALIDATE_MACRO_PATH} not found; it is transferred "
+            f"with every job and must exist to launch."
+        )
 
     # Check if the project database exists.
     if not (project_dir / 'project.db').exists():
@@ -915,13 +943,16 @@ def launch_jobsub(
     else:
         disk_flag = '--disk=25GB'
 
-    # Form the jobsub command(s) to launch the jobs, one per target.
+    # Form the jobsub command(s) to launch the jobs, one per target. count
+    # is a number of job IDs, while -N is a number of grid processes, each
+    # of which takes up to jobs_per_process of them.
     submissions = []
     for sample, count in targets:
+        n_processes = -(-count // jobs_per_process)  # ceil(count / jobs_per_process)
         cmd = [
             'jobsub_submit',
             '-G', exp,
-            '-N', str(count),
+            '-N', str(n_processes),
             f'--memory={memory}MB',
             disk_flag,
             f'--expected-lifetime={lifetime}',
@@ -929,16 +960,24 @@ def launch_jobsub(
             '--site=FermiGrid',
             "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
             '--singularity-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest',
+            # Ship the validator with the job; see VALIDATE_MACRO_PATH. The
+            # batch directory is not grid-accessible, hence dropbox://.
+            '-f', f'dropbox://{VALIDATE_MACRO_PATH}',
             f'file://{Path(__file__).resolve().parent / "submit.sh"}',
             '--',
             f'--project={project_dir.resolve()}',
             f'--tag={tag}',
+            f'--jobs-per-process={jobs_per_process}',
+            # Lets the last process stop at the requested count.
+            f'--total-jobs={count}',
         ]
         if sample is not None:
             cmd.append(f'--sample={sample}')
         if force:
             cmd.append('--force')
         label = f" for sample '{sample}'" if sample is not None else ""
+        if jobs_per_process > 1:
+            label += f" ({n_processes} process(es) of up to {jobs_per_process} job IDs)"
         submissions.append((cmd, count, label))
 
     # Show what will be launched and confirm once for the whole set.

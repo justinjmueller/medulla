@@ -137,3 +137,116 @@ class TestLaunchJobsubPerSample:
     def test_njobs_and_njobs_per_sample_mutually_exclusive(self, uneven_project):
         with pytest.raises(ValueError):
             launch_jobsub(uneven_project, njobs=5, njobs_per_sample=2, confirm=False)
+
+
+def _capture_jobsub(project_dir, **kwargs):
+    """Run launch_jobsub with jobsub_submit intercepted, returning the
+    result and every jobsub_submit command it would have run."""
+    real_run = subprocess.run
+    calls = []
+
+    def fake_run(cmd, **kw):
+        if cmd[0] == "jobsub_submit":
+            calls.append(cmd)
+            return subprocess.CompletedProcess(cmd, 0, stdout="job id 12345.0@fnal.gov\n", stderr="")
+        return real_run(cmd, **kw)
+
+    with mock.patch("subprocess.run", side_effect=fake_run):
+        ok = launch_jobsub(project_dir, confirm=False, **kwargs)
+    return ok, calls
+
+
+def _n_processes(cmd):
+    return int(cmd[cmd.index("-N") + 1])
+
+
+def _script_arg(cmd, name):
+    """Value of submit.sh's own --name=value argument. Only the arguments
+    after the '--' separator belong to submit.sh; everything before it is
+    jobsub_submit's."""
+    tail = cmd[cmd.index("--") + 1:]
+    found = [a.split("=", 1)[1] for a in tail if a.startswith(f"--{name}=")]
+    return found[0] if found else None
+
+
+class TestLaunchJobsubJobsPerProcess:
+    """launch_jobsub(jobs_per_process=M) packs M job IDs into each grid
+    process. -N then counts processes, while submit.sh is told both M and
+    the total number of job IDs, so the last process stops at the requested
+    count instead of claiming job IDs nobody asked for."""
+
+    def test_default_is_one_jobid_per_process(self, uneven_project, tmp_path, monkeypatch):
+        """Unchanged behaviour unless asked: one process per job ID."""
+        monkeypatch.chdir(tmp_path)
+        ok, calls = _capture_jobsub(uneven_project, njobs=4)
+
+        assert ok is True
+        assert len(calls) == 1
+        assert _n_processes(calls[0]) == 4
+        assert _script_arg(calls[0], "jobs-per-process") == "1"
+        assert _script_arg(calls[0], "total-jobs") == "4"
+
+    def test_process_count_rounds_up(self, uneven_project, tmp_path, monkeypatch):
+        """5 job IDs at 2 per process need 3 processes. The third holds
+        only one job ID, which submit.sh enforces via --total-jobs."""
+        monkeypatch.chdir(tmp_path)
+        ok, calls = _capture_jobsub(uneven_project, njobs=5, jobs_per_process=2)
+
+        assert ok is True
+        assert _n_processes(calls[0]) == 3
+        assert _script_arg(calls[0], "jobs-per-process") == "2"
+        assert _script_arg(calls[0], "total-jobs") == "5"
+
+    def test_all_pending_with_jobs_per_process(self, uneven_project, tmp_path, monkeypatch):
+        """The project has 6 pending job IDs; at 4 per process that is 2."""
+        monkeypatch.chdir(tmp_path)
+        ok, calls = _capture_jobsub(uneven_project, jobs_per_process=4)
+
+        assert _n_processes(calls[0]) == 2
+        assert _script_arg(calls[0], "total-jobs") == "6"
+
+    def test_per_sample_counts_processes_per_sample(self, uneven_project, tmp_path, monkeypatch):
+        """Each sample's own job-ID count is divided independently."""
+        monkeypatch.chdir(tmp_path)
+        ok, calls = _capture_jobsub(uneven_project, njobs_per_sample=5, jobs_per_process=2)
+
+        by_sample = {
+            _script_arg(c, "sample"): (_n_processes(c), _script_arg(c, "total-jobs"))
+            for c in calls
+        }
+        # sbnd_mc: 5 job IDs -> 3 processes; sbnd_offbeam: 1 job ID -> 1.
+        assert by_sample == {"sbnd_mc": (3, "5"), "sbnd_offbeam": (1, "1")}
+
+    @pytest.mark.parametrize("bad", [0, -1])
+    def test_nonpositive_jobs_per_process_raises(self, uneven_project, bad):
+        with pytest.raises(ValueError):
+            launch_jobsub(uneven_project, jobs_per_process=bad, confirm=False)
+
+
+class TestLaunchJobsubShipsValidator:
+    """The output validator travels with the job instead of being read out
+    of the tagged checkout the job builds."""
+
+    def test_validator_is_transferred_with_the_job(self, uneven_project, tmp_path, monkeypatch):
+        """A release tag that predates validate_pair.C would otherwise fail
+        validation on every job and copy nothing back."""
+        monkeypatch.chdir(tmp_path)
+        ok, calls = _capture_jobsub(uneven_project, njobs=1)
+        cmd = calls[0]
+
+        f_values = [cmd[i + 1] for i, a in enumerate(cmd) if a == "-f"]
+        shipped = [v for v in f_values if v.startswith("dropbox://") and v.endswith("/validate_pair.C")]
+        assert len(shipped) == 1
+        assert Path(shipped[0][len("dropbox://"):]).is_file()
+
+        # jobsub_submit only honours options that precede the executable.
+        exe = next(i for i, a in enumerate(cmd) if a.startswith("file://") and a.endswith("submit.sh"))
+        assert all(i < exe for i, a in enumerate(cmd) if a == "-f")
+
+    def test_missing_validator_fails_before_submitting(self, uneven_project, tmp_path, monkeypatch):
+        """Better to refuse at launch than to discover on the grid, after
+        every job has spent its event loop, that nothing can be validated."""
+        monkeypatch.chdir(tmp_path)
+        with mock.patch("utilities.VALIDATE_MACRO_PATH", tmp_path / "missing.C"):
+            with pytest.raises(FileNotFoundError):
+                _capture_jobsub(uneven_project, njobs=1)
