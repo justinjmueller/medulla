@@ -108,6 +108,18 @@ sys::WeightReader::WeightReader(const std::string & input)
         chain.Add(input.c_str());
     }
 
+    /**
+     * @brief Count the entries once, before the chain is positioned.
+     * @details TChain::GetEntries() on a chain built from a wildcard does not
+     * know the total in advance: it walks to the end, which loads the last file
+     * and rebinds the branch addresses to it. Calling it from next() therefore
+     * moved the chain out from under the per-neutrino buffers that
+     * SetBranchAddress fills, every iteration. Counting here, before entry 0 is
+     * loaded below, keeps that disturbance ahead of any positioning, and makes
+     * the count a cheap member lookup rather than a walk over every file.
+     */
+    n_entries = chain.GetEntries();
+
     // Determine whether the input is a flat or structured (nested) CAF by
     // inspecting the actual tree structure via SRProxy's GetCAFType(),
     // rather than guessing from a "flat" substring in the file name/path.
@@ -196,15 +208,22 @@ bool sys::WeightReader::next()
     if(!started)
     {
         started = true;
-        if(chain.GetEntries() == 0) return false;
-        this->progress_bar(entry+1, chain.GetEntries());
+        if(n_entries == 0) return false;
+        // Load entry 0 here rather than relying on the constructor's earlier
+        // GetEntry(0): anything that touches the chain in between (the entry
+        // count above, for one) can leave it loaded on another file, and the
+        // per-neutrino buffers would then not belong to the entry this call
+        // reports. That costs the caller every candidate in this entry, with
+        // no error anywhere -- output identical to the entry being skipped.
+        chain.GetEntry(entry);
+        this->progress_bar(entry+1, n_entries);
         return true;
     }
 
-    if(entry + 1 >= (size_t)chain.GetEntries()) return false;
+    if(entry + 1 >= (size_t)n_entries) return false;
     if(!reader->Next()) return false;
     chain.GetEntry(++entry);
-    this->progress_bar(entry+1, chain.GetEntries());
+    this->progress_bar(entry+1, n_entries);
     return true;
 }
 

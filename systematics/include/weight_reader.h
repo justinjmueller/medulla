@@ -229,6 +229,7 @@ namespace sys
         TChain chain; // TChain to hold the input files
         size_t entry; // Current entry index in the TChain
         bool started{false}; // Whether next() has yielded the constructor's entry 0 yet
+        Long64_t n_entries{0}; // Total entries, counted once in the constructor
 
         std::unique_ptr<TTreeReader> reader; // TTreeReader for structured CAF files
         
