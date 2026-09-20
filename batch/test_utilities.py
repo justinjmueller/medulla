@@ -223,30 +223,33 @@ class TestLaunchJobsubJobsPerProcess:
             launch_jobsub(uneven_project, jobs_per_process=bad, confirm=False)
 
 
-class TestLaunchJobsubShipsValidator:
-    """The output validator travels with the job instead of being read out
+class TestLaunchJobsubShipsMacros:
+    """The job's ROOT macros travel with the job instead of being read out
     of the tagged checkout the job builds."""
 
-    def test_validator_is_transferred_with_the_job(self, uneven_project, tmp_path, monkeypatch):
-        """A release tag that predates validate_pair.C would otherwise fail
-        validation on every job and copy nothing back."""
+    def test_macros_are_transferred_with_the_job(self, uneven_project, tmp_path, monkeypatch):
+        """A release tag that predates these macros would otherwise fail every
+        job: validation would copy nothing back, and the input check would have
+        nothing to run."""
         monkeypatch.chdir(tmp_path)
         ok, calls = _capture_jobsub(uneven_project, njobs=1)
         cmd = calls[0]
 
         f_values = [cmd[i + 1] for i, a in enumerate(cmd) if a == "-f"]
-        shipped = [v for v in f_values if v.startswith("dropbox://") and v.endswith("/validate_pair.C")]
-        assert len(shipped) == 1
-        assert Path(shipped[0][len("dropbox://"):]).is_file()
+        shipped = {Path(v[len("dropbox://"):]).name
+                   for v in f_values if v.startswith("dropbox://")}
+        assert {"validate_pair.C", "check_inputs.C"} <= shipped
+        for v in f_values:
+            assert Path(v[len("dropbox://"):]).is_file()
 
         # jobsub_submit only honours options that precede the executable.
         exe = next(i for i, a in enumerate(cmd) if a.startswith("file://") and a.endswith("submit.sh"))
         assert all(i < exe for i, a in enumerate(cmd) if a == "-f")
 
-    def test_missing_validator_fails_before_submitting(self, uneven_project, tmp_path, monkeypatch):
+    def test_missing_macro_fails_before_submitting(self, uneven_project, tmp_path, monkeypatch):
         """Better to refuse at launch than to discover on the grid, after
-        every job has spent its event loop, that nothing can be validated."""
+        every job has spent its event loop, that a macro is missing."""
         monkeypatch.chdir(tmp_path)
-        with mock.patch("utilities.VALIDATE_MACRO_PATH", tmp_path / "missing.C"):
+        with mock.patch("utilities.JOB_MACRO_PATHS", (tmp_path / "missing.C",)):
             with pytest.raises(FileNotFoundError):
                 _capture_jobsub(uneven_project, njobs=1)

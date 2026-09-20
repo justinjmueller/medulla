@@ -775,6 +775,14 @@ def _submit_jobsub_once(
 # with the submit.sh it is shipped alongside.
 VALIDATE_MACRO_PATH = Path(__file__).resolve().parent / 'validate_pair.C'
 
+# The ROOT macros every job needs on the worker node, transferred with the job
+# for the reason above. check_inputs.C verifies the staged input files in one
+# ROOT process rather than one per file.
+JOB_MACRO_PATHS = (
+    VALIDATE_MACRO_PATH,
+    Path(__file__).resolve().parent / 'check_inputs.C',
+)
+
 def launch_jobsub(
     project_dir : str,
     exp : str = 'sbnd',
@@ -857,13 +865,15 @@ def launch_jobsub(
     if jobs_per_process < 1:
         raise ValueError("jobs_per_process must be at least 1.")
 
-    # Refuse before touching anything if the validator cannot be shipped.
-    # Discovering it on the grid would cost every job its full event loop.
-    if not VALIDATE_MACRO_PATH.is_file():
-        raise FileNotFoundError(
-            f"Output validator {VALIDATE_MACRO_PATH} not found; it is transferred "
-            f"with every job and must exist to launch."
-        )
+    # Refuse before touching anything if a macro the job needs cannot be
+    # shipped. Discovering it on the grid would cost every job its full event
+    # loop, or leave its input unverified.
+    for macro in JOB_MACRO_PATHS:
+        if not macro.is_file():
+            raise FileNotFoundError(
+                f"Job macro {macro} not found; it is transferred with every job "
+                f"and must exist to launch."
+            )
 
     # Check if the project database exists.
     if not (project_dir / 'project.db').exists():
@@ -960,9 +970,9 @@ def launch_jobsub(
             '--site=FermiGrid',
             "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
             '--singularity-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest',
-            # Ship the validator with the job; see VALIDATE_MACRO_PATH. The
-            # batch directory is not grid-accessible, hence dropbox://.
-            '-f', f'dropbox://{VALIDATE_MACRO_PATH}',
+            # Ship the job's ROOT macros; see JOB_MACRO_PATHS. The batch
+            # directory is not grid-accessible, hence dropbox://.
+            *[arg for macro in JOB_MACRO_PATHS for arg in ('-f', f'dropbox://{macro}')],
             f'file://{Path(__file__).resolve().parent / "submit.sh"}',
             '--',
             f'--project={project_dir.resolve()}',

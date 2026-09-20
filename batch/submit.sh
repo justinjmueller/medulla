@@ -400,12 +400,26 @@ log_info "Build verified in ${BUILD_TIME}s: both binaries present."
 # names, and a release tag that predates the validator would fail
 # validation on every job and copy nothing back. The checkout copy is only
 # a fallback for a job submitted by hand without shipping one.
-VALIDATE_MACRO=""
-if [[ -n "$CONDOR_DIR_INPUT" && -f "$CONDOR_DIR_INPUT/validate_pair.C" ]]; then
-    VALIDATE_MACRO="$CONDOR_DIR_INPUT/validate_pair.C"
-elif [[ -f "$BUILD_DIR/../batch/validate_pair.C" ]]; then
-    VALIDATE_MACRO="$(cd "$BUILD_DIR/../batch" && pwd)/validate_pair.C"
+locate_macro() {
+    local name="$1"
+    if [[ -n "$CONDOR_DIR_INPUT" && -f "$CONDOR_DIR_INPUT/$name" ]]; then
+        echo "$CONDOR_DIR_INPUT/$name"
+    elif [[ -f "$BUILD_DIR/../batch/$name" ]]; then
+        echo "$(cd "$BUILD_DIR/../batch" && pwd)/$name"
+    fi
+}
+
+VALIDATE_MACRO=$(locate_macro validate_pair.C)
+
+# The batched input-integrity checker. Required: without it the only
+# alternative is to process input nothing has verified.
+CHECK_MACRO=$(locate_macro check_inputs.C)
+if [[ -z "$CHECK_MACRO" ]]; then
+    log_error "check_inputs.C was neither shipped with the job (\$CONDOR_DIR_INPUT) nor present"
+    log_error "in the '${TAG}' checkout. Submit through launch_jobsub, which transfers it."
+    exit 1
 fi
+log_info "Using input checker: ${CHECK_MACRO}"
 if [[ $VALIDATE -eq 1 ]]; then
     if [[ -z "$VALIDATE_MACRO" ]]; then
         # Refuse before claiming anything: every job ID would otherwise run
@@ -604,40 +618,65 @@ run_jobid() (
     staged_bytes=0      # everything transferred, dropped files included
     input_events=0      # recTree entries across surviving inputs
     events_known=1
-    copy_ms=0
-    check_ms=0
     stage_t0=$(now_s)
+
+    # Copy everything first, then check it all in one ROOT process. Checking
+    # per file cost a ROOT startup (~1 s) each: ~25 s of a ~75 s job, more than
+    # the copy itself.
+    : > staged_list.txt
+    t1=$(date '+%s%3N')
     for p in $full_paths; do
         echo "Copying input file: $p"
-        t1=$(date '+%s%3N')
         ifdh cp "$p" data/
-        copy_ms=$(( copy_ms + $(date '+%s%3N') - t1 ))
         b=$(basename "$p")
-        size=$(stat -c %s "data/$b" 2>/dev/null || echo 0)
-        staged_bytes=$(( staged_bytes + size ))
-
-        t1=$(date '+%s%3N')
-        check_out=$(root -l -b -q -e "TFile *f = TFile::Open(\"data/$b\"); if(!f || f->IsZombie()) gSystem->Exit(1); TTree *t = dynamic_cast<TTree*>(f->Get(\"recTree\")); std::cout << \"NENTRIES=\" << (t ? t->GetEntries() : -1) << std::endl; gSystem->Exit(0);" 2>/dev/null)
-        check_rc=$?
-        check_ms=$(( check_ms + $(date '+%s%3N') - t1 ))
-
-        if [[ $check_rc -eq 0 ]]; then
-            good_paths+=("$p")
-            input_bytes=$(( input_bytes + size ))
-            n=$(printf '%s\n' "$check_out" | sed -n 's/^NENTRIES=//p' | tail -1)
-            if [[ "$n" =~ ^[0-9]+$ ]]; then
-                input_events=$(( input_events + n ))
-            else
-                # No recTree, or no count printed: a partial sum would be
-                # silently wrong, so report the total as unknown instead.
-                events_known=0
-            fi
-        else
-            echo "Warning: dropping unreadable/corrupt input file: $p" >&2
-            bad_files+=("$p")
-            rm -f "data/$b"
-        fi
+        # An ifdh copy that produced nothing still goes on the list: the check
+        # below reports it BAD, so a failed transfer and a corrupt file take
+        # the same path out rather than one of them slipping through.
+        echo "data/$b" >> staged_list.txt
+        staged_bytes=$(( staged_bytes + $(stat -c %s "data/$b" 2>/dev/null || echo 0) ))
     done
+    copy_ms=$(( $(date '+%s%3N') - t1 ))
+
+    t1=$(date '+%s%3N')
+    rm -f check_report.txt
+    root -l -b -q "${CHECK_MACRO}(\"staged_list.txt\",\"check_report.txt\")" >/dev/null 2>&1
+    check_ms=$(( $(date '+%s%3N') - t1 ))
+
+    if [[ ! -s check_report.txt ]]; then
+        # No report at all: the checker itself failed. Treating the inputs as
+        # good here would process files nothing has verified, so stop.
+        log_error "Input integrity check produced no report; refusing to process unverified input."
+        finish 1 "transfer_lost"
+    fi
+
+    # Report lines are "<entries>|<path>", "-1|<path>" (no readable recTree) or
+    # "BAD|<path>", one per staged file and in the same order.
+    while IFS='|' read -r verdict path; do
+        [[ -z "$path" ]] && continue
+        b=$(basename "$path")
+        orig=""
+        for p in $full_paths; do
+            [[ "$(basename "$p")" == "$b" ]] && { orig="$p"; break; }
+        done
+        [[ -z "$orig" ]] && orig="$path"
+
+        if [[ "$verdict" == "BAD" ]]; then
+            echo "Warning: dropping unreadable/corrupt input file: $orig" >&2
+            bad_files+=("$orig")
+            rm -f "$path"
+            continue
+        fi
+
+        good_paths+=("$orig")
+        input_bytes=$(( input_bytes + $(stat -c %s "$path" 2>/dev/null || echo 0) ))
+        if [[ "$verdict" =~ ^[0-9]+$ ]]; then
+            input_events=$(( input_events + verdict ))
+        else
+            # No recTree count: a partial sum would be silently wrong, so
+            # report the total as unknown instead.
+            events_known=0
+        fi
+    done < check_report.txt
     STAGE_TIME=$(( $(now_s) - stage_t0 ))
     ls -lrth data/
 
