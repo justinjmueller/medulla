@@ -225,6 +225,35 @@ namespace vars
     REGISTER_VAR_SCOPE(RegistrationScope::Both, energy_qel, energy_qel);
 
     /**
+     * @brief Variable for the difference between the CCQE-kinematics and
+     * visible energies of the interaction normalized by the visible energy.
+     * @details This variable exists to be used for studies of the performance
+     * (and systematic coverage) of the energy reconstruction without needing to
+     * save sensitive quantities, in the same manner as
+     * pvars::mcs_csda_diff and pvars::calo_csda_diff do at particle level. It
+     * is calculated as the CCQE-kinematics energy minus the visible energy,
+     * normalized by the visible energy, so it is expected to be near zero for a
+     * well-behaved, genuinely QE-like interaction. Both inputs are in GeV, so
+     * the ratio is dimensionless.
+     *
+     * The value is PLACEHOLDERVALUE (NaN) when the interaction has no lepton
+     * (energy_qel is then itself PLACEHOLDERVALUE, which propagates) or no
+     * visible energy, rather than a division by zero.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj interaction to apply the variable on.
+     * @return the difference between the CCQE-kinematics and visible energies
+     * normalized by the visible energy.
+     */
+    template<class T>
+    double qel_visible_diff(const T & obj)
+    {
+        double visible = visible_energy(obj);
+        if(!(visible > 0)) return PLACEHOLDERVALUE;
+        return (energy_qel(obj) - visible) / visible;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, qel_visible_diff, qel_visible_diff);
+
+    /**
      * @brief Variable for energy reconstruction assuming CCQE kinematics using
      * the proton.
      * @details This function calculates the neutrino energy assuming CCQE

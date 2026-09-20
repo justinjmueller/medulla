@@ -53,6 +53,9 @@ branch = [
     { name = "dphiT",                 type = "reco"    },
     { name = "dpL",                   type = "reco"    },
     { name = "pn",                    type = "reco"    },
+    # Normalized energy bias; blind-safe in the same sense as mcs_csda_diff,
+    # since it carries no absolute energy scale.
+    { name = "qel_visible_diff",      type = "reco"    },
     { name = "vertex_x",              type = "reco"    },
     { name = "vertex_y",              type = "reco"    },
     { name = "vertex_z",              type = "reco"    },

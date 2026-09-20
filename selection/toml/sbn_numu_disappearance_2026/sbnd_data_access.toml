@@ -48,6 +48,7 @@ branch = [
     # Interaction-level branches
     { name = "visible_energy",        type = "reco"    },
     { name = "energy_qel",            type = "reco"    },
+    { name = "qel_visible_diff",      type = "reco"    },
     { name = "dpT",                   type = "reco"    },
     { name = "dalphaT",               type = "reco"    },
     { name = "dphiT",                 type = "reco"    },

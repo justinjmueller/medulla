@@ -92,6 +92,7 @@ branch = [
     { name = "category",              type = "true"    },
     { name = "visible_energy",        type = "both"    },
     { name = "energy_qel",            type = "both"    },
+    { name = "qel_visible_diff",      type = "both"    },
     { name = "dpT",                   type = "both"    },
     { name = "dalphaT",               type = "both"    },
     { name = "dphiT",                 type = "both"    },
@@ -214,6 +215,7 @@ branch = [
     { name = "category",              type = "true"    },
     { name = "visible_energy",        type = "both"    },
     { name = "energy_qel",            type = "both"    },
+    { name = "qel_visible_diff",      type = "both"    },
     { name = "dpT",                   type = "both"    },
     { name = "dalphaT",               type = "both"    },
     { name = "dphiT",                 type = "both"    },
@@ -329,6 +331,7 @@ branch = [
     { name = "dpL",                   type = "both" },
     { name = "visible_energy",        type = "both" },
     { name = "energy_qel",            type = "both" },
+    { name = "qel_visible_diff",      type = "both" },
 
     # Selection cuts (for calculating purity)
     { name = "fiducial_cut_osc",      type = "reco" },
