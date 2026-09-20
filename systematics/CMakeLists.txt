@@ -2,7 +2,18 @@ cmake_minimum_required(VERSION 3.12)
 include(FetchContent)
 project(systematics LANGUAGES CXX)
 
-add_compile_options(-Wall -Werror -Wno-error=maybe-uninitialized -Ofast -g)
+# -O3 rather than -Ofast: -Ofast implies -ffast-math, and therefore
+# -ffinite-math-only, which lets the compiler assume no value is ever NaN. That
+# silently deletes NaN handling. Concretely, it compiled away the
+# std::isnan(nu_id) check in trees.cc that routes cosmic-overlay interactions
+# (true_neutrino_id = NaN, the kNoMatchValue convention) to the non-matched
+# tree, and simultaneously made "nu_id >= 0" true for those entries so they
+# were offered to the candidate map, where a NaN key compares equivalent to a
+# real one and the insert was dropped. The candidate then appeared in neither
+# output tree: silent data loss, at ~32% of jobs in samples with many
+# cosmic-overlay candidates. Any float-sensitive check here needs NaNs to keep
+# behaving like NaNs, so the unsafe math is not worth the speed.
+add_compile_options(-Wall -Werror -Wno-error=maybe-uninitialized -O3 -g)
 
 # Find packages
 find_package(ROOT REQUIRED)
