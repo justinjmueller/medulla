@@ -180,11 +180,31 @@ sys::WeightReader::WeightReader(const std::string & input)
 // Advance to the next entry in the TChain.
 bool sys::WeightReader::next()
 {
-    this->progress_bar(entry+1, chain.GetEntries());
     if(!chain.GetTree() || !reader) return false;
-    if(entry >= (size_t)chain.GetEntries()) return false;
+
+    /**
+     * @brief Yield the entry the constructor already loaded before advancing.
+     * @details The constructor leaves both the TTreeReader and the TChain
+     * positioned on entry 0. Advancing unconditionally here therefore made the
+     * caller's first iteration see entry 1, and entry 0 of every chain was
+     * never processed. Its selected candidates matched no weights and were
+     * written to the "_nonmatched" tree instead -- a silent loss of one event
+     * per job (~0.26% of selected neutrino candidates), invisible to the exit
+     * code and to the matched/non-matched accounting, which both still added
+     * up.
+     */
+    if(!started)
+    {
+        started = true;
+        if(chain.GetEntries() == 0) return false;
+        this->progress_bar(entry+1, chain.GetEntries());
+        return true;
+    }
+
+    if(entry + 1 >= (size_t)chain.GetEntries()) return false;
     if(!reader->Next()) return false;
     chain.GetEntry(++entry);
+    this->progress_bar(entry+1, chain.GetEntries());
     return true;
 }
 

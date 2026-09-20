@@ -228,6 +228,7 @@ namespace sys
         bool isflat; // Flag to indicate if the input file is flat or structured
         TChain chain; // TChain to hold the input files
         size_t entry; // Current entry index in the TChain
+        bool started{false}; // Whether next() has yielded the constructor's entry 0 yet
 
         std::unique_ptr<TTreeReader> reader; // TTreeReader for structured CAF files
         
