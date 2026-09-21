@@ -158,8 +158,8 @@ systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-            systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
-# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
+            # systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
@@ -225,8 +225,8 @@ systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
-# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
+# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
@@ -294,8 +294,8 @@ normalize_to = [0, 1, 2, 3, 4, 5]  # ...but express sigma as a fraction of the s
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
-# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
+# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
@@ -363,8 +363,8 @@ normalize_to = [0, 1, 2, 3, 4, 5]  # ...but express sigma as a fraction of the s
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
-# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
+# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
@@ -430,8 +430,8 @@ normalize_to = [0, 1, 2, 3, 4, 5]  # ...but express sigma as a fraction of the s
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
-# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
+# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)

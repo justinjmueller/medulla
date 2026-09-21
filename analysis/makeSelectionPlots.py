@@ -25,15 +25,15 @@ def makePlot(var, dir):
 if __name__ == "__main__":
 
     #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/nue_plots.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine16/merged_output.root')
-    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/nue_plots.toml', '/exp/icarus/data/users/micarrig/merged_all_v3.root')
+    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/nue_plots.toml', '/exp/icarus/data/users/micarrig/merged_v27p2_fixed.root')
     # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/nue_plots_reco.toml', '/exp/icarus/data/users/micarrig/merged_outputAll.root')
     # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/cutflow_plots.toml', '/exp/icarus/data/users/micarrig/merged_outputAll.root')
 
-    plot_category = 'neutrino_type'
+    plot_category = 'reco_type'
 
     plotVars = [
         'reco_leading_electron_energy',
-        'reco_ele_beam_cosTheta',
+        'reco_ele_beam_open_angle',
         'reco_leading_electron_start_dedx',
         'reco_leading_electron_axial_spread',
         'reco_leading_electron_directional_spread',
@@ -60,7 +60,7 @@ if __name__ == "__main__":
         'reco_nu',
         'true_neutrino_energy',
         'true_leading_electron_energy',
-        'true_ele_beam_cosTheta',
+        'true_ele_beam_open_angle',
         'true_leading_electron_start_x',
         'true_leading_electron_start_y',
         'true_leading_electron_start_z',
@@ -88,7 +88,7 @@ if __name__ == "__main__":
         # 'true_ele_beam_cosTheta_cutflow',
     ]
 
-    outputDir = f'/nashome/m/micarrig/icarus/nuESpine/plots/{plot_category}/'
+    outputDir = f'/nashome/m/micarrig/icarus/nuESpine/plots_sept15/{plot_category}/'
     if not os.path.exists(outputDir):
         os.makedirs(outputDir)
 

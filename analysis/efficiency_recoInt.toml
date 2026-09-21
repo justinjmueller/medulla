@@ -37,8 +37,8 @@ branches = ["reco_fiducial_cut",
             "true_leading_electron_energy",
             ]
 
-# precompute = {"reco_category" = "np.where((true_category == 0), reco_reco_interaction_type, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(true_ele_beam_open_angle != 10, np.cos(true_ele_beam_open_angle), -10)"}
-precompute = {"reco_category" = "np.where(true_category == 0, true_interaction_mode, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)"}
+precompute = {"reco_category" = "np.where((true_category == 0), reco_reco_interaction_type, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(true_ele_beam_open_angle != 10, np.cos(true_ele_beam_open_angle), -10)"}
+# precompute = {"reco_category" = "np.where(true_category == 0, true_interaction_mode, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)"}
 
 [samples.NuMIFullNonSel]
 key = "NuMIFull"
@@ -81,27 +81,27 @@ path = 'plots/'
 ordinate_sample = 'NuMIFull'
 category_branch = 'reco_category'
 
-# category_assignment = [
-#     [1], # QE-like
-#     [2], # MEC-like
-#     [3], # DIS-like
-#     [4], # RES-like
-#     #[5, 0]  # >1 electron, Other
-# ]
-# category_labels = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', 'Other']
-# category_colors = ['#2C194C','#49749F', '#83A1BE', '#8EB38D', '#4F894E', '#1C5B19', '#0F2903'] #cork
-
 category_assignment = [
-    [0], # QE
-    [1], # RES
-    [2], # DIS
-    [10], # MEC
-    [3, -1]  # COH, Other
+    [1], # QE-like
+    [2], # MEC-like
+    [3], # DIS-like
+    [4], # RES-like
+    [5, 0]  # >1 electron, Other
 ]
-category_labels = ['QE', 'RES', 'DIS', 'MEC', 'Other']
-category_colors = ['#001261', '#1E6F9D', '#BE6533', '#8B2706', '#590008', '#000000ff']
+category_labels = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', 'Other']
+category_colors = ['#2C194C','#49749F', '#83A1BE', '#8EB38D', '#4F894E', '#1C5B19', '#0F2903'] #cork
 
-category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram']
+# category_assignment = [
+#     [0], # QE
+#     [1], # RES
+#     [2], # DIS
+#     [10], # MEC
+#     [3, -1]  # COH, Other
+# ]
+# category_labels = ['QE', 'RES', 'DIS', 'MEC', 'Other']
+# category_colors = ['#001261', '#1E6F9D', '#BE6533', '#8B2706', '#590008', '#000000ff']
+
+category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram']
 
 # Define your variables (if not already in included variables.toml)
 [variables]
@@ -121,10 +121,10 @@ xlabel = "Reco Leading Electron $cos{\theta_{NUMI}}$"
 
 [variables.reco_leading_electron_energy]
 key = 'reco_leading_electron_energy'
-nbins = 9
-range = [225.0, 5000.0]
+nbins = 10
+range = [300.0, 5000.0]
 binning_scheme = 'custom_bins'
-custom_bins = [225, 350, 500, 650, 800, 1000, 1250, 1500, 2000, 5000]
+custom_bins = [300, 390, 490, 600, 730, 870, 1030, 1240, 1500, 2000, 5000]
 xlabel = 'Reco Leading Electron Energy [MeV]'
 
 [variables.true_hadronic_invariant_mass]
@@ -141,10 +141,10 @@ xlabel = 'True Momentum Transfer ($Q^{2}$) [GeV$^{2}$]'
 
 [variables.true_leading_electron_energy]
 key = 'true_leading_electron_energy'
-nbins = 9
-range = [225.0, 5000.0]
+nbins = 10
+range = [300.0, 5000.0]
 binning_scheme = 'custom_bins'
-custom_bins = [225, 350, 500, 650, 800, 1000, 1250, 1500, 2000, 5000]
+custom_bins = [300, 390, 490, 600, 730, 870, 1030, 1240, 1500, 2000, 5000]
 xlabel = 'True Leading Electron Energy [MeV]'
 
 [variables.true_ele_beam_cosTheta]
@@ -165,19 +165,19 @@ title = 'Signal Selection Efficiency'
 [[figure.artists]]
 type = 'SpineEfficiency'
 variable = 'true_neutrino_energy'
-# groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', '$\geq1e$ (Other-e)', 'Other']
-groups = ['QE', 'RES', 'DIS', 'MEC', 'Other']
+groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', '$\geq1e$ (Other-e)', 'Other']
+# groups = ['QE', 'RES', 'DIS', 'MEC', 'Other']
 
 [figure.artists.cuts]
 reco_fiducial_cut = 'Fiducial Volume'
 reco_flash_cut = 'Flash Cut'
 reco_containment_cut = 'Interaction Containment Cut'
 reco_has_particle_multiplicity = '>=1 Electron-like Particle'
-reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.72'
-reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
+reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.60'
+reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.95'
 reco_no_muons = 'No Muon-like Particles'
-reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
-reco_leading_ele_energy_cut = 'Leading Electron Energy > 225 MeV'
+reco_vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
 
 [figure.artists.draw_kwargs]
 show_option = 'table'
@@ -208,10 +208,10 @@ reco_fiducial_cut = 'Fiducial Volume'
 reco_flash_cut = 'Flash Cut'
 reco_containment_cut = 'Interaction Containment Cut'
 reco_has_particle_multiplicity = '>=1 Electron-like Particle'
-reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.72'
-reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
+reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.60'
+reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.95'
 reco_no_muons = 'No Muon-like Particles'
-reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
+reco_vertex_distance_cut = 'Vertex Distance < 3.5 cm'
 
 [figure.artists.draw_kwargs]
 show_option = 'final_only' 
@@ -239,11 +239,11 @@ reco_fiducial_cut = 'Fiducial Volume'
 reco_flash_cut = 'Flash Cut'
 reco_containment_cut = 'Interaction Containment Cut'
 reco_has_particle_multiplicity = '>=1 Electron-like Particle'
-reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.72'
-reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
+reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.60'
+reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.95'
 reco_no_muons = 'No Muon-like Particles'
-reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
-reco_leading_ele_energy_cut = 'Leading Electron Energy > 225 MeV'
+reco_vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
 
 [figure.artists.draw_kwargs]
 show_option = 'final_only'  # KEY: This makes it a plot vs energy!
@@ -270,11 +270,11 @@ reco_fiducial_cut = 'Fiducial Volume'
 reco_flash_cut = 'Flash Cut'
 reco_containment_cut = 'Interaction Containment Cut'
 reco_has_particle_multiplicity = '>=1 Electron-like Particle'
-reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.72'
-reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
+reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.60'
+reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.95'
 reco_no_muons = 'No Muon-like Particles'
-reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
-reco_leading_ele_energy_cut = 'Leading Electron Energy > 225 MeV'
+reco_vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
 
 [figure.artists.draw_kwargs]
 show_option = 'final_only'  # KEY: This makes it a plot vs energy!
@@ -301,11 +301,11 @@ reco_fiducial_cut = 'Fiducial Volume'
 reco_flash_cut = 'Flash Cut'
 reco_containment_cut = 'Interaction Containment Cut'
 reco_has_particle_multiplicity = '>=1 Electron-like Particle'
-reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.72'
-reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
+reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.60'
+reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.95'
 reco_no_muons = 'No Muon-like Particles'
-reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
-reco_leading_ele_energy_cut = 'Leading Electron Energy > 225 MeV'
+reco_vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
 
 [figure.artists.draw_kwargs]
 show_option = 'final_only'  # KEY: This makes it a plot vs energy!
@@ -332,11 +332,11 @@ reco_fiducial_cut = 'Fiducial Volume'
 reco_flash_cut = 'Flash Cut'
 reco_containment_cut = 'Interaction Containment Cut'
 reco_has_particle_multiplicity = '>=1 Electron-like Particle'
-reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.72'
-reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
+reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.60'
+reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.95'
 reco_no_muons = 'No Muon-like Particles'
-reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
-reco_leading_ele_energy_cut = 'Leading Electron Energy > 225 MeV'
+reco_vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
 
 [figure.artists.draw_kwargs]
 show_option = 'final_only'  # KEY: This makes it a plot vs energy!
@@ -354,7 +354,7 @@ title = 'Selection Efficiency vs True Leading Electron Energy [MeV]'
 [[figure.artists]]
 type = 'SpineEfficiency'
 variable = 'true_leading_electron_energy'
-groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', 'Other']
+groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
 # groups = ['QE', 'RES', 'DIS', 'MEC']
 xtitle = 'True Leading Electron Energy [MeV]'
 
@@ -363,11 +363,11 @@ reco_fiducial_cut = 'Fiducial Volume'
 reco_flash_cut = 'Flash Cut'
 reco_containment_cut = 'Interaction Containment Cut'
 reco_has_particle_multiplicity = '>=1 Electron-like Particle'
-reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.72'
-reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
+reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.60'
+reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.95'
 reco_no_muons = 'No Muon-like Particles'
-reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
-reco_leading_ele_energy_cut = 'Leading Electron Energy > 225 MeV'
+reco_vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
 
 [figure.artists.draw_kwargs]
 show_option = 'final_only'  # KEY: This makes it a plot vs energy!
@@ -385,7 +385,7 @@ title = 'Selection Efficiency vs True Leading Electron $cos{\theta_{NUMI}}$'
 [[figure.artists]]
 type = 'SpineEfficiency'
 variable = 'true_ele_beam_cosTheta'
-groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', 'Other']
+groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
 # groups = ['QE', 'RES', 'DIS', 'MEC']
 xtitle = 'True Leading Electron $cos{\theta_{NUMI}}$'
 
@@ -394,11 +394,11 @@ reco_fiducial_cut = 'Fiducial Volume'
 reco_flash_cut = 'Flash Cut'
 reco_containment_cut = 'Interaction Containment Cut'
 reco_has_particle_multiplicity = '>=1 Electron-like Particle'
-reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.72'
-reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
+reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.60'
+reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.95'
 reco_no_muons = 'No Muon-like Particles'
-reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
-reco_leading_ele_energy_cut = 'Leading Electron Energy > 225 MeV'
+reco_vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
 
 [figure.artists.draw_kwargs]
 show_option = 'final_only'  # KEY: This makes it a plot vs energy!

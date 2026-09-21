@@ -25,9 +25,9 @@ def makePlot(var, dir):
 if __name__ == "__main__":
 
     # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/nue_plots.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine12/merged_output.root')
-    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/systematics.toml', '/exp/icarus/data/users/micarrig/merged_all_v3.root')
+    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/systematics.toml', '/exp/icarus/data/users/micarrig/merged_v27p2_fixed.root')
 
-    plot_category = 'systematics_xsec'
+    plot_category = 'systematics_total'
 
 
     # Each of these now has a signal-only and background-only variant
@@ -48,7 +48,7 @@ if __name__ == "__main__":
         'sys_trueEleCosThetaNUMI_background',
     ]
 
-    outputDir = f'/Users/micarrig/Desktop/medulla/plots/{plot_category}/'
+    outputDir = f'/nashome/m/micarrig/icarus/nuESpine/plots_sept15/{plot_category}/'
     if not os.path.exists(outputDir):
         os.makedirs(outputDir)
 
