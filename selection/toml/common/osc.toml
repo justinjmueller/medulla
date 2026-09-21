@@ -81,7 +81,7 @@ ismc = false
 key = "sbnd_bnblight"
 name = "sbnd_bnblight"
 experiment = "sbnd"
-path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/data_MCP2025C_Spring25_reprocess_FixedDev_bnblight_v10_06_00_09_caf_sbnd/*/*/*flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_bnblight_fixed_dev_reproc_full/*/*/*flat.caf.root"
 ismc = false
 
   [sample.metadata]
