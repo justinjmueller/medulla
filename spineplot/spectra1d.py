@@ -1164,6 +1164,16 @@ class SpineSystematics(SpineSpectra):
             list(self._categories.keys())
         ).to_numpy(dtype=bool)
 
+        # Per-event CV weights (e.g. PPFX corrections via a sample's
+        # `weight_branch`), same lookup `Sample.process_systematics` uses
+        # for `Systematic.process`. Passed into `category_covariance` below
+        # so a weight_branch reweighting is reflected in the uncertainty
+        # bands too, not just in the CV histograms built above via
+        # `sample.get_data()` (which already respects the 'weight' column).
+        cv_weights = None
+        if getattr(sample, '_weight_branch', None) is not None and sample._weight_branch in sample._data.columns:
+            cv_weights = sample._data[sample._weight_branch].to_numpy()
+
         # Collect covariance matrices from the sample's processed systematics,
         # recomputed on the fly and restricted to `category_mask`.
         for sysname, syst in sample._systematics.items():
@@ -1172,7 +1182,7 @@ class SpineSystematics(SpineSpectra):
                 continue
             try:
                 cov = syst.category_covariance(
-                    sample, self._variable, category_mask, nuniv=self._nuniv
+                    sample, self._variable, category_mask, nuniv=self._nuniv, cv_weights=cv_weights
                 )
             except ValueError:
                 # This systematic was never registered for this variable

@@ -433,7 +433,7 @@ class Systematic:
             return Cov, Num, Den
         return Cov
 
-    def category_covariance(self, sample, variable, category_mask, nuniv=1000) -> np.ndarray:
+    def category_covariance(self, sample, variable, category_mask, nuniv=1000, cv_weights=None) -> np.ndarray:
         """
         Compute the covariance matrix for this systematic uncertainty
         restricted to a subset of events selected by `category_mask`
@@ -476,6 +476,17 @@ class Systematic:
         nuniv : int, optional
             The number of universes to generate for multisigma
             inputs. The default is 1000.
+        cv_weights : np.ndarray, optional
+            Per-event weights (e.g. PPFX corrections), aligned with the
+            *full, unmasked* `sample._data` -- i.e. the same array you'd
+            pass to `process`, not pre-filtered to `mask`. Applied to
+            both the CV histogram and each universe histogram, exactly
+            like `process`'s `cv_weights` handling, so that a sample's
+            `weight_branch` reweighting is reflected consistently in
+            both the central value *and* the uncertainty band, rather
+            than only in the CV histograms built via `sample.get_data()`.
+            If None (the default), raw event counts are used, matching
+            the original behavior.
 
         Returns
         -------
@@ -501,7 +512,7 @@ class Systematic:
         if self._handle is None and getattr(self, '_components', None):
             cov_total = None
             for comp in self._components:
-                cov_i = comp.category_covariance(sample, variable, category_mask, nuniv=nuniv)
+                cov_i = comp.category_covariance(sample, variable, category_mask, nuniv=nuniv, cv_weights=cv_weights)
                 cov_total = cov_i if cov_total is None else (cov_total + cov_i)
             if cov_total is None:
                 raise ValueError(
@@ -524,20 +535,32 @@ class Systematic:
         valid_indices = (bin_indices >= 0) & (bin_indices < nbins)
         bin_indices = bin_indices[valid_indices]
 
+        # Per-event CV weights (e.g. PPFX), restricted the same way `data`
+        # was above: first to `mask` (presel & category), then to
+        # `valid_indices` (in-range bins) -- same two-step restriction,
+        # just applied to `cv_weights` instead of the binning variable.
+        if cv_weights is not None:
+            ev_w = np.asarray(cv_weights, dtype=float)[mask][valid_indices]
+        else:
+            ev_w = np.ones(valid_indices.sum(), dtype=float)
+
         # Purely statistical uncertainty: no handle and no components.
+        # Weighted by ev_w (matching process()'s statistical branch), so a
+        # weight_branch reweighting is reflected here too, not just in the
+        # per-universe branches below.
         if self._handle is None:
             histogram = np.zeros(nbins)
-            np.add.at(histogram, bin_indices, 1)
+            np.add.at(histogram, bin_indices, ev_w)
             return np.diag(histogram)
 
         universe_weights = self.get_universe_weights(sample=sample, mask=mask, nuniv=nuniv)
-        filtered_weights = universe_weights[valid_indices, :]
+        filtered_weights = universe_weights[valid_indices, :] * ev_w[:, np.newaxis]
 
         histogram = np.zeros((nbins, universe_weights.shape[1]))
         np.add.at(histogram, bin_indices, filtered_weights)
 
         cv_histogram = np.zeros(nbins)
-        np.add.at(cv_histogram, bin_indices, 1)
+        np.add.at(cv_histogram, bin_indices, ev_w)
 
         diff = histogram - cv_histogram[:, np.newaxis]
         return (diff @ diff.T) / universe_weights.shape[1]
