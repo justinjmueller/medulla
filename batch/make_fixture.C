@@ -27,8 +27,11 @@
 namespace
 {
     // A tree with the Run/Subrun/Evt branches every medulla output tree
-    // carries, filled with n rows.
-    void fixture_tree(TDirectory * dir, const std::string & name, Long64_t n)
+    // carries, filled with n rows. Row i is event (1, 1, i), unless fixed_evt
+    // is given, in which case every row carries event (1, 1, fixed_evt) --
+    // how systematics used to stamp every cosmic in a job with one identity.
+    void fixture_tree(TDirectory * dir, const std::string & name, Long64_t n,
+                      Long64_t fixed_evt = -1)
     {
         dir->cd();
         TTree * t = new TTree(name.c_str(), name.c_str());
@@ -40,7 +43,7 @@ namespace
         {
             run = 1;
             subrun = 1;
-            evt = static_cast<int>(i);
+            evt = static_cast<int>(fixed_evt >= 0 ? fixed_evt : i);
             t->Fill();
         }
         t->Write();
@@ -80,7 +83,8 @@ void make_fixture(const char * path,
                   double livetime,
                   const char * tables,
                   bool include_tree,
-                  bool include_dir)
+                  bool include_dir,
+                  Long64_t nonmatched_fixed_evt = -1)
 {
     TFile * f = TFile::Open(path, "RECREATE");
 
@@ -111,7 +115,7 @@ void make_fixture(const char * path,
     if(include_tree)
         fixture_tree(d, tname, n_main);
     if(n_non > 0)
-        fixture_tree(d, tname + "_nonmatched", n_non);
+        fixture_tree(d, tname + "_nonmatched", n_non, nonmatched_fixed_evt);
     for(const std::string & t : csv_split(tables))
         fixture_tree(d, tname + "_" + t + "Tree", n_table);
 

@@ -38,6 +38,7 @@
 #include <fstream>
 #include <map>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "TFile.h"
@@ -91,6 +92,38 @@ namespace
         TObject * obj = get_checked(dir, name, TTree::Class());
         if(obj == nullptr) return -1;
         return static_cast<TTree *>(obj)->GetEntries();
+    }
+
+    using event_id_t = std::tuple<Int_t, Int_t, Int_t>;
+
+    // The (Run, Subrun, Evt) of every row of a tree, as a multiset. Returns
+    // false -- and the caller skips its check rather than failing on it --
+    // if the tree or any of the three branches is missing, or if they cannot
+    // be read as Int_t: a type mismatch would otherwise read as all zeros and
+    // turn this check into a false alarm on every job.
+    bool event_ids(TDirectory * dir, const std::string & name,
+                   std::map<event_id_t, Long64_t> & out)
+    {
+        TObject * obj = get_checked(dir, name, TTree::Class());
+        if(obj == nullptr) return false;
+        TTree * t = static_cast<TTree *>(obj);
+        if(!t->GetBranch("Run") || !t->GetBranch("Subrun") || !t->GetBranch("Evt")) return false;
+
+        Int_t run(0), subrun(0), evt(0);
+        t->SetBranchStatus("*", 0);
+        for(const char * b : {"Run", "Subrun", "Evt"}) t->SetBranchStatus(b, 1);
+        const bool ok = t->SetBranchAddress("Run", &run) >= 0
+                     && t->SetBranchAddress("Subrun", &subrun) >= 0
+                     && t->SetBranchAddress("Evt", &evt) >= 0;
+        if(ok)
+            for(Long64_t i(0); i < t->GetEntries(); ++i)
+            {
+                t->GetEntry(i);
+                ++out[std::make_tuple(run, subrun, evt)];
+            }
+        t->ResetBranchAddresses();
+        t->SetBranchStatus("*", 1);
+        return ok;
     }
 
     // Bin-1 content of a 1-D exposure histogram, or NaN when absent.
@@ -324,6 +357,41 @@ void validate_pair(const char * nosyst_path,
                         << ":" << n_tab << "!=" << n_sel << "\n";
                     rc = 5;
                     if(fail_status.empty()) fail_status = "match_unknown";
+                }
+            }
+            // Every _nonmatched row is a row of the selection output, so its
+            // (Run, Subrun, Evt) must be one the selection output contains --
+            // and no more often than it does there. The counts above cannot
+            // see identities: systematics once stamped every cosmic in a job
+            // with the weight reader's final event, leaving the row count
+            // right and every row's event wrong. Compared as multisets, so a
+            // single identity repeated across rows is caught even when that
+            // identity happens to be a real candidate.
+            if(n_non > 0)
+            {
+                std::map<event_id_t, Long64_t> in_ids, non_ids;
+                if(event_ids(dno, e.name, in_ids) && event_ids(dsy, e.name + "_nonmatched", non_ids))
+                {
+                    Long64_t n_bad(0);
+                    event_id_t example{};
+                    for(const auto & [id, n] : non_ids)
+                    {
+                        const auto it = in_ids.find(id);
+                        const Long64_t have = (it == in_ids.end()) ? 0 : it->second;
+                        if(n > have)
+                        {
+                            if(n_bad == 0) example = id;
+                            n_bad += n - have;
+                        }
+                    }
+                    if(n_bad > 0)
+                    {
+                        rep << "ERROR=nonmatched_identity:" << e.name << ":" << n_bad
+                            << " row(s), e.g. (" << std::get<0>(example) << ","
+                            << std::get<1>(example) << "," << std::get<2>(example) << ")\n";
+                        rc = 5;
+                        if(fail_status.empty()) fail_status = "sys_error";
+                    }
                 }
             }
             // Soft signal only: a partial match is often a real physics
