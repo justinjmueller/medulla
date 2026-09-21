@@ -46,8 +46,18 @@
 # only discovered at merge time.
 #
 # Every job ID also writes a small validation record to
-# $PROJECT/output/val/, whether it passed or failed. That record -- not the
-# HTCondor exit code -- is the reliable per-job signal.
+# $PROJECT/output/val/<bucket>/, whether it passed or failed. That record --
+# not the HTCondor exit code -- is the reliable per-job signal.
+#
+# Output layout
+# -------------
+# Outputs go to $PROJECT/output/<bucket>/ and records to
+# $PROJECT/output/val/<bucket>/, where bucket is the job ID divided by 1000,
+# zero-padded to three digits. A flat directory does not survive a large
+# campaign (hundreds of thousands of files), and keying on the job ID rather
+# than the grid process keeps a resubmitted job ID landing in the same place.
+# This must stay in step with utilities.output_bucket(), which every reader
+# uses; readers also accept the legacy flat layout.
 #
 # Timing and sizing fields in the record
 # --------------------------------------
@@ -63,7 +73,7 @@
 #     COMPILE_TIME     cmake + make
 #   STAGE_TIME         input staging for this job ID, of which:
 #     STAGE_COPY_TIME  ifdh copies
-#     STAGE_CHECK_TIME per-file ROOT integrity checks (one ROOT start each)
+#     STAGE_CHECK_TIME ROOT integrity check of every input (one ROOT process)
 #   SELECTION_TIME, SYST_TIME, VALIDATE_TIME, COPY_TIME   the later stages
 #   INPUT_BYTES        bytes of the inputs actually processed
 #   STAGED_BYTES       bytes transferred, dropped inputs included
@@ -308,13 +318,14 @@ finish() {
         printf '%s\n' "${RECORD_LINES[@]}" > "$VALNAME"
         log_info "Validation record:"
         cat "$VALNAME"
-        ifdh mkdir_p "$PROJECT/output/val" 2>/dev/null
+        local valdir="${VALDIR:-$PROJECT/output/val}"
+        ifdh mkdir_p "$valdir" 2>/dev/null
         # --force semantics apply here too: a resubmitted job must be able
         # to replace its own earlier record.
         if [[ -n "$FORCE" ]]; then
-            ifdh rm "$PROJECT/output/val/$VALNAME" 2>/dev/null
+            ifdh rm "$valdir/$VALNAME" 2>/dev/null
         fi
-        ifdh cp "$VALNAME" "$PROJECT/output/val/$VALNAME" \
+        ifdh cp "$VALNAME" "$valdir/$VALNAME" \
             || log_error "Failed to copy back the validation record."
     fi
 
@@ -527,6 +538,13 @@ run_jobid() (
     JOBID="$1"
     SEQ="$2"
     WORKDIR="$3"
+
+    # Bucketed destinations, keyed on the job ID so a resubmission lands in
+    # the same place. This must match utilities.output_bucket(): job ID
+    # divided by 1000, zero-padded to three digits.
+    printf -v BUCKET "%03d" $(( JOBID / 1000 ))
+    OUTDIR="$PROJECT/output/$BUCKET"
+    VALDIR="$PROJECT/output/val/$BUCKET"
     RECORD_LINES=()
     STATUS_SET=""
     JOB_T0=$(now_s)
@@ -579,13 +597,19 @@ run_jobid() (
     # --force the copy-back would fail anyway, but only after the job has
     # paid for input staging and both event loops; catching it here costs
     # seconds.
+    #
+    # Both layouts are checked: a project that ran before output was bucketed
+    # holds its files flat in output/, and a job ID already completed there
+    # must not be run again into the bucketed directory beside it.
     if [[ -z "$FORCE" ]]; then
-        if dest_exists "$PROJECT/output/$RAWNAME" || dest_exists "$PROJECT/output/$SYSTNAME"; then
+        if dest_exists "$OUTDIR/$RAWNAME" || dest_exists "$OUTDIR/$SYSTNAME" \
+           || dest_exists "$PROJECT/output/$RAWNAME" || dest_exists "$PROJECT/output/$SYSTNAME"; then
             log_error "Output already exists at the destination for job ID ${JOBID}."
             log_error "Another job may already have produced it. Re-run with --force to replace it."
             finish 1 "duplicate_record"
         fi
     fi
+    ifdh mkdir_p "$OUTDIR" 2>/dev/null
 
     # Copy the input data file(s)
     mkdir -p data
@@ -735,7 +759,7 @@ run_jobid() (
     if [[ ${#bad_files[@]} -gt 0 ]]; then
         printf '%s\n' "${bad_files[@]}" > bad_files.log
         printf -v BADNAME "bad_files_jobid%04d.log" "$JOBID"
-        copy_output bad_files.log $PROJECT/output/$BADNAME
+        copy_output bad_files.log "$OUTDIR/$BADNAME"
     fi
 
     # Dump some info for debugging
@@ -837,19 +861,19 @@ run_jobid() (
     # finishes, rather than at the end of the process, so a process
     # preempted partway through keeps the job IDs it already completed.
     t0=$(now_s)
-    if ! copy_output output.root $PROJECT/output/$RAWNAME; then
+    if ! copy_output output.root "$OUTDIR/$RAWNAME"; then
         log_error "Failed to copy back the selection output."
         finish 1 "transfer_lost"
     fi
 
-    if ! copy_output output_sys.root $PROJECT/output/$SYSTNAME; then
+    if ! copy_output output_sys.root "$OUTDIR/$SYSTNAME"; then
         log_error "Failed to copy back the systematics output."
         # The selection output is already on dCache and would be read as a
         # completed job, so remove it rather than leave the pair
         # half-written.
         log_error "Removing the already-copied selection output to keep the pair atomic."
-        ifdh rm $PROJECT/output/$RAWNAME 2>/dev/null \
-            || log_error "Could not remove $PROJECT/output/$RAWNAME -- clean it up before the next sync."
+        ifdh rm "$OUTDIR/$RAWNAME" 2>/dev/null \
+            || log_error "Could not remove $OUTDIR/$RAWNAME -- clean it up before the next sync."
         finish 1 "transfer_lost"
     fi
     record "COPY_TIME=$(( $(now_s) - t0 ))"

@@ -6,6 +6,7 @@ import sqlite3
 import tempfile
 import time
 import toml
+from concurrent.futures import ThreadPoolExecutor
 from catalog import resolve_samples
 from glob import glob
 import subprocess
@@ -532,6 +533,111 @@ def create_new_project(
 # left behind by a job that failed after creating its output.
 MIN_OUTPUT_BYTES = 1024
 
+# ---------------------------------------------------------------------------
+# Output layout
+#
+# A job's files live in a bucket directory keyed on its job ID:
+#
+#     output/<bucket>/output_jobid0042.root
+#     output/<bucket>/output_systematics_jobid0042.root
+#     output/<bucket>/bad_files_jobid0042.log
+#     output/val/<bucket>/validation_jobid0042.txt
+#
+# with bucket = jobid // OUTPUT_BUCKET_SIZE, zero-padded to three digits. A
+# flat output/ directory holding every job's files does not survive a large
+# campaign: 3M input files at 25 per job is 240k output files plus 120k
+# records in two directories, which dCache listings, globbing and hadd all
+# degrade badly on.
+#
+# The bucket is keyed on the job ID rather than on the grid process that ran
+# it, so a job ID lands in the same directory however many times it is
+# submitted. That keeps a duplicate run of the same job ID colliding loudly
+# at copy-back rather than scattering into a second directory unnoticed.
+#
+# submit.sh computes the same bucket independently; the two must agree.
+#
+# Everything that reads output goes through iter_output_files() and
+# find_output_file(), which look in both the bucketed layout and the legacy
+# flat one, so projects written before the change keep working unmodified.
+# ---------------------------------------------------------------------------
+
+OUTPUT_BUCKET_SIZE = 1000
+
+# Filename format and matching glob for each kind of per-job file.
+OUTPUT_KINDS = {
+    'nosyst':   ('output_jobid{:04d}.root',             'output_jobid*.root'),
+    'wsyst':    ('output_systematics_jobid{:04d}.root', 'output_systematics_jobid*.root'),
+    'badfiles': ('bad_files_jobid{:04d}.log',           'bad_files_jobid*.log'),
+    'record':   ('validation_jobid{:04d}.txt',          'validation_jobid*.txt'),
+}
+
+def output_bucket(jobid : int) -> str:
+    """The bucket directory name for a job ID, e.g. 42 -> '000'."""
+    return f'{int(jobid) // OUTPUT_BUCKET_SIZE:03d}'
+
+def _kind_root(project_dir : Path, kind : str) -> Path:
+    """The directory a kind of file is bucketed under."""
+    if kind not in OUTPUT_KINDS:
+        raise ValueError(f"Unknown output kind '{kind}'; expected one of {sorted(OUTPUT_KINDS)}")
+    out = Path(project_dir) / 'output'
+    return out / 'val' if kind == 'record' else out
+
+def output_path_for(project_dir : Path, jobid : int, kind : str) -> Path:
+    """Where a job's file of the given kind is written (bucketed layout)."""
+    root = _kind_root(project_dir, kind)   # validates kind first
+    return root / output_bucket(jobid) / OUTPUT_KINDS[kind][0].format(int(jobid))
+
+def find_output_file(project_dir : Path, jobid : int, kind : str) -> Optional[Path]:
+    """
+    Locate a job's file of the given kind, preferring the bucketed layout
+    and falling back to the legacy flat one. None if neither exists.
+    """
+    nested = output_path_for(project_dir, jobid, kind)
+    if nested.exists():
+        return nested
+    flat = _kind_root(project_dir, kind) / OUTPUT_KINDS[kind][0].format(int(jobid))
+    return flat if flat.exists() else None
+
+def jobid_of(path) -> Optional[int]:
+    """Job ID parsed from a per-job filename, or None if it has none."""
+    stem = Path(path).stem
+    if 'jobid' not in stem:
+        return None
+    try:
+        return int(stem.split('jobid')[-1])
+    except ValueError:
+        return None
+
+def output_globs(project_dir : Path, kind : str) -> list:
+    """
+    Glob patterns covering every file of a kind in both layouts: legacy flat
+    first, then bucketed. For callers that need patterns rather than paths
+    (e.g. building a hadd file list).
+    """
+    root = _kind_root(project_dir, kind)
+    pattern = OUTPUT_KINDS[kind][1]
+    return [str(root / pattern), str(root / '*' / pattern)]
+
+def iter_output_files(project_dir : Path, kind : str) -> dict:
+    """
+    Every file of the given kind in a project, keyed by job ID.
+
+    Both layouts are searched. Should a job ID somehow have a file in each,
+    the bucketed one wins: it is where anything written after the layout
+    change goes, so it is the more recent.
+
+    Returns
+    -------
+    dict[int, Path]
+    """
+    found = {}
+    # Flat first, then bucketed, so the bucketed entry overwrites.
+    for f in [f for pat in output_globs(project_dir, kind) for f in glob(pat)]:
+        jid = jobid_of(f)
+        if jid is not None:
+            found[jid] = Path(f)
+    return found
+
 def survey_project_output(
     project_dir : Path,
 ):
@@ -565,23 +671,12 @@ def survey_project_output(
             Output files (either kind) below MIN_OUTPUT_BYTES.
     """
     project_dir = Path(project_dir)
-    out_dir = project_dir / 'output'
 
-    def _by_id(pattern):
-        found = {}
-        for f in glob(str(out_dir / pattern)):
-            path = Path(f)
-            try:
-                jid = int(path.stem.split('jobid')[-1])
-            except ValueError:
-                continue
-            found[jid] = path
-        return found
-
+    # Both layouts (bucketed and legacy flat) are covered by the helper.
     # 'output_jobid*' cannot match 'output_systematics_jobid*', so the two
-    # globs stay disjoint without further filtering.
-    nosyst = _by_id('output_jobid*.root')
-    wsyst = _by_id('output_systematics_jobid*.root')
+    # sets stay disjoint without further filtering.
+    nosyst = iter_output_files(project_dir, 'nosyst')
+    wsyst = iter_output_files(project_dir, 'wsyst')
 
     def _ok(path):
         return path is not None and path.stat().st_size >= MIN_OUTPUT_BYTES
@@ -603,6 +698,319 @@ def survey_project_output(
         'orphaned':   sorted(orphaned),
         'stub_files': sorted(stub_files),
     }
+
+# ---------------------------------------------------------------------------
+# Reconciliation
+#
+# The question this answers is not "did any job report an error" but "is the
+# dataset complete, and if not, exactly what is missing and why". It joins
+# three things the workflow already produces -- project.db (every job ID and
+# the input files it owns), the output pairs, and the per-job validation
+# records -- and places every job ID in exactly one category, so that nothing
+# can be missing without appearing somewhere in the report. It is read-only.
+# ---------------------------------------------------------------------------
+
+_RECORD_HEADER = re.compile(r'^JOB \((\d+),(-?\d+)\) VALIDATION')
+
+# Record statuses that mean the job's output was validated and transferred.
+RECORD_SUCCESS = frozenset({'ok', 'match_partial'})
+
+# Categories, in the order a report should list them.
+RECONCILE_CATEGORIES = (
+    'complete',               # pair present, record says success
+    'complete_unrecorded',    # pair present, no record (pre-validation, or record copy failed)
+    'complete_stale_record',  # pair present, record says failure (a failed attempt's record)
+    'failed',                 # no pair, record says failure: pending, will be resubmitted
+    'output_lost',            # no pair, record says success: output vanished after the fact
+    'no_trace',               # no pair, no record: never ran, or died without leaving one
+)
+
+def parse_validation_record(text : str) -> dict:
+    """
+    Parse one validation record into a dict.
+
+    Scalar fields keep their first occurrence (SAMPLE appears twice, once from
+    submit.sh and once from the validator). ERROR and WARN lines are gathered
+    into lists, and TREE_<name>=in,matched,nonmatched lines into
+    record['trees'][name] as a tuple of ints.
+    """
+    rec = {'errors': [], 'warns': [], 'trees': {}}
+    for line in text.splitlines():
+        m = _RECORD_HEADER.match(line)
+        if m:
+            rec['jobid'], rec['process'] = int(m.group(1)), int(m.group(2))
+            continue
+        if '=' not in line:
+            continue
+        key, val = line.split('=', 1)
+        if key == 'ERROR':
+            rec['errors'].append(val)
+        elif key == 'WARN':
+            rec['warns'].append(val)
+        elif key.startswith('TREE_'):
+            try:
+                rec['trees'][key[5:]] = tuple(int(x) for x in val.split(','))
+            except ValueError:
+                pass
+        elif key not in rec:
+            rec[key] = val
+    return rec
+
+def _record_int(rec : dict, key : str) -> Optional[int]:
+    try:
+        return int(rec[key])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+# The sample block's path value in a stored job configuration: either a list
+# or a single string. Configurations are written by toml.dumps, so the layout
+# is regular.
+_SAMPLE_PATH = re.compile(r'^\[\[sample\]\]\s*$.*?^path\s*=\s*(\[.*?\]|"[^"]*")',
+                          re.MULTILINE | re.DOTALL)
+
+def _job_input_files(cfg_text : str) -> list:
+    """
+    The input files a job's stored configuration lists.
+
+    A job's configuration carries the whole selection -- every tree, cut and
+    branch -- and runs to ~1400 lines, of which only the sample's path list is
+    needed here. Parsing it with the pure-Python toml library cost ~12 ms per
+    job, which for a 15,000-job project was minutes of CPU; extracting the one
+    array is ~100x faster. Full parsing remains the fallback if the layout is
+    ever not what toml.dumps writes.
+    """
+    m = _SAMPLE_PATH.search(cfg_text)
+    if m:
+        return re.findall(r'"([^"]*)"', m.group(1))
+    try:
+        cfg = toml.loads(cfg_text)
+        paths = []
+        for sample in cfg.get('sample', []):
+            p = sample.get('path', [])
+            paths.extend([p] if isinstance(p, str) else p)
+        return paths
+    except Exception:
+        # Last resort: the same extraction submit.sh uses.
+        return re.findall(r'"(/pnfs[^"]*)"', cfg_text)
+
+def reconcile_project(project_dir : Path) -> dict:
+    """
+    Account for every job ID and every input file in a project.
+
+    Parameters
+    ----------
+    project_dir : Path
+        A project directory (containing project.db and output/).
+
+    Returns
+    -------
+    dict with keys:
+        n_jobs : int
+        categories : dict[str, list[int]]
+            Every job ID in project.db, in exactly one RECONCILE_CATEGORIES
+            entry.
+        failed_by_status : dict[str, list[int]]
+            The 'failed' job IDs, split by their record's STATUS.
+        orphaned : list[int]
+            Job IDs with a selection output but no usable systematics
+            partner (a subset of the incomplete categories).
+        unknown_records : list[int]
+            Records whose job ID is not in project.db at all.
+        files : dict
+            Input-file accounting: 'expected', 'processed', 'dropped',
+            'in_incomplete', 'unverified' (belonging to complete jobs with no
+            record, so their dropped inputs cannot be known), and 'balanced'
+            (whether those add up to 'expected').
+        dropped_files : list[str]
+            Named dropped inputs, from the bad_files logs.
+        events : dict
+            For complete, recorded jobs: 'checked', 'mismatched' (job IDs
+            whose INPUT_EVENTS differs from the events written), 'unknown'
+            (job IDs with INPUT_EVENTS = -1).
+        duplicate_claims : dict[int, list[str]]
+            Job IDs claimed by more than one grid process, with the
+            processes that claimed them.
+        pot : float
+            Summed POT over complete, recorded jobs.
+    """
+    project_dir = Path(project_dir)
+    db_path = project_dir / 'project.db'
+    if not db_path.exists():
+        raise FileNotFoundError(f"Project database {db_path} does not exist.")
+
+    # Read a local copy: sqlite over dCache NFS is unreliable for locking.
+    with tempfile.NamedTemporaryFile(suffix='.db', prefix='medulla_recon_', delete=False) as f:
+        tmp = Path(f.name)
+    try:
+        safe_copy(db_path, tmp)
+        conn = sqlite3.connect(tmp)
+        jobids = [r[0] for r in conn.execute("SELECT jobid FROM jobs ORDER BY jobid")]
+        inputs = {jid: _job_input_files(cfg)
+                  for jid, cfg in conn.execute("SELECT jobid, cfg FROM configuration")}
+        conn.close()
+    finally:
+        tmp.unlink(missing_ok=True)
+
+    survey = survey_project_output(project_dir)
+    complete = set(survey['completed'])
+
+    # Records are small, numerous, and on dCache: read serially, each one is a
+    # network round-trip, and a 5000-record project took minutes. The reads
+    # are pure I/O, so a thread pool cuts that by roughly the worker count.
+    record_paths = iter_output_files(project_dir, 'record')
+    with ThreadPoolExecutor(max_workers=16) as ex:
+        texts = list(ex.map(lambda p: p.read_text(), record_paths.values()))
+    records = {jid: parse_validation_record(t) for jid, t in zip(record_paths, texts)}
+
+    categories = {c: [] for c in RECONCILE_CATEGORIES}
+    failed_by_status = {}
+    for jid in jobids:
+        rec = records.get(jid)
+        succeeded = rec is not None and rec.get('STATUS') in RECORD_SUCCESS
+        if jid in complete:
+            cat = ('complete' if succeeded else
+                   'complete_unrecorded' if rec is None else
+                   'complete_stale_record')
+        elif rec is None:
+            cat = 'no_trace'
+        elif succeeded:
+            cat = 'output_lost'
+        else:
+            cat = 'failed'
+            failed_by_status.setdefault(rec.get('STATUS', '(none)'), []).append(jid)
+        categories[cat].append(jid)
+
+    # Input files. A complete job with a record says exactly how many of its
+    # inputs it processed and dropped; one without a record cannot, so its
+    # files are counted as processed but flagged unverified.
+    known = set(jobids)
+    files = {'expected': 0, 'processed': 0, 'dropped': 0, 'in_incomplete': 0, 'unverified': 0}
+    for jid in jobids:
+        n = len(inputs.get(jid, []))
+        files['expected'] += n
+        if jid not in complete:
+            files['in_incomplete'] += n
+            continue
+        rec = records.get(jid)
+        n_in, n_drop = (_record_int(rec, 'N_INPUTS'), _record_int(rec, 'N_DROPPED_INPUTS')) if rec else (None, None)
+        if n_in is None or n_drop is None:
+            files['processed'] += n
+            files['unverified'] += n
+        else:
+            files['processed'] += n_in
+            files['dropped'] += n_drop
+    files['balanced'] = (files['processed'] + files['dropped'] + files['in_incomplete'] == files['expected'])
+
+    dropped_files = []
+    for jid, p in sorted(iter_output_files(project_dir, 'badfiles').items()):
+        if jid in complete:
+            dropped_files.extend(l.strip() for l in p.read_text().splitlines() if l.strip())
+
+    # Events read against events written, for complete recorded jobs.
+    events = {'checked': 0, 'mismatched': [], 'unknown': []}
+    pot = 0.0
+    for jid in categories['complete']:
+        rec = records[jid]
+        n_read = _record_int(rec, 'INPUT_EVENTS')
+        written = rec['trees'].get('events')
+        try:
+            pot += float(rec.get('POT', 0) or 0)
+        except ValueError:
+            pass
+        if n_read is None or written is None:
+            continue
+        events['checked'] += 1
+        if n_read < 0:
+            events['unknown'].append(jid)
+        elif n_read != written[0]:
+            events['mismatched'].append(jid)
+
+    # Job IDs claimed by more than one grid process. Two cases that look alike
+    # but mean opposite things:
+    #   - claims from *different* launches (clusters) are retries: a failed
+    #     job ID stays pending and the next launch picks it up. Expected.
+    #   - claims from two processes of the *same* launch are duplicate work:
+    #     the rank-based assignment in submit.sh shifting under a concurrent
+    #     sync. That is a bug, and the only one of the two to act on.
+    claimers = {}
+    for rec in records.values():
+        claimed = rec.get('CLAIMED_JOBIDS')
+        if not claimed:
+            continue
+        who = (rec.get('CLUSTER', '?'), rec.get('PROCESS', '?'), rec.get('PROCESS_START', '?'))
+        for c in claimed.split(','):
+            try:
+                claimers.setdefault(int(c), set()).add(who)
+            except ValueError:
+                pass
+    duplicate_claims, retried = {}, {}
+    for j, who in claimers.items():
+        if len(who) < 2:
+            continue
+        by_cluster = {}
+        for cluster, proc, start in who:
+            by_cluster.setdefault(cluster, set()).add((proc, start))
+        label = sorted(f"{c}.{p}@{s}" for c, p, s in who)
+        if any(len(v) > 1 for v in by_cluster.values()):
+            duplicate_claims[j] = label
+        else:
+            retried[j] = label
+
+    return {
+        'n_jobs':           len(jobids),
+        'categories':       categories,
+        'failed_by_status': {k: sorted(v) for k, v in sorted(failed_by_status.items())},
+        'orphaned':         survey['orphaned'],
+        'unknown_records':  sorted(set(records) - known),
+        'files':            files,
+        'dropped_files':    dropped_files,
+        'events':           events,
+        'duplicate_claims': duplicate_claims,
+        'retried':          retried,
+        'pot':              pot,
+    }
+
+def format_reconcile_report(name : str, r : dict, max_ids : int = 50) -> str:
+    """A plain-text report of a reconcile_project() result, listing job IDs."""
+    def ids(xs):
+        xs = list(xs)
+        shown = ', '.join(str(x) for x in xs[:max_ids])
+        return shown + (f' ... (+{len(xs) - max_ids} more)' if len(xs) > max_ids else '')
+
+    lines = [f"Reconciliation: {name}", '=' * 72, f"job IDs in project.db: {r['n_jobs']}", '']
+    lines.append('Job IDs by category:')
+    for c in RECONCILE_CATEGORIES:
+        lines.append(f"  {c:24s} {len(r['categories'][c]):7d}   {ids(r['categories'][c])}")
+    if r['failed_by_status']:
+        lines += ['', 'Failed, by status:']
+        for s, js in r['failed_by_status'].items():
+            lines.append(f"  {s:24s} {len(js):7d}   {ids(js)}")
+    if r['orphaned']:
+        lines += ['', f"Orphaned (selection output without systematics): {len(r['orphaned'])}   {ids(r['orphaned'])}"]
+    if r['unknown_records']:
+        lines += ['', f"Records for job IDs not in project.db: {ids(r['unknown_records'])}"]
+    f = r['files']
+    lines += ['', 'Input files:',
+              f"  expected       {f['expected']}",
+              f"  processed      {f['processed']}   (of which unverified: {f['unverified']})",
+              f"  dropped        {f['dropped']}",
+              f"  in incomplete  {f['in_incomplete']}",
+              f"  accounted for: {'yes' if f['balanced'] else 'NO -- processed + dropped + incomplete != expected'}"]
+    if r['dropped_files']:
+        lines.append('  dropped inputs:')
+        lines += [f"    {p}" for p in r['dropped_files'][:max_ids]]
+    e = r['events']
+    lines += ['', f"Events read vs written (complete, recorded jobs): {e['checked']} checked",
+              f"  mismatched   {len(e['mismatched'])}   {ids(e['mismatched'])}",
+              f"  count unknown (INPUT_EVENTS = -1)   {len(e['unknown'])}   {ids(e['unknown'])}"]
+    lines += ['', f"Duplicate work -- job IDs claimed by two processes of one launch: "
+                  f"{len(r['duplicate_claims'])}"]
+    for j, who in list(r['duplicate_claims'].items())[:max_ids]:
+        lines.append(f"  {j}: {', '.join(who)}")
+    lines.append(f"Retried across launches (expected for failed job IDs): "
+                 f"{len(r['retried'])}   {ids(sorted(r['retried']))}")
+    lines += ['', f"POT over complete, recorded jobs: {r['pot']:.6g}"]
+    return '\n'.join(lines) + '\n'
 
 def check_project_status(
     project_dir : str,

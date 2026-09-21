@@ -20,7 +20,9 @@ from pathlib import Path
 from auth import authenticate
 from catalog import resolve_samples
 from utilities import (create_new_project, check_project_status, launch_jobsub,
-                       safe_copy, safe_write_text, survey_project_output)
+                       safe_copy, safe_write_text, survey_project_output,
+                       iter_output_files, find_output_file, output_globs, jobid_of,
+                       MIN_OUTPUT_BYTES, reconcile_project, format_reconcile_report)
 
 # Repo root is two levels above this script (batch/ -> repo root).
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -97,6 +99,7 @@ _TAG_SYNC      = f"{_A.BOLD}{_A.CYAN}[SYNC]{_A.RESET}"
 _TAG_LIST      = f"{_A.BOLD}{_A.CYAN}[LIST]{_A.RESET}"
 _TAG_FINALIZE  = f"{_A.BOLD}{_A.CYAN}[FINALIZE]{_A.RESET}"
 _TAG_SCAN      = f"{_A.BOLD}{_A.CYAN}[SCAN]{_A.RESET}"
+_TAG_RECON     = f"{_A.BOLD}{_A.CYAN}[RECONCILE]{_A.RESET}"
 
 
 def _trunc(s, width):
@@ -741,9 +744,13 @@ def _run_one_scan(campaign_dir, project_name, project_dir, print_lock, timeout=1
             nonzero exit, missing report). Callers must treat this project
             as unverified, not as "zero bad files found".
     """
+    # Both halves of every pair, in both layouts. Checking only the selection
+    # files -- as this used to -- let a corrupt systematics file sit in a job
+    # counted complete, which is the half that carries the weights.
     output_files = [
-        Path(f) for f in glob(str(project_dir / 'output' / 'output_jobid*.root'))
-        if Path(f).stat().st_size >= 1024
+        p for kind in ('nosyst', 'wsyst')
+        for p in sorted(iter_output_files(project_dir, kind).values())
+        if p.stat().st_size >= MIN_OUTPUT_BYTES
     ]
     if not output_files:
         return {'n_checked': 0, 'bad_files': [], 'error': None}
@@ -881,20 +888,39 @@ def cmd_scan(args):
         n_reverted = 0
         n_delete_failed = 0
         for project_id, (row, bad_files) in by_project.items():
-            deleted_ids = []
+            proj_dir = Path(row['project_dir'])
+            deleted_ids = set()
             for f in bad_files:
                 try:
                     f.unlink()
-                    deleted_ids.append(int(f.stem.split('jobid')[-1]))
                 except OSError as e:
                     n_delete_failed += 1
                     print(f"{_TAG_SCAN} {_A.RED}Error:{_A.RESET} could not delete {f}: {e} "
                           f"-- leaving its job as-is.")
+                    continue
+                jid = jobid_of(f)
+                if jid is None:
+                    continue
+                deleted_ids.add(jid)
+                # Remove the other half of the pair too. The job is being
+                # rerun either way, and leaving a lone partner behind would
+                # only collide with the rerun's copy-back (dCache refuses to
+                # overwrite) and confuse anything reading the directory.
+                for kind in ('nosyst', 'wsyst'):
+                    partner = find_output_file(proj_dir, jid, kind)
+                    if partner is None or partner == f:
+                        continue
+                    try:
+                        partner.unlink()
+                    except OSError as e:
+                        print(f"{_TAG_SCAN} {_A.YELLOW}Warning:{_A.RESET} could not delete "
+                              f"partner {partner}: {e}")
 
             if not deleted_ids:
                 continue
+            deleted_ids = sorted(deleted_ids)
 
-            result = _sync_project_status(Path(row['project_dir']), revert_ids=deleted_ids)
+            result = _sync_project_status(proj_dir, revert_ids=deleted_ids)
             if result is None:
                 continue
             n_jobs = result['n_jobs']
@@ -909,6 +935,92 @@ def cmd_scan(args):
 
     fail_note = f", {n_delete_failed} delete(s) failed" if n_delete_failed else ""
     print(f"\n{_TAG_SCAN} Done. {n_reverted} job(s) reverted to pending{fail_note}.")
+
+
+def cmd_reconcile(args):
+    """
+    Account for every job ID and input file in each project, read-only.
+
+    Where scan asks whether the files that exist are readable, reconcile asks
+    whether everything that should exist does, and if not, why not. It needs
+    no ROOT and changes nothing, so it is safe to run at any time, including
+    while jobs are still landing.
+    """
+    campaign_dir = _resolve_campaign(args)
+    W_AN, W_RO, W_EX = 28, 18, 10
+    W_N = 9
+
+    with _open_db(campaign_dir) as (conn, curs):
+        if args.experiment:
+            curs.execute("SELECT * FROM projects WHERE experiment = ? "
+                         "ORDER BY analysis, role, experiment", (args.experiment,))
+        else:
+            curs.execute("SELECT * FROM projects ORDER BY analysis, role, experiment")
+        rows = list(curs.fetchall())
+
+    if not rows:
+        print(f"{_TAG_RECON} No projects matched.")
+        return
+
+    out_dir = campaign_dir / 'reconcile'
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    table_rows, problems = [], []
+    for row in rows:
+        name = f"{row['analysis']}_{row['role']}_{row['experiment']}"
+        try:
+            r = reconcile_project(Path(row['project_dir']))
+        except Exception as e:
+            print(f"{_TAG_RECON} {_A.RED}Error:{_A.RESET} could not reconcile {name}: {e}")
+            continue
+        safe_write_text(out_dir / f"{name}.txt", format_reconcile_report(name, r))
+
+        c = r['categories']
+        n = {k: len(v) for k, v in c.items()}
+        # Anything here means the dataset has a gap nothing else will report.
+        issues = []
+        if n['output_lost']:
+            issues.append(f"{n['output_lost']} job ID(s) succeeded but their output is gone")
+        if n['complete_stale_record']:
+            issues.append(f"{n['complete_stale_record']} complete job ID(s) shadowed by a failed attempt's record")
+        if r['duplicate_claims']:
+            issues.append(f"{len(r['duplicate_claims'])} job ID(s) processed twice within one launch")
+        if r['events']['mismatched']:
+            issues.append(f"{len(r['events']['mismatched'])} job ID(s) wrote a different number of events than they read")
+        if not r['files']['balanced']:
+            issues.append("input files do not add up")
+        if issues:
+            problems.append((name, issues))
+
+        def cell(v, bad=False):
+            return _cell(str(v), W_N, color=(_A.RED if bad and v else None))
+        table_rows.append([
+            _cell(row['analysis'],   W_AN, color=_A.MAGENTA),
+            _cell(row['role'],       W_RO),
+            _cell(row['experiment'], W_EX),
+            _cell(str(r['n_jobs']),  W_N),
+            _cell(str(n['complete']), W_N, color=_A.GREEN),
+            cell(n['failed'], bad=True),
+            _cell(str(n['no_trace']), W_N),
+            cell(n['output_lost'] + n['complete_stale_record'], bad=True),
+            _cell(str(r['files']['dropped']), W_N),
+        ])
+
+    _print_table(
+        ['Analysis', 'Role', 'Experiment', 'Jobs', 'Complete', 'Failed', 'No trace', 'Anomaly', 'Dropped'],
+        [W_AN, W_RO, W_EX, W_N, W_N, W_N, W_N, W_N, W_N],
+        table_rows,
+    )
+    print(f"\n{_TAG_RECON} Detailed reports written to {out_dir}/")
+    print(f"{_TAG_RECON} 'No trace' is expected for job IDs not yet launched; "
+          f"'Anomaly' is output lost after success or a stale record.")
+    if problems:
+        print(f"\n{_TAG_RECON} {_A.RED}Gaps needing attention:{_A.RESET}")
+        for name, issues in problems:
+            for i in issues:
+                print(f"  {_A.MAGENTA}{name}{_A.RESET}: {i}")
+    else:
+        print(f"{_TAG_RECON} {_A.GREEN}No unexplained gaps.{_A.RESET}")
 
 
 def _discover_meta_files():
@@ -1443,9 +1555,10 @@ def _resolve_hadd_files(row, input_glob, label, job_ids=None):
     ----------
     row : sqlite3.Row
         The project row this task belongs to.
-    input_glob : str
-        Glob pattern for this task's input files. Ignored when job_ids is
-        given.
+    input_glob : str | list[str]
+        Glob pattern, or patterns, for this task's input files; a list lets
+        one task span both output layouts (see utilities.output_globs).
+        Ignored when job_ids is given.
     label : str
         'nosyst' or 'wsyst' -- selects the output filename convention when
         job_ids is given.
@@ -1459,14 +1572,15 @@ def _resolve_hadd_files(row, input_glob, label, job_ids=None):
     Returns
     -------
     list[str]
-        Sorted input file paths (possibly empty).
+        Sorted input file paths (possibly empty), de-duplicated.
     """
     if job_ids is not None:
-        name_fmt = 'output_systematics_jobid{:04d}.root' if label == 'wsyst' else 'output_jobid{:04d}.root'
+        kind = 'wsyst' if label == 'wsyst' else 'nosyst'
         proj_dir = Path(row['project_dir'])
-        candidates = (proj_dir / 'output' / name_fmt.format(jid) for jid in job_ids)
-        return sorted(str(f) for f in candidates if f.exists())
-    return sorted(glob(input_glob))
+        found = (find_output_file(proj_dir, jid, kind) for jid in job_ids)
+        return sorted(str(f) for f in found if f is not None)
+    patterns = [input_glob] if isinstance(input_glob, str) else list(input_glob)
+    return sorted({f for pat in patterns for f in glob(pat)})
 
 
 def _write_hadd_filelist(campaign_dir, out_path, files):
@@ -1636,8 +1750,9 @@ def cmd_finalize(args):
             pattern = '%a_%r_%e_%t_%d'
 
         proj_dir    = Path(row['project_dir'])
-        nosyst_glob = str(proj_dir / 'output' / 'output_jobid*.root')
-        syst_glob   = str(proj_dir / 'output' / 'output_systematics_jobid*.root')
+        # Both output layouts (bucketed and legacy flat); see utilities.output_globs.
+        nosyst_glob = output_globs(proj_dir, 'nosyst')
+        syst_glob   = output_globs(proj_dir, 'wsyst')
 
         # A project's jobs may carry more than one catalog-level 'experiment'
         # tag (e.g. icarus_run2/icarus_run4 sharing one campaign-level
@@ -1876,6 +1991,27 @@ def main():
                              'independent, so this is safe to raise for campaigns '
                              'with many projects.')
 
+    # -- reconcile ------------------------------------------------------------
+    p_recon = sub.add_parser(
+        'reconcile',
+        help='Account for every job ID and input file (read-only, no ROOT)',
+        description=(
+            'Joins project.db, the output files and the per-job validation '
+            'records to place every job ID in exactly one category -- complete, '
+            'failed, never run, or anomalous (output lost after success, or a '
+            'stale record) -- and to account for every input file as '
+            'processed, dropped, or belonging to an incomplete job ID. Also '
+            'checks events read against events written, and flags any job ID '
+            'processed twice within one launch. Changes nothing; a detailed '
+            'report per project is written under <campaign>/reconcile/.'
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    tgt_recon = p_recon.add_mutually_exclusive_group(required=True)
+    tgt_recon.add_argument('--campaign', metavar='PATH', help='Full path to the campaign directory')
+    tgt_recon.add_argument('--name', metavar='NAME', help='Registered short name (see campaigns subcommand)')
+    p_recon.add_argument('--experiment', metavar='EXP', help='Restrict to one experiment')
+
     # -- launch ---------------------------------------------------------------
     p_launch = sub.add_parser('launch', help='Launch pending campaign jobs')
     tgt_launch = p_launch.add_mutually_exclusive_group(required=True)
@@ -1945,6 +2081,8 @@ def main():
         cmd_finalize(args)
     elif args.command == 'scan':
         cmd_scan(args)
+    elif args.command == 'reconcile':
+        cmd_reconcile(args)
 
 
 if __name__ == '__main__':
