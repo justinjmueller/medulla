@@ -512,16 +512,18 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
         // compares false against both "< 0" and ">= 0" (IEEE 754), so
         // without this check these entries would silently be dropped from
         // both this tree and the matched candidates map above.
+        //
+        // GetEntry(i) loads this entry's own Run/Subrun/Evt into run/subrun/
+        // event (bound by SetBranchAddress above), so they are written as-is.
+        // They must not be taken from the weight reader: by this point it has
+        // finished its pass and sits on the last event of the chain, and
+        // copying that in stamped every cosmic in a job with one identity --
+        // the physics values were right, the event they belonged to was not.
         for(int i(0); i < input_tree->GetEntries(); ++i)
         {
             input_tree->GetEntry(i);
             if(nu_id < 0 || std::isnan(nu_id))
-            {
-                run = reader.get_run();
-                subrun = reader.get_subrun();
-                event = reader.get_event();
                 nonmatched_tree->Fill();
-            }
         }
 
         directory->WriteObject(nonmatched_tree, nonmatched_tree->GetName());
