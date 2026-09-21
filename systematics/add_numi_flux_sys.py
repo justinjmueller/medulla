@@ -23,7 +23,7 @@ if not file_name.endswith('.root'):
 
 horn_current = 'fhc'
 file_nu = uproot.open(file_name)
-file_flux = uproot.open('/pnfs/icarus/scratch/users/nabrego/splines/flux.root')
+file_flux = uproot.open('/nashome/m/micarrig/icarus/nuESpine/flux.root')
 
 
 flux_g4numi = file_flux[f'g4numi_reweight_v03_01-->v03_02;1/{horn_current};1']
