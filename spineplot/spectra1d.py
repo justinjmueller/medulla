@@ -480,7 +480,7 @@ class SpineSpectra1D(SpineSpectra):
                 systs = [s[draw_error] for s in self._systematics.values() if draw_error in s]
                 if systs:
                     # Sum covariances across samples for this systematic
-                    cov = np.sum(s.get_covariance(self._variable._key) for s in systs)
+                    cov = sum(s.get_covariance(self._variable._key) for s in systs)
                     # If exposure_type='area' is active, also scale the uncertainty to match
                     # the scaled stack: cov_total = sum_i (f_i^2 * cov_i).
                     if area_scales:
@@ -1163,3 +1163,54 @@ class SpineSystematics(SpineSpectra):
             mark_pot(ax, self._exposure, style.mark_pot_horizontal, vadj=vadj)
         if style.mark_preliminary is not None:
             mark_preliminary(ax, style.mark_preliminary, hadj=hadj, vadj=vadj)
+
+
+class SpineSpectraNMinus1(SpineSpectra1D):
+    """
+    Shows the distribution of a variable with all selection cuts applied
+    except one (N-1 cuts). The excluded cut is identified by its branch
+    name in the cuts dict. Draws as a category-colored stacked histogram,
+    identical in appearance to SpineSpectra1D.
+
+    Attributes
+    ----------
+    _n1_mask : str or None
+        Pandas eval expression that ANDs every cut branch except the
+        excluded one. Passed to sample.get_data as with_mask.
+    """
+
+    def __init__(self, variable, categories, colors, category_types,
+                 cuts, excluded_cut,
+                 title=None, xrange=None, xtitle=None,
+                 yrange=None, ytitle=None) -> None:
+        """
+        Parameters
+        ----------
+        variable : Variable
+        categories : dict
+        colors : dict
+        category_types : dict
+        cuts : dict
+            Full set of selection cut branch names → human-readable labels.
+        excluded_cut : str
+            Branch name of the single cut to omit from the mask.
+        title, xrange, xtitle, yrange, ytitle : optional
+        """
+        super().__init__(variable, categories, colors, category_types,
+                         title, xrange, xtitle, yrange, ytitle)
+        n1_branches = [b for b in cuts if b != excluded_cut]
+        if not n1_branches:
+            self._n1_mask = None
+        elif len(n1_branches) == 1:
+            self._n1_mask = f'({n1_branches[0]} == 1)'
+        else:
+            self._n1_mask = ' & '.join(f'({b} == 1)' for b in n1_branches)
+
+    def add_sample(self, sample, is_ordinate) -> None:
+        """Accumulate histograms using the N-1 mask instead of the variable mask."""
+        old_mask = self._variable._mask
+        self._variable._mask = self._n1_mask
+        try:
+            super().add_sample(sample, is_ordinate)
+        finally:
+            self._variable._mask = old_mask

@@ -2,6 +2,9 @@
 #include <TTreeReader.h>
 #include <TTreeReaderValue.h>
 #include <TGraph.h>
+#include <cmath>
+#include <map>
+#include <set>
 #include <vector>
 #include "configuration.h"
 #include "trees.h"
@@ -28,13 +31,6 @@ int main(int argc, char * argv[])
   else
     input_filename = config.get_string_field("output.path");
   TFile *input = TFile::Open(input_filename.c_str(), "READ");
-
-  /// Syst trees
-  /// To-do: Automate this
-  TTree* multisigma_tree = (TTree*)input->Get("events/NuMIFull/selected_multisigmaTree");
-  TTree* variation_tree = (TTree*)input->Get("events/NuMIFull/selected_variationTree");
-  // TTree* multisim_tree = (TTree*)input->Get("events/NuMIFull/selected_multisimTree"); // TEST...delete if anything breaks
-  TTree* NuMIflux_tree = (TTree*)input->Get("events/NuMIFull/selected_NuMIfluxsimTree");
 
   /////////////////////////////////////////////////////////////
   /// Output
@@ -69,6 +65,10 @@ int main(int argc, char * argv[])
     std::cout << "copy the gundam systematics to output tree: " << table.get_bool_field("gundam_store_syst") << ", true: " << (table.get_bool_field("gundam_store_syst") == true) << std::endl;
     if(table.get_bool_field("gundam_store_syst") == true)
     {
+      std::string origin = table.get_string_field("origin");
+      TTree* multisigma_tree = (TTree*)input->Get((origin + "_multisigmaTree").c_str());
+      TTree* variation_tree  = (TTree*)input->Get((origin + "_variationTree").c_str());
+      TTree* NuMIflux_tree   = (TTree*)input->Get((origin + "_NuMIfluxsimTree").c_str());
       std::cout << "copying gundam systematics to output tree" << std::endl;
       copy_with_syst(config, table, out_tree, in_tree, multisigma_tree, "multisigma");
       std::cout << "10" << std::endl;
@@ -92,39 +92,35 @@ int main(int argc, char * argv[])
 
 void copy_no_syst(cfg::ConfigurationTable table, TTree * out_tree, TTree * in_tree)
 {
-  // Input tree
-  std::cout << "0.2" << std::endl;
+  // Event ID branches
   int run, subrun, event;
-  std::cout << "Number of branches" << in_tree << std::endl;
-  double br[in_tree->GetNbranches()-3];
-  std::cout << "1" << std::endl;
-  for(int i = 0; i < in_tree->GetNbranches()-3; i++)
-    in_tree->SetBranchAddress(in_tree->GetListOfBranches()->At(i)->GetName(), br+i);
-  std::cout << "1" << std::endl;
   in_tree->SetBranchAddress("Run", &run);
-  std::cout << "2" << std::endl;
   in_tree->SetBranchAddress("Subrun", &subrun);
-  std::cout << "3" << std::endl;
   in_tree->SetBranchAddress("Evt", &event);
 
-  // These are branches we wish to modify
-  // double _cut_type, _is_nu, _is_data, _category;
-  double _category;
-  std::cout << "4" << std::endl;
-  // in_tree->SetBranchAddress("reco_cut_type", &_cut_type);
-  // std::cout << "5" << std::endl;
-  // in_tree->SetBranchAddress("reco_is_nu", &_is_nu);
-  // std::cout << "6" << std::endl;
-  // in_tree->SetBranchAddress("reco_is_data", &_is_data);
-  std::cout << "7" << std::endl;
+  // Category branch read separately so we can transform it into the output category int
+  double _category = 0.0;
   in_tree->SetBranchAddress("true_category", &_category);
 
+  // All remaining branches: one double per branch, looked up by name
+  const std::set<std::string> skip = {"Run", "Subrun", "Evt", "true_category"};
+  std::map<std::string, double> br;
+  TObjArray *all_branches = in_tree->GetListOfBranches();
+  for(int i = 0; i < all_branches->GetEntries(); i++)
+  {
+    std::string name = all_branches->At(i)->GetName();
+    if(skip.count(name)) continue;
+    br[name] = 0.0;
+    in_tree->SetBranchAddress(name.c_str(), &br[name]);
+  }
+
   // Output tree
-  for(int i = 0; i < in_tree->GetNbranches()-3; i++)
-    out_tree->Branch(in_tree->GetListOfBranches()->At(i)->GetName(), br+i);
   out_tree->Branch("Run", &run);
   out_tree->Branch("Subrun", &subrun);
   out_tree->Branch("Evt", &event);
+  out_tree->Branch("true_category", &_category);
+  for(auto &[name, val] : br)
+    out_tree->Branch(name.c_str(), &val);
 
   int cut_type, is_nu, is_data, category;
   out_tree->Branch("cut_type", &cut_type, "cut_type/I");
@@ -132,10 +128,16 @@ void copy_no_syst(cfg::ConfigurationTable table, TTree * out_tree, TTree * in_tr
   out_tree->Branch("is_data", &is_data, "is_data/I");
   out_tree->Branch("category", &category, "category/I");
 
+  double nan_replacement = 5.0;
+  try { nan_replacement = table.get_double_field("nan_category_replacement"); }
+  catch(const cfg::ConfigurationError &) {}
+
   // Copy entries from input tree to output tree
   for(int i(0); i < in_tree->GetEntries(); ++i)
   {
     in_tree->GetEntry(i);
+
+    if(std::isnan(_category)) _category = nan_replacement;
 
     // Any modifications happen here...
 

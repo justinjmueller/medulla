@@ -7,24 +7,24 @@
 ##################################
 
 [[systematic_recipe]]
-name = 'ZExpB1CCQE'
-label = 'ZExpB1CCQE'
-pattern = 'ZExpB1CCQE'
+name = 'ZExpPCAB1CCQE'
+label = 'ZExpPCAB1CCQE'
+pattern = 'ZExpPCAB1CCQE'
 
 [[systematic_recipe]]
-name = 'ZExpB2CCQE'
-label = 'ZExpB2CCQE'
-pattern = 'ZExpB2CCQE'
+name = 'ZExpPCAB2CCQE'
+label = 'ZExpPCAB2CCQE'
+pattern = 'ZExpPCAB2CCQE'
 
 [[systematic_recipe]]
-name = 'ZExpB3CCQE'
-label = 'ZExpB3CCQE'
-pattern = 'ZExpB3CCQE'
+name = 'ZExpPCAB3CCQE'
+label = 'ZExpPCAB3CCQE'
+pattern = 'ZExpPCAB3CCQE'
 
 [[systematic_recipe]]
-name = 'ZExpB4CCQE'
-label = 'ZExpB4CCQE'
-pattern = 'ZExpB4CCQE'
+name = 'ZExpPCAB4CCQE'
+label = 'ZExpPCAB4CCQE'
+pattern = 'ZExpPCAB4CCQE'
 
 [[systematic_recipe]]
 name = 'VecFFCCQEshape'
@@ -177,9 +177,9 @@ label = 'CV2uBY'
 pattern = 'CV2uBY'
 
 [[systematic_recipe]]
-name = 'NormCCOH'
-label = 'NormCCOH'  
-pattern = 'NormCCOH'
+name = 'NormCCCOH'
+label = 'NormCCCOH'
+pattern = 'NormCCCOH'
 
 [[systematic_recipe]]
 name = 'NormNCCOH'
@@ -269,7 +269,7 @@ pattern = 'ThetaDelta2NRad'
 [[systematic_recipe]]
 name = 'xsec_ccqe'
 label = 'QE'
-pattern = '^(ZExpB1CCQE|ZExpB2CCQE|ZExpB3CCQE|ZExpB4CCQE|VecFFCCQEshape|RPA_CCQE|CoulombCCQE)$'
+pattern = '^(ZExpPCAB1CCQE|ZExpPCAB2CCQE|ZExpPCAB3CCQE|ZExpPCAB4CCQE|VecFFCCQEshape|RPA_CCQE|CoulombCCQE)$'
 
 [[systematic_recipe]]
 name = 'xsec_mec'
@@ -289,7 +289,7 @@ pattern = '^(AhtBY|BhtBY|CV1uBY|CV2uBY)$'
 [[systematic_recipe]]
 name = 'xsec_coh'
 label = 'COH'
-pattern = '^(NormCCOH|NormNCCOH)$'
+pattern = '^(NormCCCOH|NormNCCOH)$'
 
 [[systematic_recipe]]
 name = 'xsec_nonres'

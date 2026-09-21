@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 
 from sample import Sample
 from figure import SpineFigure, SimpleFigure
-from spectra1d import SpineSpectra1D, SpineSpectraCutFlow, SpineSystematics
+from spectra1d import SpineSpectra1D, SpineSpectraCutFlow, SpineSystematics, SpineSpectraNMinus1
 from spectra2d import SpineSpectra2D
 from efficiency import SpineEfficiency
 from confusion import ConfusionMatrix
@@ -144,6 +144,21 @@ class Analysis:
                                 x.get('title', None), x.get('xrange', None), x.get('xtitle', None),
                                 x.get('yrange', None), x.get('ytitle', None))
                             self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
+                            self._artists.append(art)
+
+                        elif x['type'] == 'SpineSpectraNMinus1':
+                            if not all(self._variables[x['variable']]._validity_check.values()):
+                                missing_samples = [k for k, v in self._variables[x['variable']]._validity_check.items() if not v]
+                                raise ConfigException(f"Variable '{x['variable']}' not found in all samples ({' '.join(missing_samples)}).")
+                            art = SpineSpectraNMinus1(
+                                self._variables[x['variable']], restrict_categories,
+                                self._colors, self._category_types,
+                                x['cuts'], x['excluded_cut'],
+                                x.get('title', None), x.get('xrange', None), x.get('xtitle', None),
+                                x.get('yrange', None), x.get('ytitle', None))
+                            draw_kwargs = x.get('draw_kwargs', {})
+                            draw_kwargs['draw_error'] = draw_kwargs.get('draw_error', None)
+                            self._figures[fig['name']].register_spine_artist(art, draw_kwargs=draw_kwargs)
                             self._artists.append(art)
 
                         elif x['type'] == 'SpineSpectra2D':

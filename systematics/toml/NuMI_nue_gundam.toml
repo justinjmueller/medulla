@@ -35,6 +35,17 @@ is_nu = true
 is_data = false
 
 [[tree]]
+origin = 'events/NuMIFull/all_signal_nonmatched'
+destination = 'events/NuMIFull/'
+name = 'all_signal_nonmatched'
+action = 'add_weights'
+table_types = ['multisim', 'multisigma', 'variation', 'NuMIfluxsim']
+gundam_store_syst = false
+is_nu = true
+is_data = false
+nan_category_replacement = 5.0
+
+[[tree]]
 origin = 'events/NuMIFull/selected'
 destination = 'events/NuMIFull/'
 name = 'selected'
@@ -46,6 +57,17 @@ is_nu = true
 is_data = false
 
 [[tree]]
+origin = 'events/NuMIFull/selected_nonmatched'
+destination = 'events/NuMIFull/'
+name = 'selected_nonmatched'
+action = 'add_weights'
+table_types = ['multisim', 'multisigma', 'variation', 'NuMIfluxsim']
+gundam_store_syst = false
+is_nu = true
+is_data = false
+nan_category_replacement = 5.0
+
+[[tree]]
 origin = 'events/data/selected'
 destination = 'events/data/'
 name = 'selected'
@@ -53,6 +75,7 @@ action = 'copy'
 gundam_store_syst = false
 is_nu = false
 is_data = true
+nan_category_replacement = -1
 
 [[tree]]
 origin = 'events/dataBeamOff/selected'
@@ -62,6 +85,7 @@ action = 'copy'
 gundam_store_syst = false
 is_nu = false
 is_data = true
+nan_category_replacement = 5.0
 
 [[sys]]
 name = 'induction_high'
@@ -548,28 +572,28 @@ nsigma = [-1,1,-2,2,-3,3]
 name = "ZExpPCAWeighter_SBNNuSyst_ZExpPCA_multisigma_b1"
 name_short = 'ZExpPCAB1CCQE'
 type = "multisigma"
-nsigma = [-1,1,-2,2,-3,3]
+nsigma = [-3,-2,-1,0,1,2,3]
 index = 130
 
 [[sys]]
 name = "ZExpPCAWeighter_SBNNuSyst_ZExpPCA_multisigma_b2"
 name_short = 'ZExpPCAB2CCQE'
 type = "multisigma"
-nsigma = [-1,1,-2,2,-3,3]
+nsigma = [-3,-2,-1,0,1,2,3]
 index = 131
 
 [[sys]]
 name = "ZExpPCAWeighter_SBNNuSyst_ZExpPCA_multisigma_b3"
 name_short = 'ZExpPCAB3CCQE'
 type = "multisigma"
-nsigma = [-1,1,-2,2,-3,3]
+nsigma = [-3,-2,-1,0,1,2,3]
 index = 132
 
 [[sys]]
 name = "ZExpPCAWeighter_SBNNuSyst_ZExpPCA_multisigma_b4"
 name_short = 'ZExpPCAB4CCQE'
 type = "multisigma"
-nsigma = [-1,1,-2,2,-3,3]
+nsigma = [-3,-2,-1,0,1,2,3]
 index = 133
 
 [[sys]]

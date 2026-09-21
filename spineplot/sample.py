@@ -39,7 +39,8 @@ class Sample:
     def __init__(self, name, rf, category_branch, key, exposure_type, trees,
                  fillna=None, systematics=None, override_exposure=None, precompute=None,
                  presel=None, override_category=None, print_sys=False, branches=None, area_scale=None,
-                 scale_systematics_with_exposure=None, weight_branch=None) -> None:
+                 scale_systematics_with_exposure=None, weight_branch=None,
+                 override_pot=None, override_livetime=None) -> None:
         """
         Initializes the Sample object with the given name and key.
 
@@ -109,6 +110,10 @@ class Sample:
 
         if override_exposure is not None:
             self.override_exposure(override_exposure, exposure_type)
+        if override_pot is not None:
+            self._exposure_pot = override_pot
+        if override_livetime is not None:
+            self._exposure_livetime = override_livetime
 
         if branches is None:
             self._data = pd.concat([self._file_handle[tree].arrays(library='pd') for tree in trees], ignore_index=True)

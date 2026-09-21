@@ -157,7 +157,7 @@ class SpineEfficiency(SpineArtist):
         # groups are unique AND in the correct order.
         groups = list()
         for category in self._categories.values():
-            if category not in groups:
+            if category not in groups and category in self._posteriors:
                 groups.append(category)
 
         if show_option == 'table':
