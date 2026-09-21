@@ -35,10 +35,12 @@ branches = ["reco_fiducial_cut",
             "true_interaction_mode",
             "true_ele_beam_open_angle",
             "true_leading_electron_energy",
+            "ppfx_cv_weight"
             ]
 
 precompute = {"reco_category" = "np.where((true_category == 0), reco_reco_interaction_type, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(true_ele_beam_open_angle != 10, np.cos(true_ele_beam_open_angle), -10)"}
 # precompute = {"reco_category" = "np.where(true_category == 0, true_interaction_mode, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)"}
+weight_branch = 'ppfx_cv_weight'
 
 [samples.NuMIFullNonSel]
 key = "NuMIFull"
@@ -66,10 +68,12 @@ branches = ["reco_fiducial_cut",
             "reco_flash_time",
             "true_leading_electron_energy",
             "true_ele_beam_open_angle",
-            "true_interaction_mode"
+            "true_interaction_mode",
+            "ppfx_cv_weight"
             ]
 # precompute = {"reco_category" = "np.where((true_category == 0), reco_reco_interaction_type, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(true_ele_beam_open_angle != 10, np.cos(true_ele_beam_open_angle), -10)"}
 precompute = {"reco_category" = "np.where(true_category == 0, true_interaction_mode, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)"}
+weight_branch = 'ppfx_cv_weight'
 
 
 # Output directory for plots

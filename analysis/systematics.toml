@@ -14,6 +14,7 @@ print_sys = true
 # Comment this to avoid systematics when plotting (usually done for testing plots)
 systematics = ['selected_multisigmaTree', 'selected_NuMIfluxsimTree', 'selected_variationTree']
 precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "reco_category" = "np.where(true_cc == 1, true_interaction_mode, -1)"}
+weight_branch = 'ppfx_cv_weight'
 
 # DATA SAMPLE
 # [samples.onbeam]
@@ -158,7 +159,7 @@ systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-            # systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
 systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
@@ -192,6 +193,7 @@ systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
+# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
 # systematics = ['flux', 'xsec_total', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
@@ -260,6 +262,7 @@ systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
+# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
 # systematics = ['flux', 'xsec_total', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
@@ -329,6 +332,7 @@ systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
+# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
 # systematics = ['flux', 'xsec_total', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
@@ -398,6 +402,7 @@ systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
+# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
 # systematics = ['flux', 'xsec_total', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
