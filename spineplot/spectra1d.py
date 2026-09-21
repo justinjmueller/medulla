@@ -957,6 +957,69 @@ class SpineSystematics(SpineSpectra):
     ``'absolute'``
         y-axis shows ``sigma_i`` directly.
 
+    Splitting by true_category (signal vs. background)
+    ----------------------------------------------------
+    Like the other ``SimpleFigure`` artists, ``SpineSystematics``
+    respects the artist-level ``groups`` key (handled in
+    ``Analysis.__init__``, which builds ``restrict_categories`` from
+    it and passes it in as ``categories``). Setting ``groups``
+    restricts *both* the central-value histogram and the systematic
+    covariance matrices to events whose ``true_category`` falls in
+    the given category label(s) -- the covariance is recomputed from
+    the underlying universe weights for exactly that event subset
+    (see ``Systematic.category_covariance``), not merely rescaled.
+    This means two separate artists, one per figure or overlaid on
+    different figures, can show the effect of the same systematics on
+    the signal categories and on the background categories
+    separately::
+
+        [[figure.artists]]
+        type        = "SpineSystematics"
+        variable    = "reco_leading_electron_energy"
+        groups      = ["$\\nu_{e}$ Signal"]          # signal-only band
+        systematics = ["xsec_ccqe", "xsec_mec"]
+
+        [[figure.artists]]
+        type        = "SpineSystematics"
+        variable    = "reco_leading_electron_energy"
+        groups      = ["$\\nu_{e}$ OOFV", "$\\nu_{\\mu}$", "$\\nu$ OOFV", "$\\nu$ NC", "Cosmic"]
+        systematics = ["xsec_ccqe", "xsec_mec"]
+
+    Omitting ``groups`` (the default) reproduces the previous
+    behavior of summing over every labeled category.
+
+    Normalizing by a different group's yield
+    -----------------------------------------
+    In ``mode='fractional'``, sigma is normally divided by *this
+    artist's own* central-value histogram -- i.e. a ``groups``-restricted
+    artist's fractional band answers "sigma as a fraction of that
+    group's own yield". That is not the same question as "how much does
+    this systematic's effect on group A matter relative to group B" --
+    e.g. a background-restricted artist's 20% fractional band and a
+    signal-restricted artist's 5% fractional band are *not* directly
+    comparable, since they divide by two different N's (N_background vs.
+    N_signal), and a small background can carry a large fractional
+    uncertainty on a small absolute effect.
+
+    Setting ``normalize_to`` on an artist (same accepted forms as
+    ``groups``: label string or integer index) divides that artist's
+    sigma by a *different* group's central-value histogram instead of
+    its own, putting two artists' fractional bands on a common footing.
+    For example, to see the background systematic's impact expressed as
+    a fraction of the signal yield you're actually measuring::
+
+        [[figure.artists]]
+        type          = "SpineSystematics"
+        variable      = "reco_leading_electron_energy"
+        groups        = [1, 2, 3, 4, 5]   # background categories
+        normalize_to  = [0]               # ...but divide by signal's N
+        systematics   = ["xsec_ccqe", "xsec_mec"]
+
+    Omitting ``normalize_to`` (the default) reproduces the previous
+    behavior of normalizing by the artist's own ``groups``. In
+    ``mode='absolute'`` this has no effect, since that mode plots sigma
+    directly without dividing by any central value.
+
     TOML usage example::
 
         [[figure]]
@@ -968,6 +1031,13 @@ class SpineSystematics(SpineSpectra):
         variable    = "reco_leading_electron_energy"
         # Optional list of recipe names to include (defaults to all recipes).
         # systematics = ["xsec_ccqe", "xsec_mec"]
+        # Optional: restrict to specific true_category label(s), see above.
+        # groups = ["$\\nu_{e}$ Signal"]
+        # Optional: normalize by a different group's yield, see above.
+        # normalize_to = [0]
+        # Optional: number of universes used to (re)build the covariance
+        # matrices; defaults to 1000.
+        # nuniv = 1000
         [figure.artists.draw_kwargs]
         mode        = "fractional"   # or "absolute"
         show_total  = true           # overlay quadrature sum of shown recipes
@@ -981,24 +1051,44 @@ class SpineSystematics(SpineSpectra):
     _recipe_names : list[str] or None
         Names of recipes to include.  If None all available recipes are used.
     _covdata : dict
-        {recipe_name: np.ndarray covariance matrix} collected from the ordinate sample.
+        {recipe_name: np.ndarray covariance matrix} collected from the ordinate sample,
+        restricted to this artist's category set (see ``groups`` above).
     _cv : np.ndarray or None
-        Central-value histogram (all categories summed).
+        Central-value histogram, summed over this artist's category set.
     _binedges : np.ndarray or None
         Bin edges for the variable.
     _recipe_labels : dict
         {recipe_name: human-readable label} for legend entries.
+    _nuniv : int
+        Number of universes used when (re)computing category-restricted
+        covariance matrices in ``add_sample``.
+    _normalize_categories : dict or None
+        If set, the `{raw_category: label}` group whose central-value
+        histogram is used as the denominator in ``mode='fractional'``,
+        instead of this artist's own ``_categories``. See ``Normalizing
+        by a different group's yield`` above.
+    _normalize_cv : np.ndarray or None
+        Central-value histogram used as the fractional-mode denominator
+        (equal to ``_cv`` unless ``_normalize_categories`` is set).
     """
 
     def __init__(self, variable, categories, colors, category_types,
                  recipe_names=None,
                  all_recipe_names=None,
                  title=None, xrange=None, xtitle=None,
-                 yrange=None, ytitle=None) -> None:
+                 yrange=None, ytitle=None, nuniv=1000,
+                 normalize_categories=None) -> None:
         super().__init__([variable], categories, colors, title,
                          xrange, xtitle, yrange, ytitle)
         self._variable       = self._variables[0]
         self._category_types = category_types
+        # Number of universes used when (re)computing category-restricted
+        # covariance matrices on the fly in `add_sample`.
+        self._nuniv           = nuniv
+        # Optional alternate group to normalize sigma by in fractional
+        # mode (see class docstring). None means "use this artist's own
+        # `_categories`", i.e. the original behavior.
+        self._normalize_categories = normalize_categories
         # _allowed_names: the set of sysnames to draw.
         # Priority: explicit 'systematics' list > all recipe names > everything.
         if recipe_names is not None:
@@ -1011,6 +1101,7 @@ class SpineSystematics(SpineSpectra):
         self._covdata        = {}             # {recipe_name: cov_matrix}
         self._recipe_labels  = {}             # {recipe_name: label}
         self._cv             = None
+        self._normalize_cv   = None
         self._binedges       = None
 
     # ------------------------------------------------------------------
@@ -1028,31 +1119,67 @@ class SpineSystematics(SpineSpectra):
                 else self._variable._custom_bins)
         xr   = self._variable._range if self._xrange is None else self._xrange
 
-        # Build central-value histogram (all categories summed)
+        # Build central-value histogram(s). `_build_cv` is reused below to
+        # optionally build a *second* CV histogram over a different group
+        # of categories (see `_normalize_categories`), from the same
+        # already-fetched `data`/`weights` -- no extra call to
+        # `sample.get_data` needed.
         data, weights = sample.get_data([vkey], with_mask=self._variable.mask)
-        cv        = np.zeros(self._variable._nbins)
-        bin_edges = None
-        for category, values in data.items():
-            if category not in self._categories:
-                continue
-            vals = values[0]
-            w    = weights[category]
-            h, edges = np.histogram(vals, bins=bins, range=xr, weights=w)
-            cv += h
-            if bin_edges is None:
-                bin_edges = edges
+
+        def _build_cv(categories):
+            h_total   = np.zeros(self._variable._nbins)
+            edges_out = None
+            for category, values in data.items():
+                if category not in categories:
+                    continue
+                vals = values[0]
+                w    = weights[category]
+                h, edges = np.histogram(vals, bins=bins, range=xr, weights=w)
+                h_total += h
+                if edges_out is None:
+                    edges_out = edges
+            return h_total, edges_out
+
+        cv, bin_edges = _build_cv(self._categories)
         self._cv       = cv
         self._binedges = bin_edges
 
-        # Collect covariance matrices from the sample's processed systematics
+        # Fractional-mode denominator: this artist's own CV unless
+        # `normalize_to` asked for a different group's yield instead.
+        if self._normalize_categories is None:
+            self._normalize_cv = self._cv
+        else:
+            normalize_cv, _ = _build_cv(self._normalize_categories)
+            self._normalize_cv = normalize_cv
+
+        # Boolean mask selecting exactly the events whose true_category
+        # falls in this artist's category set (i.e. respecting any
+        # `groups` restriction from the TOML config, same as the CV
+        # histogram above). This is what allows separate SpineSystematics
+        # artists -- e.g. one restricted to `groups = ["signal label"]`
+        # and another to the background labels -- to show the effect of
+        # each systematic on that category subset alone, rather than on
+        # the sample as a whole.
+        category_mask = sample._data[sample._category_branch].isin(
+            list(self._categories.keys())
+        ).to_numpy(dtype=bool)
+
+        # Collect covariance matrices from the sample's processed systematics,
+        # recomputed on the fly and restricted to `category_mask`.
         for sysname, syst in sample._systematics.items():
             # Filter: only include names in the allowed set (recipes or explicit list)
             if self._allowed_names is not None and sysname not in self._allowed_names:
                 continue
-            cov_key = f'{sysname}_{vkey}'
-            if cov_key not in syst._covariances:
+            try:
+                cov = syst.category_covariance(
+                    sample, self._variable, category_mask, nuniv=self._nuniv
+                )
+            except ValueError:
+                # This systematic was never registered for this variable
+                # (e.g. a combined recipe missing one of its components'
+                # variable registrations). Skip it rather than failing
+                # the whole figure.
                 continue
-            cov = syst._covariances[cov_key].copy()
             if sysname in self._covdata:
                 self._covdata[sysname] += cov
             else:
@@ -1117,7 +1244,11 @@ class SpineSystematics(SpineSpectra):
 
         bin_edges = self._binedges
         cv        = self._cv
-        safe_cv   = np.where(cv > 0, cv, np.nan)   # avoid division by zero
+        # Fractional-mode denominator: this artist's own CV, unless
+        # `normalize_to` requested a different group's yield (see class
+        # docstring, "Normalizing by a different group's yield").
+        normalize_cv = self._normalize_cv if self._normalize_cv is not None else cv
+        safe_cv   = np.where(normalize_cv > 0, normalize_cv, np.nan)   # avoid division by zero
 
         prop_cycle = plt.rcParams['axes.prop_cycle']
         colors     = [c['color'] for c in prop_cycle]

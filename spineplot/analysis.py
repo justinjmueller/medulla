@@ -108,14 +108,13 @@ class Analysis:
 
                         # Check if the artist is restricted to certain
                         # groups. This allows for some additional
-                        # amount of control over the plotting.
-                        restrict_categories = {}
-                        group_setting = x.get('groups', [])
-                        if group_setting:
-                            for g in group_setting:
-                                restrict_categories.update({k : v for k,v in self._categories.items() if v == g})
-                        else:
-                            restrict_categories = self._categories.copy()
+                        # amount of control over the plotting. See
+                        # `_resolve_category_groups` for the accepted
+                        # forms of a `groups` entry (label string or
+                        # integer index) and its failure behavior.
+                        restrict_categories = self._resolve_category_groups(
+                            x.get('groups', []), x.get('type'), fig['name'], key='groups'
+                        )
                     
                         if x['type'] == 'SpineSpectra1D':
                             # Check if the variable is present in all samples
@@ -251,6 +250,25 @@ class Analysis:
                             # Subset requested in the artist block, or all recipes if unset
                             recipe_names = x.get('systematics', None)
 
+                            # Optional: in fractional mode, normalize this
+                            # artist's sigma by a *different* group's
+                            # central-value histogram than its own (e.g. a
+                            # background-restricted artist normalized by
+                            # the signal yield, so its fractional band
+                            # reads as "sigma as a fraction of the signal
+                            # you're measuring" rather than "sigma as a
+                            # fraction of the background itself"). Accepts
+                            # the same label-string/integer-index forms as
+                            # `groups`. Omit to keep the default behavior
+                            # of normalizing by the artist's own `groups`.
+                            normalize_setting = x.get('normalize_to', None)
+                            if normalize_setting:
+                                normalize_categories = self._resolve_category_groups(
+                                    normalize_setting, x.get('type'), fig['name'], key='normalize_to'
+                                )
+                            else:
+                                normalize_categories = None
+
                             art = SpineSystematics(
                                 self._variables[x['variable']], restrict_categories,
                                 self._colors, self._category_types,
@@ -261,10 +279,86 @@ class Analysis:
                                 xtitle=x.get('xtitle', None),
                                 yrange=x.get('yrange', None),
                                 ytitle=x.get('ytitle', None),
+                                nuniv=x.get('nuniv', 1000),
+                                normalize_categories=normalize_categories,
                             )
                             self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
                             self._artists.append(art)
 
+    def _resolve_category_groups(self, group_setting, artist_type, fig_name, key='groups') -> dict:
+        """
+        Resolve a list of group entries (as given in a TOML artist block,
+        e.g. via `groups` or `normalize_to`) into a `{raw_category: label}`
+        dict, i.e. the same shape as `self._categories` but restricted to
+        the requested categories.
+
+        Each entry in `group_setting` may be given as either:
+          - the category label string, which must match an entry in
+            `category_labels` exactly. This is fragile for LaTeX-heavy
+            labels (e.g. '$\\nu_{e}$ Signal'), since TOML string escaping
+            can silently produce a string that doesn't match, or a typo
+            can too -- and previously that failed silently (an empty
+            dict, i.e. a blank plot or a nonsensical normalization).
+          - an integer, interpreted as the 0-based index into
+            `category_assignment`/`category_labels` (i.e. its position in
+            those lists). This sidesteps label spelling/escaping entirely.
+
+        An empty/falsy `group_setting` resolves to every category (a copy
+        of `self._categories`). Any entry that fails to match a category
+        raises `ConfigException` immediately instead of silently producing
+        an empty/blank result.
+
+        Parameters
+        ----------
+        group_setting : list
+            The raw `groups`/`normalize_to` value from the TOML artist
+            block.
+        artist_type : str
+            The artist's `type`, used only for error messages.
+        fig_name : str
+            The enclosing figure's `name`, used only for error messages.
+        key : str
+            The TOML key this value came from (`'groups'` or
+            `'normalize_to'`), used only for error messages.
+
+        Returns
+        -------
+        dict
+            `{raw_category: label}`, restricted to the requested groups.
+        """
+        if not group_setting:
+            return self._categories.copy()
+
+        restrict_categories = {}
+        category_labels = self._config['analysis']['category_labels']
+        for g in group_setting:
+            if isinstance(g, bool):
+                raise ConfigException(
+                    f"Invalid '{key}' entry {g!r} for a '{artist_type}' artist "
+                    f"in figure '{fig_name}'. Expected a category label string "
+                    f"(matching 'category_labels') or an integer index into it."
+                )
+            elif isinstance(g, int):
+                if not (0 <= g < len(category_labels)):
+                    raise ConfigException(
+                        f"'{key}' index {g} is out of range for a '{artist_type}' "
+                        f"artist in figure '{fig_name}'; 'category_labels' has "
+                        f"{len(category_labels)} entries (valid indices: "
+                        f"0-{len(category_labels) - 1})."
+                    )
+                label = category_labels[g]
+            else:
+                label = g
+            matched = {k: v for k, v in self._categories.items() if v == label}
+            if not matched:
+                raise ConfigException(
+                    f"'{key}' entry {g!r} for a '{artist_type}' artist in figure "
+                    f"'{fig_name}' did not match any entry in category_labels "
+                    f"{category_labels}. Check spelling/escaping, or use the integer "
+                    f"index into category_labels instead."
+                )
+            restrict_categories.update(matched)
+        return restrict_categories
 
     def override_exposure(self, sample_name, exposure, exposure_type='pot') -> None:
         """

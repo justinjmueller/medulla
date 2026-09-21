@@ -433,6 +433,115 @@ class Systematic:
             return Cov, Num, Den
         return Cov
 
+    def category_covariance(self, sample, variable, category_mask, nuniv=1000) -> np.ndarray:
+        """
+        Compute the covariance matrix for this systematic uncertainty
+        restricted to a subset of events selected by `category_mask`
+        (e.g. only events belonging to the signal `true_category`
+        value(s), or only those belonging to a set of background
+        `true_category` values).
+
+        This differs from `process`, which builds a single covariance
+        matrix for the Sample as a whole (all `true_category` values
+        combined together into one histogram). Here, `category_mask`
+        is applied as an additional selection on top of the Sample's
+        pre-selection mask, and the histogram (and therefore the
+        covariance) is built using only the selected events. Because
+        each category subset is binned independently per universe,
+        this yields a well-defined, standalone uncertainty for that
+        subset of the spectrum -- which is what makes it possible to
+        show the effect of a systematic on the signal and background
+        categories as separate plot elements.
+
+        For a combined (recipe) systematic -- i.e. one produced by
+        `Systematic.combine` and therefore lacking its own `_handle`
+        -- this recurses into `_components` and sums the resulting
+        covariance matrices, mirroring `efficiency_covariance`. This
+        correctly handles multi-level recipes (e.g. a "xsec_total"
+        recipe built from "xsec_ccqe", "xsec_mec", ... recipes, each
+        of which is itself built from several raw branches).
+
+        Parameters
+        ----------
+        sample : Sample
+            The parent Sample object containing the dataset.
+        variable : Variable
+            The Variable object to bin the covariance for. Must
+            already be registered with this Systematic via
+            `register_variable`.
+        category_mask : array-like of bool
+            Boolean mask, aligned with `sample._data` rows, selecting
+            the events belonging to the category (or group of
+            categories) of interest.
+        nuniv : int, optional
+            The number of universes to generate for multisigma
+            inputs. The default is 1000.
+
+        Returns
+        -------
+        numpy.ndarray
+            The covariance matrix for the given variable, restricted
+            to the selected categories.
+        """
+        category_mask = np.asarray(category_mask, dtype=bool)
+        presel_mask = np.asarray(
+            getattr(sample, '_presel_mask', np.ones(len(sample._data), dtype=bool)),
+            dtype=bool,
+        )
+        if len(category_mask) != len(presel_mask):
+            raise ValueError(
+                f"category_mask (length {len(category_mask)}) does not align with "
+                f"sample._data (length {len(presel_mask)}) for Systematic '{self._name}'."
+            )
+        mask = presel_mask & category_mask
+
+        # Combined (recipe) systematics have no branch handle of their own;
+        # recurse into the components and sum, since these are assumed to
+        # be independent sources of uncertainty.
+        if self._handle is None and getattr(self, '_components', None):
+            cov_total = None
+            for comp in self._components:
+                cov_i = comp.category_covariance(sample, variable, category_mask, nuniv=nuniv)
+                cov_total = cov_i if cov_total is None else (cov_total + cov_i)
+            if cov_total is None:
+                raise ValueError(
+                    f"Combined systematic '{self._name}' has no components; cannot "
+                    f"compute category covariance."
+                )
+            return cov_total
+
+        name = variable._key
+        if name not in self._variables:
+            raise ValueError(
+                f"Variable '{name}' has not been registered with Systematic "
+                f"'{self._name}'; call register_variable first."
+            )
+        bin_edges = list(self._variables[name]._bin_edges.values())[0]
+        nbins = len(bin_edges) - 1
+
+        data = sample._data[name].to_numpy()[mask]
+        bin_indices = np.digitize(data, bin_edges) - 1
+        valid_indices = (bin_indices >= 0) & (bin_indices < nbins)
+        bin_indices = bin_indices[valid_indices]
+
+        # Purely statistical uncertainty: no handle and no components.
+        if self._handle is None:
+            histogram = np.zeros(nbins)
+            np.add.at(histogram, bin_indices, 1)
+            return np.diag(histogram)
+
+        universe_weights = self.get_universe_weights(sample=sample, mask=mask, nuniv=nuniv)
+        filtered_weights = universe_weights[valid_indices, :]
+
+        histogram = np.zeros((nbins, universe_weights.shape[1]))
+        np.add.at(histogram, bin_indices, filtered_weights)
+
+        cv_histogram = np.zeros(nbins)
+        np.add.at(cv_histogram, bin_indices, 1)
+
+        diff = histogram - cv_histogram[:, np.newaxis]
+        return (diff @ diff.T) / universe_weights.shape[1]
+
     def get_covariance(self, variable) -> np.ndarray:
         """
         Retrieve the covariance matrix for the given variable.
