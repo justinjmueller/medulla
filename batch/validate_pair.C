@@ -119,7 +119,8 @@ void validate_pair(const char * nosyst_path,
                    const char * sample,
                    const char * manifest_path,
                    const char * report_path,
-                   double nonmatched_warn_frac = 0.01)
+                   double nonmatched_warn_frac = 0.01,
+                   int nonmatched_warn_min = 3)
 {
     std::ofstream rep(report_path);
     rep << "SAMPLE=" << sample << "\n";
@@ -328,7 +329,18 @@ void validate_pair(const char * nosyst_path,
             // Soft signal only: a partial match is often a real physics
             // effect rather than a broken job, so it is reported for later
             // triage but does not block the transfer.
-            if(n_in > 0 && n_non_eff > nonmatched_warn_frac * n_in)
+            //
+            // Both a fraction and a minimum count must be exceeded. A tree
+            // holds ~35 candidates, so a single cosmic is already 3% and a
+            // fraction alone fired on a quarter of all jobs -- noise that
+            // buries the cases worth looking at. Cosmics and truth-matching
+            // failures legitimately land in "_nonmatched" (that is what it is
+            // for), and after the -Ofast fix they land there in numbers, so the
+            // warning must key on an excess rather than on presence. The exact
+            // counts are in the TREE_ lines regardless, so nothing is lost by
+            // warning less.
+            if(n_in > 0 && n_non_eff >= nonmatched_warn_min
+               && n_non_eff > nonmatched_warn_frac * n_in)
             {
                 rep << "WARN=match_partial:" << e.name
                     << ":" << n_non_eff << "/" << n_in << "\n";

@@ -151,6 +151,55 @@ def test_large_nonmatched_fraction_warns_but_passes(tmp_path):
     assert _status(report) == "match_partial"
 
 
+def test_single_nonmatched_in_a_small_tree_does_not_warn(tmp_path):
+    """The real tree holds ~35 candidates, so one cosmic is already 3%. A
+    fraction-only threshold fired on a quarter of all jobs; cosmics belong in
+    _nonmatched, so their presence alone is not a warning."""
+    _write_nosyst(tmp_path / "nosyst.root", n_events=33)
+    _write_syst(tmp_path / "syst.root", n_sel=32, n_non=1, n_table=32)
+    _write_manifest(tmp_path / "manifest.txt")
+
+    rc, report = _run(tmp_path)
+    assert rc == RC_OK, report
+    assert "WARN=match_partial" not in report
+    assert _status(report) == "ok"
+
+
+def test_nonmatched_below_the_minimum_count_does_not_warn(tmp_path):
+    """Two of 33 is 6% -- over the fraction, under the minimum count."""
+    _write_nosyst(tmp_path / "nosyst.root", n_events=33)
+    _write_syst(tmp_path / "syst.root", n_sel=31, n_non=2, n_table=31)
+    _write_manifest(tmp_path / "manifest.txt")
+
+    rc, report = _run(tmp_path)
+    assert rc == RC_OK, report
+    assert "WARN=match_partial" not in report
+
+
+def test_nonmatched_at_the_minimum_count_warns(tmp_path):
+    """Three of 33 clears both the count and the fraction."""
+    _write_nosyst(tmp_path / "nosyst.root", n_events=33)
+    _write_syst(tmp_path / "syst.root", n_sel=30, n_non=3, n_table=30)
+    _write_manifest(tmp_path / "manifest.txt")
+
+    rc, report = _run(tmp_path)
+    assert rc == RC_OK, report
+    assert "WARN=match_partial:selectedNu:3/33" in report
+    assert _status(report) == "match_partial"
+
+
+def test_small_fraction_in_a_large_tree_does_not_warn(tmp_path):
+    """Four non-matched clears the count, but 0.4% of 1000 is well under the
+    fraction: the fraction still governs once counts are large."""
+    _write_nosyst(tmp_path / "nosyst.root", n_events=1000)
+    _write_syst(tmp_path / "syst.root", n_sel=996, n_non=4, n_table=996)
+    _write_manifest(tmp_path / "manifest.txt")
+
+    rc, report = _run(tmp_path)
+    assert rc == RC_OK, report
+    assert "WARN=match_partial" not in report
+
+
 def test_offbeam_sample_with_zero_pot_passes(tmp_path):
     """Offbeam/intime samples carry no POT and are bookkept by livetime;
     requiring POT > 0 would reject every one of them."""
