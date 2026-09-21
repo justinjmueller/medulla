@@ -14,3 +14,7 @@ build/
 */CMakeFiles/*
 *.cmake
 Makefile
+
+# Miscellaneous
+test_weight_reader
+MANIFEST.md
