@@ -13,7 +13,7 @@ from math import nan
 #file_nu = input("Enter path to medulla file")
 #file_flux = input("Enter path to NuMI flux file")
 file_name = sys.argv[1]
-treeName = 'selected'
+treeName = 'nc_sideband'
 if len(sys.argv) > 2:
     treeName = sys.argv[2]
 
