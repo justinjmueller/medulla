@@ -3,7 +3,7 @@
 #######################################################################
 # Usage: submit.sh [--project=PROJECT] [--tag=TAG] [--sample=SAMPLE]
 #                  [--force] [--stage-timeout=SECONDS] [--no-validate]
-#                  [--jobs-per-process=M] [--total-jobs=N]
+#                  [--jobs-per-process=M] [--total-jobs=N] [--shipped-db]
 #
 # Arguments:
 #   --project=PROJECT   : Specify the project directory
@@ -33,6 +33,9 @@
 #                          stops where the request stops instead of
 #                          claiming job IDs nobody asked for. Omit to
 #                          always claim a full M.
+#   --shipped-db         : Read the job database from submission.db.gz,
+#                          transferred with the job, instead of copying
+#                          $PROJECT/project.db. See "The job database".
 #
 # Output validation
 # -----------------
@@ -71,6 +74,10 @@
 #     SETUP_TIME       CVMFS/UPS environment setup
 #     CLONE_TIME       git clone + checkout of --tag
 #     COMPILE_TIME     cmake + make
+#   DB_SOURCE          where the job database came from: "shipped" (the
+#                      snapshot sent with the job) or "project" (project.db)
+#   DB_TIME, DB_BYTES  time to fetch it and its uncompressed size; per
+#                      process, like BUILD_TIME
 #   STAGE_TIME         input staging for this job ID, of which:
 #     STAGE_COPY_TIME  ifdh copies
 #     STAGE_CHECK_TIME ROOT integrity check of every input (one ROOT process)
@@ -101,13 +108,28 @@
 # A failed job ID does not stop the ones after it. The process exits
 # non-zero if any job ID failed, so the HTCondor exit code stays truthful,
 # but the records remain the per-job-ID signal.
+#
+# The job database
+# ----------------
+# A job needs only its own rows of project.db, but project.db holds the
+# full resolved configuration of every job in the project -- about 32 KB
+# each, 2.7 GB for a large project -- and every process used to copy all of
+# it from dCache before doing anything else. launch_jobsub therefore writes
+# a snapshot holding just the rows this submission can claim, compressed
+# (the configurations are near-identical, so it shrinks ~15x), and ships it
+# with the job. It holds exactly the rows the claim query below would reach,
+# in the same order, so claiming is unchanged. It also means every process
+# of one submission claims against the same snapshot, taken at launch: a
+# sync while processes are still starting no longer shifts their slices.
+# Without --shipped-db the script falls back to copying project.db, for
+# jobs submitted by hand.
 #######################################################################
 
 # Print usage information
 usage() {
   echo "Usage: submit.sh [--project=PROJECT] [--tag=TAG] [--sample=SAMPLE] [--force]"
   echo "                 [--stage-timeout=SECONDS] [--no-validate]"
-  echo "                 [--jobs-per-process=M] [--total-jobs=N]"
+  echo "                 [--jobs-per-process=M] [--total-jobs=N] [--shipped-db]"
   echo ""
   echo "Arguments:"
   echo "  --project=PROJECT   : Specify the project directory"
@@ -118,6 +140,7 @@ usage() {
   echo "  --no-validate        : Skip output validation (debugging only)"
   echo "  --jobs-per-process=M : Job IDs this grid process runs in turn (default 1)"
   echo "  --total-jobs=N       : Job IDs the whole submission covers (caps the last process)"
+  echo "  --shipped-db         : Use the job database shipped with the job (submission.db.gz)"
 }
 
 # Initialize variables
@@ -129,6 +152,7 @@ STAGE_TIMEOUT=7200
 VALIDATE=1
 JOBS_PER_PROCESS=1
 TOTAL_JOBS=""
+SHIPPED_DB=""
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -188,6 +212,10 @@ while [[ $# -gt 0 ]]; do
     --total-jobs)
       TOTAL_JOBS="$2"
       shift 2
+      ;;
+    --shipped-db)
+      SHIPPED_DB=1
+      shift
       ;;
     -h|--help)
       usage
@@ -451,11 +479,34 @@ DB="$BUILD_DIR/project.db"
 SYST_CFG="$BUILD_DIR/systematics.toml"
 MANIFEST_PATH="$BUILD_DIR/validation_manifest.txt"
 
-# Copy the project database
-if ! ifdh cp $PROJECT/project.db "$DB"; then
-    log_error "Failed to stage the project database from $PROJECT."
-    exit 1
+# The job database: the snapshot launch_jobsub shipped with the job, or
+# the whole of project.db for a job submitted by hand. See "The job
+# database" above. When a snapshot was promised but is missing, stop rather
+# than fall back: the fallback would quietly bring back the full copy, and
+# claim against a different set of rows than the launch counted.
+t0=$(now_s)
+if [[ -n "$SHIPPED_DB" ]]; then
+    SHIPPED_DB_PATH="${CONDOR_DIR_INPUT:-.}/submission.db.gz"
+    if [[ ! -f "$SHIPPED_DB_PATH" ]]; then
+        log_error "--shipped-db was given but $SHIPPED_DB_PATH is not present."
+        exit 1
+    fi
+    # gunzip verifies the CRC, so a truncated transfer fails here.
+    if ! gunzip -c "$SHIPPED_DB_PATH" > "$DB"; then
+        log_error "Failed to decompress the shipped job database $SHIPPED_DB_PATH."
+        exit 1
+    fi
+    DB_SOURCE=shipped
+else
+    if ! ifdh cp $PROJECT/project.db "$DB"; then
+        log_error "Failed to stage the project database from $PROJECT."
+        exit 1
+    fi
+    DB_SOURCE=project
 fi
+DB_TIME=$(( $(now_s) - t0 ))
+DB_BYTES=$(stat -c %s "$DB" 2>/dev/null || echo -1)
+log_info "Job database from ${DB_SOURCE} (${DB_BYTES} bytes) in ${DB_TIME}s."
 
 # Copy the systematics TOML file
 if ! ifdh cp $PROJECT/systematics.toml "$SYST_CFG"; then
@@ -486,13 +537,14 @@ fi
 # --total-jobs, the slice is cut off at the requested total, which keeps
 # the last process from claiming job IDs beyond what was asked for.
 #
-# The ranking is computed against this process's own snapshot of
-# project.db. A sync that marks jobs completed while a submission is still
-# starting shifts the ranks between snapshots, so two processes can claim
-# the same job ID or one can be skipped -- and a shifted rank misaligns a
-# whole slice at once. The claimed list goes into every record so that this
-# is at least detectable after the fact. Avoid syncing a project while its
-# jobs are starting.
+# With --shipped-db every process ranks against the same snapshot, taken at
+# launch, so the slices cannot shift. Without it, each process ranks against
+# its own copy of project.db, taken when it starts: a sync that marks jobs
+# completed while a submission is still starting shifts the ranks between
+# copies, so two processes can claim the same job ID or one can be skipped
+# -- and a shifted rank misaligns a whole slice at once. The claimed list
+# goes into every record so that this is at least detectable after the
+# fact.
 OFFSET=$(( ${PROCESS:-0} * JOBS_PER_PROCESS ))
 LIMIT=$JOBS_PER_PROCESS
 if [[ -n "$TOTAL_JOBS" ]]; then
@@ -572,6 +624,9 @@ run_jobid() (
     record "SETUP_TIME=${SETUP_TIME}"
     record "CLONE_TIME=${CLONE_TIME}"
     record "COMPILE_TIME=${COMPILE_TIME}"
+    record "DB_SOURCE=${DB_SOURCE}"
+    record "DB_TIME=${DB_TIME}"
+    record "DB_BYTES=${DB_BYTES}"
     [[ -n "$MANIFEST_MISSING" ]] && record "WARN=no_manifest_validation_skipped"
 
     # The sample this job processes. The validator needs it to address

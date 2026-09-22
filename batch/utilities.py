@@ -1191,6 +1191,98 @@ JOB_MACRO_PATHS = (
     Path(__file__).resolve().parent / 'check_inputs.C',
 )
 
+# File name of the job database shipped with each submission. submit.sh
+# --shipped-db looks for exactly this name in $CONDOR_DIR_INPUT.
+SUBMISSION_DB_NAME = 'submission.db.gz'
+
+def write_submission_db(
+    project_db,
+    dst,
+    count : int,
+    sample : Optional[str] = None,
+):
+    """
+    Write the job database one submission ships with its jobs: the rows of
+    project_db that the submission's processes can claim, gzip-compressed.
+
+    Every grid process used to copy the whole of project.db from dCache,
+    although it reads only the rows of the job IDs it claims. project.db
+    holds the full resolved configuration of every job (about 32 KB each),
+    so for a large project that is gigabytes per process, multiplied by
+    hundreds of processes. The configurations differ only in their file
+    lists, so the snapshot also compresses ~15x.
+
+    The rows kept are exactly those submit.sh's claim query can reach: the
+    first `count` job IDs whose status is not 'completed' (within `sample`,
+    if given), in job ID order. Process P claims ranks P*M .. P*M+M-1 of
+    that ordering, capped at --total-jobs=count, so the snapshot gives every
+    process the same job IDs the full database would have given it at
+    launch. Statuses are copied unchanged.
+
+    Parameters
+    ----------
+    project_db : str | Path
+        The project database to take the rows from (a local copy).
+    dst : str | Path
+        Where to write the compressed snapshot.
+    count : int
+        Number of job IDs the submission covers.
+    sample : str | None
+        Restrict to this sample, as a per-sample submission does.
+
+    Returns
+    -------
+    int
+        Number of job IDs written.
+    """
+    import gzip
+
+    dst = Path(dst)
+    raw = dst.with_name(dst.name + '.tmp')
+    raw.unlink(missing_ok=True)
+    conn = sqlite3.connect(raw)
+    try:
+        curs = conn.cursor()
+        curs.execute(SCHEMA_CONFIGURATION)
+        curs.execute(SCHEMA_JOBS)
+        curs.execute("ATTACH DATABASE ? AS src", (str(project_db),))
+        # A project created before the sample/catalog_experiment columns has
+        # fewer; copy what it has, and leave the rest NULL.
+        curs.execute("PRAGMA src.table_info(jobs)")
+        columns = [row[1] for row in curs.fetchall()]
+        cols = ', '.join(columns)
+
+        where, params = "status != 'completed'", []
+        if sample is not None:
+            where += " AND sample = ?"
+            params.append(sample)
+        curs.execute(
+            f"CREATE TEMP TABLE picked AS SELECT jobid FROM src.jobs "
+            f"WHERE {where} ORDER BY jobid LIMIT ?",
+            (*params, count),
+        )
+        curs.execute(
+            f"INSERT INTO main.jobs ({cols}) SELECT {cols} FROM src.jobs "
+            f"WHERE jobid IN (SELECT jobid FROM picked)"
+        )
+        curs.execute(
+            "INSERT INTO main.configuration (jobid, cfg) SELECT jobid, cfg "
+            "FROM src.configuration WHERE jobid IN (SELECT jobid FROM picked)"
+        )
+        curs.execute("SELECT COUNT(*) FROM main.jobs")
+        n_written = curs.fetchone()[0]
+        conn.commit()
+        curs.execute("DETACH DATABASE src")
+    finally:
+        conn.close()
+
+    try:
+        with open(raw, 'rb') as fsrc, gzip.open(dst, 'wb', compresslevel=6) as fdst:
+            shutil.copyfileobj(fsrc, fdst)
+    finally:
+        raw.unlink(missing_ok=True)
+    return n_written
+
 def launch_jobsub(
     project_dir : str,
     exp : str = 'sbnd',
@@ -1353,6 +1445,28 @@ def launch_jobsub(
 
         targets = [(None, njobs)]
 
+    # Each submission ships its own slice of the job database instead of
+    # having every process copy project.db; see write_submission_db. The
+    # files must exist until jobsub_submit has uploaded them, and are removed
+    # once every submission has been made.
+    ship_dir = Path(tempfile.mkdtemp(prefix='medulla_submission_', dir='.')).resolve()
+    try:
+        return _launch_targets(
+            project_dir, exp, targets, ship_dir, confirm, tag, memory, disk,
+            lifetime, verbose, force, jobs_per_process,
+        )
+    finally:
+        shutil.rmtree(ship_dir, ignore_errors=True)
+
+def _launch_targets(
+    project_dir, exp, targets, ship_dir, confirm, tag, memory, disk,
+    lifetime, verbose, force, jobs_per_process,
+):
+    """
+    Build, confirm and run the jobsub_submit call for each (sample, count)
+    target of launch_jobsub, shipping each its own job database written
+    under ship_dir. Returns True if at least one submission succeeded.
+    """
     # Determine the disk request.
     if disk is not None:
         disk_flag = f'--disk={disk}GB'
@@ -1365,7 +1479,25 @@ def launch_jobsub(
     # is a number of job IDs, while -N is a number of grid processes, each
     # of which takes up to jobs_per_process of them.
     submissions = []
-    for sample, count in targets:
+    for i, (sample, count) in enumerate(targets):
+        # jobsub places a dropbox file in $CONDOR_DIR_INPUT under its own
+        # name, which submit.sh expects to be SUBMISSION_DB_NAME, so each
+        # submission's copy gets a directory of its own.
+        shipped_db = ship_dir / str(i) / SUBMISSION_DB_NAME
+        shipped_db.parent.mkdir()
+        n_rows = write_submission_db('./project.db', shipped_db, count, sample)
+        if n_rows != count:
+            # Cannot happen unless project.db changed under us; the processes
+            # would then claim against a different set than was counted.
+            raise RuntimeError(
+                f"Job database snapshot holds {n_rows} job IDs, expected {count}"
+                f"{f' for sample {sample!r}' if sample is not None else ''}."
+            )
+        if confirm or verbose:
+            size_mb = shipped_db.stat().st_size / 1e6
+            print(f"{_INFO} -- Job database for this submission: {n_rows} job IDs, "
+                  f"{size_mb:.1f} MB compressed.")
+
         n_processes = -(-count // jobs_per_process)  # ceil(count / jobs_per_process)
         cmd = [
             'jobsub_submit',
@@ -1381,6 +1513,7 @@ def launch_jobsub(
             # Ship the job's ROOT macros; see JOB_MACRO_PATHS. The batch
             # directory is not grid-accessible, hence dropbox://.
             *[arg for macro in JOB_MACRO_PATHS for arg in ('-f', f'dropbox://{macro}')],
+            '-f', f'dropbox://{shipped_db}',
             f'file://{Path(__file__).resolve().parent / "submit.sh"}',
             '--',
             f'--project={project_dir.resolve()}',
@@ -1388,6 +1521,7 @@ def launch_jobsub(
             f'--jobs-per-process={jobs_per_process}',
             # Lets the last process stop at the requested count.
             f'--total-jobs={count}',
+            '--shipped-db',
         ]
         if sample is not None:
             cmd.append(f'--sample={sample}')

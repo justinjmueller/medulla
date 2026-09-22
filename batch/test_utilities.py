@@ -3,6 +3,8 @@ Tests for medulla/batch/utilities.py job creation and per-sample launch
 logic that isn't already covered by test_campaign.py's campaign-level
 tests.
 """
+import gzip
+import shutil
 import subprocess
 import sqlite3
 import textwrap
@@ -11,7 +13,9 @@ from unittest import mock
 
 import pytest
 
-from utilities import create_new_project, launch_jobsub
+from utilities import (
+    SUBMISSION_DB_NAME, create_new_project, launch_jobsub, write_submission_db,
+)
 
 
 def _write_selection_toml(path: Path):
@@ -139,14 +143,30 @@ class TestLaunchJobsubPerSample:
             launch_jobsub(uneven_project, njobs=5, njobs_per_sample=2, confirm=False)
 
 
-def _capture_jobsub(project_dir, **kwargs):
+def _dropbox_paths(cmd):
+    return [Path(cmd[i + 1][len("dropbox://"):])
+            for i, a in enumerate(cmd)
+            if a == "-f" and cmd[i + 1].startswith("dropbox://")]
+
+
+def _capture_jobsub(project_dir, shipped=None, **kwargs):
     """Run launch_jobsub with jobsub_submit intercepted, returning the
-    result and every jobsub_submit command it would have run."""
+    result and every jobsub_submit command it would have run.
+
+    Dropbox files only exist while jobsub_submit runs -- launch_jobsub
+    removes the job database snapshots afterwards -- so if `shipped` is a
+    directory, each call's shipped database is copied there as
+    <call index>.db.gz for inspection, and each call's dropbox paths are
+    checked to exist at the moment of submission."""
     real_run = subprocess.run
     calls = []
 
     def fake_run(cmd, **kw):
         if cmd[0] == "jobsub_submit":
+            for path in _dropbox_paths(cmd):
+                assert path.is_file(), f"{path} missing at submission time"
+                if shipped is not None and path.name == SUBMISSION_DB_NAME:
+                    shutil.copy(path, Path(shipped) / f"{len(calls)}.db.gz")
             calls.append(cmd)
             return subprocess.CompletedProcess(cmd, 0, stdout="job id 12345.0@fnal.gov\n", stderr="")
         return real_run(cmd, **kw)
@@ -235,12 +255,9 @@ class TestLaunchJobsubShipsMacros:
         ok, calls = _capture_jobsub(uneven_project, njobs=1)
         cmd = calls[0]
 
-        f_values = [cmd[i + 1] for i, a in enumerate(cmd) if a == "-f"]
-        shipped = {Path(v[len("dropbox://"):]).name
-                   for v in f_values if v.startswith("dropbox://")}
+        # _capture_jobsub checks each one existed at submission time.
+        shipped = {p.name for p in _dropbox_paths(cmd)}
         assert {"validate_pair.C", "check_inputs.C"} <= shipped
-        for v in f_values:
-            assert Path(v[len("dropbox://"):]).is_file()
 
         # jobsub_submit only honours options that precede the executable.
         exe = next(i for i, a in enumerate(cmd) if a.startswith("file://") and a.endswith("submit.sh"))
@@ -253,3 +270,143 @@ class TestLaunchJobsubShipsMacros:
         with mock.patch("utilities.JOB_MACRO_PATHS", (tmp_path / "missing.C",)):
             with pytest.raises(FileNotFoundError):
                 _capture_jobsub(uneven_project, njobs=1)
+
+
+def _unpack(gz_path, tmp_path, name):
+    """Decompress a shipped job database the way submit.sh does."""
+    out = tmp_path / name
+    with gzip.open(gz_path, "rb") as fsrc, open(out, "wb") as fdst:
+        shutil.copyfileobj(fsrc, fdst)
+    return out
+
+
+def _claims(db, n_processes, m, total, sample=None):
+    """Every process's job IDs under submit.sh's claim query: process P takes
+    ranks P*M .. P*M+M-1 of the non-completed job IDs, capped at total."""
+    conn = sqlite3.connect(db)
+    out = []
+    for p in range(n_processes):
+        offset = p * m
+        limit = min(m, total - offset)
+        where = "status != 'completed'"
+        params = []
+        if sample is not None:
+            where += " AND sample = ?"
+            params.append(sample)
+        rows = conn.execute(
+            f"SELECT jobid FROM jobs WHERE {where} ORDER BY jobid LIMIT ? OFFSET ?",
+            (*params, limit, offset),
+        ).fetchall()
+        out.append([r[0] for r in rows])
+    conn.close()
+    return out
+
+
+class TestShippedJobDatabase:
+    """Each submission ships only the rows of project.db its processes can
+    claim, instead of every process copying the whole database (2.7 GB for
+    a large project) from dCache. The snapshot must give every process
+    exactly the job IDs the full database would have."""
+
+    def _complete(self, project_dir, jobids):
+        conn = sqlite3.connect(project_dir / "project.db")
+        conn.executemany("UPDATE jobs SET status = 'completed' WHERE jobid = ?",
+                         [(j,) for j in jobids])
+        conn.commit()
+        conn.close()
+
+    def test_submission_ships_the_database_and_says_so(self, uneven_project, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        ok, calls = _capture_jobsub(uneven_project, njobs=3)
+
+        assert ok is True
+        cmd = calls[0]
+        assert SUBMISSION_DB_NAME in {p.name for p in _dropbox_paths(cmd)}
+        assert "--shipped-db" in cmd[cmd.index("--") + 1:]
+
+    def test_snapshot_is_removed_after_launch(self, uneven_project, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        ok, calls = _capture_jobsub(uneven_project, njobs=3)
+
+        shipped = next(p for p in _dropbox_paths(calls[0]) if p.name == SUBMISSION_DB_NAME)
+        assert not shipped.exists()
+        assert not list(tmp_path.glob("medulla_submission_*"))
+
+    def test_every_process_claims_what_the_full_database_gives_it(
+            self, uneven_project, tmp_path, monkeypatch):
+        """The property that matters: identical claims, process by process,
+        with completed job IDs interleaved so the ranks are not just the job
+        IDs themselves."""
+        monkeypatch.chdir(tmp_path)
+        self._complete(uneven_project, [0, 2])
+        shipped = tmp_path / "shipped"
+        shipped.mkdir()
+        ok, calls = _capture_jobsub(uneven_project, shipped=shipped, njobs=3, jobs_per_process=2)
+
+        db = _unpack(shipped / "0.db.gz", tmp_path, "snap.db")
+        n = _n_processes(calls[0])
+        full = _claims(uneven_project / "project.db", n, 2, 3)
+        assert _claims(db, n, 2, 3) == full
+        assert full == [[1, 3], [4]]
+
+    def test_snapshot_holds_only_claimable_rows_with_their_configs(
+            self, uneven_project, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        self._complete(uneven_project, [0])
+        shipped = tmp_path / "shipped"
+        shipped.mkdir()
+        _capture_jobsub(uneven_project, shipped=shipped, njobs=2)
+
+        db = _unpack(shipped / "0.db.gz", tmp_path, "snap.db")
+        snap = sqlite3.connect(db)
+        full = sqlite3.connect(uneven_project / "project.db")
+        jobs = snap.execute("SELECT jobid, status, sample FROM jobs ORDER BY jobid").fetchall()
+        assert jobs == full.execute(
+            "SELECT jobid, status, sample FROM jobs WHERE jobid IN (1, 2) ORDER BY jobid").fetchall()
+        # Each job's configuration is carried over byte for byte: it is what
+        # submit.sh writes out as the job's config.
+        for (jobid, _, _) in jobs:
+            q = "SELECT cfg FROM configuration WHERE jobid = ?"
+            assert snap.execute(q, (jobid,)).fetchone() == full.execute(q, (jobid,)).fetchone()
+        assert snap.execute("SELECT COUNT(*) FROM configuration").fetchone()[0] == 2
+
+    def test_per_sample_submissions_each_ship_their_own_sample(
+            self, uneven_project, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        shipped = tmp_path / "shipped"
+        shipped.mkdir()
+        ok, calls = _capture_jobsub(uneven_project, shipped=shipped, njobs_per_sample=5, jobs_per_process=2)
+
+        paths = [next(p for p in _dropbox_paths(c) if p.name == SUBMISSION_DB_NAME) for c in calls]
+        assert len(set(paths)) == len(calls)
+        for i, cmd in enumerate(calls):
+            sample = _script_arg(cmd, "sample")
+            total = int(_script_arg(cmd, "total-jobs"))
+            db = _unpack(shipped / f"{i}.db.gz", tmp_path, f"snap{i}.db")
+            samples = {r[0] for r in sqlite3.connect(db).execute("SELECT sample FROM jobs")}
+            assert samples == {sample}
+            n = _n_processes(cmd)
+            assert (_claims(db, n, 2, total, sample)
+                    == _claims(uneven_project / "project.db", n, 2, total, sample))
+
+    def test_legacy_jobs_table_without_sample_column(self, tmp_path):
+        """A project predating the sample column still snapshots; the
+        missing columns are left NULL."""
+        src = tmp_path / "legacy.db"
+        conn = sqlite3.connect(src)
+        conn.execute("CREATE TABLE configuration (jobid INTEGER PRIMARY KEY, cfg TEXT NOT NULL)")
+        conn.execute("CREATE TABLE jobs (jobid INTEGER PRIMARY KEY, status TEXT)")
+        conn.executemany("INSERT INTO configuration VALUES (?, ?)", [(i, f"cfg{i}") for i in range(4)])
+        conn.executemany("INSERT INTO jobs VALUES (?, ?)",
+                         [(0, "completed"), (1, "pending"), (2, "pending"), (3, "pending")])
+        conn.commit()
+        conn.close()
+
+        dst = tmp_path / SUBMISSION_DB_NAME
+        assert write_submission_db(src, dst, 2) == 2
+        db = _unpack(dst, tmp_path, "snap.db")
+        rows = sqlite3.connect(db).execute(
+            "SELECT j.jobid, j.status, j.sample, c.cfg FROM jobs j "
+            "JOIN configuration c USING (jobid) ORDER BY jobid").fetchall()
+        assert rows == [(1, "pending", None, "cfg1"), (2, "pending", None, "cfg2")]
+        assert not (tmp_path / (SUBMISSION_DB_NAME + ".tmp")).exists()
