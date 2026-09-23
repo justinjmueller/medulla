@@ -62,19 +62,19 @@ ordinate_sample = 'data'
 ## Define your categories below
 ########################################
 
-# category_branch = 'true_category'
-# category_assignment = [
-#     [0], # CC nue
-#     [1], 
-#     [2], 
-#     [3], 
-#     [4],
-#     [5],  # Cosmic
-#     [-1] #data
-# ]
-# category_labels = ['$\nu_{e}$ Signal', '$\nu_{e}$ OOFV', '$\nu_{\mu}$', '$\nu$ OOFV', '$\nu$ NC', 'Cosmic', 'Data']
-# #category_colors = ['#011959', '#103F60', '#1C5A62', '#3C6D56', '#687B3E', '#9D892B', '#D29343', '#F8A17B', '#FDB7BC', '#FACCFA'] #batlow
-# category_colors = ['#011959', '#1C5A62', '#687B3E', '#D29343', '#FDB7BC', '#ca80a0ff', '#000000ff']
+category_branch = 'true_category'
+category_assignment = [
+    [0], # CC nue
+    [1], 
+    [2], 
+    [3], 
+    [4],
+    [5],  # Cosmic
+    [-1] #data
+]
+category_labels = ['$\nu_{e}$ Signal', '$\nu_{e}$ OOFV', '$\nu_{\mu}$', '$\nu$ OOFV', '$\nu$ NC', 'Cosmic', 'Data']
+#category_colors = ['#011959', '#103F60', '#1C5A62', '#3C6D56', '#687B3E', '#9D892B', '#D29343', '#F8A17B', '#FDB7BC', '#FACCFA'] #batlow
+category_colors = ['#011959', '#1C5A62', '#687B3E', '#D29343', '#FDB7BC', '#ca80a0ff', '#000000ff']
 
 # category_branch = 'true_mode_category'
 # category_assignment = [
@@ -88,19 +88,19 @@ ordinate_sample = 'data'
 # # category_colors = ['#001261', '#033E7D', '#1E6F9D', '#71A8C4', '#C9DDE7', '#EACEBD', '#D39774', '#BE6533', '#8B2706', '#590008'] #vik
 # category_colors = ['#001261', '#1E6F9D', '#BE6533', '#8B2706', '#590008']
 
-category_branch = 'reco_category'
-category_assignment = [
-    [1], # QE-like
-    [2], # MEC-like
-    [3], # DIS-like
-    [4], # RES-like
-    [5, 0], #other
-    [-1], #bkgd
-    [-2] #data
-]
-category_labels = ['1e1p0$\pi$', '1e2p0$\pi$', '1e$\geq3$p$0\pi$', '1e1$\pi$', 'Other', 'Bkgd', 'Data']
-#category_colors = ['#2C194C', '#284578', '#49749F', '#83A1BE', '#CAD7E3', '#D2E1D2', '#8EB38D', '#4F894E', '#1C5B19', '#0F2903'] #cork
-category_colors = ['#2C194C','#49749F', '#83A1BE', '#8EB38D', '#4F894E', '#1C5B19', '#000000ff'] #cork
+# category_branch = 'reco_category'
+# category_assignment = [
+#     [1], # QE-like
+#     [2], # MEC-like
+#     [3], # DIS-like
+#     [4], # RES-like
+#     [5, 0], #other
+#     [-1], #bkgd
+#     [-2] #data
+# ]
+# category_labels = ['1e1p0$\pi$', '1e2p0$\pi$', '1e$\geq3$p$0\pi$', '1e1$\pi$', 'Other', 'Bkgd', 'Data']
+# #category_colors = ['#2C194C', '#284578', '#49749F', '#83A1BE', '#CAD7E3', '#D2E1D2', '#8EB38D', '#4F894E', '#1C5B19', '#0F2903'] #cork
+# category_colors = ['#2C194C','#49749F', '#83A1BE', '#8EB38D', '#4F894E', '#1C5B19', '#000000ff'] #cork
 
 category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'scatter']
 

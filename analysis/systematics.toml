@@ -1,8 +1,8 @@
 [[this_includes]]
-file = '/Users/micarrig/Desktop/medulla/spineplot/configurations/common/styles.toml'
+file = '/nashome/m/micarrig/icarus/nuESpine/medulla/spineplot/configurations/common/styles.toml'
 
 [[this_includes]]
-file = '/Users/micarrig/Desktop/medulla/analysis/systematic_recipes.toml'
+file = '/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/systematic_recipes.toml'
 
 # SIMULATION SAMPLE
 [samples]
@@ -57,8 +57,8 @@ binning_scheme = 'custom_bins'
 custom_bins = [0.0, 0.275, 0.42, 0.55, 0.68, 0.825, 1.0, 1.25, 1.7, 3.2]
 xlabel = "Reco Leading Electron Polar Angle [rad]"
 
-[variables.reco_ele_beam_open_angle]
-key = 'reco_ele_beam_open_angle'
+[variables.reco_ele_beam_cosTheta]
+key = 'reco_ele_beam_cosTheta'
 nbins = 13
 binning_scheme = 'custom_bins'
 custom_bins = [-1.0, -0.4, 0.0, 0.2, 0.35, 0.5, 0.625, 0.725, 0.8, 0.85, 0.9, 0.94, 0.97, 1.0]
@@ -93,13 +93,45 @@ binning_scheme = 'custom_bins'
 custom_bins = [300, 390, 490, 600, 730, 870, 1030, 1240, 1500, 2000, 5000]
 xlabel = 'True Leading Electron Energy [MeV]'
 
-[variables.true_ele_beam_open_angle]
-key = 'true_ele_beam_open_angle'
+[variables.true_ele_beam_cosTheta]
+key = 'true_ele_beam_cosTheta'
 nbins = 13
 binning_scheme = 'custom_bins'
 custom_bins = [-1.0, -0.4, 0.0, 0.2, 0.35, 0.5, 0.625, 0.725, 0.8, 0.85, 0.9, 0.94, 0.97, 1.0]
 range = [-1.0, 1.0]
 xlabel = "True Leading Electron $cos{\\theta_{NUMI}}$"
+
+# systematics vs reco leading electron energy
+[[figure]]
+name = "sys_eleE"
+type = "SimpleFigure"
+style = 'basic_icarus'
+
+[[figure.artists]]
+type     = "SpineSystematics"
+variable = "reco_leading_electron_energy"
+# # systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
+# systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
+#                'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
+#                'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
+#                'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
+#                'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
+#                'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
+#                'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
+#                'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
+# systematics = ['hysyst_beam_horn_2kA', 'hysyst_beam_horn1_x_3mm', 'hysyst_beam_horm1_y_3mm', 'hysyst_beam_spot_1_3mm', 'hysyst_beam_spot_1_7mm',
+#               'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
+#               'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
+#               'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
+#               'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
+
+[figure.artists.draw_kwargs]
+mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
+show_total = true           # overlay quadrature sum as dashed black line
+show_stat  = true          # include statistical uncertainty
+logy       = false
 
 # systematics vs reco leading electron energy
 [[figure]]
@@ -112,21 +144,22 @@ type     = "SpineSystematics"
 variable = "reco_leading_electron_energy"
 groups   = [0]  # signal only (index 0 = $\nu_{e}$ Signal)
 normalize_to = [0, 1, 2, 3, 4, 5]  # ...but express sigma as a fraction of the signal yield, not the background's own
-systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
+# systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
 # systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
-#                'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
-#                'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
-#                'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
-#                'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
-#                'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
-#                'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
-#                'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
+#               'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
+#               'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
+#               'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
+#               'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
+#               'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
+#               'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
+#               'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
 # systematics = ['hysyst_beam_horn_2kA', 'hysyst_beam_horn1_x_3mm', 'hysyst_beam_horm1_y_3mm', 'hysyst_beam_spot_1_3mm', 'hysyst_beam_spot_1_7mm',
-#                'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
-#                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
-#                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
-#                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['flux', 'xsec_total', 'total_stat'] # total systematics
+#               'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
+#               'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
+#               'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
+#               'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
@@ -145,22 +178,54 @@ type     = "SpineSystematics"
 variable = "reco_leading_electron_energy"
 groups   = [1, 2, 3, 4, 5]  # background only (indices 1-5)
 normalize_to = [0, 1, 2, 3, 4, 5]  # ...but express sigma as a fraction of the signal yield, not the background's own
-systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
+# systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
 # systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
-#                'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
-#                'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
-#                'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
-#                'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
-#                'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
-#                'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
-#                'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
+#               'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
+#               'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
+#               'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
+#               'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
+#               'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
+#               'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
+#               'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
 # systematics = ['hysyst_beam_horn_2kA', 'hysyst_beam_horn1_x_3mm', 'hysyst_beam_horm1_y_3mm', 'hysyst_beam_spot_1_3mm', 'hysyst_beam_spot_1_7mm',
-#                'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
-#                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
-#                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
-#                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
-systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
+#               'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
+#               'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
+#               'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
+#               'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
+
+[figure.artists.draw_kwargs]
+mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
+show_total = true           # overlay quadrature sum as dashed black line
+show_stat  = true          # include statistical uncertainty
+logy       = false
+
+ # systematics vs true neutrino energy
+[[figure]]
+name = "sys_nuE"
+type = "SimpleFigure"
+style = 'basic_icarus'
+
+[[figure.artists]]
+type     = "SpineSystematics"
+variable = "true_neutrino_energy"
+# systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
+# systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
+#               'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
+#               'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
+#               'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
+#               'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
+#               'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
+#               'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
+#               'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
+# systematics = ['hysyst_beam_horn_2kA', 'hysyst_beam_horn1_x_3mm', 'hysyst_beam_horm1_y_3mm', 'hysyst_beam_spot_1_3mm', 'hysyst_beam_spot_1_7mm',
+#               'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
+#               'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
+#               'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
+#               'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
@@ -179,22 +244,22 @@ type     = "SpineSystematics"
 variable = "true_neutrino_energy"
 groups   = [0]  # signal only (index 0 = $\nu_{e}$ Signal)
 normalize_to = [0, 1, 2, 3, 4, 5]  # ...but express sigma as a fraction of the signal yield, not the background's own
-systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
+# systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
 # systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
-#                'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
-#                'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
-#                'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
-#                'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
-#                'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
-#                'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
-#                'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
+#               'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
+#               'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
+#               'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
+#               'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
+#               'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
+#               'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
+#               'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
 # systematics = ['hysyst_beam_horn_2kA', 'hysyst_beam_horn1_x_3mm', 'hysyst_beam_horm1_y_3mm', 'hysyst_beam_spot_1_3mm', 'hysyst_beam_spot_1_7mm',
-#                'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
-#                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
-#                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
-#                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
-# systematics = ['flux', 'xsec_total', 'total_stat'] # total systematics
+#               'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
+#               'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
+#               'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
+#               'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
@@ -213,22 +278,55 @@ type     = "SpineSystematics"
 variable = "true_neutrino_energy"
 groups   = [1, 2, 3, 4, 5]  # background only (indices 1-5)
 normalize_to = [0, 1, 2, 3, 4, 5]  # ...but express sigma as a fraction of the signal yield, not the background's own
-systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
+# systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
 # systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
-#                'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
-#                'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
-#                'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
-#                'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
-#                'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
-#                'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
-#                'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
+#               'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
+#               'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
+#               'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
+#               'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
+#               'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
+#               'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
+#               'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
 # systematics = ['hysyst_beam_horn_2kA', 'hysyst_beam_horn1_x_3mm', 'hysyst_beam_horm1_y_3mm', 'hysyst_beam_spot_1_3mm', 'hysyst_beam_spot_1_7mm',
 #                'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
 #                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
 #                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
 #                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
-systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
+
+[figure.artists.draw_kwargs]
+mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
+show_total = true           # overlay quadrature sum as dashed black line
+show_stat  = true          # include statistical uncertainty
+logy       = false
+
+ # systematics vs reco leading electron cos(theta) numi
+[[figure]]
+name = "sys_eleCosThetaNUMI"
+type = "SimpleFigure"
+style = 'basic_icarus'
+
+[[figure.artists]]
+type     = "SpineSystematics"
+variable = "reco_ele_beam_cosTheta"
+# Uncomment to restrict to specific recipes:
+# systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
+# systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
+#               'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
+#               'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
+#               'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
+#               'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
+#               'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
+#               'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
+#               'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
+# systematics = ['hysyst_beam_horn_2kA', 'hysyst_beam_horn1_x_3mm', 'hysyst_beam_horm1_y_3mm', 'hysyst_beam_spot_1_3mm', 'hysyst_beam_spot_1_7mm',
+#               'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
+#               'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
+#               'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
+#               'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
@@ -248,22 +346,22 @@ variable = "reco_ele_beam_cosTheta"
 groups   = [0]  # signal only (index 0 = $\nu_{e}$ Signal)
 normalize_to = [0, 1, 2, 3, 4, 5]  # ...but express sigma as a fraction of the signal yield, not the background's own
 # Uncomment to restrict to specific recipes:
-systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
+# systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
 # systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
-#                'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
-#                'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
-#                'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
-#                'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
-#                'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
-#                'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
-#                'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
+#               'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
+#               'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
+#               'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
+#               'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
+#               'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
+#               'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
+#               'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
 # systematics = ['hysyst_beam_horn_2kA', 'hysyst_beam_horn1_x_3mm', 'hysyst_beam_horm1_y_3mm', 'hysyst_beam_spot_1_3mm', 'hysyst_beam_spot_1_7mm',
-#                'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
-#                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
-#                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
-#                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
-# systematics = ['flux', 'xsec_total', 'total_stat'] # total systematics
+#               'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
+#               'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
+#               'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
+#               'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
@@ -285,20 +383,53 @@ normalize_to = [0, 1, 2, 3, 4, 5]  # ...but express sigma as a fraction of the s
 # Uncomment to restrict to specific recipes:
 # systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
 # systematics = ['ZExpB1CCQE', 'ZExpB2CCQE', 'ZExpB3CCQE', 'ZExpB4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
-#                'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
-#                'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
-#                'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
-#                'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
-#                'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
-#                'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
-#                'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
+#               'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
+#               'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
+#               'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
+#               'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
+#               'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
+#               'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
+#               'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
 # systematics = ['hysyst_beam_horn_2kA', 'hysyst_beam_horn1_x_3mm', 'hysyst_beam_horm1_y_3mm', 'hysyst_beam_spot_1_3mm', 'hysyst_beam_spot_1_7mm',
-#                'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
-#                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
-#                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
-#                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
-systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
+#               'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
+#               'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
+#               'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
+#               'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
+
+[figure.artists.draw_kwargs]
+mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
+show_total = true           # overlay quadrature sum as dashed black line
+show_stat  = true          # include statistical uncertainty
+logy       = false
+
+ # systematics vs true leading electron energy
+[[figure]]
+name = "sys_trueEleE"
+type = "SimpleFigure"
+style = 'basic_icarus'
+
+[[figure.artists]]
+type     = "SpineSystematics"
+variable = "true_leading_electron_energy"
+# Uncomment to restrict to specific recipes:
+# systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
+# systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
+#               'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
+#               'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
+#               'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
+#               'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
+#               'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
+#               'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
+#               'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
+# systematics = ['hysyst_beam_horn_2kA', 'hysyst_beam_horn1_x_3mm', 'hysyst_beam_horm1_y_3mm', 'hysyst_beam_spot_1_3mm', 'hysyst_beam_spot_1_7mm',
+#               'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
+#               'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
+#               'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
+#               'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
@@ -318,22 +449,22 @@ variable = "true_leading_electron_energy"
 groups   = [0]  # signal only (index 0 = $\nu_{e}$ Signal)
 normalize_to = [0, 1, 2, 3, 4, 5]  # ...but express sigma as a fraction of the signal yield, not the background's own
 # Uncomment to restrict to specific recipes:
-systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
+# systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
 # systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
-#                'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
-#                'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
-#                'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
-#                'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
-#                'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
-#                'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
-#                'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
+#               'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
+#               'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
+#               'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
+#               'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
+#               'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
+#               'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
+#               'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
 # systematics = ['hysyst_beam_horn_2kA', 'hysyst_beam_horn1_x_3mm', 'hysyst_beam_horm1_y_3mm', 'hysyst_beam_spot_1_3mm', 'hysyst_beam_spot_1_7mm',
-#                'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
-#                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
-#                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
-#                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
-# systematics = ['flux', 'xsec_total', 'total_stat'] # total systematics
+#               'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
+#               'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
+#               'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
+#               'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
@@ -355,26 +486,59 @@ normalize_to = [0, 1, 2, 3, 4, 5]  # ...but express sigma as a fraction of the s
 # Uncomment to restrict to specific recipes:
 # systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
 # systematics = ['ZExpB1CCQE', 'ZExpB2CCQE', 'ZExpB3CCQE', 'ZExpB4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
-#                'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
-#                'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
-#                'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
-#                'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
-#                'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
-#                'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
-#                'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
+#               'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
+#               'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
+#               'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
+#               'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
+#               'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
+#               'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
+#               'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
 # systematics = ['hysyst_beam_horn_2kA', 'hysyst_beam_horn1_x_3mm', 'hysyst_beam_horm1_y_3mm', 'hysyst_beam_spot_1_3mm', 'hysyst_beam_spot_1_7mm',
-#                'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
-#                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
-#                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
-#                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
-systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
+#               'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
+#               'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
+#               'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
+#               'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
 show_total = true           # overlay quadrature sum as dashed black line
 show_stat  = true          # include statistical uncertainty
 logy       = false
+
+ # systematics vs true leading electron cos(theta) numi
+[[figure]]
+name = "sys_trueEleCosThetaNUMI"
+type = "SimpleFigure"
+style = 'basic_icarus'
+
+[[figure.artists]]
+type     = "SpineSystematics"
+variable = "true_ele_beam_cosTheta"
+# Uncomment to restrict to specific recipes:
+# systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
+# systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
+#               'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
+#               'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
+#               'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
+#               'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
+#               'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
+#               'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
+#               'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
+# systematics = ['hysyst_beam_horn_2kA', 'hysyst_beam_horn1_x_3mm', 'hysyst_beam_horm1_y_3mm', 'hysyst_beam_spot_1_3mm', 'hysyst_beam_spot_1_7mm',
+#               'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
+#               'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
+#               'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
+#               'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
+
+[figure.artists.draw_kwargs]
+mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
+show_total = true           # overlay quadrature sum as dashed black line
+show_stat  = true          # include statistical uncertainty
+logy       = false # systematics vs true leading electron cos(theta) numi
 
  # systematics vs true leading electron cos(theta) numi
 [[figure]]
@@ -388,28 +552,29 @@ variable = "true_ele_beam_cosTheta"
 groups   = [0]  # signal only (index 0 = $\nu_{e}$ Signal)
 normalize_to = [0, 1, 2, 3, 4, 5]  # ...but express sigma as a fraction of the signal yield, not the background's own
 # Uncomment to restrict to specific recipes:
-systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
+# systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
 # systematics = ['ZExpA1CCQE', 'ZExpA2CCQE', 'ZExpA3CCQE', 'ZExpA4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
-#                'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
-#                'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
-#                'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
-#                'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
-#                'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
-#                'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
-#                'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
+#               'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
+#               'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
+#               'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
+#               'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
+#               'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
+#               'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
+#               'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
 # systematics = ['hysyst_beam_horn_2kA', 'hysyst_beam_horn1_x_3mm', 'hysyst_beam_horm1_y_3mm', 'hysyst_beam_spot_1_3mm', 'hysyst_beam_spot_1_7mm',
-#                'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
-#                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
-#                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
-#                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
-# systematics = ['flux', 'xsec_total', 'total_stat'] # total systematics
+#               'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
+#               'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
+#               'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
+#               'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)
 show_total = true           # overlay quadrature sum as dashed black line
 show_stat  = true          # include statistical uncertainty
 logy       = false # systematics vs true leading electron cos(theta) numi
+
 [[figure]]
 name = "sys_trueEleCosThetaNUMI_background"
 type = "SimpleFigure"
@@ -423,20 +588,20 @@ normalize_to = [0, 1, 2, 3, 4, 5]  # ...but express sigma as a fraction of the s
 # Uncomment to restrict to specific recipes:
 # systematics = ["xsec_ccqe", "xsec_mec", "xsec_res", "xsec_nonres", "xsec_fsi", "xsec_other"] #xsec systematics
 # systematics = ['ZExpB1CCQE', 'ZExpB2CCQE', 'ZExpB3CCQE', 'ZExpB4CCQE', 'VecFFCCQEshape', 'RPA_CCQE', 'CoulombCCQE',
-#                'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
-#                'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
-#                'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
-#                'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
-#                'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
-#                'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
-#                'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
+#               'NormCCMEC', 'NormNCMEC', 'DecayAngMEC', 'MaCCRES', 'MvCCRES', 'MaNCRES', 'MvNCRES',
+#               'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'NormCCOH', 'NormNCCOH', 'NonRESBGvpCC1pi', 'NonRESBGvnCC1pi', 
+#               'NonRESBGvbarpCC1pi', 'NonRESBGvbarnCC1pi', 'NonRESBGvpCC2pi', 'NonRESBGvnCC2pi', 'NonRESBGvbarpCC2pi', 
+#               'NonRESBGvbarnCC2pi', 'NonRESBGvpNC1pi', 'NonRESBGvnNC1pi', 'NonRESBGvbarpNC1pi', 'NonRESBGvbarnNC1pi', 
+#               'NonRESBGvpNC2pi', 'NonRESBGvnNC2pi', 'NonRESBGvbarpNC2pi', 'NonRESBGvbarnNC2pi', 'MFP_pi', 'FrCEx_pi', 
+#               'FrInel_pi', 'FrAbs_pi', 'FrPiProd_pi', 'MFP_N', 'FrCEx_N', 'FrInel_N', 'FrAbs_N', 'FrPiProd_N', 'MaNCEL', 
+#               'EtaNCEL', 'RDECBR1gamma', 'RDECBR1eta', 'Theta_Delta2Npi', 'ThetaDelta2NRad'] # all xsec systematics
 # systematics = ['hysyst_beam_horn_2kA', 'hysyst_beam_horn1_x_3mm', 'hysyst_beam_horm1_y_3mm', 'hysyst_beam_spot_1_3mm', 'hysyst_beam_spot_1_7mm',
-#                'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
-#                'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
-#                'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
-#                'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
-# systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
-systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
+#               'hysyst_beam_horm2_x_3mm', 'hysyst_beam_horm2_y_3mm', 'hysyst_beam_horms_0mm_water', 'hysyst_beam_horms_2mm_water',
+#               'hysyst_beam_Beam_shift_x_1mm', 'hysyst_beam_Beam_shift_y_1mm', 'hysyst_beam_Target_z_7mm', 'hysyst_hpc_0', 'hysyst_hpc_1',
+#               'hysyst_hpc_2', 'hysyst_hpc_3', 'hysyst_hpc_4', 'hysyst_hpc_5', 'hysyst_hpc_6', 'hysyst_hpc_7', 'hysyst_hpc_8', 'hysyst_hpc_9',
+#               'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14' ] # flux systematics
+systematics = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination'] # detector systematics
+# systematics = ['flux', 'xsec_total', 'detector', 'total_stat'] # total systematics
 
 [figure.artists.draw_kwargs]
 mode       = "fractional"  # "fractional" (sigma/N per bin) or "absolute" (sigma per bin)

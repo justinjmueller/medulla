@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import os
 import sys
 import pickle
-os.environ['MEDULLA_PLOT_DIR'] =  '/Users/micarrig/Desktop/medulla/spineplot/'
-sys.path.append('/Users/micarrig/Desktop/medulla/spineplot/')
+os.environ['MEDULLA_PLOT_DIR'] =  '/nashome/m/micarrig/icarus/nuESpine/medulla/spineplot/'
+sys.path.append('/nashome/m/micarrig/icarus/nuESpine/medulla/spineplot/')
 from efficiency import SpineEfficiency
 from analysis import Analysis
 
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/nue_plots.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine12/merged_output.root')
     ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/systematics.toml', '/exp/icarus/data/users/micarrig/merged_v27p2_fixed.root')
 
-    plot_category = 'systematics_total'
+    plot_category = 'systematics_detector'
 
 
     # Each of these now has a signal-only and background-only variant
