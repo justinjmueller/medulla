@@ -203,7 +203,17 @@ namespace cuts
     template<class T>
     bool avoid_icarus_dangling_cable(const T & obj)
     {
-        return !(obj.vertex[0] > 210.215 && obj.vertex[1] > 60 && (obj.vertex[2] > 290 && obj.vertex[2] < 390));
+        return (
+            (abs(obj.vertex[0]) > 10) &&
+            (abs(obj.vertex[0]) < 190) &&
+            (obj.vertex[2] > 10) &&
+            (obj.vertex[2] < 450) &&
+            (
+                ((obj.vertex[2] > 250) && (obj.vertex[1] > -190) && (obj.vertex[1] < 100)) ||
+                ((obj.vertex[2] < 250) && (abs(obj.vertex[1]) < 190))
+            )
+
+        );
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, avoid_icarus_dangling_cable, avoid_icarus_dangling_cable);
 
