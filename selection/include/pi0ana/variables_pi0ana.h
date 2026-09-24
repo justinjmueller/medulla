@@ -236,7 +236,7 @@ namespace vars::pi0ana
 	      if(cuts::neutrino(obj))
 	      {
             // 0mu0pi1pi0 (in-phase, fiducial)
-	          if(num_primary_muons_thresh == 0 && num_primary_pions_thresh == 0 && num_primary_pi0s == 1 && !cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 0;
+	          if(num_primary_muons_thresh == 0 && num_primary_pions_thresh == 0 && num_primary_pi0s == 1 && !cuts::iscc(obj) && cuts::fiducial_cut_tmp(obj)) cat = 0;
 	          // Other nu-induced pi0
 	          else if(num_primary_pi0s >= 1) cat = 1;
 	          // Other nu without pi0
@@ -272,8 +272,8 @@ namespace vars::pi0ana
 	    {
             // 0mu0pi1pi0 (in-phase, fiducial)
 	        if(cuts::pi0ana::single_pi0<caf::SRInteractionTruthDLPProxy>(obj, {params[4]}) && cuts::no_muons(obj, {params[2]}) && cuts::no_charged_pions(obj, {params[3]}) 
-			&& cuts::two_photons(obj, {params[0]}) && cuts::pi0_leading_shower_containment_cut(obj) && cuts::pi0_subleading_shower_containment_cut(obj)
-			&& cuts::pi0ana::leading_photon_ke_cut(obj, {params[6]}) && !cuts::iscc(obj) && cuts::fiducial_cut(obj)) cat = 0;
+			&& cuts::two_photons(obj, {params[7]}) && cuts::pi0_leading_shower_containment_cut(obj) && cuts::pi0_subleading_shower_containment_cut(obj)
+			&& cuts::pi0ana::leading_photon_ke_cut(obj, {params[6]}) && !cuts::iscc(obj) && cuts::fiducial_cut_tmp(obj)) cat = 0;
 	        // NCpi0 non-signal background
 	        else if(num_primary_pi0s > 0 && !cuts::iscc(obj)) cat = 1;
 			// CCpi0
@@ -311,10 +311,10 @@ namespace vars::pi0ana
 	    {
             // NCpi0 single shower signal
 	        if(cuts::no_muons(obj, {params[1]}) && cuts::no_charged_pions(obj, {params[2]}) && cuts::single_photon(obj, {params[0]})
-			&& cuts::leading_primary_photon_containment_cut(obj) && cuts::fiducial_cut(obj) && !cuts::iscc(obj)) cat = 0;
+			&& cuts::leading_primary_photon_containment_cut(obj) && cuts::fiducial_cut_tmp(obj) && !cuts::iscc(obj)) cat = 0;
 			// CCpi0 single shower signal
 			else if(cuts::no_muons(obj, {params[1]}) && cuts::no_charged_pions(obj, {params[2]}) && cuts::single_photon(obj, {params[0]})
-			&& cuts::leading_primary_photon_containment_cut(obj) && cuts::fiducial_cut(obj) && cuts::iscc(obj)) cat = 1;
+			&& cuts::leading_primary_photon_containment_cut(obj) && cuts::fiducial_cut_tmp(obj) && cuts::iscc(obj)) cat = 1;
 	        // NCpi0 non-signal background
 	        else if(num_primary_pi0s > 0 && !cuts::iscc(obj)) cat = 2;
 			// CCpi0
@@ -348,7 +348,7 @@ namespace vars::pi0ana
 		run = run && ncpi0_cut;
 		cut_results = cut_results * 10 + ncpi0_cut*2 + run;
 		// Fiducial
-		bool fiducial_cut = cuts::fiducial_cut(obj);
+		bool fiducial_cut = cuts::fiducial_cut_tmp(obj);
 		run = run && fiducial_cut;
 		cut_results = cut_results * 10 + fiducial_cut*2 + run;
 		// No muons
@@ -360,7 +360,7 @@ namespace vars::pi0ana
 		run = run && no_charged_pions_cut;
 		cut_results = cut_results * 10 + no_charged_pions_cut*2 + run;
 		// Two photons
-		bool two_photons_cut = cuts::two_photons(obj, {params[0]});
+		bool two_photons_cut = cuts::two_photons(obj, {params[7]});
 		run = run && two_photons_cut;
 		cut_results = cut_results * 10 + two_photons_cut*2 + run;
 		// Leading in fiducial volume

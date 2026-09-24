@@ -213,15 +213,10 @@ namespace cuts
     bool fiducial_cut_tmp(const T & obj)
     {
         return (
-            (abs(obj.vertex[0]) > 10) &&
-            (abs(obj.vertex[0]) < 190) &&
-            (obj.vertex[2] > 10) &&
-            (obj.vertex[2] < 450) &&
-            (
-                ((obj.vertex[2] > 250) && (obj.vertex[1] > -190) && (obj.vertex[1] < 100)) ||
-                ((obj.vertex[2] < 250) && (abs(obj.vertex[1]) < 190))
-            )
-
+            (abs(obj.vertex[0]) < 195) &&
+            (abs(obj.vertex[1]) < 195) &&
+            (obj.vertex[2] > 5) &&
+            (obj.vertex[2] < 495)
         );
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut_tmp, fiducial_cut_tmp);
