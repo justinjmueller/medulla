@@ -55,7 +55,7 @@ def main():
         name = sample.get('name', f'job{jobid:04d}')
         tag = sample.get('tag', '')
 
-        if tag in ('data', 'detector_variation'):
+        if tag in ('data', 'detector_variation', 'rock'):
             candidate = output_dir / f'output_jobid{jobid:04d}.root'
         elif tag == 'nominal' or tag == "nue_enhanced":
             candidate = output_dir / f'output_systematics_jobid{jobid:04d}.root'

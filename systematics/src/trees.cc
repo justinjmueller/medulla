@@ -9,6 +9,7 @@
  * @author mueller@fnal.gov
  */
 #include <iostream>
+#include <set>
 
 #include "trees.h"
 #include "detsys.h"
@@ -215,7 +216,7 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
      * run, subrun, event, nu_id, and nu_energy branches as the key. The
      * value is the index of the entry in the input TTree.
      */
-    std::map<index_t, size_t> candidates;
+    std::map<index_t, std::vector<size_t>> candidates;
     bool use_additional_hash = config.get_bool_field("input.use_additional_hash", false);
     for(int i(0); i < input_tree->GetEntries(); ++i)
     {
@@ -225,14 +226,14 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
         // will be copied to the non-matched TTree if it has been created.
         if(nu_id >= 0)
         {
-            if(!use_additional_hash)
-                candidates.insert(std::make_pair<index_t, size_t>(std::make_tuple(run, subrun, event, nu_id, 0), i));
-            else
-                candidates.insert(std::make_pair<index_t, size_t>(std::make_tuple(run, subrun, event, nu_id, brs["true_neutrino_energy"]), i));
+            index_t key = use_additional_hash
+                ? std::make_tuple(run, subrun, event, nu_id, brs["true_neutrino_energy"])
+                : std::make_tuple(run, subrun, event, nu_id, 0.0);
+            candidates[key].push_back(i);
         }
     }
 
-    std::cout << "Created map of selected signal candidates with " << candidates.size() << " entries." << std::endl;
+    std::cout << "Created map of selected signal candidates with " << candidates.size() << " unique neutrino keys." << std::endl;
 
     /**
      * @brief Configure the weight-based systematics.
@@ -333,19 +334,10 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     std::cout << "Total events in input tree: " << input_tree->GetEntries() << std::endl;
 
     sys::WeightReader reader(config.get_string_field("input.weights"));
-    std::vector<index_t> saved_indices;
+    std::set<index_t> saved_keys;
     double nominal_count(0);
     while(reader.next())
     {
-        /**
-         * @brief Loop over the neutrinos in the CAF input files.
-         * @details This block loops over the neutrinos in the CAF input
-         * files. The loop is used to populate the output TTree with the
-         * selected signal candidates and the universe weights for matched
-         * neutrinos. The loop also retrieves the selected signal candidate
-         * that has been matched with the parent neutrino and copies the
-         * values to the output TTree.
-         */
         for(size_t idn(0); idn < reader.get_nnu(); ++idn)
         {
             index_t index;
@@ -353,79 +345,62 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
                 index = std::make_tuple(reader.get_run(), reader.get_subrun(), reader.get_event(), idn, 0);
             else
                 index = std::make_tuple(reader.get_run(), reader.get_subrun(), reader.get_event(), idn, (double)reader.get_energy(idn));
-            if(candidates.find(index) != candidates.end())
+            auto it = candidates.find(index);
+            if(it != candidates.end())
             {
-                /**
-                 * @brief Retrieve the selected signal candidate and copy
-                 * the values to the output TTree.
-                 * @details This block retrieves the selected signal
-                 * candidate that has been matched with the parent neutrino
-                 * and copies the values to the output TTree.
-                 */
-                input_tree->GetEntry(candidates[index]);
-                run = reader.get_run();
-                subrun = reader.get_subrun();
-                event = reader.get_event();
-                calc.increment_nominal_count(1.0);
-                nominal_count += 1.0;
-                output_tree->Fill();
-
-                /**
-                 * @brief Store the universe weights in the output TTree.
-                 * @details This block stores the universe weights in the
-                 * output TTree for each of the configured systematics.  
-                 */
-
-                // Print progress every 100 matched events
-                if ((size_t)nominal_count % 100 == 0 && nominal_count > 0) {
-                    std::cout << "Processed " << (size_t)nominal_count << " events..." << std::endl;
-                }
-                
-                for(auto & [key, value] : systematics)
+                // Fill one output entry per selected reco interaction that
+                // matched this neutrino; all share the same universe weights.
+                for(size_t entry_idx : it->second)
                 {
-                    value->get_weights()->clear();
-                    if(value->get_type() == Type::kMULTISIM || value->get_type() == Type::kMULTISIGMA)
+                    input_tree->GetEntry(entry_idx);
+                    run = reader.get_run();
+                    subrun = reader.get_subrun();
+                    event = reader.get_event();
+                    calc.increment_nominal_count(1.0);
+                    nominal_count += 1.0;
+                    output_tree->Fill();
+
+                    if ((size_t)nominal_count % 100 == 0 && nominal_count > 0)
+                        std::cout << "Processed " << (size_t)nominal_count << " events..." << std::endl;
+
+                    for(auto & [key, value] : systematics)
                     {
-                        for(SysVariable & sv : sysvariables)
+                        value->get_weights()->clear();
+                        if(value->get_type() == Type::kMULTISIM || value->get_type() == Type::kMULTISIGMA)
                         {
-                            syst_t syskey = std::make_pair(sv.name, value->get_index());
-                            reader.set(value->get_index());
-                            if(results1d.find(syskey) == results1d.end())
+                            for(SysVariable & sv : sysvariables)
                             {
-                                results1d[syskey] = new TH1D((sv.name + "_" + key + "_1d").c_str(), (sv.name + "_" + key + "_1d").c_str(), 1000, -0.25, 0.25);
-                                results1d[syskey]->SetDirectory(nullptr);
-                                results2d[syskey] = new TH2D((sv.name + "_" + key + "_2d").c_str(), (sv.name + "_" + key + "_2d").c_str(), sv.nbins, sv.min, sv.max, reader.get_nuniv(idn), 0, reader.get_nuniv(idn));
-                                results2d[syskey]->SetDirectory(nullptr);
-                            }
-                            for(size_t u(0); u < reader.get_nuniv(idn); ++u)
-                            {
-                                value->get_weights()->push_back(reader.get_weight(idn, u));
-                                results2d[syskey]->Fill(brs[sv.name], u, reader.get_weight(idn, u));
+                                syst_t syskey = std::make_pair(sv.name, value->get_index());
+                                reader.set(value->get_index());
+                                if(results1d.find(syskey) == results1d.end())
+                                {
+                                    results1d[syskey] = new TH1D((sv.name + "_" + key + "_1d").c_str(), (sv.name + "_" + key + "_1d").c_str(), 1000, -0.25, 0.25);
+                                    results1d[syskey]->SetDirectory(nullptr);
+                                    results2d[syskey] = new TH2D((sv.name + "_" + key + "_2d").c_str(), (sv.name + "_" + key + "_2d").c_str(), sv.nbins, sv.min, sv.max, reader.get_nuniv(idn), 0, reader.get_nuniv(idn));
+                                    results2d[syskey]->SetDirectory(nullptr);
+                                }
+                                for(size_t u(0); u < reader.get_nuniv(idn); ++u)
+                                {
+                                    value->get_weights()->push_back(reader.get_weight(idn, u));
+                                    results2d[syskey]->Fill(brs[sv.name], u, reader.get_weight(idn, u));
+                                }
                             }
                         }
+                        else
+                        {
+                            for(double & z : calc.get_zscores(key))
+                                value->get_weights()->push_back(calc.get_weight(key, brs[calc.get_variable()], z));
+                            for(SysVariable & sv : sysvariables)
+                                calc.add_value(sv.name, brs[sv.name], key, brs);
+                        }
                     }
-                    else
-                    {
-                        for(double & z : calc.get_zscores(key))
-                            value->get_weights()->push_back(calc.get_weight(key, brs[calc.get_variable()], z));
-                        for(SysVariable & sv : sysvariables)
-                            calc.add_value(sv.name, brs[sv.name], key, brs);
-                    }
-                } // End of loop over the configured systematics.
 
-                /**
-                 * @brief Fill the systematic TTrees.
-                 * @details This block fills the systematic TTrees with
-                 * the universe weights for the parent neutrino. Each
-                 * configured systematic should have its weights vector
-                 * populated by the above loop.
-                 */
-                for(auto & [key, value] : systrees)
-                    value->Fill();
+                    for(auto & [key, value] : systrees)
+                        value->Fill();
+                }
 
-                // Save the index of the matched signal candidate.
-                saved_indices.push_back(index);
-            } // End of block for matched signal candidates.
+                saved_keys.insert(index);
+            }
         }
     }
 
@@ -441,15 +416,18 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
         // any neutrino entries that do not have a match in the input weights
         // file to the non-matched TTree as a "audible" sign that something is
         // amiss.
-        for(auto & [key, value] : candidates)
+        for(auto & [key, entries] : candidates)
         {
-            if(std::find(saved_indices.begin(), saved_indices.end(), key) != saved_indices.end())
+            if(saved_keys.count(key))
                 continue;
-            input_tree->GetEntry(value);
-            run = std::get<0>(key);
-            subrun = std::get<1>(key);
-            event = std::get<2>(key);
-            nonmatched_tree->Fill();
+            for(size_t entry_idx : entries)
+            {
+                input_tree->GetEntry(entry_idx);
+                run = std::get<0>(key);
+                subrun = std::get<1>(key);
+                event = std::get<2>(key);
+                nonmatched_tree->Fill();
+            }
         }
 
         // The primary use case for the non-matched TTree is to capture cosmics
