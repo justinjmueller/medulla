@@ -83,7 +83,6 @@ sys::WeightReader::WeightReader(const std::string & input)
         mc = std::make_unique<TTreeReaderArray<caf::SRTrueInteraction>>(*reader, "rec.mc.nu");
         nu_energy_structured = std::make_unique<TTreeReaderArray<Float_t>>(*reader, "rec.mc.nu.E");
     }
-    reader->Next();
 }
 
 // Advance to the next entry in the TChain.
@@ -93,7 +92,7 @@ bool sys::WeightReader::next()
     if(!chain.GetTree() || !reader) return false;
     if(entry >= (size_t)chain.GetEntries()) return false;
     if(!reader->Next()) return false;
-    chain.GetEntry(++entry);
+    chain.GetEntry(entry++);
     return true;
 }
 
