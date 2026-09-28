@@ -14,7 +14,8 @@ from unittest import mock
 import pytest
 
 from utilities import (
-    SUBMISSION_DB_NAME, create_new_project, launch_jobsub, write_submission_db,
+    SUBMISSION_DB_NAME, create_new_project, create_systematics_cfg,
+    launch_jobsub, write_submission_db,
 )
 
 
@@ -410,3 +411,75 @@ class TestShippedJobDatabase:
             "JOIN configuration c USING (jobid) ORDER BY jobid").fetchall()
         assert rows == [(1, "pending", None, "cfg1"), (2, "pending", None, "cfg2")]
         assert not (tmp_path / (SUBMISSION_DB_NAME + ".tmp")).exists()
+
+
+class TestSystematicsSwitch:
+    """create_new_project(systematics=False) copies every tree through the
+    systematics step, and the validation manifest -- generated from the same
+    configuration -- checks them as copies."""
+
+    TREES = [
+        {"name": "selected", "add_systematics": True,
+         "branch": [{"name": "neutrino_id", "type": "true"},
+                    {"name": "neutrino_energy", "type": "mctruth"}]},
+        {"name": "signal", "branch": []},
+    ]
+    SAMPLES = [{"name": "sbnd_mc", "ismc": True}, {"name": "sbnd_offbeam", "ismc": False}]
+
+    def _actions(self, cfg):
+        return {t["origin"]: t["action"] for t in cfg["tree"]}
+
+    def _base(self):
+        return {"input": {}, "output": {}}
+
+    def test_default_reweights_mc_trees_that_ask_for_it(self):
+        cfg = create_systematics_cfg(self._base(), self.TREES, self.SAMPLES)
+        assert self._actions(cfg) == {
+            "events/sbnd_mc/selected": "add_weights",
+            "events/sbnd_mc/signal": "copy",
+            "events/sbnd_offbeam/selected": "copy",
+            "events/sbnd_offbeam/signal": "copy",
+        }
+
+    def test_off_copies_every_tree(self):
+        cfg = create_systematics_cfg(self._base(), self.TREES, self.SAMPLES, add_weights=False)
+        assert set(self._actions(cfg).values()) == {"copy"}
+        assert all("table_types" not in t for t in cfg["tree"])
+
+    def test_project_manifest_follows(self, tmp_path):
+        tml = tmp_path / "selection.toml"
+        tml.write_text(textwrap.dedent("""\
+            [general]
+            output = "test_output"
+
+            [[sample]]
+            name = "placeholder"
+            path = "/fake/placeholder.root"
+            ismc = true
+
+            [[tree]]
+            name = "selected"
+            sim_only = false
+            mode = "reco"
+            add_systematics = true
+            cut = []
+
+            [[tree.branch]]
+            name = "neutrino_id"
+            type = "true"
+
+            [[tree.branch]]
+            name = "neutrino_energy"
+            type = "mctruth"
+        """))
+        fake = [{"name": "sbnd_detvar_x", "path": ["/fake/x.root"], "ismc": True, "disable": False}]
+
+        manifests = {}
+        for on in (True, False):
+            project_dir = tmp_path / f"project_{on}"
+            with mock.patch("utilities.get_samples", return_value=fake):
+                create_new_project(project_dir, str(tml), batch_size=1, systematics=on)
+            manifests[on] = (project_dir / "validation_manifest.txt").read_text().split()
+
+        assert manifests[True] == ["events/sbnd_detvar_x/selected|selected|add_weights|multisim,multisigma"]
+        assert manifests[False] == ["events/sbnd_detvar_x/selected|selected|copy|"]

@@ -298,6 +298,7 @@ def create_systematics_cfg(
     base_cfg : dict,
     trees : list[dict],
     samples : list[dict],
+    add_weights : bool = True,
 ):
     """
     Create a TOML configuration for running systematics on the given
@@ -316,6 +317,13 @@ def create_systematics_cfg(
         List of tree configurations in the selection configuration.
     samples : list[dict]
         List of sample configurations in the selection configuration.
+    add_weights : bool
+        If False, every tree is configured with the "copy" action,
+        whatever its add_systematics setting. For projects whose MC
+        samples carry no systematic weights (e.g. detector variations),
+        which would otherwise be given the CV recipe and fail when the
+        weights are not there. See the per-role `systematics` switch in
+        meta.toml.
     
     Returns
     -------
@@ -336,11 +344,22 @@ def create_systematics_cfg(
             if key in syst_trees:
                 continue
 
+            # A sim_only tree is never created by the selection stage for
+            # a non-MC sample (see analysis.h's Analysis::Go(), which
+            # skips it outright: `if(t.is_sim && !s.is_sim) continue;`).
+            # Configuring or requiring it here would ask this stage's
+            # copy/add_weights step -- and validate_pair.C's manifest
+            # check -- for an origin tree that structurally never exists,
+            # which is a false failure, not a signal of anything broken.
+            if tree.get('sim_only', False) and not sample['ismc']:
+                continue
+
             # Data samples and samples not requesting systematics are
             # configured with a "copy" action that just copies the
             # selected events to the output without applying any
             # systematics.
-            if not sample['ismc'] or not tree.get('add_systematics', False):
+            if (not add_weights or not sample['ismc']
+                    or not tree.get('add_systematics', False)):
                 syst_trees[key] = {
                     'origin' : key,
                     'destination' : f'events/{sample["name"]}/',
@@ -443,6 +462,7 @@ def create_new_project(
     catalog_path = None,
     enable_keys = None,
     experiment : str = 'sbnd',
+    systematics : bool = True,
 ):
     """
     Create a new project directory with the necessary subdirectories
@@ -466,6 +486,10 @@ def create_new_project(
         Experiment name used to configure the SAMWeb client for samples
         whose path is a SAMWeb definition (see DEFNAME_PREFIX in
         get_samples).
+    systematics : bool
+        If False, no tree is reweighted: systematics.toml copies every
+        tree, and the validation manifest checks them as copies. See
+        create_systematics_cfg's add_weights.
 
     Returns
     -------
@@ -498,7 +522,8 @@ def create_new_project(
     # after the selection step.
     if sys is None:
         sys = Path(__file__).resolve().parent / 'sys_template.toml'
-    sys = create_systematics_cfg(toml.load(sys), cfg.get('tree', []), samples)
+    sys = create_systematics_cfg(toml.load(sys), cfg.get('tree', []), samples,
+                                 add_weights=systematics)
     with open(project_dir / 'systematics.toml', 'w') as f:
         toml.dump(sys, f)
 

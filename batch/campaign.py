@@ -154,6 +154,7 @@ class TomlEntry:
     sys_template: str = None     # absolute path to a systematics TOML template, a
                                   # {experiment: path} dict for a per-experiment
                                   # override, or None for the default
+    systematics: bool = True     # False: reweight no tree (see ProjectUnit)
 
 
 @dataclass
@@ -179,6 +180,10 @@ class ProjectUnit:
     sys_template: str = None     # absolute path to a systematics TOML template, or None for the default
     lifetime: str = None         # --expected-lifetime for jobsub_submit (e.g. "4h"), or None
                                   # to fall back to launch_jobsub's own default
+    systematics: bool = True     # False: every tree is copied through the systematics
+                                  # step, none reweighted -- for roles whose MC samples
+                                  # carry no systematic weights (detector variations),
+                                  # which would otherwise get the CV recipe and fail
 
 
 # ---------------------------------------------------------------------------
@@ -290,12 +295,22 @@ def discover_analyses(toml_root):
                 sys_template = str(meta_path.parent / raw_sys_template)
             else:
                 sys_template = None
+            # A role-level switch rather than a separate selection file, so
+            # that a role whose samples have no weights still runs exactly
+            # the selection the others do.
+            systematics = t.get('systematics', True)
+            if not isinstance(systematics, bool):
+                raise ValueError(
+                    f"{meta_path}: role '{t['role']}' has systematics = "
+                    f"{systematics!r}; expected true or false."
+                )
             tomls.append(TomlEntry(
                 role=t['role'],
                 file=str(meta_path.parent / t['file']),
                 experiments=t.get('experiments', top_experiments),
                 enable=enable,
                 sys_template=sys_template,
+                systematics=systematics,
             ))
         analyses.append(AnalysisMeta(
             analysis=meta['meta']['analysis'],
@@ -354,6 +369,7 @@ def expand_campaign(analyses, catalog_path,
                     batch_size=a.defaults.get('batch_size', 50),
                     sys_template=sys_template,
                     lifetime=a.defaults.get('lifetime'),
+                    systematics=t.systematics,
                 ))
     return units
 
@@ -452,6 +468,7 @@ def create_campaign(campaign_dir, project_units, catalog_path,
                 enable_keys=u.enable_keys,
                 sys=u.sys_template,
                 experiment=u.experiment,
+                systematics=u.systematics,
             )
 
             # Read back the job count from the locally-built project.db.
@@ -1154,7 +1171,8 @@ def cmd_create(args):
         'projects': [
             {'analysis': u.analysis, 'role': u.role, 'experiment': u.experiment,
              'toml_path': u.toml_path, 'batch_size': u.batch_size,
-             'sys_template': u.sys_template or '', 'lifetime': u.lifetime or ''}
+             'sys_template': u.sys_template or '', 'lifetime': u.lifetime or '',
+             'systematics': u.systematics}
             for u in all_units
         ],
     }

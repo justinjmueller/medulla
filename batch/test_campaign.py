@@ -280,6 +280,33 @@ class TestSysTemplateResolution:
         assert all(u.sys_template is None for u in units)
 
 
+@skip_expand
+class TestSystematicsSwitch:
+    """A role can turn reweighting off with `systematics = false`, so that
+    samples with no systematic weights (detector variations) run the same
+    selection file as the CV without being given the CV's weight recipe."""
+
+    def _units(self, tmp_path, block):
+        toml_root = tmp_path / "selection" / "toml"
+        toml_root.mkdir(parents=True)
+        TestSysTemplateResolution()._make_analysis(toml_root, block)
+        return expand_campaign(discover_analyses(toml_root), catalog_path=None)
+
+    def test_defaults_to_on(self, tmp_path):
+        assert all(u.systematics is True for u in self._units(tmp_path, ""))
+
+    def test_false_reaches_every_experiment(self, tmp_path):
+        units = self._units(tmp_path, "systematics = false\n")
+        assert {u.experiment for u in units} == {"sbnd", "icarus"}
+        assert all(u.systematics is False for u in units)
+
+    def test_non_boolean_is_rejected(self, tmp_path):
+        """A quoted "false" is truthy; accepting it would silently leave
+        reweighting on for the samples it was meant to protect."""
+        with pytest.raises(ValueError):
+            self._units(tmp_path, 'systematics = "false"\n')
+
+
 # ===================================================================
 # lifetime resolution: [defaults].lifetime in meta.toml flows through to
 # ProjectUnit.lifetime exactly like batch_size does, so that launch_jobsub's
