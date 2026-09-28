@@ -329,33 +329,48 @@ void validate_pair(const char * nosyst_path,
                 if(fail_status.empty()) fail_status = "match_unknown";
                 continue;
             }
-            if(n_in > 0 && n_sel == 0)
+            // Everything fell through to _nonmatched. This can mean the
+            // weights were never actually applied to anything, but it is
+            // also the physically expected outcome for some sample types
+            // -- dirt MC in particular, where an in-volume-reconstructed
+            // candidate generated outside the active volume often has no
+            // single GENIE-generated parent to truth-match against.
+            // Treating this as fatal was inconsistent besides: a job with
+            // *zero* selected candidates already sails through this same
+            // check untouched (it only triggers when n_in > 0), so a job
+            // with one candidate that fails to match was held to a
+            // stricter standard than one with none at all. Warn rather
+            // than fail -- the TREE_ line above already records the full
+            // picture for auditing a sample's match rate -- and skip the
+            // weight-table checks below, since there is nothing
+            // meaningful to check in them when nothing matched.
+            bool any_matched = n_sel > 0;
+            if(n_in > 0 && !any_matched)
             {
-                // Everything fell through to _nonmatched: the weights were
-                // never actually applied to anything.
-                rep << "ERROR=match_empty:" << e.name << "\n";
-                rc = 5;
-                if(fail_status.empty()) fail_status = "match_empty";
-                continue;
+                rep << "WARN=match_empty:" << e.name << "\n";
+                warn_match = true;
             }
             // Each weight table is filled once per matched record.
-            for(const std::string & t : e.table_types)
+            if(any_matched)
             {
-                const std::string tname = e.name + "_" + t + "Tree";
-                const Long64_t n_tab = tree_entries(dsy, tname);
-                if(n_tab < 0)
+                for(const std::string & t : e.table_types)
                 {
-                    rep << "ERROR=missing_weight_table:" << tname << "\n";
-                    rc = 5;
-                    if(fail_status.empty()) fail_status = "match_empty";
-                    continue;
-                }
-                if(n_tab != n_sel)
-                {
-                    rep << "ERROR=weight_table_entries:" << tname
-                        << ":" << n_tab << "!=" << n_sel << "\n";
-                    rc = 5;
-                    if(fail_status.empty()) fail_status = "match_unknown";
+                    const std::string tname = e.name + "_" + t + "Tree";
+                    const Long64_t n_tab = tree_entries(dsy, tname);
+                    if(n_tab < 0)
+                    {
+                        rep << "ERROR=missing_weight_table:" << tname << "\n";
+                        rc = 5;
+                        if(fail_status.empty()) fail_status = "match_empty";
+                        continue;
+                    }
+                    if(n_tab != n_sel)
+                    {
+                        rep << "ERROR=weight_table_entries:" << tname
+                            << ":" << n_tab << "!=" << n_sel << "\n";
+                        rc = 5;
+                        if(fail_status.empty()) fail_status = "match_unknown";
+                    }
                 }
             }
             // Every _nonmatched row is a row of the selection output, so its

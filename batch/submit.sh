@@ -348,11 +348,15 @@ finish() {
         cat "$VALNAME"
         local valdir="${VALDIR:-$PROJECT/output/val}"
         ifdh mkdir_p "$valdir" 2>/dev/null
-        # --force semantics apply here too: a resubmitted job must be able
-        # to replace its own earlier record.
-        if [[ -n "$FORCE" ]]; then
-            ifdh rm "$valdir/$VALNAME" 2>/dev/null
-        fi
+        # Unlike copy_output()'s job outputs, this is always overwritten,
+        # not gated behind --force: the record is disposable diagnostic
+        # data describing "what happened on the latest attempt", not a
+        # result to protect. A fresh write only ever happens while the
+        # job is still pending (nothing has succeeded yet), so there is
+        # no good prior record a race could clobber -- but leaving a
+        # stale one in place from an earlier failed attempt, silently,
+        # defeats the entire point of the file.
+        ifdh rm "$valdir/$VALNAME" 2>/dev/null
         ifdh cp "$VALNAME" "$valdir/$VALNAME" \
             || log_error "Failed to copy back the validation record."
     fi
