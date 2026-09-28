@@ -92,6 +92,20 @@ ismc = false
   spine_config = "full_chain_co_250901.yaml"
 
 [[sample]]
+key = "sbnd_bnblight_full"
+name = "sbnd_bnblight_full"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_bnblight_full_reproc_lite/*/*/*flat.caf.root"
+ismc = false
+
+  [sample.metadata]
+  description = "SBND BNBLight Full (reprocessed lite)."
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.6.0"
+  spine_config = "full_chain_co_250901.yaml"
+
+[[sample]]
 key = "sbnd_intime_mc5e18"
 name = "sbnd_intime"
 experiment = "sbnd"
@@ -482,6 +496,20 @@ ismc = false
 
   [sample.metadata]
   description = "ICARUS BNB on-beam+light Run 2."
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_12"
+  spine_production = "v0.10.9"
+  spine_config = "full_chain_co_260501.yaml"
+
+[[sample]]
+key = "icarus_run2_bnblight_full"
+name = "icarus_run2_bnblight_full"
+experiment = "icarus_run2"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_onbeam/*/*/*.root"
+ismc = false
+
+  [sample.metadata]
+  description = "Full ICARUS Run 2 On-beam dataset (BLIND)."
   parent_production = "Generation 1"
   production_version = "v10_06_00_12"
   spine_production = "v0.10.9"
