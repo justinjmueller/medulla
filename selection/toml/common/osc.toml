@@ -232,6 +232,20 @@ ismc = false
   spine_config = "full_chain_co_250901.yaml + modifier/data/mod_data_common.yaml"
 
 [[sample]]
+key = "sbnd_detvar_mattmod_yz"
+name = "sbnd_detvar_mattmod_yz"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_run1_detvar_mattmodyz/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND Run 1 BNB MattMod YZ DetVar"
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.17.1" # TODO: confirm version
+  spine_config = "full_chain_co_250901.yaml + modifier/transp/mod_transp_240720.yaml"
+
+[[sample]]
 key = "sbnd_detvar_cv"
 name = "sbnd_detvar_cv"
 experiment = "sbnd"
@@ -257,6 +271,34 @@ ismc = true
   parent_production = "Generation 1"
   production_version = "v10_06_00_09"
   spine_production = "v0.10.9"
+  spine_config = "full_chain_co_250901.yaml"
+
+[[sample]]
+key = "sbnd_detvar_newcv"
+name = "sbnd_detvar_newcv"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_newcv_lite/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND New CV Lite (DENT SystVar2 production)"
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.10.9" #TODO confirm version
+  spine_config = "full_chain_co_250901.yaml"
+
+[[sample]]
+key = "sbnd_detvar_newdent"
+name = "sbnd_detvar_newdent"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_newdent_lite/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND New DENT Lite (DENT SystVar2 production)"
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.10.9" #TODO confirm version
   spine_config = "full_chain_co_250901.yaml"
 
 # ─── ICARUS Run 4 Samples ─────────────────────────────────────────────
