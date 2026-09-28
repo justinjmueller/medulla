@@ -272,7 +272,7 @@ namespace vars::pi0ana
 	    {
             // 0mu0pi1pi0 (in-phase, fiducial)
 	        if(cuts::pi0ana::single_pi0<caf::SRInteractionTruthDLPProxy>(obj, {params[4]}) && cuts::no_muons(obj, {params[2]}) && cuts::no_charged_pions(obj, {params[3]}) 
-			&& cuts::two_photons(obj, {params[7]}) && cuts::pi0_leading_shower_containment_cut(obj) && cuts::pi0_subleading_shower_containment_cut(obj)
+			&& cuts::no_electrons(obj, {params[1]}) && cuts::two_photons(obj, {params[7]}) && cuts::pi0_leading_shower_containment_cut(obj) && cuts::pi0_subleading_shower_containment_cut(obj)
 			&& cuts::pi0ana::leading_photon_ke_cut(obj, {params[6]}) && !cuts::iscc(obj) && cuts::fiducial_cut_tmp(obj)) cat = 0;
 	        // NCpi0 non-signal background
 	        else if(num_primary_pi0s > 0 && !cuts::iscc(obj)) cat = 1;
