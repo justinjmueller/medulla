@@ -117,6 +117,17 @@ output_pattern = "spineosc_numu_%e_%t_sbnd_access_DONOTLOOK#"
   keys = ["sbnd_bnblight"]
 
 [[toml]]
+role = "detector_data_access"
+file = "detector_data_access.toml"
+output_pattern = "spineosc_numu_%e_%t_detector_access_DONOTLOOK#"
+
+  [toml.enable.sbnd]
+  keys = ["sbnd_bnblight_full"]
+
+  [toml.enable.icarus]
+  keys = ["icarus_run2_bnblight_full"]
+
+[[toml]]
 role = "data_quality"
 file = "data_quality.toml"
 experiments = ["sbnd"]
