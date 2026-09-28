@@ -1,4 +1,5 @@
 # Utilities for batch processing in medulla projects using jobsub
+import copy
 import os
 import re
 import shutil
@@ -78,6 +79,59 @@ def command(
     except Exception as e:
         print(e)
 
+def local_tmp_dir():
+    """
+    Resolve the local (non-/pnfs) directory to stage temporary copies of
+    project.db/campaign.db in for SQLite access.
+
+    Checks MEDULLA_TMPDIR first; falls back to tempfile.gettempdir()
+    (i.e. $TMPDIR/$TEMP/$TMP, or /tmp if none of those are set). Set
+    MEDULLA_TMPDIR to a roomier local directory if that default doesn't
+    have enough free space -- a project.db for a project with many jobs
+    can run to several GB. This must be a genuinely local filesystem,
+    not /pnfs: SQLite needs real local-disk locking semantics, and even
+    a plain buffered write to /pnfs can fail outright (dCache does not
+    reliably support it), independent of free space.
+
+    Returns
+    -------
+    str
+        Directory path suitable for tempfile's `dir=` argument.
+
+    Raises
+    ------
+    RuntimeError
+        If MEDULLA_TMPDIR resolves under /pnfs. The copy itself can
+        appear to succeed there, but sqlite3.connect() or a query
+        against the result fails with a cryptic "disk I/O error" --
+        better to reject it up front with an explanation.
+    """
+    result = os.environ.get('MEDULLA_TMPDIR', tempfile.gettempdir())
+    if str(Path(result).resolve()).startswith('/pnfs/'):
+        raise RuntimeError(
+            f"MEDULLA_TMPDIR resolves to {result}, which is under /pnfs. SQLite needs real "
+            f"POSIX file locking for random-access reads, which dCache's NFS layer does not "
+            f"provide -- the copy itself may succeed, but sqlite3.connect() or a query against "
+            f"it will fail with a cryptic 'disk I/O error'. Point MEDULLA_TMPDIR at a genuinely "
+            f"local (or at least non-/pnfs, e.g. NFS/BlueArc) directory instead."
+        )
+    return result
+
+def _ifdh_cp(src, dst):
+    """
+    Run `ifdh cp src dst`, raising a clear, single error (rather than a
+    confusing FileNotFoundError buried under whatever OSError triggered
+    this fallback) when ifdh itself is not on PATH.
+    """
+    if shutil.which('ifdh') is None:
+        raise RuntimeError(
+            f"Could not copy {src} -> {dst}: the direct copy failed, and "
+            f"the ifdh fallback is unavailable because 'ifdh' is not on "
+            f"PATH in this environment. Set up ifdhc (e.g. `setup ifdhc`) "
+            f"and try again."
+        )
+    subprocess.run(['ifdh', 'cp', str(src), str(dst)], check=True)
+
 def safe_copy(src, dst):
     """
     Copy a file, working around dCache access quirks that break both
@@ -120,7 +174,7 @@ def safe_copy(src, dst):
             shutil.copyfileobj(fsrc, fdst)
     except OSError:
         dst.unlink(missing_ok=True)
-        subprocess.run(['ifdh', 'cp', str(src), str(dst)], check=True)
+        _ifdh_cp(src, dst)
 
 def safe_write_text(dst, content):
     """
@@ -152,11 +206,11 @@ def safe_write_text(dst, content):
     try:
         dst.write_text(content)
     except OSError:
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.tmp') as f:
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.tmp', dir=local_tmp_dir()) as f:
             f.write(content)
             tmp = Path(f.name)
         try:
-            subprocess.run(['ifdh', 'cp', str(tmp), str(dst)], check=True)
+            _ifdh_cp(tmp, dst)
         finally:
             tmp.unlink(missing_ok=True)
 
@@ -393,12 +447,23 @@ def create_systematics_cfg(
     # configuration. For grid submission purposes, we always set the
     # following:
     # - input.path = "output.root"
-    # - input.weights = "data/*flat*.root"
+    # - input.weights = "data/*.root"
     # - output.path = "output_sys.root"
     # - tree = list of syst_trees values
-    syst_cfg = base_cfg.copy()
+    #
+    # input.weights matches every staged input rather than filtering on a
+    # "flat" substring in the filename: data/ only ever holds this job's
+    # own sample's files (nothing else is staged there), so all of them
+    # are a valid weight source regardless of naming convention -- some
+    # samples' flat CAF files are not literally named with "flat" in
+    # them (see submit.sh's matching input.weights glob and its
+    # add_weights precheck).
+    # A shallow copy would share base_cfg['input']/['output'] with the
+    # caller's dict, so the assignments below would silently mutate
+    # whatever object the caller passed in as base_cfg.
+    syst_cfg = copy.deepcopy(base_cfg)
     syst_cfg['input']['path'] = 'output.root'
-    syst_cfg['input']['weights'] = 'data/*flat*.root'
+    syst_cfg['input']['weights'] = 'data/*.root'
     syst_cfg['output']['path'] = 'output_sys.root'
     syst_cfg['tree'] = list(syst_trees.values())
     return syst_cfg
@@ -864,7 +929,7 @@ def reconcile_project(project_dir : Path) -> dict:
         raise FileNotFoundError(f"Project database {db_path} does not exist.")
 
     # Read a local copy: sqlite over dCache NFS is unreliable for locking.
-    with tempfile.NamedTemporaryFile(suffix='.db', prefix='medulla_recon_', delete=False) as f:
+    with tempfile.NamedTemporaryFile(suffix='.db', prefix='medulla_recon_', delete=False, dir=local_tmp_dir()) as f:
         tmp = Path(f.name)
     try:
         safe_copy(db_path, tmp)

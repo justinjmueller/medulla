@@ -22,7 +22,8 @@ from catalog import resolve_samples
 from utilities import (create_new_project, check_project_status, launch_jobsub,
                        safe_copy, safe_write_text, survey_project_output,
                        iter_output_files, find_output_file, output_globs, jobid_of,
-                       MIN_OUTPUT_BYTES, reconcile_project, format_reconcile_report)
+                       MIN_OUTPUT_BYTES, reconcile_project, format_reconcile_report,
+                       local_tmp_dir)
 
 # Repo root is two levels above this script (batch/ -> repo root).
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -227,7 +228,7 @@ def _open_db(campaign_dir):
     if not db_path.exists():
         raise FileNotFoundError(f"Campaign database not found: {db_path}")
     with tempfile.NamedTemporaryFile(
-        suffix='.db', prefix='medulla_campaign_', delete=False
+        suffix='.db', prefix='medulla_campaign_', delete=False, dir=local_tmp_dir()
     ) as f:
         tmp = Path(f.name)
     safe_copy(db_path, tmp)
@@ -568,7 +569,7 @@ def _sync_project_status(project_dir, revert_ids=None):
 
     # Copy to a local temp file to avoid /pnfs locking failures.
     with tempfile.NamedTemporaryFile(
-        suffix='.db', prefix='medulla_proj_', delete=False
+        suffix='.db', prefix='medulla_proj_', delete=False, dir=local_tmp_dir()
     ) as f:
         tmp = Path(f.name)
     try:
@@ -1542,7 +1543,7 @@ def _project_catalog_tags(project_dir):
         checks len() > 1, not the key's value.
     """
     project_dir = Path(project_dir)
-    with tempfile.TemporaryDirectory() as tmp:
+    with tempfile.TemporaryDirectory(dir=local_tmp_dir()) as tmp:
         local_db = Path(tmp) / 'project.db'
         safe_copy(project_dir / 'project.db', local_db)
         conn = sqlite3.connect(local_db)

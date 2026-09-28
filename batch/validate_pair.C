@@ -231,14 +231,13 @@ void validate_pair(const char * nosyst_path,
         rep << "ERROR=nosyst_missing_exposure\n";
         finish(rep, "output_empty", 2);
     }
-    // Offbeam/intime samples legitimately carry zero POT and are bookkept
-    // by livetime instead, so require only that *some* exposure was
-    // recorded rather than POT > 0 specifically.
-    if(!(pot_no > 0.0 || live_no > 0.0))
-    {
-        rep << "ERROR=nosyst_zero_exposure\n";
-        finish(rep, "output_empty", 2);
-    }
+    // A hard requirement that POT or Livetime be nonzero was removed here:
+    // some upstream productions have a confirmed bug where the CAF files'
+    // own exposure metadata is genuinely zero, which is not something a
+    // rerun of this job can fix. POT=0/LIVETIME=0 is still recorded above
+    // for every job, so a zero exposure remains visible in the record for
+    // anyone auditing a sample's totals -- it just no longer blocks the
+    // job from completing.
 
     // Every tree the manifest names must exist in the selection output.
     std::map<std::string, Long64_t> n_nosyst;

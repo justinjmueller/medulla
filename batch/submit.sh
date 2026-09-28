@@ -794,17 +794,26 @@ run_jobid() (
     fi
 
     # The systematics configuration reads its universe weights from the
-    # fixed glob 'data/*flat*.root'. If the surviving inputs contain no flat
-    # CAF, the systematics step would run to completion and silently produce
-    # output with no weights applied, which is exactly the kind of
-    # quietly-wrong result this validation exists to stop. Check before
-    # spending the event loop.
-    if [[ $VALIDATE -eq 1 ]] && grep -q 'add_weights' "$MANIFEST_PATH" 2>/dev/null; then
+    # fixed glob 'data/*.root' -- i.e. every staged input, since data/
+    # only ever holds this job's own sample's files and all of them are
+    # a valid weight source regardless of naming. If nothing survived
+    # staging, the systematics step would run to completion and silently
+    # produce output with no weights applied, which is exactly the kind
+    # of quietly-wrong result this validation exists to stop. Check
+    # before spending the event loop.
+    #
+    # The add_weights check is scoped to this job's own sample
+    # (events/${JOB_SAMPLE}/...) rather than the whole manifest: a
+    # project mixing weighted and unweighted samples (e.g. MC alongside
+    # off-beam data) would otherwise have every job blocked by this
+    # check as soon as *any* sample in the project needs weights, even
+    # jobs whose own sample never does.
+    if [[ $VALIDATE -eq 1 ]] && grep -q "^events/${JOB_SAMPLE}/[^|]*|[^|]*|add_weights|" "$MANIFEST_PATH" 2>/dev/null; then
         shopt -s nullglob
-        flat_inputs=(data/*flat*.root)
+        flat_inputs=(data/*.root)
         shopt -u nullglob
         if [[ ${#flat_inputs[@]} -eq 0 ]]; then
-            log_error "No 'data/*flat*.root' inputs survived staging, but this project applies weights."
+            log_error "No input files survived staging, but this sample applies weights."
             finish 1 "transfer_lost"
         fi
         log_info "Found ${#flat_inputs[@]} flat CAF input(s) for weights."
