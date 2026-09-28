@@ -12,7 +12,13 @@
 #
 # Arguments:
 #   --project=PROJECT   : Path to the project directory (PNFS)
-#   --tag=BRANCH     : Medulla git branch (default: develop)
+#   --tag=BRANCH        : Medulla git branch (default: develop)
+#
+# Nue-enhanced splines: if variation_splines_nue.root was bundled in
+# the submission tarball (by medulla.py when the source TOML contains
+# splines_file_nue), it will be available at
+# $INPUT_TAR_DIR_LOCAL/variation_splines_nue.root and the
+# __SPLINES_FILE_NUE__ placeholder in the TOML is replaced automatically.
 #######################################################################
 
 PROJECT=""
@@ -95,6 +101,12 @@ sed -i 's|__INPUT_FILE__|input_selection.root|g' variation_systematics_phase2.to
 sed -i "s|__SPLINES_FILE__|${INPUT_TAR_DIR_LOCAL}/variation_splines.root|g" variation_systematics_phase2.toml
 echo "[INFO] Set [input] path -> input_selection.root"
 echo "[INFO] Set [variations] splines_file -> ${INPUT_TAR_DIR_LOCAL}/variation_splines.root"
+
+# If nue-enhanced splines were bundled in the submission tarball, wire them up.
+if [[ -f "${INPUT_TAR_DIR_LOCAL}/variation_splines_nue.root" ]]; then
+  sed -i "s|__SPLINES_FILE_NUE__|${INPUT_TAR_DIR_LOCAL}/variation_splines_nue.root|g" variation_systematics_phase2.toml
+  echo "[INFO] Set [variations] splines_file_nue -> ${INPUT_TAR_DIR_LOCAL}/variation_splines_nue.root"
+fi
 
 #######################################################################
 # Run systematics (Phase 2: apply detsys weights from splines)

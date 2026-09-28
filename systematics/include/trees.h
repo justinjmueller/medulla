@@ -63,7 +63,7 @@ namespace sys::trees
      * @param input The input TFile.
      * @return void
      */
-    void copy_with_weight_systematics(cfg::ConfigurationTable & config, cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc);
+    void copy_with_weight_systematics(cfg::ConfigurationTable & config, cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc, sys::detsys::DetsysCalculator * calc_nue = nullptr, const std::vector<int> & nue_categories = {});
 
     /**
      * @brief Apply pre-loaded detector variation weights without reading CAF files.
@@ -73,13 +73,23 @@ namespace sys::trees
      * WeightReader is needed because detector variation weights depend only on
      * the reconstructed variable value and the pre-rolled z-scores, both of
      * which are available without re-reading the original CAF files.
+     *
+     * If @p calc_nue is non-null and @p nue_categories is non-empty, events
+     * whose true_category falls in @p nue_categories use @p calc_nue to
+     * evaluate splines; all other events use @p calc. This allows nue-enhanced
+     * splines (built from a nue-enriched sample) to be applied to nue-flavor
+     * events while background events receive weights from the standard splines.
+     *
      * @param config The global configuration table.
      * @param table The per-tree configuration sub-table.
      * @param output The output TFile.
      * @param input The input TFile (individual job selection output).
-     * @param calc A DetsysCalculator initialised with pre-built splines.
+     * @param calc A DetsysCalculator initialised with standard pre-built splines.
+     * @param calc_nue Optional DetsysCalculator with nue-enhanced splines.
+     *                 Pass nullptr to use @p calc for all events (default behaviour).
+     * @param nue_categories true_category values that should use @p calc_nue.
      * @return void
      */
-    void copy_with_detsys_weights(cfg::ConfigurationTable & config, cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc);
+    void copy_with_detsys_weights(cfg::ConfigurationTable & config, cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc, sys::detsys::DetsysCalculator * calc_nue = nullptr, const std::vector<int> & nue_categories = {});
 }
 #endif

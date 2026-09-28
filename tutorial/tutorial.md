@@ -548,6 +548,83 @@ sed -i 's|__SPLINES_FILE__|variation_splines.root|g' variation_systematics_phase
 
 This produces `output_varsys.root` locally, containing the `events/NuMIFull/selected_variationTree` tree — the same tree `submit_variation_phase2.sh` validates after each grid job.
 
+## Nue-Enhanced Detector Splines (Optional)
+
+When the standard detector-variation sample has poor statistics for a particular event category (e.g. νe signal, which makes up only a tiny fraction of a NuMI sample), the N_syst/N_cv ratios used to build the Phase 1 splines can be noisy, producing inflated uncertainty bands for that category in the final plots. If a dedicated nue-enhanced (or other category-enriched) sample exists, its splines can be applied selectively to those events while background events continue to use the standard splines.
+
+### What to change
+
+Add two fields to the `[variations]` block of your TOML:
+
+```toml
+[variations]
+splines_file     = '/pnfs/icarus/.../variation_splines.root'     # standard splines
+splines_file_nue = '/pnfs/icarus/.../variation_splines_nue.root' # nue-enhanced splines
+nue_categories   = [0, 1]                                        # true_category values routed to nue splines
+keys = [...]
+variable = [...]
+bins = [...]
+nuniverses = 1000
+```
+
+`nue_categories` lists the integer `true_category` values that should receive weights from the nue-enhanced splines. All other events use the standard splines. The convention for the ICARUS nueCC inclusive analysis is:
+
+| `true_category` | Label         |
+|-----------------|---------------|
+| 0               | νe Signal     |
+| 1               | νe OOFV       |
+| 2               | νμ            |
+| 3               | ν OOFV        |
+| 4               | ν NC          |
+| 5               | Cosmic        |
+
+With `nue_categories = [0, 1]` both νe-flavor categories use the nue-enhanced splines; all others use the standard splines.
+
+### Running interactively
+
+```bash
+./systematics/run_systematics /path/to/NuMI_nue_gundam.toml
+```
+
+The paths in `splines_file` and `splines_file_nue` are read directly as configured — no placeholder substitution is needed for interactive runs.
+
+### Running in batch (Phase 2)
+
+No extra arguments are needed. When `medulla.py` builds the Phase 2 TOML for the grid, it detects `splines_file_nue` automatically, replaces both splines paths with placeholders (`__SPLINES_FILE__` and `__SPLINES_FILE_NUE__`), and bundles both files into the same CVMFS tarball:
+
+```bash
+# Smoke test
+python3 medulla/batch/medulla.py -p <project_dir> -e icarus \
+    --variation-phase2 -V NuMI_nue_gundam.toml --test-job
+
+# Full submission
+python3 medulla/batch/medulla.py -p <project_dir> -e icarus \
+    --variation-phase2 -V NuMI_nue_gundam.toml \
+    --tag <medulla_branch> --memory 4000 --disk 30 --lifetime 4h
+```
+
+Each grid worker finds both `variation_splines.root` and `variation_splines_nue.root` in `$INPUT_TAR_DIR_LOCAL` and wires them up automatically.
+
+### Sandbox debugging with nue splines
+
+If you need to debug a Phase 2 job interactively and the TOML uses nue-enhanced splines, stage both files manually:
+
+```bash
+mkdir sandbox && cd sandbox
+bash ../medulla/batch/sandbox.sh --project=<project_dir> --jobid=<N>
+
+ifdh cp <project_dir>/variation_systematics_phase2.toml .
+ifdh cp <project_dir>/variation_splines.root .
+ifdh cp /pnfs/icarus/.../variation_splines_nue.root .
+ifdh cp <project_dir>/output/output_systematics_jobid<NNNN>.root input_selection.root
+
+sed -i 's|__INPUT_FILE__|input_selection.root|g'      variation_systematics_phase2.toml
+sed -i 's|__SPLINES_FILE__|variation_splines.root|g'  variation_systematics_phase2.toml
+sed -i 's|__SPLINES_FILE_NUE__|variation_splines_nue.root|g' variation_systematics_phase2.toml
+
+./systematics/run_systematics variation_systematics_phase2.toml
+```
+
 ## Merging Output Files
 `medulla/batch/merge_list.py` builds a flat list of output files to merge for a project by reading `project.db` directly, so it always uses the same jobid-to-filename convention as the batch scripts (`output_jobid<NNNN>.root` for `data`/`detector_variation`-tagged jobs, `output_systematics_jobid<NNNN>.root` for `nominal`-tagged jobs), and it automatically appends any `output_varsys_jobid<NNNN>.root` files it finds under `output/`:
 

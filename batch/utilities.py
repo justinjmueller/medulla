@@ -1046,8 +1046,12 @@ def launch_variation_phase2_jobsub(
     cfg = toml.load(str(variation_toml_path))
     cfg['input']['path'] = '__INPUT_FILE__'
     cfg['output']['path'] = 'output_varsys.root'
+    splines_nue_source = None
     if 'variations' in cfg:
         cfg['variations']['splines_file'] = '__SPLINES_FILE__'
+        if 'splines_file_nue' in cfg['variations']:
+            splines_nue_source = Path(cfg['variations']['splines_file_nue'])
+            cfg['variations']['splines_file_nue'] = '__SPLINES_FILE_NUE__'
     cfg['tree'] = [tree for tree in cfg.get('tree', []) if tree.get('action') != 'copy']
     for tree in cfg['tree']:
         if tree.get('action') == 'add_weights':
@@ -1068,22 +1072,30 @@ def launch_variation_phase2_jobsub(
 
     disk_size = f'{disk}GB' if disk is not None else '25GB'
 
-    # Package the splines file into a tarball for CVMFS distribution so all
+    # Package the splines file(s) into a tarball for CVMFS distribution so all
     # grid nodes read from the CVMFS cache rather than each issuing an
     # independent ifdh copy of the same large file.
-    # The splines file lives on PNFS/dCache and cannot be read directly —
-    # stage it locally first, then tar it.
+    # Splines files live on PNFS/dCache and cannot be read directly —
+    # stage them locally first, then tar them.
     import tarfile, tempfile
     splines_local = Path(tempfile.mkstemp(suffix='.root')[1])
     splines_local.unlink()
+    splines_nue_local = None
     splines_tar = Path(tempfile.mkstemp(suffix='.tar.gz')[1])
     try:
         _ifdh_cp(str(splines_path), str(splines_local))
-        #subprocess.run(['ifdh', 'cp', str(splines_path), str(splines_local)], check=True)
+        if splines_nue_source is not None:
+            splines_nue_local = Path(tempfile.mkstemp(suffix='_nue.root')[1])
+            splines_nue_local.unlink()
+            _ifdh_cp(str(splines_nue_source), str(splines_nue_local))
         with tarfile.open(str(splines_tar), 'w:gz') as tar:
             tar.add(str(splines_local), arcname='variation_splines.root')
+            if splines_nue_local is not None:
+                tar.add(str(splines_nue_local), arcname='variation_splines_nue.root')
     finally:
         splines_local.unlink(missing_ok=True)
+        if splines_nue_local is not None:
+            splines_nue_local.unlink(missing_ok=True)
 
     cmd = [
         'jobsub_submit',
@@ -1103,10 +1115,12 @@ def launch_variation_phase2_jobsub(
     ]
 
     print(f"{_INFO} -- Submitting {njobs} Phase 2 variation systematics jobs:")
-    print(f"{_INFO} --   TOML:    {variation_toml_path}")
-    print(f"{_INFO} --   Splines: {splines_path}")
-    print(f"{_INFO} --   Jobs:    {njobs}")
-    print(f"{_INFO} --   Output:  {project_dir}/output/output_varsys_jobid<NNNN>.root")
+    print(f"{_INFO} --   TOML:       {variation_toml_path}")
+    print(f"{_INFO} --   Splines:    {splines_path}")
+    if splines_nue_source is not None:
+        print(f"{_INFO} --   Splines nue: {splines_nue_source}")
+    print(f"{_INFO} --   Jobs:       {njobs}")
+    print(f"{_INFO} --   Output:     {project_dir}/output/output_varsys_jobid<NNNN>.root")
     print(f"{_INFO} --   Command: {' '.join(cmd)}")
 
     resp = input("Confirm Phase 2 batch submission? [Y/N] ")

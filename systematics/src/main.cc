@@ -105,6 +105,9 @@ int main(int argc, char * argv[])
      * @see sys::detsys::DetsysCalculator
      */
     sys::detsys::DetsysCalculator calc;
+    sys::detsys::DetsysCalculator calc_nue;
+    std::vector<int> nue_categories;
+
     if(config.has_field("variations"))
     {
         try
@@ -119,6 +122,26 @@ int main(int argc, char * argv[])
                 calc = sys::detsys::DetsysCalculator(config, output, splines_path);
                 // No calc.write() here: histograms and splines already live in the
                 // phase-1 output; only the per-event weight results are written.
+
+                // Optionally load a second set of nue-enhanced splines. When
+                // both splines_file_nue and nue_categories are present, events
+                // whose true_category falls in nue_categories will use calc_nue
+                // for weight evaluation instead of calc.
+                if(config.has_field("variations.splines_file_nue"))
+                {
+                    std::string splines_path_nue = config.get_string_field("variations.splines_file_nue");
+                    std::cout << "Loading nue-enhanced splines from: " << splines_path_nue << std::endl;
+                    calc_nue = sys::detsys::DetsysCalculator(config, output, splines_path_nue);
+
+                    if(config.has_field("variations.nue_categories"))
+                    {
+                        for(double c : config.get_double_vector("variations.nue_categories"))
+                            nue_categories.push_back(static_cast<int>(c));
+                    }
+                    std::cout << "Nue categories for nue-enhanced splines:";
+                    for(int c : nue_categories) std::cout << " " << c;
+                    std::cout << std::endl;
+                }
             }
             else
             {
@@ -182,13 +205,15 @@ int main(int argc, char * argv[])
         }
         else if(type == "add_weights"){
             std::cout << "Copying tree " << table.get_string_field("origin") << " and adding weights for systematics." << std::endl;
-            sys::trees::copy_with_weight_systematics(config, table, output, input, calc);
+            sys::detsys::DetsysCalculator * calc_nue_ptr = calc_nue.is_initialized() ? &calc_nue : nullptr;
+            sys::trees::copy_with_weight_systematics(config, table, output, input, calc, calc_nue_ptr, nue_categories);
         }
         else if(type == "add_detsys_weights"){
             // Phase 2: apply pre-loaded detector variation weights directly from
             // the selection tree without reading CAF files.
             std::cout << "Copying tree " << table.get_string_field("origin") << " and applying pre-loaded detsys weights." << std::endl;
-            sys::trees::copy_with_detsys_weights(config, table, output, input, calc);
+            sys::detsys::DetsysCalculator * calc_nue_ptr = calc_nue.is_initialized() ? &calc_nue : nullptr;
+            sys::trees::copy_with_detsys_weights(config, table, output, input, calc, calc_nue_ptr, nue_categories);
         }
 
         std::cout << "Finished processing tree: " << table.get_string_field("origin") << std::endl;

@@ -106,7 +106,7 @@ void sys::trees::copy_tree(cfg::ConfigurationTable & table, TFile * output, TFil
 }
 
 // Add reweightable systematics to the output TTree.
-void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc)
+void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc, sys::detsys::DetsysCalculator * calc_nue, const std::vector<int> & nue_categories)
 {
     /**
      * @brief Create the output subdirectory following the nesting outlined
@@ -277,7 +277,10 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     {
         sysvariables.push_back(SysVariable(t));
         calc.add_variable(sysvariables.back());
+        if(calc_nue) calc_nue->add_variable(sysvariables.back());
     }
+
+    std::set<int> nue_cat_set(nue_categories.begin(), nue_categories.end());
 
     std::cout << "Configured " << sysvariables.size() << " systematic variables." << std::endl;
 
@@ -363,6 +366,11 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
                     if ((size_t)nominal_count % 100 == 0 && nominal_count > 0)
                         std::cout << "Processed " << (size_t)nominal_count << " events..." << std::endl;
 
+                    bool use_nue = calc_nue != nullptr
+                                   && !nue_cat_set.empty()
+                                   && nue_cat_set.count(static_cast<int>(brs["true_category"]));
+                    sys::detsys::DetsysCalculator & active = use_nue ? *calc_nue : calc;
+
                     for(auto & [key, value] : systematics)
                     {
                         value->get_weights()->clear();
@@ -388,10 +396,10 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
                         }
                         else
                         {
-                            for(double & z : calc.get_zscores(key))
-                                value->get_weights()->push_back(calc.get_weight(key, brs[calc.get_variable()], z));
+                            for(double & z : active.get_zscores(key))
+                                value->get_weights()->push_back(active.get_weight(key, brs[active.get_variable()], z));
                             for(SysVariable & sv : sysvariables)
-                                calc.add_value(sv.name, brs[sv.name], key, brs);
+                                active.add_value(sv.name, brs[sv.name], key, brs);
                         }
                     }
 
@@ -437,7 +445,7 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
         for(int i(0); i < input_tree->GetEntries(); ++i)
         {
             input_tree->GetEntry(i);
-            if(nu_id < 0)
+            if(!(nu_id >= 0))
             {
                 run = reader.get_run();
                 subrun = reader.get_subrun();
@@ -484,12 +492,16 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
     // Write detector systematic histograms to the output file.
     if(calc.is_initialized())
         calc.write_results();
+    if(calc_nue && calc_nue->is_initialized())
+        calc_nue->write_results();
 }
 
 // Apply pre-loaded detector variation weights directly from the selection tree.
 // No WeightReader needed: detsys weights depend only on the event's reconstructed
 // variable value and the pre-rolled z-scores stored in the DetsysCalculator.
-void sys::trees::copy_with_detsys_weights(cfg::ConfigurationTable & config, cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc)
+// If calc_nue is non-null, events whose true_category is in nue_categories use
+// calc_nue; all other events use calc.
+void sys::trees::copy_with_detsys_weights(cfg::ConfigurationTable & config, cfg::ConfigurationTable & table, TFile * output, TFile * input, sys::detsys::DetsysCalculator & calc, sys::detsys::DetsysCalculator * calc_nue, const std::vector<int> & nue_categories)
 {
     std::cout << "Processing tree " << table.get_string_field("origin")
               << " (add_detsys_weights) -> " << table.get_string_field("destination") << std::endl;
@@ -555,12 +567,13 @@ void sys::trees::copy_with_detsys_weights(cfg::ConfigurationTable & config, cfg:
         systrees[tname]->SetAutoFlush(1000);
     }
 
-    // Configure sysvariables and register them with the calculator.
+    // Configure sysvariables and register them with both calculators.
     std::vector<SysVariable> sysvariables;
     for(cfg::ConfigurationTable & t : config.get_subtables("sysvar"))
     {
         sysvariables.push_back(SysVariable(t));
         calc.add_variable(sysvariables.back());
+        if(calc_nue) calc_nue->add_variable(sysvariables.back());
     }
 
     // Wire up only variation-type systematics (others need a CAF reader).
@@ -582,20 +595,31 @@ void sys::trees::copy_with_detsys_weights(cfg::ConfigurationTable & config, cfg:
 
     std::cout << "Applying detsys weights to " << input_tree->GetEntries() << " events." << std::endl;
 
+    // Build a set of nue categories for O(1) lookup.
+    std::set<int> nue_cat_set(nue_categories.begin(), nue_categories.end());
+
     // Main loop: iterate directly over the selection tree entries.
     for(int i(0); i < input_tree->GetEntries(); ++i)
     {
         input_tree->GetEntry(i);
         output_tree->Fill();
-        calc.increment_nominal_count(1.0);
+
+        // Choose the spline calculator for this event. If a nue-enhanced
+        // calculator is configured and this event's true_category is in the
+        // nue set, use it; otherwise fall back to the standard calculator.
+        bool use_nue = calc_nue != nullptr
+                       && !nue_cat_set.empty()
+                       && nue_cat_set.count(static_cast<int>(brs["true_category"]));
+        sys::detsys::DetsysCalculator & active = use_nue ? *calc_nue : calc;
+        active.increment_nominal_count(1.0);
 
         for(auto & [key, value] : systematics)
         {
             value->get_weights()->clear();
-            for(double & z : calc.get_zscores(key))
-                value->get_weights()->push_back(calc.get_weight(key, brs[calc.get_variable()], z));
+            for(double & z : active.get_zscores(key))
+                value->get_weights()->push_back(active.get_weight(key, brs[active.get_variable()], z));
             for(SysVariable & sv : sysvariables)
-                calc.add_value(sv.name, brs[sv.name], key, brs);
+                active.add_value(sv.name, brs[sv.name], key, brs);
         }
 
         for(auto & [key, value] : systrees)
@@ -611,4 +635,6 @@ void sys::trees::copy_with_detsys_weights(cfg::ConfigurationTable & config, cfg:
 
     if(calc.is_initialized())
         calc.write_results();
+    if(calc_nue && calc_nue->is_initialized())
+        calc_nue->write_results();
 }
