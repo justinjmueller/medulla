@@ -333,7 +333,14 @@ sys::detsys::DetsysCalculator::DetsysCalculator(cfg::ConfigurationTable & table,
 
             // Reconstruct hdummy from the saved ordinate histogram to recover
             // the bin boundaries needed by FindBin() inside get_weight().
-            TH1D * h = (TH1D *) spline_dir->Get(hist_key.c_str());
+            // Different Phase 1 runs may use different CV sample names (e.g.
+            // 'cv', 'NuMI_nue', 'NuMIFull'), so try each in turn.
+            TH1D * h = nullptr;
+            for(const std::string & ord : {ordinate, std::string("cv"), std::string("NuMI_nue"), std::string("NuMIFull")})
+            {
+                h = (TH1D *) spline_dir->Get(make_hist_key(configured_variable, ord).c_str());
+                if(h) break;
+            }
             if(!h)
                 throw cfg::ConfigurationError("Ordinate histogram '" + hist_key + "' not found in splines file.");
 
