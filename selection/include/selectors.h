@@ -568,5 +568,42 @@ namespace selectors
         return pi0_photon_pair(obj, params).second;
     }
     REGISTER_SELECTOR(pi0_subleading_shower, pi0_subleading_shower);
+
+    /**
+     * @brief Find the index of the leading primary photon not used in the
+     * pi0 photon pair.
+     * @details The pi0 pair is chosen with pi0_photon_pair (forwarding
+     * params). Among the remaining primary photons, the one with the highest
+     * kinetic energy (pvars::ke) is returned. This is intended to capture the
+     * "extra" shower in interactions with three or more reconstructed
+     * photons.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @param params optional parameters forwarded to pi0_photon_pair
+     *        (params[0] = per-shower calo KE threshold in MeV).
+     * @return the index of the leading unpaired primary photon, or kNoMatch
+     *         if there is none.
+     */
+    template<class T>
+    size_t third_shower(const T & obj, std::vector<double> params = {})
+    {
+        auto pair = pi0_photon_pair(obj, params);
+        double leading_ke(-1.0);
+        size_t index(kNoMatch);
+        for(size_t i(0); i < obj.particles.size(); ++i)
+        {
+            if(i == pair.first || i == pair.second) continue;
+            const auto & p = obj.particles[i];
+            if(pvars::pid(p) != pvars::kPhoton || !pvars::primary_classification(p)) continue;
+            double energy(pvars::ke(p));
+            if(energy > leading_ke && energy > params[0])
+            {
+                leading_ke = energy;
+                index = i;
+            }
+        }
+        return index;
+    }
+    REGISTER_SELECTOR(third_shower, third_shower);
 }
 #endif // SELECTORS_H
