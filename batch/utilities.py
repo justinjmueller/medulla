@@ -978,7 +978,7 @@ def launch_variation_phase2_jobsub(
     splines_local.unlink()
     splines_tar = Path(tempfile.mkstemp(suffix='.tar.gz')[1])
     try:
-        subprocess.run(['ifdh', 'cp', str(splines_path), str(splines_local)], check=True)
+        subprocess.run(['_ifdh_cp', str(splines_path), str(splines_local)], check=True)
         with tarfile.open(str(splines_tar), 'w:gz') as tar:
             tar.add(str(splines_local), arcname='variation_splines.root')
     finally:
