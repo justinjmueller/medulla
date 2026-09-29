@@ -69,7 +69,7 @@ make -j4
 # Determine this job's input file via the Phase 2 manifest
 #######################################################################
 
-ifdh cp "$PROJECT/variation_phase2_manifest.txt" variation_phase2_manifest.txt
+cp "$PROJECT/variation_phase2_manifest.txt" variation_phase2_manifest.txt
 JOBID=$(sed -n "$((PROCESS + 1))p" variation_phase2_manifest.txt)
 if [[ -z "$JOBID" ]]; then
   echo "[ERROR] Could not determine JOBID for PROCESS=$PROCESS" >&2
@@ -82,10 +82,10 @@ echo "[INFO] PROCESS=$PROCESS -> JOBID=$JOBID"
 # Stage input files
 #######################################################################
 
-ifdh cp "$PROJECT/variation_systematics_phase2.toml" variation_systematics_phase2.toml
+cp "$PROJECT/variation_systematics_phase2.toml" variation_systematics_phase2.toml
 echo "[INFO] Copied variation_systematics_phase2.toml"
 
-ifdh cp "$PROJECT/output/output_systematics_jobid${PADDED_JOBID}.root" input_selection.root
+cp "$PROJECT/output/output_systematics_jobid${PADDED_JOBID}.root" input_selection.root
 echo "[INFO] Copied output_systematics_jobid${PADDED_JOBID}.root -> input_selection.root"
 
 # Replace path placeholders written at submission time.
@@ -135,5 +135,5 @@ root -l -b -q "$VALIDATE_MACRO"
 rm -f "$VALIDATE_MACRO"
 
 printf -v OUTNAME "output_varsys_jobid%04d.root" "$JOBID"
-ifdh cp output_varsys.root "$PROJECT/output/$OUTNAME"
+cp output_varsys.root "$PROJECT/output/$OUTNAME"
 echo "[INFO] Staged output to: $PROJECT/output/$OUTNAME"
