@@ -222,6 +222,25 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::Both, fiducial_cut_tmp, fiducial_cut_tmp);
 
     /**
+     * @brief Apply a tpc volume cut for sbnd; the interaction vertex must be fully 
+     * contained within the sbnd TPC.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to select on.
+     * @return true if the interaction vertex is fully contained within the sbnd TPC.
+    */
+    template<class T>
+    bool sbnd_tpc_cut(const T & obj)
+    {
+        return (
+            (abs(obj.vertex[0]) < 200) &&
+            (abs(obj.vertex[1]) < 200) &&
+            (obj.vertex[2] > 0) &&
+            (obj.vertex[2] < 500)
+        );
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, sbnd_tpc_cut, sbnd_tpc_cut);
+
+    /**
      * @brief Veto interactions whose vertex falls in the ICARUS z-gap region.
      * @details A region near |z| < 100 cm in ICARUS exhibits anomalously high
      * rates of poorly-reconstructed interactions ("mystery z-gap"). This cut
