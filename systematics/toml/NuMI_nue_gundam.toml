@@ -33,6 +33,27 @@ variable_length = false
 # gundam_store_syst = true
 # is_nu = true
 # is_data = false
+[[tree]]
+origin = 'events/NuMIFull/all_signal'
+destination = 'events/NuMIFull/'
+name = 'all_signal'
+action = 'add_weights'
+table_types = ['multisim', 'multisigma', 'variation', 'NuMIfluxsim']
+gundam_store_syst = true
+is_nu = true
+is_data = false
+
+[[tree]]
+origin = 'events/NuMIFull/all_signal_nonmatched'
+destination = 'events/NuMIFull/'
+name = 'all_signal_nonmatched'
+action = 'add_weights'
+table_types = ['multisim', 'multisigma', 'variation', 'NuMIfluxsim']
+gundam_store_syst = false
+is_nu = true
+is_data = false
+nan_category_replacement = 5.0
+
 
 [[tree]]
 origin = 'events/NuMIFull/selected'
@@ -46,8 +67,59 @@ is_nu = true
 is_data = false
 
 [[tree]]
+origin = 'events/NuMIFull/selected_nonmatched'
+destination = 'events/NuMIFull/'
+name = 'selected_nonmatched'
+action = 'add_weights'
+table_types = ['multisim', 'multisigma', 'variation', 'NuMIfluxsim']
+gundam_store_syst = false
+is_nu = true
+is_data = false
+nan_category_replacement = 5.0
+
+[[tree]]
 origin = 'events/data/selected'
 destination = 'events/data/'
+name = 'selected'
+action = 'copy'
+gundam_store_syst = false
+is_nu = false
+is_data = true
+
+[[tree]]
+origin = 'events/NuMIFull/nc_sideband'
+destination = 'events/NuMIFull/'
+name = 'nc_sideband'
+action = 'add_weights'
+table_types = ['multisim', 'multisigma', 'variation', 'NuMIfluxsim']
+# table_types = ['variation']
+gundam_store_syst = true
+is_nu = true
+is_data = false
+
+[[tree]]
+origin = 'events/NuMIFull/nc_sideband_nonmatched'
+destination = 'events/NuMIFull/'
+name = 'nc_sideband_nonmatched'
+action = 'add_weights'
+table_types = ['multisim', 'multisigma', 'variation', 'NuMIfluxsim']
+gundam_store_syst = false
+is_nu = true
+is_data = false
+nan_category_replacement = 5.0
+
+[[tree]]
+origin = 'events/data/nc_sideband'
+destination = 'events/data/'
+name = 'selected'
+action = 'copy'
+gundam_store_syst = false
+is_nu = false
+is_data = true
+
+[[tree]]
+origin = 'events/dataBeamOff/nc_sideband'
+destination = 'events/dataBeamOff/'
 name = 'selected'
 action = 'copy'
 gundam_store_syst = false
