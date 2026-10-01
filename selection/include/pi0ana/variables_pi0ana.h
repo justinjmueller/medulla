@@ -289,11 +289,12 @@ namespace vars::pi0ana
      * @brief Variable for enumerating interaction topologies.
      * @details This variable provides a basic categorization of interactions
      * using the following categories:
-     * 0: NCpi0 single shower signal
-	 * 1: CCpi0 single shower signal
-     * 2: NCpi0 non-signal background
-     * 3: CCpi0 non-signal background
-	 * 4: Other nu without pi0.
+     * 0: NCpi0 single shower signal (outscattered)
+	 * 1: NCpi0 single shower background (inscattered)
+     * 2: Other NCpi0 non-signal background
+     * 3: CCpi0 single shower background
+	 * 4: Other CCpi0
+	 * 5: Other nu without pi0.
      * 10: Cosmic
      * @param obj the interaction to apply the variable on.
      * @return the enumerated topology of the interaction.
