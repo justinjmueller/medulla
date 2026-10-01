@@ -312,11 +312,11 @@ namespace vars::pi0ana
 	    {
             // NCpi0 single shower signal (outscattered)
 	        if(cuts::pi0ana::single_pi0<caf::SRInteractionTruthDLPProxy>(obj, {params[4]}) && cuts::no_muons(obj, {params[1]}) && cuts::no_charged_pions(obj, {params[2]})
-			&& cuts::single_photon(obj, {params[0]}) && cuts::no_electrons(obj, {params[3]}) && cuts::leading_primary_photon_containment_cut(obj) && cuts::fiducial_cut_tmp(obj)
+			&& cuts::single_photon(obj, {params[0]}) && cuts::no_electrons(obj, {params[3]}) && cuts::leading_primary_photon_containment_cut(obj) && cuts::sbnd_tpc_cut(obj)
 			&& !cuts::iscc(obj)) cat = 0;
 			// NCpi0 single shower background (inscattered)
 	        else if(cuts::pi0ana::single_pi0<caf::SRInteractionTruthDLPProxy>(obj, {params[4]}) && cuts::no_muons(obj, {params[1]}) && cuts::no_charged_pions(obj, {params[2]})
-			&& cuts::single_photon(obj, {params[0]}) && cuts::no_electrons(obj, {params[3]}) && cuts::leading_primary_photon_containment_cut(obj) && !cuts::fiducial_cut_tmp(obj)
+			&& cuts::single_photon(obj, {params[0]}) && cuts::no_electrons(obj, {params[3]}) && cuts::leading_primary_photon_containment_cut(obj) && !cuts::sbnd_tpc_cut(obj)
 			&& !cuts::iscc(obj)) cat = 1;
 			// Other NCpi0 non-signal background
 	        else if(num_primary_pi0s > 0 && !cuts::iscc(obj)) cat = 2;
