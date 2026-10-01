@@ -7,7 +7,7 @@ weights = '/pnfs/icarus/persistent/users/dcarber/spine/NuMI_CV_ext/v09_89_01_02p
 use_additional_hash = true
 
 [output]
-path = '/exp/icarus/data/users/micarrig/gundam_merged_v2.root'
+path = '/exp/icarus/app/users/nabrego/dirWork/systematics_nue_gundam/gundam_merged_v2.root'
 histogram_destination = 'variations/'
 
 [[sysvar]]
