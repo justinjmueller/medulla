@@ -321,6 +321,37 @@ namespace selectors
     REGISTER_SELECTOR(leading_primary_photon, leading_primary_photon);
 
     /**
+     * @brief Finds the index corresponding to the subleading primary photon.
+     * @details The subleading primary photon is the primary photon with the
+     * second-highest kinetic energy (the leading one is excluded). Together
+     * with the leading primary photon this fixes the outcome of the
+     * single_photon cut for any KE threshold.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the subleading primary photon (second-highest KE).
+     */
+    template<class T>
+    size_t subleading_primary_photon(const T & obj)
+    {
+        size_t leading_index = leading_primary_particle_index(obj, pvars::kPhoton);
+        double subleading_ke(0);
+        size_t index(kNoMatch);
+        for(size_t i(0); i < obj.particles.size(); ++i)
+        {
+            if(i == leading_index) continue;
+            const auto & p = obj.particles[i];
+            double energy(pvars::ke(p));
+            if(pvars::pid(p) == pvars::kPhoton && pvars::primary_classification(p) && energy > subleading_ke)
+            {
+                subleading_ke = energy;
+                index = i;
+            }
+        }
+        return index;
+    }
+    REGISTER_SELECTOR(subleading_primary_photon, subleading_primary_photon);
+
+    /**
      * @brief Finds the index corresponding to the leading primary electron.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to operate on.
