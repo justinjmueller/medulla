@@ -266,26 +266,21 @@ namespace pvars
     template<class T>
     double default_calo_ke(const T & p)
     {
-        return p.calo_ke;
+        if constexpr (std::is_same_v<T, caf::SRParticleTruthDLPProxy>)
+            return p.ke;
+        else
+            return p.calo_ke;
     }
-    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, default_calo_ke, default_calo_ke);
+    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, default_calo_ke, default_calo_ke);
 
     /**
-     * @brief Variable for the calorimetric kinetic energy of the particle.
-     * @details The calorimetic kinetic energy is calculated upstream in the
-     * SPINE reconstruction as the sum of energy of each spacepoint in the
-     * particle.  This quanity is then scaled according to the pi0 mass
-     * distribution.
-     * @tparam T the type of particle (true or reco).
-     * @param p the particle to apply the variable on.
-     * @return the calorimetric kinetic energy of the particle.
+     * @brief Runtime-switchable KE estimator, templated on particle type.
+     * @details calofn<RParticleType> defaults to default_calo_ke; calofn<TParticleType>
+     * defaults to default_true_ke. Both can be overridden via general.calofn_reco /
+     * general.calofn_true in the configuration. Set alongside primfn/pidfn in main.cc.
      */
     template<class T>
-    double pi0_adj_mc_calo_ke(const T & p)
-    {
-        return (1/82.03) * 78.10 * (1/1.2359) * 1/(0.77) * (1/(133.31/134.9768)) * p.calo_ke;
-    }
-    REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, pi0_adj_mc_calo_ke, pi0_adj_mc_calo_ke);
+    extern std::shared_ptr<VarFn<T>> calofn;
 
     /**
      * @brief Variable for the calorimetric kinetic energy of the particle.
