@@ -251,8 +251,8 @@ namespace utilities
             }
             double pmag  = std::sqrt(px*px + py*py + pz*pz);
             double pi0ke = std::sqrt(PI0_MASS*PI0_MASS + pmag*pmag) - PI0_MASS;
-            if(ndaughters < 2 || pi0ke < params[0])
-                bad_ids.push_back(entry.first);
+            // if(ndaughters < 2 || pi0ke < params[0])
+            //    bad_ids.push_back(entry.first);
         }
         for(int id : bad_ids) true_pi0s.erase(id);
         return true_pi0s;
