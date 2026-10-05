@@ -366,7 +366,7 @@ namespace vars::pi0ana
 		run = run && no_charged_pions_cut;
 		cut_results = cut_results * 10 + no_charged_pions_cut*2 + run;
 		// Two photons
-		bool two_photons_cut = cuts::two_photons(obj, {params[7]});
+		bool two_photons_cut = cuts::two_photons(obj, {params[0]});
 		run = run && two_photons_cut;
 		cut_results = cut_results * 10 + two_photons_cut*2 + run;
 		// Leading in fiducial volume
