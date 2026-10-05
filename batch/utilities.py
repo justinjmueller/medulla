@@ -369,7 +369,7 @@ def launch_jobsub(
     tag : str = 'develop',
     memory : int = 1800,
     disk : Optional[int] = None,
-    lifetime : str = '1h',
+    lifetime : str = '3h',
     verbose : bool = False,
 ):
     """

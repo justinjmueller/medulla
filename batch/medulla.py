@@ -16,7 +16,7 @@ def main(
     tag : str = 'develop',
     memory : int = 1800,
     disk : Optional[int] = None,
-    lifetime : str = '1h',
+    lifetime : str = '3h',
 ):
     """
     Main function to run the medulla script.
@@ -158,8 +158,8 @@ if __name__ == '__main__':
     )
 
     p.add_argument(
-        '--lifetime', '-f', type=str, default='1h',
-        help="Expected lifetime of each job (e.g., '1h', '30m') (default: '1h')."
+        '--lifetime', '-f', type=str, default='3h',
+        help="Expected lifetime of each job (e.g., '1h', '30m') (default: '3h')."
     )
 
     args = p.parse_args()
