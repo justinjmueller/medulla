@@ -700,11 +700,13 @@ namespace cuts
      * @param params the parameters for the cut. In this case, this sets the
      * kinetic energy threshold for the particle to count towards the
      * multiplicity. The first element of the vector is used for this purpose.
+     * @param count_nan_ke if true, a particle whose kinetic energy is
+     * undefined (NaN, e.g. a failed MCS fit) counts as above threshold.
      * @return the multiplicity of the specified particle species terminated at
      * some maximum value (the desired multiplicity + 1).
      */
     template<class T>
-    size_t particle_multiplicity(const T & obj, size_t mult, size_t particle_species, std::vector<double> params={})
+    size_t particle_multiplicity(const T & obj, size_t mult, size_t particle_species, std::vector<double> params={}, bool count_nan_ke=false)
     {
         // Default to a kinetic energy threshold of 0 MeV if no parameters are
         // given.
@@ -714,7 +716,9 @@ namespace cuts
         size_t count(0);
         for(const auto & p : obj.particles)
         {
-            if(pvars::pid(p) == particle_species && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
+            const double ke(pvars::ke(p));
+            const bool above(count_nan_ke ? !(ke < params[0]) : ke >= params[0]);
+            if(pvars::pid(p) == particle_species && pvars::primary_classification(p) && above)
                 ++count;
             if(count > mult)
                 break; // No need to count further.
@@ -947,6 +951,37 @@ namespace cuts
         return particle_multiplicity(obj, 0, 3, params) == 0;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, no_charged_pions, no_charged_pions);
+
+    /**
+     * @brief Variants of the no_electrons, no_muons, and no_charged_pions
+     * vetoes that count particles with an undefined (NaN) kinetic energy as
+     * above threshold.
+     * @details The nominal vetoes compare ke >= threshold, which is false for
+     * NaN, so e.g. a short exiting muon with a failed MCS fit is not vetoed.
+     * @param obj the interaction to select on.
+     * @param params the kinetic energy threshold for the veto.
+     * @return true if the interaction has no such primary particle.
+     */
+    template<class T>
+    bool no_electrons_nan_ke(const T & obj, std::vector<double> params={25.0,})
+    {
+        return particle_multiplicity(obj, 0, 1, params, true) == 0;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, no_electrons_nan_ke, no_electrons_nan_ke);
+
+    template<class T>
+    bool no_muons_nan_ke(const T & obj, std::vector<double> params={143.425,})
+    {
+        return particle_multiplicity(obj, 0, 2, params, true) == 0;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, no_muons_nan_ke, no_muons_nan_ke);
+
+    template<class T>
+    bool no_charged_pions_nan_ke(const T & obj, std::vector<double> params={25.0,})
+    {
+        return particle_multiplicity(obj, 0, 3, params, true) == 0;
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, no_charged_pions_nan_ke, no_charged_pions_nan_ke);
 
     /**
      * @brief Binding for zero particle proton multiplicity cut (negation of

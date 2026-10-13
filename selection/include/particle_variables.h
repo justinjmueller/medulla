@@ -1226,5 +1226,104 @@ namespace pvars
             ) / 11000);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, off_axis_angle_sbnd, off_axis_angle_sbnd);
+
+    /**
+     * @brief Variables for the per-hypothesis CSDA and MCS kinetic energies
+     * of the particle.
+     * @details These expose the muon and proton entries of the
+     * csda_ke_per_pid and mcs_ke_per_pid arrays, regardless of
+     * the PID assigned to the particle.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the requested per-hypothesis value of the particle.
+     */
+    template<class T>
+    double csda_ke_muon(const T & p)
+    {
+        return std::isinf(p.csda_ke_per_pid[pvars::kMuon]) ? PLACEHOLDERVALUE : (double)p.csda_ke_per_pid[pvars::kMuon];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, csda_ke_muon, csda_ke_muon);
+
+    template<class T>
+    double csda_ke_proton(const T & p)
+    {
+        return std::isinf(p.csda_ke_per_pid[pvars::kProton]) ? PLACEHOLDERVALUE : (double)p.csda_ke_per_pid[pvars::kProton];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, csda_ke_proton, csda_ke_proton);
+
+    template<class T>
+    double mcs_ke_muon(const T & p)
+    {
+        return std::isinf(p.mcs_ke_per_pid[pvars::kMuon]) ? PLACEHOLDERVALUE : (double)p.mcs_ke_per_pid[pvars::kMuon];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, mcs_ke_muon, mcs_ke_muon);
+
+    template<class T>
+    double mcs_ke_proton(const T & p)
+    {
+        return std::isinf(p.mcs_ke_per_pid[pvars::kProton]) ? PLACEHOLDERVALUE : (double)p.mcs_ke_per_pid[pvars::kProton];
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, mcs_ke_proton, mcs_ke_proton);
+
+    /**
+     * @brief Variable for the sum of the deposited (de-ghosted) energy of the
+     * particle [MeV].
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the summed energy depositions of the particle.
+     */
+    template<class T>
+    double depositions_sum(const T & p)
+    {
+        return p.depositions_sum;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, depositions_sum, depositions_sum);
+
+    /**
+     * @brief Variable for the number of voxels in the particle.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the number of voxels in the particle.
+     */
+    template<class T>
+    double n_voxels(const T & p)
+    {
+        return p.size;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, n_voxels, n_voxels);
+
+    /**
+     * @brief Boolean flags of the particle, stored as 0/1.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @return the requested flag of the particle.
+     */
+    template<class T>
+    double is_cathode_crosser(const T & p)
+    {
+        return p.is_cathode_crosser;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, is_cathode_crosser, is_cathode_crosser);
+
+    template<class T>
+    double is_time_contained(const T & p)
+    {
+        return p.is_time_contained;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, is_time_contained, is_time_contained);
+
+    template<class T>
+    double is_valid(const T & p)
+    {
+        return p.is_valid;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, is_valid, is_valid);
+
+    template<class T>
+    double is_primary_flag(const T & p)
+    {
+        return p.is_primary;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, is_primary_flag, is_primary_flag);
 }
 #endif // PARTICLE_VARIABLES_H
