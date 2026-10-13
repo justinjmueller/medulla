@@ -89,6 +89,23 @@ namespace pcuts
     REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, size_cut, size_cut);
 
     /**
+     * @brief Apply a cut on the length of the particle.
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to select on.
+     * @param params the parameters for the cut. In this case, this sets the
+     * minimum length [cm] of the particle.
+     * @return true if the particle is at least the minimum length.
+     */
+    template<class T>
+    bool min_length(const T & p, std::vector<double> params={3.0,})
+    {
+        if(params.size() != 1)
+            throw std::invalid_argument("min_length requires exactly one parameter: the minimum length.");
+        return pvars::length(p) >= params[0];
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, min_length, min_length);
+
+    /**
      * @brief Check if the particle meets final state signal requirements.
      * @details The particle must be marked as a primary particle and have a
      * kinetic energy above a certain threshold. The per-particle thresholds
