@@ -1431,24 +1431,27 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::Both, leading_primary_photon_containment_cut, leading_primary_photon_containment_cut);
 
     /**
-     * @brief Cut on the proton softmax score of the leading primary proton.
-     * @details Rejects interactions whose leading primary proton (highest KE)
-     * has a proton softmax score below the threshold. Interactions without a
-     * leading primary proton pass.
+     * @brief Cut on the proton softmax score of the primary protons.
+     * @details Rejects interactions in which any primary proton has a proton
+     * softmax score below the threshold. Interactions without a primary
+     * proton pass.
      * @tparam T the type of interaction (reco).
      * @param obj the interaction to select on.
-     * @param params params[0] is the proton softmax threshold.
-     * @return false if the leading primary proton has a proton softmax score
-     * below the threshold, true otherwise.
+     * @param params params[0] is the proton softmax threshold (default 0.8).
+     * @return false if any primary proton has a proton softmax score below
+     * the threshold, true otherwise.
      */
     template<class T>
     bool proton_softmax_cut(const T & obj, std::vector<double> params={})
     {
-        if(params.size() != 1)
-            throw std::invalid_argument("proton_softmax_cut requires one parameter: the proton softmax threshold.");
-        size_t i = selectors::leading_primary_particle_index(obj, pvars::kProton);
-        if(i == kNoMatch) return true;
-        return obj.particles[i].pid_scores[pvars::kProton] >= params[0];
+        double threshold = params.empty() ? 0.8 : params[0];
+        for(const auto & p : obj.particles)
+        {
+            if(pvars::pid(p) == pvars::kProton && pvars::primary_classification(p)
+               && !(p.pid_scores[pvars::kProton] >= threshold))
+                return false;
+        }
+        return true;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Reco, proton_softmax_cut, proton_softmax_cut);
 
