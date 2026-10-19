@@ -35,12 +35,125 @@ branches = ["reco_ele_beam_open_angle",
             "reco_no_muons",
             "reco_vertex_distance_cut",
             "reco_leading_ele_energy_cut",
-            "ppfx_cv_weight"
+            "reco_leading_muon_ke",
+            "reco_leading_muon_primary_softmax",
             ]
-precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "true_mode_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_category" = "np.where(true_category == 0, reco_reco_interaction_type, -1)"}
+precompute = {"reco_ele_beam_cosTheta" = "(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "(true_ele_beam_open_angle)", "true_mode_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_category" = "np.where(true_category == 0, reco_reco_interaction_type, -1)", "primary_muon_ke" = "np.where(reco_leading_muon_primary_softmax > 0.5, reco_leading_muon_ke, -1)"}
 area_scale = false
-# weight_branch = 'ppfx_cv_weight'
+override_exposure = 7.095834e+20
 
+
+[samples.data]
+key = "data"
+exposure_type = "pot"
+trees = ['all']
+print_sys = true
+systematics = []
+precompute = {"reco_ele_beam_cosTheta" = "(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "(true_ele_beam_open_angle)", "true_mode_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_category" = "np.where(true_category == 0, reco_reco_interaction_type, -1)", "primary_muon_ke" = "np.where(reco_leading_muon_primary_softmax > 0.5, reco_leading_muon_ke, -1)", "true_category" = "-1"}
+override_exposure = 2.36124e19 # 10% data from Guadalupe's studies https://sbn-docdb.fnal.gov/cgi-bin/sso/RetrieveFile?docid=46480&filename=POT_counting_numi_2026-2.pdf&version=1
+override_livetime = 483958
+branches = ["reco_ele_beam_open_angle",
+            "true_ele_beam_open_angle",
+            "true_category",
+            "true_neutrino_energy",
+            "true_cc",
+            "true_interaction_mode",
+            "reco_flash_time",
+            "reco_reco_interaction_type",
+            "reco_leading_electron_start_x",
+            "reco_leading_electron_start_y",
+            "reco_leading_electron_start_z",
+            "reco_electron_multiplicity",
+            "reco_leading_electron_electron_softmax",
+            "reco_leading_electron_primary_softmax",
+            "reco_muon_multiplicity",
+            "reco_leading_electron_vertex_distance",
+            "reco_leading_electron_energy",
+            "reco_flash_cut",
+            "reco_fiducial_cut",
+            "reco_containment_cut",
+            "reco_has_particle_multiplicity",
+            "reco_electron_softmax_cut",
+            "reco_primary_softmax_cut",
+            "reco_no_muons",
+            "reco_vertex_distance_cut",
+            "reco_leading_ele_energy_cut",
+            "reco_leading_muon_ke",
+            "reco_leading_muon_primary_softmax",
+            ]
+
+[samples.dataBeamOff]
+key = "dataBeamOff"
+exposure_type = "livetime"
+trees = ['all']
+systematics = []
+precompute = {"reco_ele_beam_cosTheta" = "(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "(true_ele_beam_open_angle)", "true_mode_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_category" = "np.where(true_category == 0, reco_reco_interaction_type, -1)", "primary_muon_ke" = "np.where(reco_leading_muon_primary_softmax > 0.5, reco_leading_muon_ke, -1)", "true_category" = "6"}
+override_exposure = 50788498
+branches = ["reco_ele_beam_open_angle",
+            "true_ele_beam_open_angle",
+            "true_category",
+            "true_neutrino_energy",
+            "true_cc",
+            "true_interaction_mode",
+            "reco_flash_time",
+            "reco_reco_interaction_type",
+            "reco_leading_electron_start_x",
+            "reco_leading_electron_start_y",
+            "reco_leading_electron_start_z",
+            "reco_electron_multiplicity",
+            "reco_leading_electron_electron_softmax",
+            "reco_leading_electron_primary_softmax",
+            "reco_muon_multiplicity",
+            "reco_leading_electron_vertex_distance",
+            "reco_leading_electron_energy",
+            "reco_flash_cut",
+            "reco_fiducial_cut",
+            "reco_containment_cut",
+            "reco_has_particle_multiplicity",
+            "reco_electron_softmax_cut",
+            "reco_primary_softmax_cut",
+            "reco_no_muons",
+            "reco_vertex_distance_cut",
+            "reco_leading_ele_energy_cut",
+            "reco_leading_muon_ke",
+            "reco_leading_muon_primary_softmax",
+            ]
+
+[samples.rockMuon]
+key = "rock"
+exposure_type = "pot"
+trees = ['all']
+systematics = []
+precompute = {"reco_ele_beam_cosTheta" = "(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "(true_ele_beam_open_angle)", "true_mode_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_category" = "np.where(true_category == 0, reco_reco_interaction_type, -1)", "primary_muon_ke" = "np.where(reco_leading_muon_primary_softmax > 0.5, reco_leading_muon_ke, -1)", "true_category" = "7"}
+branches = ["reco_ele_beam_open_angle",
+            "true_ele_beam_open_angle",
+            "true_category",
+            "true_neutrino_energy",
+            "true_cc",
+            "true_interaction_mode",
+            "reco_flash_time",
+            "reco_reco_interaction_type",
+            "reco_leading_electron_start_x",
+            "reco_leading_electron_start_y",
+            "reco_leading_electron_start_z",
+            "reco_electron_multiplicity",
+            "reco_leading_electron_electron_softmax",
+            "reco_leading_electron_primary_softmax",
+            "reco_muon_multiplicity",
+            "reco_leading_electron_vertex_distance",
+            "reco_leading_electron_energy",
+            "reco_flash_cut",
+            "reco_fiducial_cut",
+            "reco_containment_cut",
+            "reco_has_particle_multiplicity",
+            "reco_electron_softmax_cut",
+            "reco_primary_softmax_cut",
+            "reco_no_muons",
+            "reco_vertex_distance_cut",
+            "reco_leading_ele_energy_cut",
+            "reco_leading_muon_ke",
+            "reco_leading_muon_primary_softmax",
+            ]
 
 # Output directory for plots
 [output]
@@ -48,25 +161,30 @@ path = 'plots/'
 
 # Analysis configuration
 [analysis]
-ordinate_sample = 'NuMIFull'
+ordinate_sample = 'data'
 
 ########################################
 ## Categories
 ########################################
-
 category_branch = 'true_category'
+
 category_assignment = [
-    [0],
-    [1],
-    [2],
-    [3],
+    [0], # CC nue
+    [1], 
+    [2], 
+    [3], 
     [4],
-    [5],
-    [-1]
+    [5],  # Cosmic out of time
+    [6],  # Cosmic in time
+    [7],  # Rock
+    [-1]  # Data
 ]
-category_labels = ['$\nu_{e}$ Signal', '$\nu_{e}$ OOFV', '$\nu_{\mu}$', '$\nu$ OOFV', '$\nu$ NC', 'Cosmic', 'Data']
-category_colors = ['#011959', '#1C5A62', '#687B3E', '#D29343', '#FDB7BC', '#ca80a0ff', '#000000ff']
-category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'scatter']
+category_labels = ['$\nu_{e}$ Signal', '$\nu_{e}$ OOFV', '$\nu_{\mu}$', '$\nu$ OOFV', '$\nu$ NC', 'Cosmic-OOT', 'Cosmic-IT', 'Rock', 'Data']
+#category_colors = ['#011959', '#103F60', '#1C5A62', '#3C6D56', '#687B3E', '#9D892B', '#D29343', '#F8A17B', '#FDB7BC', '#FACCFA'] #batlow
+# category_colors = ['#011959', '#1C5A62', '#687B3E', '#D29343', '#FDB7BC', '#ca80a0ff', '#000000ff']
+# category_colors = ['#070159', '#104c60', '#3C6D56', '#687B3E', '#9D892B', '#D29343', '#F8A17B', '#FACCFA', '#000000ff'] #batlow
+category_colors = ['#0072B2', '#770107', '#02694d', '#CC79A7', '#ff7912', '#8B5A2B', '#C9A400', '#6C4BA6', '#000000']
+category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'scatter']
 
 ##############################################
 ## Variables
@@ -76,14 +194,16 @@ category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram
 
 [variables.reco_flash_time_mod]
 key = 'reco_flash_time_mod'
-nbins = 40
-range = [-20, 20]
+# No-flash events are set to -20 (precompute); this range leaves them out of
+# the histogram so the beam window is readable. 1 us bins as before.
+nbins = 20
+range = [-5, 15]
 xlabel = 'Reco Flash Time [us]'
 
 [variables.reco_leading_electron_start_x]
 key = 'reco_leading_electron_start_x'
-nbins = 70
-range = [-350, 350]
+nbins = 80
+range = [-400, 400]
 xlabel = 'Reco Leading Electron Start Position X [cm]'
 
 [variables.reco_leading_electron_start_y]
@@ -136,6 +256,12 @@ binning_scheme = 'custom_bins'
 custom_bins = [0, 150, 300, 390, 490, 600, 730, 870, 1030, 1240, 1500, 2000, 5000]
 xlabel = 'Reco Leading Electron Energy [MeV]'
 
+[variables.reco_leading_muon_ke]
+key = 'primary_muon_ke'
+nbins = 25
+range = [0.0, 2500.0]
+xlabel = 'Reco Leading Muon KE [MeV]'
+
 ##############################################
 ## N-1 Figures (one per selection cut)
 ##############################################
@@ -161,7 +287,6 @@ style = 'basic_icarus'
 type = 'SpineSpectraNMinus1'
 variable = 'reco_leading_electron_start_x'
 excluded_cut = 'reco_fiducial_cut'
-draw_kwargs = {'show_component_number' = true}
 
 [figure.artists.cuts]
 reco_fiducial_cut = 'Fiducial Volume'
@@ -173,6 +298,13 @@ reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
 reco_no_muons = 'No Muon-like Particles'
 reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
 reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
+
+[figure.artists.draw_kwargs]
+ratio_scatter_label = 'data'
+make_ratio_plot = true
+show_component_number = true
+show_component_percentage = true
+invert_stack_order = true
 
 # ---- Fiducial Volume (Y) ----
 [[figure]]
@@ -184,7 +316,6 @@ style = 'basic_icarus'
 type = 'SpineSpectraNMinus1'
 variable = 'reco_leading_electron_start_y'
 excluded_cut = 'reco_fiducial_cut'
-draw_kwargs = {'show_component_number' = true}
 
 [figure.artists.cuts]
 reco_fiducial_cut = 'Fiducial Volume'
@@ -196,6 +327,13 @@ reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
 reco_no_muons = 'No Muon-like Particles'
 reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
 reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
+
+[figure.artists.draw_kwargs]
+ratio_scatter_label = 'data'
+make_ratio_plot = true
+show_component_number = true
+show_component_percentage = true
+invert_stack_order = true
 
 # ---- Fiducial Volume (Z) ----
 [[figure]]
@@ -207,7 +345,6 @@ style = 'basic_icarus'
 type = 'SpineSpectraNMinus1'
 variable = 'reco_leading_electron_start_z'
 excluded_cut = 'reco_fiducial_cut'
-draw_kwargs = {'show_component_number' = true}
 
 [figure.artists.cuts]
 reco_fiducial_cut = 'Fiducial Volume'
@@ -219,6 +356,13 @@ reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
 reco_no_muons = 'No Muon-like Particles'
 reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
 reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
+
+[figure.artists.draw_kwargs]
+ratio_scatter_label = 'data'
+make_ratio_plot = true
+show_component_number = true
+show_component_percentage = true
+invert_stack_order = true
 
 # ---- Flash Cut ----
 [[figure]]
@@ -230,7 +374,7 @@ style = 'basic_icarus'
 type = 'SpineSpectraNMinus1'
 variable = 'reco_flash_time_mod'
 excluded_cut = 'reco_flash_cut'
-draw_kwargs = {'show_component_number' = true}
+cut_lines = [{value = 0.0, keep = '>'}, {value = 9.6, keep = '<'}]  # flash_low_t, flash_high_t
 
 [figure.artists.cuts]
 reco_fiducial_cut = 'Fiducial Volume'
@@ -242,6 +386,13 @@ reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
 reco_no_muons = 'No Muon-like Particles'
 reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
 reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
+
+[figure.artists.draw_kwargs]
+ratio_scatter_label = 'data'
+make_ratio_plot = true
+show_component_number = true
+show_component_percentage = true
+invert_stack_order = true
 
 # ---- Interaction Containment Cut ----
 [[figure]]
@@ -253,7 +404,6 @@ style = 'basic_icarus'
 type = 'SpineSpectraNMinus1'
 variable = 'reco_leading_electron_start_x'
 excluded_cut = 'reco_containment_cut'
-draw_kwargs = {'show_component_number' = true}
 
 [figure.artists.cuts]
 reco_fiducial_cut = 'Fiducial Volume'
@@ -265,6 +415,13 @@ reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
 reco_no_muons = 'No Muon-like Particles'
 reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
 reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
+
+[figure.artists.draw_kwargs]
+ratio_scatter_label = 'data'
+make_ratio_plot = true
+show_component_number = true
+show_component_percentage = true
+invert_stack_order = true
 
 [[figure]]
 name = 'nminus1_containment_y'
@@ -275,7 +432,6 @@ style = 'basic_icarus'
 type = 'SpineSpectraNMinus1'
 variable = 'reco_leading_electron_start_y'
 excluded_cut = 'reco_containment_cut'
-draw_kwargs = {'show_component_number' = true}
 
 [figure.artists.cuts]
 reco_fiducial_cut = 'Fiducial Volume'
@@ -287,6 +443,13 @@ reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
 reco_no_muons = 'No Muon-like Particles'
 reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
 reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
+
+[figure.artists.draw_kwargs]
+ratio_scatter_label = 'data'
+make_ratio_plot = true
+show_component_number = true
+show_component_percentage = true
+invert_stack_order = true
 
 [[figure]]
 name = 'nminus1_containment_z'
@@ -297,7 +460,6 @@ style = 'basic_icarus'
 type = 'SpineSpectraNMinus1'
 variable = 'reco_leading_electron_start_z'
 excluded_cut = 'reco_containment_cut'
-draw_kwargs = {'show_component_number' = true}
 
 [figure.artists.cuts]
 reco_fiducial_cut = 'Fiducial Volume'
@@ -309,6 +471,13 @@ reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
 reco_no_muons = 'No Muon-like Particles'
 reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
 reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
+
+[figure.artists.draw_kwargs]
+ratio_scatter_label = 'data'
+make_ratio_plot = true
+show_component_number = true
+show_component_percentage = true
+invert_stack_order = true
 
 # ---- >=1 Electron-like Particle ----
 [[figure]]
@@ -320,7 +489,7 @@ style = 'basic_icarus'
 type = 'SpineSpectraNMinus1'
 variable = 'reco_electron_multiplicity'
 excluded_cut = 'reco_has_particle_multiplicity'
-draw_kwargs = {'show_component_number' = true}
+cut_lines = [{value = 1.0, keep = '>'}]  # >= 1 electron (bins are [n, n+1))
 
 [figure.artists.cuts]
 reco_fiducial_cut = 'Fiducial Volume'
@@ -333,6 +502,14 @@ reco_no_muons = 'No Muon-like Particles'
 reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
 # reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
 
+[figure.artists.draw_kwargs]
+logy = true
+ratio_scatter_label = 'data'
+make_ratio_plot = true
+show_component_number = true
+show_component_percentage = true
+invert_stack_order = true
+
 # ---- Electron Softmax Cut ----
 [[figure]]
 name = 'nminus1_electron_softmax'
@@ -343,7 +520,7 @@ style = 'basic_icarus'
 type = 'SpineSpectraNMinus1'
 variable = 'reco_leading_electron_electron_softmax'
 excluded_cut = 'reco_electron_softmax_cut'
-draw_kwargs = {'show_component_number' = true}
+cut_lines = [{value = 0.6, keep = '>'}]  # electron_softmax
 
 [figure.artists.cuts]
 reco_fiducial_cut = 'Fiducial Volume'
@@ -355,6 +532,14 @@ reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
 reco_no_muons = 'No Muon-like Particles'
 reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
 reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
+
+[figure.artists.draw_kwargs]
+logy = true
+ratio_scatter_label = 'data'
+make_ratio_plot = true
+show_component_number = true
+show_component_percentage = true
+invert_stack_order = true
 
 # ---- Primary Softmax Cut ----
 [[figure]]
@@ -366,7 +551,7 @@ style = 'basic_icarus'
 type = 'SpineSpectraNMinus1'
 variable = 'reco_leading_electron_primary_softmax'
 excluded_cut = 'reco_primary_softmax_cut'
-draw_kwargs = {'show_component_number' = true}
+cut_lines = [{value = 0.95, keep = '>'}]  # primary_softmax
 
 [figure.artists.cuts]
 reco_fiducial_cut = 'Fiducial Volume'
@@ -378,6 +563,14 @@ reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
 reco_no_muons = 'No Muon-like Particles'
 reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
 reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
+
+[figure.artists.draw_kwargs]
+logy = true
+ratio_scatter_label = 'data'
+make_ratio_plot = true
+show_component_number = true
+show_component_percentage = true
+invert_stack_order = true
 
 # ---- No Muons Cut ----
 [[figure]]
@@ -389,7 +582,7 @@ style = 'basic_icarus'
 type = 'SpineSpectraNMinus1'
 variable = 'reco_muon_multiplicity'
 excluded_cut = 'reco_no_muons'
-draw_kwargs = {'show_component_number' = true}
+cut_lines = [{value = 1.0, keep = '<'}]  # 0 muons with KE > muon_threshold (bins are [n, n+1))
 
 [figure.artists.cuts]
 reco_fiducial_cut = 'Fiducial Volume'
@@ -401,6 +594,14 @@ reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
 reco_no_muons = 'No Muon-like Particles'
 reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
 reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
+
+[figure.artists.draw_kwargs]
+logy = true
+ratio_scatter_label = 'data'
+make_ratio_plot = true
+show_component_number = true
+show_component_percentage = true
+invert_stack_order = true
 
 # ---- Vertex Distance Cut ----
 [[figure]]
@@ -412,7 +613,7 @@ style = 'basic_icarus'
 type = 'SpineSpectraNMinus1'
 variable = 'reco_leading_electron_vertex_distance'
 excluded_cut = 'reco_vertex_distance_cut'
-draw_kwargs = {'show_component_number' = true, 'logy' = true}
+cut_lines = [{value = 3.5, keep = '<'}]  # vertex_threshold [cm]
 
 [figure.artists.cuts]
 reco_fiducial_cut = 'Fiducial Volume'
@@ -424,6 +625,14 @@ reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
 reco_no_muons = 'No Muon-like Particles'
 reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
 reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
+
+[figure.artists.draw_kwargs]
+ratio_scatter_label = 'data'
+make_ratio_plot = true
+show_component_number = true
+show_component_percentage = true
+invert_stack_order = true
+logy = true
 
 # ---- Leading Electron Energy Cut ----
 [[figure]]
@@ -435,7 +644,7 @@ style = 'basic_icarus'
 type = 'SpineSpectraNMinus1'
 variable = 'reco_leading_electron_energy'
 excluded_cut = 'reco_leading_ele_energy_cut'
-draw_kwargs = {'show_component_number' = true}
+cut_lines = [{value = 300.0, keep = '>'}]  # electron_threshold [MeV]
 
 [figure.artists.cuts]
 reco_fiducial_cut = 'Fiducial Volume'
@@ -447,3 +656,40 @@ reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
 reco_no_muons = 'No Muon-like Particles'
 reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
 reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
+
+[figure.artists.draw_kwargs]
+ratio_scatter_label = 'data'
+make_ratio_plot = true
+show_component_number = true
+show_component_percentage = true
+invert_stack_order = true
+
+# ---- Leading Muon KE Cut ----
+[[figure]]
+name = 'nminus1_leading_muon_ke'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectraNMinus1'
+variable = 'reco_leading_muon_ke'
+excluded_cut = 'reco_no_muons'
+cut_lines = [{value = 100.0, keep = '<'}]  # muon_threshold [MeV]
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_has_particle_multiplicity = '>=1 Electron-like Particle'
+reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.72'
+reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.97'
+reco_no_muons = 'No Muon-like Particles'
+reco_vertex_distance_cut = 'Vertex Distance < 3.25 cm'
+reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
+
+[figure.artists.draw_kwargs]
+ratio_scatter_label = 'data'
+make_ratio_plot = true
+show_component_number = true
+show_component_percentage = true
+invert_stack_order = true

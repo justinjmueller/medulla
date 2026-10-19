@@ -520,9 +520,14 @@ label = 'Recombination'
 pattern = 'recombination'
 
 [[systematic_recipe]]
+name = 'cathode_bending'
+label = 'Cathode Bending'
+pattern = 'cathode_bend'
+
+[[systematic_recipe]]
 name = 'detector'
 label = 'Detector'
-pattern = '^(induction_high|induction_low|coherent_high|coherent_low|intrinsic_high|intrinsic_low|lifetime_high|lifetime_low|scintillation|wire_gap|yz_uniformity|recombination)$'
+pattern = '^(induction_high|induction_low|coherent_high|coherent_low|intrinsic_high|intrinsic_low|lifetime_high|lifetime_low|scintillation|wire_gap|yz_uniformity|recombination|cathode_bending)$'
 
 #####################
 ## BNB flux recipes

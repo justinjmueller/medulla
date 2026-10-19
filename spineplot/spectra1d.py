@@ -8,7 +8,7 @@ from spectra import SpineSpectra
 from style import Style
 from variable import Variable
 from systematic import Systematic
-from utilities import mark_pot, mark_preliminary, draw_error_boxes
+from utilities import mark_pot, mark_preliminary, draw_error_boxes, draw_legend
 
 class SpineSpectra1D(SpineSpectra):
     """
@@ -191,6 +191,7 @@ class SpineSpectra1D(SpineSpectra):
              show_component_percentage=False, invert_stack_order=False,
              fit_type=None, logx=False, logy=False, normalize=False,
              draw_error=None, make_ratio_plot=False, ratio_scatter_label='Data', ratio_ylim=None, ratio_ylabel='Data/MC', scatter_from_ordinate_only=True,
+             draw_scatter=True,
              area_error_apply_sample_weights=False, debug_area_error_scale=False) -> None:
         """
         Plots the data for the SpineSpectra1D object.
@@ -535,7 +536,7 @@ class SpineSpectra1D(SpineSpectra):
 
             scatter_labels = [labels[i] for i in scatter_mask] if 'scatter_labels' not in locals() else scatter_labels
             reduce = lambda x : [x[i] for i in scatter_mask]
-            for i, label in enumerate(scatter_labels):
+            for i, label in enumerate(scatter_labels if draw_scatter else []):
                 # Optionally only draw scatter from the ordinate sample (common for real data overlays).
                 si = scatter_mask[i]
                 y_scatter = data[si]
@@ -632,20 +633,22 @@ class SpineSpectra1D(SpineSpectra):
 
                 # If top axis is logy, ratio panel should remain linear.
                 ratio_ax.set_yscale('linear')
+        # The legend is drawn at the end, after the y-range is set, so the
+        # headroom above the data can be sized to it.
         if invert_stack_order:
             h, l = ax.get_legend_handles_labels()
             if draw_error:
                 h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
                 l.append(systs[0].label or systs[0].name)
-                ax.legend(h[-2::-1]+h[-1:], l[-2::-1]+l[-1:])
+                legend_h, legend_l = h[-2::-1]+h[-1:], l[-2::-1]+l[-1:]
             else:
-                ax.legend(h[::-1], l[::-1])
+                legend_h, legend_l = h[::-1], l[::-1]
         else:
             h, l = ax.get_legend_handles_labels()
             if draw_error:
                 h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
                 l.append(systs[0].label or systs[0].name)
-            ax.legend(h, l)
+            legend_h, legend_l = h, l
 
         if isinstance(self._yrange, (tuple, list)):
             ax.set_ylim(*self._yrange)
@@ -708,17 +711,20 @@ class SpineSpectra1D(SpineSpectra):
             ax.ticklabel_format(axis='y', scilimits=style.scilimits)
             hadj = 0.035
 
-        # The vadj value is adjusted to ensure that the POT label does
-        # not overlap with the top axis of the plot when the y-axis is
-        # logarithmic.
-        if logy:
-            vadj = 0.1
-        
+        # No extra vertical offset for log y: the POT and preliminary labels
+        # sit just above the axes (axes fraction 1.01) on both scales, and a
+        # 0.1 offset left them floating far above the plot.
+
         # Add the POT and preliminary labels to the plot.
         if style.mark_pot:
             mark_pot(ax, self._exposure, style.mark_pot_horizontal, vadj=vadj)
         if style.mark_preliminary is not None:
             mark_preliminary(ax, style.mark_preliminary, hadj=hadj, vadj=vadj)
+
+        # Compact legend in the upper right; raise the y-axis so the data
+        # sits below it.
+        draw_legend(ax, legend_h, legend_l, logy=logy,
+                    headroom=not isinstance(self._yrange, (tuple, list)))
 
 class SpineSpectraCutFlow(SpineSpectra):
     """
@@ -909,7 +915,6 @@ class SpineSpectraCutFlow(SpineSpectra):
             ax.stairs(counts, bin_edges, label=legend_label,
                       color=color, linewidth=1.8)
 
-        ax.legend()
 
         # y-range
         if isinstance(self._yrange, (tuple, list)):
@@ -929,13 +934,14 @@ class SpineSpectraCutFlow(SpineSpectra):
         if style.scilimits and not logy:
             ax.ticklabel_format(axis='y', scilimits=style.scilimits)
             hadj = 0.035
-        if logy:
-            vadj = 0.1
 
         if style.mark_pot:
             mark_pot(ax, self._exposure, style.mark_pot_horizontal, vadj=vadj)
         if style.mark_preliminary is not None:
             mark_preliminary(ax, style.mark_preliminary, hadj=hadj, vadj=vadj)
+
+        draw_legend(ax, logy=logy,
+                    headroom=not isinstance(self._yrange, (tuple, list)))
 
 
 class SpineSystematics(SpineSpectra):
@@ -1260,8 +1266,29 @@ class SpineSystematics(SpineSpectra):
         normalize_cv = self._normalize_cv if self._normalize_cv is not None else cv
         safe_cv   = np.where(normalize_cv > 0, normalize_cv, np.nan)   # avoid division by zero
 
+        # Build enough visually distinct colors for however many systematics
+        # are plotted. The style's prop_cycle only carries a handful of colors,
+        # so a breakdown with dozens of knobs (e.g. ~52 xsec) would wrap and
+        # repeat, making the lines indistinguishable. Concatenate the
+        # qualitative tab20/tab20b/tab20c maps (60 distinct colors); if even
+        # that is not enough, sample the continuous 'turbo' map. When the color
+        # list still has to wrap, vary the linestyle so repeats differ.
+        n_series = sum(
+            1 for s in self._covdata
+            if show_stat or 'statistical' not in s.lower()
+        )
         prop_cycle = plt.rcParams['axes.prop_cycle']
         colors     = [c['color'] for c in prop_cycle]
+        if n_series > len(colors):
+            qualitative = []
+            for cmap_name in ('tab20', 'tab20b', 'tab20c'):
+                qualitative += list(plt.get_cmap(cmap_name).colors)
+            if n_series <= len(qualitative):
+                colors = qualitative
+            else:
+                cmap   = plt.get_cmap('turbo')
+                colors = [cmap(i / max(n_series - 1, 1)) for i in range(n_series)]
+        linestyles = ['-', '--', '-.', ':']
 
         total_var = np.zeros(len(cv))
         plotted   = 0
@@ -1273,8 +1300,10 @@ class SpineSystematics(SpineSpectra):
             sigma = np.sqrt(np.diag(cov))
             y     = sigma / safe_cv if mode == 'fractional' else sigma
             label = self._recipe_labels.get(sysname, sysname)
-            color = colors[plotted % len(colors)]
-            ax.stairs(y, bin_edges, label=label, color=color, linewidth=1.8)
+            color     = colors[plotted % len(colors)]
+            linestyle = linestyles[(plotted // len(colors)) % len(linestyles)]
+            ax.stairs(y, bin_edges, label=label, color=color,
+                      linewidth=1.8, linestyle=linestyle)
             print("covariance trace for {}: {:.6g}".format(sysname, np.nansum(np.diag(cov))))
             total_var += np.diag(cov)
             plotted   += 1
@@ -1285,7 +1314,6 @@ class SpineSystematics(SpineSpectra):
             ax.stairs(y_total, bin_edges, label='Total', color='black',
                       linewidth=2.2, linestyle='--')
 
-        ax.legend()
 
         if isinstance(self._yrange, (tuple, list)):
             ax.set_ylim(*self._yrange)
@@ -1305,6 +1333,9 @@ class SpineSystematics(SpineSpectra):
         if style.mark_preliminary is not None:
             mark_preliminary(ax, style.mark_preliminary, hadj=hadj, vadj=vadj)
 
+        draw_legend(ax, logy=logy,
+                    headroom=not isinstance(self._yrange, (tuple, list)))
+
 
 class SpineSpectraNMinus1(SpineSpectra1D):
     """
@@ -1318,12 +1349,16 @@ class SpineSpectraNMinus1(SpineSpectra1D):
     _n1_mask : str or None
         Pandas eval expression that ANDs every cut branch except the
         excluded one. Passed to sample.get_data as with_mask.
+    _cut_lines : list of dict
+        Positions of the excluded cut, each {value, keep} where keep is
+        '>' or '<' (the side of the line the selection keeps). Drawn as
+        a dashed vertical line with an arrow toward the kept side.
     """
 
     def __init__(self, variable, categories, colors, category_types,
                  cuts, excluded_cut,
                  title=None, xrange=None, xtitle=None,
-                 yrange=None, ytitle=None) -> None:
+                 yrange=None, ytitle=None, cut_lines=None) -> None:
         """
         Parameters
         ----------
@@ -1336,9 +1371,12 @@ class SpineSpectraNMinus1(SpineSpectra1D):
         excluded_cut : str
             Branch name of the single cut to omit from the mask.
         title, xrange, xtitle, yrange, ytitle : optional
+        cut_lines : list of dict, optional
+            Cut positions to mark, each {value = float, keep = '>' or '<'}.
         """
         super().__init__(variable, categories, colors, category_types,
                          title, xrange, xtitle, yrange, ytitle)
+        self._cut_lines = list(cut_lines or [])
         n1_branches = [b for b in cuts if b != excluded_cut]
         if not n1_branches:
             self._n1_mask = None
@@ -1346,6 +1384,29 @@ class SpineSpectraNMinus1(SpineSpectra1D):
             self._n1_mask = f'({n1_branches[0]} == 1)'
         else:
             self._n1_mask = ' & '.join(f'({b} == 1)' for b in n1_branches)
+
+    def draw(self, ax, style, **kwargs) -> None:
+        """Draw as SpineSpectra1D, then mark the excluded cut's position."""
+        super().draw(ax, style, **kwargs)
+        if not self._cut_lines:
+            return
+        # The ratio panel (if any) shares the x-axis with ax.
+        axes = [a for a in ax.figure.axes if a is ax or a.get_shared_x_axes().joined(a, ax)]
+        xlo, xhi = ax.get_xlim()
+        for cut in self._cut_lines:
+            value, keep = float(cut['value']), cut.get('keep', '>')
+            if not (xlo < value < xhi):
+                continue
+            for a in axes:
+                a.axvline(value, color='#d62728', linestyle='--', linewidth=2, zorder=4)  # under the legend (zorder 5)
+            # Arrow toward the kept side at mid-height, about 6% of the
+            # axis width long.
+            xfrac = ax.transAxes.inverted().transform(ax.transData.transform((value, 0)))[0]
+            dx = 0.06 if keep == '>' else -0.06
+            ax.annotate('', xy=(xfrac + dx, 0.5), xytext=(xfrac, 0.5),
+                        xycoords='axes fraction', textcoords='axes fraction',
+                        arrowprops=dict(arrowstyle='->', color='#d62728', linewidth=2),
+                        zorder=4)
 
     def add_sample(self, sample, is_ordinate) -> None:
         """Accumulate histograms using the N-1 mask instead of the variable mask."""

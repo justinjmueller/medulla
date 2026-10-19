@@ -6,7 +6,7 @@ from matplotlib.colors import LogNorm
 from spectra import SpineSpectra
 from style import Style
 from variable import Variable
-from utilities import mark_pot, mark_preliminary, draw_error_boxes
+from utilities import mark_pot, mark_preliminary, draw_error_boxes, draw_legend
 
 class SpineSpectra2D(SpineSpectra):
     """
@@ -242,6 +242,7 @@ class SpineSpectra2D(SpineSpectra):
         None.
         """
         ax.set_title(self._title)
+        legend_hl = None
         if show_option == '2d' and self._plotdata is not None:
             values = np.sum([v for v in self._plotdata.values()], axis=0)
             binedges = self._binedges[list(self._plotdata.keys())[0]]
@@ -352,13 +353,13 @@ class SpineSpectra2D(SpineSpectra):
                 if draw_stat_error:
                     h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
                     l.append('MC Statistical Uncertainty')
-                ax.legend(h[-2::-1]+h[-1:], l[-2::-1]+l[-1:])
+                legend_hl = (h[-2::-1]+h[-1:], l[-2::-1]+l[-1:])
             else:
                 h, l = ax.get_legend_handles_labels()
                 if draw_stat_error:
                     h.append(plt.Rectangle((0, 0), 1, 1, fc='gray', alpha=0.5, hatch='///'))
                     l.append('MC Statistical Uncertainty')
-                ax.legend(h, l)
+                legend_hl = (h, l)
         
         if style.scilimits and not logy:
             ax.ticklabel_format(axis='y', scilimits=style.scilimits)
@@ -366,6 +367,9 @@ class SpineSpectra2D(SpineSpectra):
             mark_pot(ax, self._exposure, style.mark_pot_horizontal)
         if style.mark_preliminary is not None:
             mark_preliminary(ax, style.mark_preliminary, hadj=0.035 if (style.scilimits and not logy) is not None else 0)
+        # Only the 1D projection has a legend.
+        if legend_hl is not None:
+            draw_legend(ax, *legend_hl, logy=logy)
 
         # Set the axis to be logarithmic if requested.
         if logx:

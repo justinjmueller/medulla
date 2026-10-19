@@ -1,10 +1,30 @@
 [[style]]
+name = 'nue_icarus'
+style_sheet = "styles/nue2024.mplstyle"
+markers = ['o', '^', 's', 'P', 'D']
+default_figsize = [6.4,4.8]
+title = ''
+mark_pot = true
+mark_preliminary = '$\bf{ICARUS}$ Simulation - Work-in-Progress'
+plot_kwargs = {'histtype' = 'barstacked', 'stacked' = true}
+
+[[style]]
+name = 'nue_icarus_data'
+style_sheet = "styles/nue2024.mplstyle"
+markers = ['o', '^', 's', 'P', 'D']
+default_figsize = [6.4,4.8]
+title = ''
+mark_pot = true
+mark_preliminary = '$\bf{ICARUS}$ Work-in-Progress'
+plot_kwargs = {'histtype' = 'barstacked', 'stacked' = true}
+
+[[style]]
 name = 'basic_icarus'
 style_sheet = "styles/muon2024.mplstyle"
 markers = ['o', '^', 's', 'P', 'D']
 default_figsize = [6.4,4.8]
 title = ''
-mark_pot = false
+mark_pot = true
 mark_preliminary = '$\bf{ICARUS}$ Work-in-Progress'
 plot_kwargs = {'histtype' = 'barstacked', 'stacked' = true}
 

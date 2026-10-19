@@ -21,7 +21,7 @@ def makePlot(var, dir):
 
 if __name__ == "__main__":
 
-    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/nminus1_plots.toml', '/exp/icarus/data/users/micarrig/merged_v27p2_fixed.root')
+    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/nminus1_plots.toml', '/exp/icarus/data/users/micarrig/merged_v30.root')
 
     plotVars = [
         'nminus1_fiducial_x',
@@ -37,6 +37,7 @@ if __name__ == "__main__":
         'nminus1_no_muons',
         'nminus1_vertex_distance',
         'nminus1_electron_energy',
+        'nminus1_leading_muon_ke',
     ]
 
     outputDir = '/nashome/m/micarrig/icarus/nuESpine/plots_sept15/nminus1/'

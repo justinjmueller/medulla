@@ -25,9 +25,10 @@ def makePlot(var, dir):
 if __name__ == "__main__":
 
     # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/nue_plots.toml', 'root://fndcadoor.fnal.gov:/icarus/scratch/users/micarrig/nueCCInclusiveSpine12/merged_output.root')
-    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/systematics.toml', '/exp/icarus/data/users/micarrig/merged_v27p2_fixed.root')
+    #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/systematics.toml', '/exp/icarus/data/users/micarrig/merged_nue_v3.root')
+    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/systematics.toml', '/exp/icarus/data/users/micarrig/merged_v30.root')
 
-    plot_category = 'systematics_detector'
+    plot_category = 'systematics_xsec_all'
 
 
     # Each of these now has a signal-only and background-only variant
@@ -36,14 +37,19 @@ if __name__ == "__main__":
     # figures/plots for each rather than summing signal and background
     # into a single systematics band.
     plotVars = [
+        'sys_eleE',
         'sys_eleE_signal',
         'sys_eleE_background',
+        'sys_eleCosThetaNUMI',
         'sys_eleCosThetaNUMI_signal',
         'sys_eleCosThetaNUMI_background',
+        'sys_nuE',
         'sys_nuE_signal',
         'sys_nuE_background',
+        'sys_trueEleE',
         'sys_trueEleE_signal',
         'sys_trueEleE_background',
+        'sys_trueEleCosThetaNUMI',
         'sys_trueEleCosThetaNUMI_signal',
         'sys_trueEleCosThetaNUMI_background',
     ]

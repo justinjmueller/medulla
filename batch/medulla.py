@@ -4,7 +4,7 @@ from pathlib import Path
 from utilities import (
     create_new_project, check_project_status, launch_jobsub, check_git_branch,
     run_variation_phase1_interactive, launch_variation_phase1_jobsub,
-    launch_variation_phase2_jobsub,
+    launch_variation_phase2_jobsub, set_assume_yes, set_dry_run,
 )
 from typing import Optional
 
@@ -29,6 +29,7 @@ def main(
     variation_interactive : bool = False,
     check_zombies : bool = False,
     dataset_tag : str = None,
+    dry_run : bool = False,
 ):
     """
     Main function to run the medulla script.
@@ -85,6 +86,9 @@ def main(
     -------
     None.
     """
+    # Make dry-run mode hold for any caller, not only the command line.
+    set_dry_run(dry_run)
+
     # Check if the project file already exists. This will be used to
     # inform logic later on in the function.
     project_dir = Path(project_dir)
@@ -99,6 +103,9 @@ def main(
         if project_exists:
             raise FileExistsError(f"Project database {project_dir / 'project.db'} already exists.")
         create_new_project(project_dir, tml, batch_size, systematic)
+        if dry_run:
+            print("[INFO] -- [DRY RUN] Stopping here: the later stages need the project to exist.")
+            return
         print(f"[INFO] -- Created new project in {project_dir}")
 
     # If the project exists, do a check of the project status.
@@ -278,6 +285,22 @@ if __name__ == '__main__':
     )
 
     p.add_argument(
+        '--yes', '-y', action='store_true',
+        help='Non-interactive: answer yes to every Y/N prompt. Corrupt/stub '
+             'outputs are listed (name, size, creation time), deleted, and '
+             'their jobs reset to pending; then jobs are submitted without '
+             'asking for confirmation.'
+    )
+
+    p.add_argument(
+        '--dry-run', action='store_true',
+        help='Report only: print what would be created, marked, deleted, copied '
+             'and submitted (including the jobsub command) and do none of it. '
+             'project.db and the project directory are not modified. Takes '
+             'precedence over --yes.'
+    )
+
+    p.add_argument(
         '--dataset-tag', type=str, default=None,
         help='Only submit Phase 2 jobs for samples with this tag in the '
              'selection TOML (e.g. "nominal", "data", "detector_variation"). '
@@ -318,6 +341,11 @@ if __name__ == '__main__':
     if args.dataset_tag is not None and not args.variation_phase2:
         p.error('--dataset-tag is only valid with --variation-phase2.')
 
+    set_assume_yes(args.yes)
+    set_dry_run(args.dry_run)
+    if args.dry_run:
+        print('[INFO] -- DRY RUN: nothing will be created, deleted, copied, or submitted.')
+
     if args.tag != 'develop':
         print(f"[INFO] -- Using tag '{args.tag}' for medulla repository.")
         if not check_git_branch(args.tag):
@@ -345,4 +373,5 @@ if __name__ == '__main__':
         variation_interactive=args.variation_interactive,
         check_zombies=args.check_zombies,
         dataset_tag=args.dataset_tag,
+        dry_run=args.dry_run,
     )

@@ -17,11 +17,11 @@ r.gStyle.SetOptStat(0)
 
 def main():
     # Load the analysis
-    # ana = Analysis('/exp/icarus/app/users/micarrig/nuESpine/medulla/analysis/efficiency_analysis.toml', '/exp/icarus/data/users/micarrig/merged_v27p2_fixed.root')
-    ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_withError.toml', '/exp/icarus/data/users/micarrig/merged_v27p2_fixed.root')
-    #ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/efficiency_analysis.toml', '/nashome/m/micarrig/icarus/nuESpine/output_nueCCInclusive2.root')
+    # ana = Analysis('/exp/icarus/app/users/micarrig/nuESpine/medulla/analysis/efficiency_analysis.toml', '/exp/icarus/data/users/micarrig/merged_v30.root')
+    # ana = Analysis('/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/efficiency_withError.toml', '/exp/icarus/data/users/micarrig/merged_v30.root')
+    ana = Analysis('/exp/icarus/app/users/micarrig/nuESpine/medulla/analysis/efficiency_recoInt.toml', '/exp/icarus/data/users/micarrig/merged_v30.root')
 
-    output_dir = '/exp/icarus/app/users/micarrig/nuESpine/plots_sept15/efficiency_error_flux_trueTree/'
+    output_dir = '/exp/icarus/app/users/micarrig/nuESpine/plots_sept15/efficiency_neutrino_type_trueTree/'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -65,15 +65,41 @@ def main():
     with open(f'{output_dir}/efficiency_vs_trueLeadingElectronAngle.pkl', 'wb') as f:
         pickle.dump(eff_tEleAngle, f)   
 
-    eff_flashTime = ana.run_interactively('efficiency_vs_recoFlashTime')
-    plt.savefig(f'{output_dir}/efficiency_vs_recoFlashTime.png', dpi=300)
-    with open(f'{output_dir}/efficiency_vs_recoFlashTime.pkl', 'wb') as f:
-        pickle.dump(eff_flashTime, f)
+    # eff_flashTime = ana.run_interactively('efficiency_vs_recoFlashTime')
+    # plt.savefig(f'{output_dir}/efficiency_vs_recoFlashTime.png', dpi=300)
+    # with open(f'{output_dir}/efficiency_vs_recoFlashTime.pkl', 'wb') as f:
+    #     pickle.dump(eff_flashTime, f)
 
-    eff_nu = ana.run_interactively('efficiency_vs_trueNu')
-    plt.savefig(f'{output_dir}/efficiency_vs_trueNu.png', dpi=300)
-    with open(f'{output_dir}/efficiency_vs_trueNu.pkl', 'wb') as f:
-        pickle.dump(eff_nu, f)
+    # eff_nu = ana.run_interactively('efficiency_vs_trueNu')
+    # plt.savefig(f'{output_dir}/efficiency_vs_trueNu.png', dpi=300)
+    # with open(f'{output_dir}/efficiency_vs_trueNu.pkl', 'wb') as f:
+    #     pickle.dump(eff_nu, f)
+
+
+    # eff_eleE_total = ana.run_interactively('efficiency_vs_trueLeadingElectronEnergy_total')
+    # plt.savefig(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy_total.png', dpi=300)
+    # with open(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy_total.pkl', 'wb') as f:
+    #     pickle.dump(eff_eleE_total, f)
+
+    # eff_eleE_flux = ana.run_interactively('efficiency_vs_trueLeadingElectronEnergy_flux')
+    # plt.savefig(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy_flux.png', dpi=300)
+    # with open(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy_flux.pkl', 'wb') as f:
+    #     pickle.dump(eff_eleE_flux, f)
+
+    # eff_eleE_detector = ana.run_interactively('efficiency_vs_trueLeadingElectronEnergy_detector')
+    # plt.savefig(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy_detector.png', dpi=300)
+    # with open(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy_detector.pkl', 'wb') as f:
+    #     pickle.dump(eff_eleE_detector, f)
+
+    # eff_eleE_xsec = ana.run_interactively('efficiency_vs_trueLeadingElectronEnergy_xsec')
+    # plt.savefig(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy_xsec.png', dpi=300)
+    # with open(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy_xsec.pkl', 'wb') as f:
+    #     pickle.dump(eff_eleE_xsec, f)
+
+    # eff_eleE_totalStat = ana.run_interactively('efficiency_vs_trueLeadingElectronEnergy_totalStat')
+    # plt.savefig(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy_totalStat.png', dpi=300)
+    # with open(f'{output_dir}/efficiency_vs_trueLeadingElectronEnergy_totalStat.pkl', 'wb') as f:
+    #     pickle.dump(eff_eleE_totalStat, f)
 
 
 if __name__ == "__main__":

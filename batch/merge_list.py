@@ -3,13 +3,22 @@
 Generate a list of output ROOT files to merge, grouped by sample name.
 
 For each job in project.db:
-  - tag "data" or "detector_variation" -> output_jobid{N:04d}.root
-  - tag "nominal"                       -> output_systematics_jobid{N:04d}.root
+  - tag "data", "detector_variation", or "rock" -> output_jobid{N:04d}.root
+  - tag "nominal", "nue_enhanced", or "g4"       -> output_systematics_jobid{N:04d}.root
 
 Also includes any output_varsys*.root files found in output/.
 
 Usage:
     python merge_list.py <project_dir> [--output merge_list.txt]
+                         [--tags TAG [TAG ...]] [--no-varsys] [--dry-run]
+
+--tags restricts the list to jobs whose sample tag is one of TAG (e.g.
+`--tags detector_variation` for the phase 1 input, which covers the variation
+samples and the CV sample). --no-varsys leaves out output_varsys*.root files.
+
+--dry-run reads project.db and stats the outputs exactly as a real run does, but
+writes no --output file and prints only a per-sample count summary. It leaves no
+file behind (the temporary project.db copy is always removed).
 """
 import argparse
 import sqlite3
@@ -24,6 +33,14 @@ def main():
     parser.add_argument('project_dir', type=Path)
     parser.add_argument('--output', type=Path, default=None,
                         help='Write file list to this path (default: print to stdout)')
+    parser.add_argument('--tags', nargs='+', default=None,
+                        help='Only include jobs whose sample tag is in this list '
+                             '(e.g. detector_variation). Default: all known tags.')
+    parser.add_argument('--no-varsys', action='store_true',
+                        help='Do not add output_varsys*.root files to the list.')
+    parser.add_argument('--dry-run', action='store_true',
+                        help='Preview the file list (per-sample counts) without '
+                             'writing the --output file.')
     args = parser.parse_args()
 
     project_dir = args.project_dir.resolve()
@@ -55,9 +72,12 @@ def main():
         name = sample.get('name', f'job{jobid:04d}')
         tag = sample.get('tag', '')
 
+        if args.tags is not None and tag not in args.tags:
+            continue
+
         if tag in ('data', 'detector_variation', 'rock'):
             candidate = output_dir / f'output_jobid{jobid:04d}.root'
-        elif tag == 'nominal' or tag == "nue_enhanced":
+        elif tag in ('nominal', 'nue_enhanced', 'g4'):
             candidate = output_dir / f'output_systematics_jobid{jobid:04d}.root'
         else:
             print(f'[WARN] Unknown tag "{tag}" for jobid {jobid} (sample "{name}"), skipping.')
@@ -70,7 +90,7 @@ def main():
         files_by_sample.setdefault(name, []).append(str(candidate))
 
     # varsys files are not per-jobid — collect them all under a special key
-    varsys_files = sorted(glob(str(output_dir / 'output_varsys*.root')))
+    varsys_files = [] if args.no_varsys else sorted(glob(str(output_dir / 'output_varsys*.root')))
     if varsys_files:
         files_by_sample['_varsys'] = varsys_files
 
@@ -80,10 +100,17 @@ def main():
             lines.append(p)
 
     text = '\n'.join(lines)
+    total = sum(len(v) for v in files_by_sample.values())
 
-    if args.output:
+    if args.dry_run:
+        print('[DRY-RUN] merge_list.py: no file will be written.')
+        for name, paths in files_by_sample.items():
+            print(f'[DRY-RUN]   {name}: {len(paths)} file(s)')
+        dest = str(args.output) if args.output else 'stdout'
+        print(f'[DRY-RUN] Would write {total} file(s) to {dest}.')
+    elif args.output:
         args.output.write_text(text)
-        print(f'Wrote {sum(len(v) for v in files_by_sample.values())} file(s) to {args.output}')
+        print(f'Wrote {total} file(s) to {args.output}')
     else:
         print(text)
 

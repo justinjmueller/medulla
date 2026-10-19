@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from artists import SpineArtist
 from style import Style
 from variable import Variable
-from utilities import mark_pot, mark_preliminary
+from utilities import mark_pot, mark_preliminary, draw_legend
 
 class SpineEfficiency(SpineArtist):
     """
@@ -384,9 +384,11 @@ class SpineEfficiency(SpineArtist):
                             fmt(msigma[f'{key_base}{cut}']),
                             fmt(psigma[f'{key_base}{cut}']),
                         ],
-                        fmt='o',
+                        # Change marker each time the colour cycle wraps, so
+                        # cuts beyond the number of colours stay distinct.
+                        fmt='o' if show_option == 'final_only' else style.get_marker(ci // len(plt.rcParams['axes.prop_cycle'])),
                         color=colors.get(groups[0], style.get_color(ci)) if (colors and show_option == 'final_only') else style.get_color(ci),
-                        label=cutname if show_option != 'final_only' else None,
+                        label=groups[0] if show_option == 'final_only' else cutname,
                     )
             else:
                 for gi, group in enumerate(groups):
@@ -446,9 +448,6 @@ class SpineEfficiency(SpineArtist):
             if logy:
                 ax.set_yscale('log')
 
-            if show_legend:
-                ax.legend()
-
             # Mark the POT and preliminary information on the plot.
             if style.scilimits:
                 ax.ticklabel_format(axis='y', scilimits=style.scilimits)
@@ -456,6 +455,11 @@ class SpineEfficiency(SpineArtist):
                 mark_pot(ax, self._exposure, style.mark_pot_horizontal)
             if style.mark_preliminary is not None:
                 mark_preliminary(ax, style.mark_preliminary, hadj=0.035 if style.scilimits is not None else 0)
+
+            # Compact legend in the upper right; with no fixed y-range,
+            # raise the y-axis so the curves sit below it.
+            if show_legend:
+                draw_legend(ax, logy=logy, headroom=yrange is None)
 
     def add_sample(self, sample, is_ordinate):
         """

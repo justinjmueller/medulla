@@ -154,7 +154,8 @@ class Analysis:
                                 self._colors, self._category_types,
                                 x['cuts'], x['excluded_cut'],
                                 x.get('title', None), x.get('xrange', None), x.get('xtitle', None),
-                                x.get('yrange', None), x.get('ytitle', None))
+                                x.get('yrange', None), x.get('ytitle', None),
+                                x.get('cut_lines', None))
                             draw_kwargs = x.get('draw_kwargs', {})
                             draw_kwargs['draw_error'] = draw_kwargs.get('draw_error', None)
                             self._figures[fig['name']].register_spine_artist(art, draw_kwargs=draw_kwargs)

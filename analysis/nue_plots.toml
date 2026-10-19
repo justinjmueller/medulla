@@ -15,10 +15,69 @@ exposure_type = 'pot'
 trees = ['selected']
 print_sys = true
 systematics = ['selected_multisigmaTree', 'selected_NuMIfluxsimTree', 'selected_variationTree']
-precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "true_mode_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_category" = "np.where(true_category == 0, reco_reco_interaction_type, -1)", "true_nu" = "true_visible_energy - true_leading_electron_energy/1000", "reco_nu" = "reco_visible_energy - reco_leading_electron_energy/1000", "nu_diff" = "reco_nu - true_nu"}
+precompute = {"scaled_weight" = "ppfx_cv_weight * 7.095834e+20 / 2.5e20", "reco_ele_beam_cosTheta" = "(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "(true_ele_beam_open_angle)", "true_mode_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_category" = "np.where(true_category == 0, reco_reco_interaction_type, -1)", "true_nu" = "true_visible_energy - true_leading_electron_energy/1000", "reco_nu" = "reco_visible_energy - reco_leading_electron_energy/1000", "nu_diff" = "reco_nu - true_nu", "ele_diff" = "reco_leading_electron_energy - true_leading_electron_energy", "angle_diff" = "reco_ele_beam_open_angle - true_ele_beam_open_angle"}
 area_scale = false
 override_exposure = 7.095834e+20
 weight_branch = 'ppfx_cv_weight'
+# branches = ["true_category",
+#             "reco_fiducial_cut",
+#             "reco_flash_cut",
+#             "reco_containment_cut",
+#             "reco_has_particle_multiplicity",
+#             "reco_no_muons",
+#             "reco_vertex_distance_cut",
+#             "reco_electron_softmax_cut",
+#             "reco_primary_softmax_cut",
+#             "reco_leading_ele_energy_cut",
+#             "true_neutrino_energy",
+#             "reco_leading_electron_energy",
+#             "reco_ele_beam_open_angle",
+#             "reco_leading_electron_start_dedx",
+#             "reco_leading_electron_axial_spread",
+#             "reco_leading_electron_directional_spread",
+#             "reco_leading_electron_start_x",
+#             "reco_leading_electron_start_y",
+#             "reco_leading_electron_start_z",
+#             "reco_leading_electron_start_dir_x",
+#             "reco_leading_electron_start_dir_y",
+#             "reco_leading_electron_start_dir_z",
+#             "reco_leading_electron_mip_softmax",
+#             "reco_leading_electron_photon_softmax",
+#             "reco_leading_electron_muon_softmax",
+#             "reco_leading_electron_proton_softmax",
+#             "reco_leading_electron_pion_softmax",
+#             "reco_leading_electron_electron_softmax",
+#             "reco_leading_electron_primary_softmax",
+#             "reco_leading_electron_secondary_softmax",
+#             "reco_leading_electron_vertex_distance",
+#             "reco_leading_electron_polar_angle",
+#             "reco_muon_multiplicity",
+#             "reco_photon_multiplicity",
+#             "reco_pion_multiplicity",
+#             "reco_proton_multiplicity",
+#             "reco_electron_multiplicity",
+#             "reco_flash_time",
+#             "true_leading_electron_energy",
+#             "true_ele_beam_open_angle",
+#             "true_leading_electron_start_x",
+#             "true_leading_electron_start_y",
+#             "true_leading_electron_start_z",
+#             "true_leading_electron_start_dir_x",
+#             "true_leading_electron_start_dir_y",
+#             "true_leading_electron_start_dir_z",
+#             "true_leading_electron_polar_angle",
+#             "true_muon_multiplicity",
+#             "true_photon_multiplicity",
+#             "true_pion_multiplicity",
+#             "true_proton_multiplicity",
+#             "true_electron_multiplicity",
+#             "true_hadronic_invariant_mass",
+#             "true_momentum_transfer",
+#             "true_visible_energy",
+#             "reco_visible_energy",
+#             "true_cc",
+#             "true_interaction_mode",
+#             "reco_reco_interaction_type"]
 
 [samples.NuMIFullNonSel]
 key = "NuMIFull"
@@ -28,7 +87,7 @@ exposure_type = "pot"
 trees = ['selected_nonmatched']
 print_sys = true
 systematics = []
-precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "true_mode_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_category" = "np.where(true_category == 0, reco_reco_interaction_type, -1)", "true_nu" = "true_visible_energy - true_leading_electron_energy/1000", "reco_nu" = "reco_visible_energy - reco_leading_electron_energy/1000", "nu_diff" = "reco_nu - true_nu"}
+precompute = {"reco_ele_beam_cosTheta" = "(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "(true_ele_beam_open_angle)", "true_mode_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_category" = "np.where(true_category == 0, reco_reco_interaction_type, -1)", "true_nu" = "true_visible_energy - true_leading_electron_energy/1000", "reco_nu" = "reco_visible_energy - reco_leading_electron_energy/1000", "nu_diff" = "reco_nu - true_nu", "ele_diff" = "reco_leading_electron_energy - true_leading_electron_energy", "angle_diff" = "reco_ele_beam_open_angle - true_ele_beam_open_angle"}
 area_scale = false
 override_exposure = 7.095834e+20
 
@@ -38,7 +97,7 @@ exposure_type = "pot"
 trees = ['selected']
 print_sys = true
 systematics = []
-precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "true_mode_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_category" = "-2", "true_nu" = "true_visible_energy - true_leading_electron_energy/1000", "reco_nu" = "reco_visible_energy - reco_leading_electron_energy/1000", "nu_diff" = "reco_nu - true_nu", "true_category" = "-1"}
+precompute = {"reco_ele_beam_cosTheta" = "(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "(true_ele_beam_open_angle)", "true_mode_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_category" = "-2", "true_nu" = "true_visible_energy - true_leading_electron_energy/1000", "reco_nu" = "reco_visible_energy - reco_leading_electron_energy/1000", "nu_diff" = "reco_nu - true_nu", "true_category" = "-1", "ele_diff" = "reco_leading_electron_energy - true_leading_electron_energy", "angle_diff" = "reco_ele_beam_open_angle - true_ele_beam_open_angle"}
 override_exposure = 2.36124e19 # 10% data from Guadalupe's studies https://sbn-docdb.fnal.gov/cgi-bin/sso/RetrieveFile?docid=46480&filename=POT_counting_numi_2026-2.pdf&version=1
 override_livetime = 483958
 
@@ -47,8 +106,16 @@ key = "dataBeamOff"
 exposure_type = "livetime"
 trees = ['selected']
 systematics = []
-precompute = {"reco_ele_beam_cosTheta" = "np.cos(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "np.cos(true_ele_beam_open_angle)", "true_mode_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_category" = "-2", "true_nu" = "true_visible_energy - true_leading_electron_energy/1000", "reco_nu" = "reco_visible_energy - reco_leading_electron_energy/1000", "nu_diff" = "reco_nu - true_nu", "true_category" = "5"}
+precompute = {"reco_ele_beam_cosTheta" = "(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "(true_ele_beam_open_angle)", "true_mode_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_category" = "-2", "true_nu" = "true_visible_energy - true_leading_electron_energy/1000", "reco_nu" = "reco_visible_energy - reco_leading_electron_energy/1000", "nu_diff" = "reco_nu - true_nu", "true_category" = "6", "ele_diff" = "reco_leading_electron_energy - true_leading_electron_energy", "angle_diff" = "reco_ele_beam_open_angle - true_ele_beam_open_angle"}
 override_exposure = 50788498
+
+[samples.rockMuon]
+key = "rock"
+exposure_type = "pot"
+trees = ['selected']
+systematics = []
+precompute = {"reco_ele_beam_cosTheta" = "(reco_ele_beam_open_angle)", "true_ele_beam_cosTheta" = "(true_ele_beam_open_angle)", "true_mode_category" = "np.where(true_cc == 1, true_interaction_mode, -1)", "reco_flash_time_mod" = "np.nan_to_num(reco_flash_time, nan=-20)", "reco_category" = "-2", "true_nu" = "true_visible_energy - true_leading_electron_energy/1000", "reco_nu" = "reco_visible_energy - reco_leading_electron_energy/1000", "nu_diff" = "reco_nu - true_nu", "true_category" = "7", "ele_diff" = "reco_leading_electron_energy - true_leading_electron_energy", "angle_diff" = "reco_ele_beam_open_angle - true_ele_beam_open_angle"}
+
 
 # Output directory for plots
 [output]
@@ -69,12 +136,16 @@ category_assignment = [
     [2], 
     [3], 
     [4],
-    [5],  # Cosmic
-    [-1] #data
+    [5],  # Cosmic out of time
+    [6],  # Cosmic in time
+    [7],  # Rock
+    [-1]  # Data
 ]
-category_labels = ['$\nu_{e}$ Signal', '$\nu_{e}$ OOFV', '$\nu_{\mu}$', '$\nu$ OOFV', '$\nu$ NC', 'Cosmic', 'Data']
+category_labels = ['$\nu_{e}$ Signal', '$\nu_{e}$ OOFV', '$\nu_{\mu}$', '$\nu$ OOFV', '$\nu$ NC', 'Cosmic-OOT', 'Cosmic-IT', 'Rock', 'Data']
 #category_colors = ['#011959', '#103F60', '#1C5A62', '#3C6D56', '#687B3E', '#9D892B', '#D29343', '#F8A17B', '#FDB7BC', '#FACCFA'] #batlow
-category_colors = ['#011959', '#1C5A62', '#687B3E', '#D29343', '#FDB7BC', '#ca80a0ff', '#000000ff']
+# category_colors = ['#011959', '#1C5A62', '#687B3E', '#D29343', '#FDB7BC', '#ca80a0ff', '#000000ff']
+# category_colors = ['#070159', '#104c60', '#3C6D56', '#687B3E', '#9D892B', '#D29343', '#F8A17B', '#FACCFA', '#000000ff'] #batlow
+category_colors = ['#0072B2', '#770107', '#02694d', '#CC79A7', '#ff7912', '#8B5A2B', '#C9A400', '#6C4BA6', '#000000']
 
 # category_branch = 'true_mode_category'
 # category_assignment = [
@@ -102,7 +173,9 @@ category_colors = ['#011959', '#1C5A62', '#687B3E', '#D29343', '#FDB7BC', '#ca80
 # #category_colors = ['#2C194C', '#284578', '#49749F', '#83A1BE', '#CAD7E3', '#D2E1D2', '#8EB38D', '#4F894E', '#1C5B19', '#0F2903'] #cork
 # category_colors = ['#2C194C','#49749F', '#83A1BE', '#8EB38D', '#4F894E', '#1C5B19', '#000000ff'] #cork
 
-category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'scatter']
+#category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'scatter']
+
+category_types = ['histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'histogram', 'scatter']
 
 ##############################################
 ## Define your variables and figures below
@@ -162,19 +235,19 @@ xlabel = 'Reco Leading Electron Directional Spread [cm]'
 
 [variables.reco_leading_electron_start_x]
 key = 'reco_leading_electron_start_x'
-nbins = 175
+nbins = 70
 range = [-350, 350]
 xlabel = 'Reco Leading Electron Start Position X [cm]'
 
 [variables.reco_leading_electron_start_y]
 key = 'reco_leading_electron_start_y'
-nbins = 175
+nbins = 60
 range = [-200, 150]
 xlabel = 'Reco Leading Electron Start Position Y [cm]'
 
 [variables.reco_leading_electron_start_z]
 key = 'reco_leading_electron_start_z'
-nbins = 150
+nbins = 60
 range = [-900, 900]
 xlabel = 'Reco Leading Electron Start Position Z [cm]'
 
@@ -313,19 +386,19 @@ xlabel = "True Leading Electron $cos{\\theta_{NUMI}}$"
 
 [variables.true_leading_electron_start_x]
 key = 'true_leading_electron_start_x'
-nbins = 175
+nbins = 70
 range = [-350, 350]
 xlabel = 'True Leading Electron Start Position X [cm]'
 
 [variables.true_leading_electron_start_y]
 key = 'true_leading_electron_start_y'
-nbins = 175
+nbins = 70
 range = [-200, 150]
 xlabel = 'True Leading Electron Start Position Y [cm]'
 
 [variables.true_leading_electron_start_z]
 key = 'true_leading_electron_start_z'
-nbins = 150
+nbins = 60
 range = [-900, 900]
 xlabel = 'True Leading Electron Start Position Z [cm]'
 
@@ -406,6 +479,18 @@ key = 'nu_diff'
 nbins = 60
 range = [-3.0, 3.0]
 xlabel = '$\nu_{reco} - \nu_{true} [GeV]$'
+
+[variables.ele_diff]
+key = 'ele_diff'
+nbins = 200
+range = [-1000.0, 1000.0]
+xlabel = '$E_{reco} - E_{true} [MeV]$'
+
+[variables.angle_diff]
+key = 'angle_diff'
+nbins = 100
+range = [-1.0, 1.0]
+xlabel = '$\cos(\theta_{reco}) - \cos(\theta_{true})$'
 
 
 ###############################################
@@ -894,6 +979,7 @@ show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
 draw_error = 'total'
+draw_scatter = false
 
 # Figure 27: true leading electron polar angle
 [[figure]]
@@ -910,6 +996,7 @@ show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
 draw_error = 'total'
+draw_scatter = false
 
 # Figure 28: true leading electron start x
 [[figure]]
@@ -923,11 +1010,11 @@ variable = 'true_leading_electron_start_x'
 
 [figure.artists.draw_kwargs]
 ratio_scatter_label = 'data'
-make_ratio_plot = true
 show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
 draw_error = 'total'
+draw_scatter = false
 
 # Figure 29: true leading electron start y
 [[figure]]
@@ -941,11 +1028,11 @@ variable = 'true_leading_electron_start_y'
 
 [figure.artists.draw_kwargs]
 ratio_scatter_label = 'data'
-make_ratio_plot = true
 show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
 draw_error = 'total'
+draw_scatter = false
 
 # Figure 30: true leading electron start z
 [[figure]]
@@ -959,11 +1046,11 @@ variable = 'true_leading_electron_start_z'
 
 [figure.artists.draw_kwargs]
 ratio_scatter_label = 'data'
-make_ratio_plot = true
 show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
 draw_error = 'total'
+draw_scatter = false
 
 # Figure 31: true leading electron start dir x
 [[figure]]
@@ -977,11 +1064,11 @@ variable = 'true_leading_electron_start_dir_x'
 
 [figure.artists.draw_kwargs]
 ratio_scatter_label = 'data'
-make_ratio_plot = true
 show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
 draw_error = 'total'
+draw_scatter = false
 
 # Figure 32: true leading electron start dir y
 [[figure]]
@@ -995,11 +1082,11 @@ variable = 'true_leading_electron_start_dir_y'
 
 [figure.artists.draw_kwargs]
 ratio_scatter_label = 'data'
-make_ratio_plot = true
 show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
 draw_error = 'total'
+draw_scatter = false
 
 # Figure 33: true leading electron start dir z
 [[figure]]
@@ -1013,11 +1100,11 @@ variable = 'true_leading_electron_start_dir_z'
 
 [figure.artists.draw_kwargs]
 ratio_scatter_label = 'data'
-make_ratio_plot = true
 show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
 draw_error = 'total'
+draw_scatter = false
 
 # Figure 34: true muon multiplicity
 [[figure]]
@@ -1031,11 +1118,11 @@ variable = 'true_muon_multiplicity'
 
 [figure.artists.draw_kwargs]
 ratio_scatter_label = 'data'
-make_ratio_plot = true
 show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
 draw_error = 'total'
+draw_scatter = false
 
 # Figure 35: true photon multiplicity
 [[figure]]
@@ -1049,11 +1136,11 @@ variable = 'true_photon_multiplicity'
 
 [figure.artists.draw_kwargs]
 ratio_scatter_label = 'data'
-make_ratio_plot = true
 show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
 draw_error = 'total'
+draw_scatter = false
 
 # Figure 36: true pion multiplicity
 [[figure]]
@@ -1067,11 +1154,11 @@ variable = 'true_pion_multiplicity'
 
 [figure.artists.draw_kwargs]
 ratio_scatter_label = 'data'
-make_ratio_plot = true
 show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
 draw_error = 'total'
+draw_scatter = false
 
 # Figure 37: true proton multiplicity
 [[figure]]
@@ -1085,11 +1172,11 @@ variable = 'true_proton_multiplicity'
 
 [figure.artists.draw_kwargs]
 ratio_scatter_label = 'data'
-make_ratio_plot = true
 show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
 draw_error = 'total'
+draw_scatter = false
 
 # Figure 38: true electron multiplicity
 [[figure]]
@@ -1103,11 +1190,11 @@ variable = 'true_electron_multiplicity'
 
 [figure.artists.draw_kwargs]
 ratio_scatter_label = 'data'
-make_ratio_plot = true
 show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
 draw_error = 'total'
+draw_scatter = false
 
 #Figure 39: true momentum transfer
 [[figure]]
@@ -1121,11 +1208,11 @@ variable = 'true_momentum_transfer'
 
 [figure.artists.draw_kwargs]
 ratio_scatter_label = 'data'
-make_ratio_plot = true
 show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
 draw_error = 'total'
+draw_scatter = false
 
 #Figure 40: true hadronic invariant mass
 [[figure]]
@@ -1139,11 +1226,11 @@ variable = 'true_hadronic_invariant_mass'
 
 [figure.artists.draw_kwargs]
 ratio_scatter_label = 'data'
-make_ratio_plot = true
 show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
 draw_error = 'total'
+draw_scatter = false    
 
 #Figure 40.1 true visible energy - true leading electron energy
 [[figure]]
@@ -1157,11 +1244,11 @@ variable = 'true_nu'
 
 [figure.artists.draw_kwargs]
 ratio_scatter_label = 'data'
-make_ratio_plot = false
 show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
 draw_error = 'total'
+draw_scatter = false
 
 #Figure 40.2 reco visible energy - reco leading electron energy
 [[figure]]
@@ -1175,11 +1262,11 @@ variable = 'reco_nu'
 
 [figure.artists.draw_kwargs]
 ratio_scatter_label = 'data'
-make_ratio_plot = true
 show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
 draw_error = 'total'
+draw_scatter = false
 
 #Figure 40.3 reco - true nu
 [[figure]]
@@ -1192,12 +1279,46 @@ type = 'SpineSpectra1D'
 variable = 'nu_diff'
 
 [figure.artists.draw_kwargs]
-ratio_scatter_label = 'data'
-make_ratio_plot = false
 show_component_number = true
 show_component_percentage = true
 invert_stack_order = true
 draw_error = 'total'
+draw_scatter = false
+
+[[figure]]
+name = 'ele_diff'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'ele_diff'
+
+[figure.artists.draw_kwargs]
+ratio_scatter_label = 'data'
+show_component_number = true
+show_component_percentage = true
+invert_stack_order = true
+draw_error = 'total'
+draw_scatter = false
+
+[[figure]]
+name = 'angle_diff'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+
+[[figure.artists]]
+type = 'SpineSpectra1D'
+variable = 'angle_diff'
+
+[figure.artists.draw_kwargs]
+ratio_scatter_label = 'data'
+show_component_number = true
+show_component_percentage = true
+invert_stack_order = true
+draw_error = 'total'
+draw_scatter = false
+
 
 #Figure 41: reco flash time — cut flow
 # Each line shows the distribution after all cuts up to and including that step.

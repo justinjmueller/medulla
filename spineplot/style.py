@@ -258,6 +258,60 @@ class Style:
         """
         return self._plot_kwargs
 
+def stamp(ax, style_name='nue_icarus', pot=None,
+          work_in_progress=False, loc='left', fontsize=13,
+          styles_toml_path=None) -> None:
+    """Add watermark and optional POT label to an existing axis.
+
+    Call this at the end of a cell after all drawing is done.  The rcParams
+    (colors, fonts, ticks) must still be set beforehand with
+    ``plt.style.use(...)``.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+    style_name : str
+        Named style in styles.toml.  Defaults to ``'nue_icarus'``.
+    pot : float, optional
+        POT value to display.
+    work_in_progress : bool, optional
+        If True, use the ``nue_icarus_data`` label ("Work-in-Progress")
+        instead of the style's default ("Simulation").  Default False.
+    loc : str, optional
+        Horizontal anchor for the watermark: ``'left'`` (default) or
+        ``'right'``.
+    fontsize : int, optional
+        Font size for the watermark text.  Default 13.
+    styles_toml_path : str, optional
+        Override path to styles.toml.
+    """
+    style = load_style_from_toml(style_name, styles_toml_path=styles_toml_path)
+
+    label = style.mark_preliminary
+    if work_in_progress:
+        try:
+            wip_style = load_style_from_toml('nue_icarus_data', styles_toml_path=styles_toml_path)
+            label = wip_style.mark_preliminary
+        except ValueError:
+            label = label  # fall back to whatever the chosen style says
+
+    if label is not None:
+        if loc == 'right':
+            x, ha = 1.0 - 0.025, 'right'
+        else:
+            x, ha = 0.025, 'left'
+        ax.text(
+            x=x, y=1.01, s=label,
+            fontsize=fontsize, color='#d67a11',
+            transform=ax.transAxes,
+            horizontalalignment=ha, verticalalignment='bottom',
+            clip_on=False,
+        )
+
+    if pot is not None and mark_pot is not None:
+        mark_pot(ax, pot, horizontal=style.mark_pot_horizontal)
+
+
 def load_style_from_toml(style_name, styles_toml_path=None) -> Style:
     """Load a Style object by name from a styles TOML file."""
     if styles_toml_path is None:

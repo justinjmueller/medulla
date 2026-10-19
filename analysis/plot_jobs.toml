@@ -1,0 +1,127 @@
+# plot_jobs.toml -- the plotting jobs that analysis/plot_all.py runs.
+#
+# Each [[job]] is ONE CLI invocation. The variant matrix lives here, not in code:
+# to plot the same TOML a second way, add another [[job]] with the same `toml`
+# and a different `figures` subset and/or `output_dir`. Fields:
+#   name        unique job label (used by `plot_all.py --only <name> ...`)
+#   cli         plotting CLI, relative to the repo root
+#   toml        analysis TOML
+#   input       input ROOT file (job is skipped with a warning if it is missing)
+#   output_dir  where the png/pkl (or efficiency figures) are written
+#   figures     OPTIONAL list of figure/variable names; omit to use the CLI default
+#   args        OPTIONAL extra CLI flags appended verbatim (e.g. ["--systematics-set", "xsec"])
+#
+# plot_all.py runs these one at a time (memory is released between jobs) and only
+# when this node's available memory comfortably exceeds the input size.
+
+[[job]]
+name = "selection"
+cli = "analysis/makeSelectionPlotsCLI.py"
+toml = "analysis/nue_plots.toml"
+input = "/exp/icarus/data/users/micarrig/merged_v30.root"
+output_dir = "plots_v30/selection"
+
+# One systematics run per breakdown. `args` passes --systematics-set, which
+# overrides every SpineSystematics artist's `systematics` with the named set in
+# analysis/systematic_sets.toml (membership lifted verbatim from systematics.toml).
+[[job]]
+name = "systematic_xsec"
+cli = "analysis/makeSystematicPlotsCLI.py"
+toml = "analysis/systematics.toml"
+input = "/exp/icarus/data/users/micarrig/merged_v30.root"
+output_dir = "plots_v30/systematics_xsec"
+args = ["--systematics-set", "xsec"]
+
+[[job]]
+name = "systematic_flux"
+cli = "analysis/makeSystematicPlotsCLI.py"
+toml = "analysis/systematics.toml"
+input = "/exp/icarus/data/users/micarrig/merged_v30.root"
+output_dir = "plots_v30/systematics_flux"
+args = ["--systematics-set", "flux"]
+
+[[job]]
+name = "systematic_detector"
+cli = "analysis/makeSystematicPlotsCLI.py"
+toml = "analysis/systematics.toml"
+input = "/exp/icarus/data/users/micarrig/merged_v30.root"
+output_dir = "plots_v30/systematics_detector"
+args = ["--systematics-set", "detector"]
+
+[[job]]
+name = "systematic_total"
+cli = "analysis/makeSystematicPlotsCLI.py"
+toml = "analysis/systematics.toml"
+input = "/exp/icarus/data/users/micarrig/merged_v30.root"
+output_dir = "plots_v30/systematics_total"
+args = ["--systematics-set", "total"]
+
+[[job]]
+name = "systematic_xsec_grouped"
+cli = "analysis/makeSystematicPlotsCLI.py"
+toml = "analysis/systematics.toml"
+input = "/exp/icarus/data/users/micarrig/merged_v30.root"
+output_dir = "plots_v30/systematics_xsec_grouped"
+args = ["--systematics-set", "xsec_grouped"]
+
+[[job]]
+name = "nminus1"
+cli = "analysis/makeNMinus1PlotsCLI.py"
+toml = "analysis/nminus1_plots.toml"
+input = "/exp/icarus/data/users/micarrig/merged_v30.root"
+output_dir = "plots_v30/nminus1"
+
+[[job]]
+name = "efficiency_allTree"
+cli = "analysis/plotEfficiencyCLI.py"
+toml = "analysis/efficiency_analysis_allTree.toml"
+input = "/exp/icarus/data/users/micarrig/merged_v30.root"
+output_dir = "plots_v30/efficiency_allTree"
+
+[[job]]
+name = "efficiency_trueSignalTree"
+cli = "analysis/plotEfficiencyCLI.py"
+toml = "analysis/efficiency_analysis_trueSignalTree.toml"
+input = "/exp/icarus/data/users/micarrig/merged_v30.root"
+output_dir = "plots_v30/efficiency_trueSignalTree"
+
+[[job]]
+name = "efficiency_withError"
+cli = "analysis/plotEfficiencyCLI.py"
+toml = "analysis/efficiency_withError.toml"
+input = "/exp/icarus/data/users/micarrig/merged_v30.root"
+output_dir = "plots_v30/efficiency_withError"
+# This TOML splits the true-electron-energy figure into one per error type.
+figures = ["selection_efficiency_table", "efficiency_vs_energy", "efficiency_vs_electronEnergy",
+           "efficiency_vs_electronAngle", "efficiency_vs_trueMomentumTransfer",
+           "efficiency_vs_trueInvariantMass", "efficiency_vs_trueLeadingElectronCosTheta",
+           "efficiency_vs_trueLeadingElectronEnergy_flux", "efficiency_vs_trueLeadingElectronEnergy_xsec",
+           "efficiency_vs_trueLeadingElectronEnergy_detector",
+           "efficiency_vs_trueLeadingElectronEnergy_totalStat",
+           "efficiency_vs_trueLeadingElectronEnergy_total"]
+
+# Efficiency broken down by reconstructed topology (6 neutrino-type categories).
+# Same 8 figure names as the CLI default, so no `figures` override is needed.
+[[job]]
+name = "efficiency_recoInt"
+cli = "analysis/plotEfficiencyCLI.py"
+toml = "analysis/efficiency_recoInt.toml"
+input = "/exp/icarus/data/users/micarrig/merged_v30.root"
+output_dir = "plots_v30/efficiency_recoInt"
+
+# Cutflow N-1 style plots (cutflow_plots.toml, tree all_signal) via the selection
+# CLI; `figures` lists the six *_cutflow figures defined in that TOML.
+[[job]]
+name = "cutflows"
+cli = "analysis/makeSelectionPlotsCLI.py"
+toml = "analysis/cutflow_plots.toml"
+input = "/exp/icarus/data/users/micarrig/merged_v30.root"
+output_dir = "plots_v30/cutflows"
+figures = [
+    "reco_flash_time_mod_cutflow",
+    "true_neutrino_energy_cutflow",
+    "reco_leading_electron_energy_cutflow",
+    "reco_ele_beam_cosTheta_cutflow",
+    "true_ele_beam_cosTheta_cutflow",
+    "true_leading_electron_energy_cutflow",
+]

@@ -1,3 +1,4 @@
+import hashlib
 import numpy as np
 import pandas as pd
 import uproot
@@ -257,21 +258,20 @@ class Systematic:
                 sigma_levels = np.linspace(-3, 3, 7)
                 W = np.asarray(weights_array, dtype=float)
 
-            # Draw per-event random sigma values for each universe
-            random_sigmas = np.random.normal(
-                0, 1,
-                (W.shape[0], nuniv)
+            # Draw one sigma per universe (coherent shift: all events see the same
+            # parameter value in a given universe, as is correct for a single
+            # physical systematic parameter).
+            if seed is None:
+                seed = int(hashlib.md5(self._name.encode()).hexdigest(), 16) % (2**31)
+            rng = np.random.default_rng(seed)
+            random_sigmas = rng.normal(0, 1, nuniv)  # shape (nuniv,)
+            idx = np.clip(
+                np.searchsorted(sigma_levels, random_sigmas, side='right') - 1,
+                0, len(sigma_levels) - 2,
             )
-            # Interpolate each universes's 6/7-point curve at its own random_sigmas
-            universe_weights = np.apply_along_axis(
-                lambda w: np.interp(
-                    random_sigmas[0],
-                    sigma_levels,
-                    w
-                ),
-                axis=1,
-                arr=W
-            )
+            t = (random_sigmas - sigma_levels[idx]) / (sigma_levels[idx + 1] - sigma_levels[idx])
+            # W[:, idx] broadcasts to (N_sel, nuniv)
+            universe_weights = W[:, idx] * (1 - t) + W[:, idx + 1] * t
 
             return universe_weights
 

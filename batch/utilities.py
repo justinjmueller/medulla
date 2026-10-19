@@ -14,6 +14,36 @@ _INFO     = '\033[1m\033[94m[INFO]\033[0m'      # bold blue
 _ERROR    = '\033[1m\033[91m[ERROR]\033[0m'     # bold red
 _CAMPAIGN = '\033[1m\033[96m[CAMPAIGN]\033[0m'  # bold cyan
 
+# When True (set by medulla.py --yes), every Y/N confirmation in this module is
+# answered "yes" automatically and the question is echoed so it shows in logs.
+ASSUME_YES = False
+
+def set_assume_yes(value: bool = True):
+    """Enable or disable automatic "yes" answers to Y/N prompts."""
+    global ASSUME_YES
+    ASSUME_YES = value
+
+# When True (set by medulla.py --dry-run), nothing is submitted, deleted,
+# written to project.db, or copied into the project directory. Every Y/N
+# prompt is answered with its `dry_answer` (default "no") and echoed. This takes
+# precedence over ASSUME_YES.
+DRY_RUN = False
+
+def set_dry_run(value: bool = True):
+    """Enable or disable dry-run mode."""
+    global DRY_RUN
+    DRY_RUN = value
+
+def _yes(prompt: str, dry_answer: bool = False) -> bool:
+    """Ask a Y/N question. Dry run: answer `dry_answer`. --yes: answer yes."""
+    if DRY_RUN:
+        print(f"{prompt}{'Y' if dry_answer else 'N'} (auto: --dry-run)")
+        return dry_answer
+    if ASSUME_YES:
+        print(f"{prompt}Y (auto: --yes)")
+        return True
+    return input(prompt).strip().lower() == 'y'
+
 def _ifdh_cp(src: str, dest: str):
     """Copy src to dest via ifdh, removing dest first if it already exists."""
     subprocess.run(['rm', dest], capture_output=True)
@@ -247,6 +277,14 @@ def create_new_project(
     -------
     None.
     """
+    if DRY_RUN:
+        sys_path = sys if sys is not None else 'default template (batch/sys_template.toml)'
+        print(f"{_INFO} -- [DRY RUN] Would create project in {project_dir}")
+        print(f"{_INFO} -- [DRY RUN]   selection TOML: {tml} ({'found' if Path(tml).exists() else 'NOT FOUND'})")
+        print(f"{_INFO} -- [DRY RUN]   systematics template: {sys_path}")
+        print(f"{_INFO} -- [DRY RUN]   batch size: {batch_size}")
+        print(f"{_INFO} -- [DRY RUN]   project.db: {'already exists' if (Path(project_dir) / 'project.db').exists() else 'would be created'}")
+        return
     # Create the project directory and a subdirectory for job output,
     # if they do not already exist.
     os.makedirs(project_dir, exist_ok=True)
@@ -382,8 +420,11 @@ def check_project_status(
         for f in output_files if Path(f).stat().st_size >= 1024
     ]
     ins = [('completed', jid) for jid in completed_jobs]
-    command(curs, "UPDATE jobs SET status = ? WHERE jobid = ?", ins)
-    conn.commit()
+    if DRY_RUN:
+        print(f"[INFO] -- [DRY RUN] Would mark {len(completed_jobs)} job(s) 'completed' in project.db (not written).")
+    else:
+        command(curs, "UPDATE jobs SET status = ? WHERE jobid = ?", ins)
+        conn.commit()
 
     stub_jobs = [
         int(Path(f).stem.split("jobid")[-1])
@@ -437,7 +478,7 @@ def check_project_status(
         if recovered_jobs:
             print(
                 f"[WARN] -- Found {len(recovered_jobs)} recovered ROOT file(s)"
-                " (not properly closed; may be incomplete): job IDs {recovered_jobs}"
+                f" (not properly closed; may be incomplete): job IDs {recovered_jobs}"
             )
             stub_jobs = sorted(set(stub_jobs).union(recovered_jobs))
 
@@ -453,8 +494,7 @@ def check_project_status(
                 if p.exists():
                     stub_paths.append(p)
 
-        resp_list = input("[INFO] -- Print file details before deleting? [Y/N] ")
-        if resp_list.strip().lower() == 'y':
+        if _yes("[INFO] -- Print file details before deleting? [Y/N] ", dry_answer=True):
             import datetime
             col_w = max((len(p.name) for p in stub_paths), default=10)
             print(f"\n  {'File':<{col_w}}  {'Size (bytes)':>14}  {'Created'}")
@@ -465,8 +505,7 @@ def check_project_status(
                 print(f"  {p.name:<{col_w}}  {st.st_size:>14,}  {created}")
             print()
 
-        resp = input("Delete these outputs? [Y/N] ")
-        if resp.strip().lower() != 'y':
+        if not _yes("Delete these outputs? [Y/N] "):
             print(
                 "[INFO] -- Keeping stub output files. Please check"
                 " these files manually to determine if they are valid"
@@ -499,8 +538,12 @@ def check_project_status(
 
     conn.close()
 
-    # Replace the project database copy with the updated version.
-    subprocess.run(['mv', './project.db', project_dir / 'project.db'], check=True)
+    # Replace the project database copy with the updated version (dry run:
+    # discard the local copy, leave project.db untouched).
+    if DRY_RUN:
+        os.remove('./project.db')
+    else:
+        subprocess.run(['mv', './project.db', project_dir / 'project.db'], check=True)
 
     print(f"[INFO] -- Found {len(completed_jobs)} completed jobs.")
 def launch_jobsub(
@@ -576,17 +619,21 @@ def launch_jobsub(
         ]
         if relaunch_jobs:
             ins = [('pending', jid) for jid in relaunch_jobs]
-            command(curs, "UPDATE jobs SET status = ? WHERE jobid = ?", ins)
-            conn.commit()
+            if not DRY_RUN:
+                command(curs, "UPDATE jobs SET status = ? WHERE jobid = ?", ins)
+                conn.commit()
             pending_jobs = sorted(set(pending_jobs).union(relaunch_jobs))
             print(
-                f"[INFO] -- Marked {len(relaunch_jobs)} missing-output job(s) as pending for relaunch: {relaunch_jobs}"
+                f"[INFO] -- {'[DRY RUN] Would mark' if DRY_RUN else 'Marked'} {len(relaunch_jobs)} missing-output job(s) as pending for relaunch: {relaunch_jobs}"
             )
         else:
             print("[INFO] -- No additional missing-output jobs needed relaunch.")
 
     conn.close()
-    subprocess.run(['mv', './project.db', project_dir / 'project.db'], check=True)
+    if DRY_RUN:
+        os.remove('./project.db')
+    else:
+        subprocess.run(['mv', './project.db', project_dir / 'project.db'], check=True)
 
     # Do some checking that the request is sane. Naturally, if there
     # are no pending jobs, there is nothing to launch. Similarly, if
@@ -628,11 +675,16 @@ def launch_jobsub(
         f'--project={project_dir.resolve()}',
         f'--tag={tag}',
     ]
+    if DRY_RUN:
+        print(f"{_INFO} -- [DRY RUN] Would submit {njobs} of {len(pending_jobs)} pending job(s) with command:")
+        print(f"{_INFO} -- [DRY RUN]   {' '.join(cmd)}")
+        print(f"{_INFO} -- [DRY RUN] Nothing submitted.")
+        return False
+
     # Query the user to confirm that they want to launch the jobs.
     if confirm:
         print(f"{_INFO} -- Launching {njobs} jobs with command: {' '.join(cmd)}")
-        resp = input("Confirm job launch? [Y/N] ")
-        if resp.lower() != 'y':
+        if not _yes("Confirm job launch? [Y/N] "):
             print(f"{_INFO} -- User aborted job launch.")
             return False
 
@@ -710,8 +762,15 @@ def run_variation_phase1_interactive(
     print(f"{_INFO} --   Input:  {variation_input}")
     print(f"{_INFO} --   Output: {project_dir}/variation_splines.root")
 
-    resp = input("Confirm Phase 1 interactive run? [Y/N] ")
-    if resp.strip().lower() != 'y':
+    if DRY_RUN:
+        print(f"{_INFO} -- [DRY RUN] Would run {binary} on this node, copy the rewritten TOML to")
+        print(f"{_INFO} -- [DRY RUN]   /exp/icarus/app/users/micarrig/nuESpine/variation_systematics_phase1.toml (overwriting it),")
+        print(f"{_INFO} -- [DRY RUN]   and stage the splines to {project_dir}/variation_splines.root"
+              f"{' (OVERWRITING an existing file)' if (project_dir / 'variation_splines.root').exists() else ''}.")
+        print(f"{_INFO} -- [DRY RUN] Input file {'found' if Path(variation_input).exists() else 'not found locally (xrootd URL or missing)'}: {variation_input}")
+        return False
+
+    if not _yes("Confirm Phase 1 interactive run? [Y/N] "):
         print(f"{_INFO} -- User aborted.")
         return False
 
@@ -792,8 +851,11 @@ def launch_variation_phase1_jobsub(
         return False
 
     dest_toml = str(project_dir / 'variation_systematics.toml')
-    print(f"{_INFO} -- Copying {variation_toml_path} -> {dest_toml}")
-    _ifdh_cp(str(variation_toml_path), dest_toml)
+    if DRY_RUN:
+        print(f"{_INFO} -- [DRY RUN] Would copy {variation_toml_path} -> {dest_toml}")
+    else:
+        print(f"{_INFO} -- Copying {variation_toml_path} -> {dest_toml}")
+        _ifdh_cp(str(variation_toml_path), dest_toml)
 
     disk_size = f'{disk}GB' if disk is not None else '80GB'
 
@@ -820,8 +882,11 @@ def launch_variation_phase1_jobsub(
     print(f"{_INFO} --   Output: {project_dir}/variation_splines.root")
     print(f"{_INFO} --   Command: {' '.join(cmd)}")
 
-    resp = input("Confirm Phase 1 batch submission? [Y/N] ")
-    if resp.strip().lower() != 'y':
+    if DRY_RUN:
+        print(f"{_INFO} -- [DRY RUN] Nothing submitted.")
+        return False
+
+    if not _yes("Confirm Phase 1 batch submission? [Y/N] "):
         print(f"{_INFO} -- User aborted.")
         return False
 
@@ -994,8 +1059,7 @@ def launch_variation_phase2_jobsub(
             if p.exists():
                 bad_paths.append(p)
         print(f"{_INFO} -- Found {len(stub_varsys_ids)} {label} varsys file(s).")
-        resp_list = input(f"{_INFO} -- Print file details before deleting? [Y/N] ")
-        if resp_list.strip().lower() == 'y':
+        if _yes(f"{_INFO} -- Print file details before deleting? [Y/N] ", dry_answer=True):
             import datetime
             col_w = max((len(p.name) for p in bad_paths), default=10)
             print(f"\n  {'File':<{col_w}}  {'Size (bytes)':>14}  {'Created'}")
@@ -1005,12 +1069,14 @@ def launch_variation_phase2_jobsub(
                 created = datetime.datetime.fromtimestamp(st.st_ctime).strftime('%Y-%m-%d %H:%M:%S')
                 print(f"  {p.name:<{col_w}}  {st.st_size:>14,}  {created}")
             print()
-        resp = input("Delete these varsys outputs and resubmit? [Y/N] ")
-        if resp.strip().lower() == 'y':
+        if _yes("Delete these varsys outputs and resubmit? [Y/N] "):
             for p in bad_paths:
                 p.unlink()
             already_done -= stub_varsys_ids
             print(f"{_INFO} -- Deleted {len(bad_paths)} {label} varsys file(s); they will be resubmitted.")
+        elif DRY_RUN:
+            already_done -= stub_varsys_ids
+            print(f"{_INFO} -- [DRY RUN] Would delete {len(bad_paths)} {label} varsys file(s) and resubmit them (nothing deleted).")
         else:
             print(f"{_INFO} -- Keeping {label} varsys files; they will not be resubmitted.")
 
@@ -1058,17 +1124,20 @@ def launch_variation_phase2_jobsub(
             tree['action'] = 'add_detsys_weights'
             tree['write_tree'] = False
             tree['table_types'] = ['variation']
-    phase2_toml_local = Path('variation_systematics_phase2.toml')
-    with open(phase2_toml_local, 'w') as f:
-        toml.dump(cfg, f)
-    _ifdh_cp(str(phase2_toml_local), str(project_dir / 'variation_systematics_phase2.toml'))
-    phase2_toml_local.unlink()
+    if DRY_RUN:
+        print(f"{_INFO} -- [DRY RUN] Would write {project_dir}/variation_systematics_phase2.toml and variation_phase2_manifest.txt ({njobs} job ids).")
+    else:
+        phase2_toml_local = Path('variation_systematics_phase2.toml')
+        with open(phase2_toml_local, 'w') as f:
+            toml.dump(cfg, f)
+        _ifdh_cp(str(phase2_toml_local), str(project_dir / 'variation_systematics_phase2.toml'))
+        phase2_toml_local.unlink()
 
-    manifest_local = Path('variation_phase2_manifest.txt')
-    manifest_local.write_text('\n'.join(str(jid) for jid in jobids) + '\n')
-    manifest_dest = str(project_dir / 'variation_phase2_manifest.txt')
-    _ifdh_cp(str(manifest_local), manifest_dest)
-    manifest_local.unlink()
+        manifest_local = Path('variation_phase2_manifest.txt')
+        manifest_local.write_text('\n'.join(str(jid) for jid in jobids) + '\n')
+        manifest_dest = str(project_dir / 'variation_phase2_manifest.txt')
+        _ifdh_cp(str(manifest_local), manifest_dest)
+        manifest_local.unlink()
 
     disk_size = f'{disk}GB' if disk is not None else '25GB'
 
@@ -1078,24 +1147,31 @@ def launch_variation_phase2_jobsub(
     # Splines files live on PNFS/dCache and cannot be read directly —
     # stage them locally first, then tar them.
     import tarfile, tempfile
-    splines_local = Path(tempfile.mkstemp(suffix='.root')[1])
-    splines_local.unlink()
-    splines_nue_local = None
-    splines_tar = Path(tempfile.mkstemp(suffix='.tar.gz')[1])
-    try:
-        _ifdh_cp(str(splines_path), str(splines_local))
-        if splines_nue_source is not None:
-            splines_nue_local = Path(tempfile.mkstemp(suffix='_nue.root')[1])
-            splines_nue_local.unlink()
-            _ifdh_cp(str(splines_nue_source), str(splines_nue_local))
-        with tarfile.open(str(splines_tar), 'w:gz') as tar:
-            tar.add(str(splines_local), arcname='variation_splines.root')
+    if DRY_RUN:
+        # Do not copy or tar the splines; just check the files are there.
+        splines_tar = Path('<splines.tar.gz built at submit time>')
+        for label_, path_ in (('splines', splines_path), ('nue splines', splines_nue_source)):
+            if path_ is not None:
+                print(f"{_INFO} -- [DRY RUN] {label_} file {'found' if Path(path_).exists() else 'NOT FOUND'}: {path_}")
+    else:
+        splines_local = Path(tempfile.mkstemp(suffix='.root')[1])
+        splines_local.unlink()
+        splines_nue_local = None
+        splines_tar = Path(tempfile.mkstemp(suffix='.tar.gz')[1])
+        try:
+            _ifdh_cp(str(splines_path), str(splines_local))
+            if splines_nue_source is not None:
+                splines_nue_local = Path(tempfile.mkstemp(suffix='_nue.root')[1])
+                splines_nue_local.unlink()
+                _ifdh_cp(str(splines_nue_source), str(splines_nue_local))
+            with tarfile.open(str(splines_tar), 'w:gz') as tar:
+                tar.add(str(splines_local), arcname='variation_splines.root')
+                if splines_nue_local is not None:
+                    tar.add(str(splines_nue_local), arcname='variation_splines_nue.root')
+        finally:
+            splines_local.unlink(missing_ok=True)
             if splines_nue_local is not None:
-                tar.add(str(splines_nue_local), arcname='variation_splines_nue.root')
-    finally:
-        splines_local.unlink(missing_ok=True)
-        if splines_nue_local is not None:
-            splines_nue_local.unlink(missing_ok=True)
+                splines_nue_local.unlink(missing_ok=True)
 
     cmd = [
         'jobsub_submit',
@@ -1123,8 +1199,11 @@ def launch_variation_phase2_jobsub(
     print(f"{_INFO} --   Output:     {project_dir}/output/output_varsys_jobid<NNNN>.root")
     print(f"{_INFO} --   Command: {' '.join(cmd)}")
 
-    resp = input("Confirm Phase 2 batch submission? [Y/N] ")
-    if resp.strip().lower() != 'y':
+    if DRY_RUN:
+        print(f"{_INFO} -- [DRY RUN] Nothing submitted.")
+        return False
+
+    if not _yes("Confirm Phase 2 batch submission? [Y/N] "):
         print(f"{_INFO} -- User aborted.")
         splines_tar.unlink(missing_ok=True)
         return False

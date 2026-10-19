@@ -35,12 +35,12 @@ branches = ["reco_fiducial_cut",
             "true_interaction_mode",
             "true_ele_beam_open_angle",
             "true_leading_electron_energy",
-            "ppfx_cv_weight"
+            # "ppfx_cv_weight"
             ]
 
-precompute = {"reco_category" = "np.where((true_category == 0), reco_reco_interaction_type, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(true_ele_beam_open_angle != 10, np.cos(true_ele_beam_open_angle), -10)"}
-# precompute = {"reco_category" = "np.where(true_category == 0, true_interaction_mode, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)"}
-weight_branch = 'ppfx_cv_weight'
+precompute = {"reco_category" = "np.where((true_category == 0), reco_reco_interaction_type, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, (reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(true_ele_beam_open_angle != 10, (true_ele_beam_open_angle), -10)"}
+# precompute = {"reco_category" = "np.where(true_category == 0, true_interaction_mode, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, (reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, (reco_ele_beam_open_angle), -10)"}
+# weight_branch = 'ppfx_cv_weight'
 
 [samples.NuMIFullNonSel]
 key = "NuMIFull"
@@ -69,11 +69,13 @@ branches = ["reco_fiducial_cut",
             "true_leading_electron_energy",
             "true_ele_beam_open_angle",
             "true_interaction_mode",
-            "ppfx_cv_weight"
+            # "ppfx_cv_weight"
             ]
-# precompute = {"reco_category" = "np.where((true_category == 0), reco_reco_interaction_type, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(true_ele_beam_open_angle != 10, np.cos(true_ele_beam_open_angle), -10)"}
-precompute = {"reco_category" = "np.where(true_category == 0, true_interaction_mode, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, np.cos(reco_ele_beam_open_angle), -10)"}
-weight_branch = 'ppfx_cv_weight'
+# precompute = {"reco_category" = "np.where((true_category == 0), reco_reco_interaction_type, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, (reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(true_ele_beam_open_angle != 10, (true_ele_beam_open_angle), -10)"}
+# precompute = {"reco_category" = "np.where(true_category == 0, true_interaction_mode, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, (reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, (reco_ele_beam_open_angle), -10)"}
+# Non-matched true signal has no reco topology, so it is counted as code 0 ("Other").
+precompute = {"reco_category" = "np.where(true_category == 0, 0, -1)", "reco_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, (reco_ele_beam_open_angle), -10)", "true_ele_beam_cosTheta" = "np.where(reco_ele_beam_open_angle != 10, (reco_ele_beam_open_angle), -10)"}
+# weight_branch = 'ppfx_cv_weight'
 
 
 # Output directory for plots
@@ -83,6 +85,25 @@ path = 'plots/'
 # Analysis configuration
 [analysis]
 ordinate_sample = 'NuMIFull'
+
+
+# Breakdown by neutrino type (meaningless on the true_signal tree, kept for reference):
+# category_branch = 'true_category'
+# category_assignment = [
+#     [0], # CC nue
+#     [1], 
+#     [2], 
+#     [3], 
+#     [4],
+#     [5],  # Cosmic
+# ]
+# category_labels = ['$\nu_{e}$ Signal', '$\nu_{e}$ OOFV', '$\nu_{\mu}$', '$\nu$ OOFV', '$\nu$ NC', 'Cosmic']
+#category_colors = ['#011959', '#103F60', '#1C5A62', '#3C6D56', '#687B3E', '#9D892B', '#D29343', '#F8A17B', '#FDB7BC', '#FACCFA'] #batlow
+# category_colors = ['#011959', '#1C5A62', '#687B3E', '#D29343', '#FDB7BC', '#ca80a0ff', '#000000ff']
+# category_colors = ['#0072B2', '#770107', '#02694d', '#CC79A7', '#070605', '#8B5A2B', '#C9A400', '#6C4BA6', '#000000']
+
+# Breakdown by reconstructed topology (codes from reco_interaction_type in
+# selection/include/variables.h). Non-matched true signal is code 0 -> Other.
 category_branch = 'reco_category'
 
 category_assignment = [
@@ -90,7 +111,7 @@ category_assignment = [
     [2], # MEC-like
     [3], # DIS-like
     [4], # RES-like
-    [5, 0]  # >1 electron, Other
+    [5, 0]  # >1 electron, Other (incl. non-matched)
 ]
 category_labels = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', 'Other']
 category_colors = ['#2C194C','#49749F', '#83A1BE', '#8EB38D', '#4F894E', '#1C5B19', '#0F2903'] #cork
@@ -169,7 +190,7 @@ title = 'Signal Selection Efficiency'
 [[figure.artists]]
 type = 'SpineEfficiency'
 variable = 'true_neutrino_energy'
-groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', '$\geq1e$ (Other-e)', 'Other']
+groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', 'Other']
 # groups = ['QE', 'RES', 'DIS', 'MEC', 'Other']
 
 [figure.artists.cuts]
@@ -201,7 +222,7 @@ title = 'Selection Efficiency vs True Neutrino Energy'
 [[figure.artists]]
 type = 'SpineEfficiency'
 variable = 'true_neutrino_energy'
-groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
+groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', 'Other']
 # groups = ['QE', 'RES', 'DIS', 'MEC']
 
 xrange = [0, 5]
@@ -233,7 +254,7 @@ title = 'Selection Efficiency vs Reco Electron Energy'
 [[figure.artists]]
 type = 'SpineEfficiency'
 variable = 'reco_leading_electron_energy'
-groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
+groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', 'Other']
 # groups = ['QE', 'RES', 'DIS', 'MEC']
 xrange = [0, 5000]
 xtitle = 'Reco Electron Energy [MeV]'
@@ -265,7 +286,7 @@ title = 'Selection Efficiency vs Reco Electron $cos{\theta_{NUMI}}$'
 [[figure.artists]]
 type = 'SpineEfficiency'
 variable = 'reco_ele_beam_cosTheta'
-groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
+groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', 'Other']
 # groups = ['QE', 'RES', 'DIS', 'MEC']
 xtitle = 'Reco Electron $cos{\theta_{NUMI}}$'
 
@@ -296,7 +317,7 @@ title = 'Selection Efficiency vs True Hadronic Invariant Mass (W)'
 [[figure.artists]]
 type = 'SpineEfficiency'
 variable = 'true_hadronic_invariant_mass'
-groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
+groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', 'Other']
 # groups = ['QE', 'RES', 'DIS', 'MEC']
 xtitle = 'True Hadronic Invariant Mass (W) [GeV]'
 
@@ -327,7 +348,7 @@ title = 'Selection Efficiency vs True Momentum Transfer (Q^2) [GeV$^{2}$]'
 [[figure.artists]]
 type = 'SpineEfficiency'
 variable = 'true_momentum_transfer'
-groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
+groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', 'Other']
 # groups = ['QE', 'RES', 'DIS', 'MEC']
 xtitle = 'True Momentum Transfer ($Q^{2}$) [GeV$^{2}$]'
 
@@ -358,7 +379,7 @@ title = 'Selection Efficiency vs True Leading Electron Energy [MeV]'
 [[figure.artists]]
 type = 'SpineEfficiency'
 variable = 'true_leading_electron_energy'
-groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
+groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', 'Other']
 # groups = ['QE', 'RES', 'DIS', 'MEC']
 xtitle = 'True Leading Electron Energy [MeV]'
 
@@ -389,7 +410,7 @@ title = 'Selection Efficiency vs True Leading Electron $cos{\theta_{NUMI}}$'
 [[figure.artists]]
 type = 'SpineEfficiency'
 variable = 'true_ele_beam_cosTheta'
-groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)']
+groups = ['1e1p0$\pi$ (QE-like)', '1e2p0$\pi$ (MEC-like)', '1e$\geq3p0\pi$ (DIS-like)', '1e1$\pi$ (RES-like)', 'Other']
 # groups = ['QE', 'RES', 'DIS', 'MEC']
 xtitle = 'True Leading Electron $cos{\theta_{NUMI}}$'
 

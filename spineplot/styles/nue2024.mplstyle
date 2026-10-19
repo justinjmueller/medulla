@@ -1,0 +1,73 @@
+## nuE CC Inclusive ICARUS style
+## Based on muon2024.mplstyle; tuned for νe CC inclusive analysis plots.
+
+## FONT
+font.sans-serif:  DejaVu Sans, Helvetica, Helvetica Neue, Nimbus Sans, Liberation Sans, Arial
+
+## FIGURE
+figure.titlesize:              16
+figure.constrained_layout.use: True
+figure.facecolor:              white
+
+## AXES
+axes.linewidth:  1.0
+axes.labelsize:  14
+axes.titlesize:  14
+axes.titlepad:   28
+
+## PATCHES (histograms)
+patch.linewidth: 1.5
+
+## TICKS — inward on all four sides, minor ticks on
+xtick.top:           True
+xtick.bottom:        True
+xtick.direction:     in
+xtick.minor.visible: True
+xtick.major.size:    8
+xtick.minor.size:    4
+xtick.labelsize:     12
+
+ytick.left:          True
+ytick.right:         True
+ytick.direction:     in
+ytick.minor.visible: True
+ytick.major.size:    8
+ytick.minor.size:    4
+ytick.labelsize:     12
+
+## GRID
+grid.color:     b8b8b8
+grid.linestyle: --
+grid.linewidth: 0.5
+
+## LEGEND
+legend.fontsize:  11
+legend.frameon:   False
+legend.borderpad: 0.4
+
+## LINES
+lines.linewidth: 2.0
+
+## COLORS
+## Primary cycle — 6 νe category colors followed by extras for systematic lines.
+## Category assignment (matches systematics.toml category_colors):
+##   0  #011959  νe Signal      (dark navy)
+##   1  #1C5A62  νe OOFV        (dark teal)
+##   2  #687B3E  νμ             (olive)
+##   3  #D29343  ν OOFV         (golden)
+##   4  #FDB7BC  ν NC           (soft pink)
+##   5  #ca80a0  Cosmic         (mauve)
+## Extras for systematic lines (12 detector systematics), colorblind-safe:
+##   6  #0072B2  blue
+##   7  #D55E00  vermilion
+##   8  #009E73  green
+##   9  #E69F00  orange
+##  10  #CC79A7  pink-purple
+##  11  #56B4E9  sky blue
+axes.prop_cycle: cycler('color', ['011959', '1C5A62', '687B3E', 'D29343', 'FDB7BC', 'ca80a0', '0072B2', 'D55E00', '009E73', 'E69F00', 'CC79A7', '56B4E9'])
+
+## Colormap for 2D histograms / heatmaps
+image.cmap: Blues
+
+savefig.facecolor: white
+savefig.dpi:       150

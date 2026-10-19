@@ -1,0 +1,93 @@
+
+# Dedicated systematics config for the G4Reweight sample (selection.toml
+# [[sample]] name = "g4", tag = "g4"). This sample's rec.mc.nu.wgt layout is
+# NOT the same as the nominal (NuMI_nue_gundam.toml) production: indices
+# 115-120 hold the six G4 reinteraction weight groups below instead of the
+# Flux groups that occupy those slots in the nominal file. Do not merge this
+# [[sys]] list with NuMI_nue_gundam.toml's, and do not run this sample
+# through NuMI_nue_gundam.toml (or vice versa) -- same index, different
+# physics. This toml is meant to be its own project's -s/--systematic
+# template (stage 1/2) and its own standalone `to_gundam` run (stage 6),
+# using a selection TOML that carries only the "g4" sample.
+
+[input]
+#path = '/exp/icarus/data/users/micarrig/merged_g4.root' # debug default; always pass merged_final.root explicitly to to_gundam
+path = '/exp/icarus/app/users/micarrig/nuESpine/output_nueCCInclusive_g4.root'
+weights = '/pnfs/icarus/persistent/users/kyjung/G4Reweight/NuMI/icaruspro_production_v09_89_01_02p02_2025A_NuMI_nuCos_CV_detsys_nu_cos_CV_scrub/*.flat.root'
+use_additional_hash = true
+
+[output]
+path = '/exp/icarus/data/users/micarrig/debug_g4.root'
+histogram_destination = 'variations/'
+
+[[tree]]
+origin = 'events/g4/all_signal'
+destination = 'events/g4/'
+name = 'all_signal'
+action = 'add_weights'
+table_types = ['multisim']
+gundam_store_syst = false
+is_nu = true
+is_data = false
+
+[[tree]]
+origin = 'events/g4/all_signal_nonmatched'
+destination = 'events/g4/'
+name = 'all_signal_nonmatched'
+action = 'add_weights'
+table_types = ['multisim']
+gundam_store_syst = false
+is_nu = true
+is_data = false
+nan_category_replacement = 5.0
+
+[[tree]]
+origin = 'events/g4/selected'
+destination = 'events/g4/'
+name = 'selected'
+action = 'add_weights'
+table_types = ['multisim']
+gundam_store_syst = false
+is_nu = true
+is_data = false
+
+[[tree]]
+origin = 'events/g4/selected_nonmatched'
+destination = 'events/g4/'
+name = 'selected_nonmatched'
+action = 'add_weights'
+table_types = ['multisim']
+gundam_store_syst = false
+is_nu = true
+is_data = false
+nan_category_replacement = 5.0
+
+[[sys]]
+name = 'reinteractions_kminus_Geant4'
+type = 'multisim'
+index = 115
+
+[[sys]]
+name = 'reinteractions_kplus_Geant4'
+type = 'multisim'
+index = 116
+
+[[sys]]
+name = 'reinteractions_neutron_Geant4'
+type = 'multisim'
+index = 117
+
+[[sys]]
+name = 'reinteractions_piminus_Geant4'
+type = 'multisim'
+index = 118
+
+[[sys]]
+name = 'reinteractions_piplus_Geant4'
+type = 'multisim'
+index = 119
+
+[[sys]]
+name = 'reinteractions_proton_Geant4'
+type = 'multisim'
+index = 120
