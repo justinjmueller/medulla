@@ -1430,5 +1430,27 @@ namespace cuts
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, leading_primary_photon_containment_cut, leading_primary_photon_containment_cut);
 
+    /**
+     * @brief Cut on the proton softmax score of the leading primary proton.
+     * @details Rejects interactions whose leading primary proton (highest KE)
+     * has a proton softmax score below the threshold. Interactions without a
+     * leading primary proton pass.
+     * @tparam T the type of interaction (reco).
+     * @param obj the interaction to select on.
+     * @param params params[0] is the proton softmax threshold.
+     * @return false if the leading primary proton has a proton softmax score
+     * below the threshold, true otherwise.
+     */
+    template<class T>
+    bool proton_softmax_cut(const T & obj, std::vector<double> params={})
+    {
+        if(params.size() != 1)
+            throw std::invalid_argument("proton_softmax_cut requires one parameter: the proton softmax threshold.");
+        size_t i = selectors::leading_primary_particle_index(obj, pvars::kProton);
+        if(i == kNoMatch) return true;
+        return obj.particles[i].pid_scores[pvars::kProton] >= params[0];
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, proton_softmax_cut, proton_softmax_cut);
+
 }
 #endif
