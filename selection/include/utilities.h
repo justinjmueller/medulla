@@ -208,7 +208,7 @@ namespace utilities
      * the calculation cannot be performed.
      */
     template<class T>
-    double pi0_invariant_mass(const T & obj)
+    double get_pi0_invariant_mass(const T & obj)
     {
         size_t i = selectors::leading_photon(obj);
         size_t j = selectors::secondary_photon(obj);
@@ -229,7 +229,6 @@ namespace utilities
         if (invariant_mass_squared < 0) return PLACEHOLDERVALUE; // Unphysical result
         return std::sqrt(invariant_mass_squared);
     }
-    REGISTER_VAR_SCOPE(RegistrationScope::Both, pi0_invariant_mass, pi0_invariant_mass);
 
 }
 #endif // UTILITIES_H

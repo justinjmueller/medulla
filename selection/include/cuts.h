@@ -1096,7 +1096,7 @@ namespace cuts
     bool pi0_invariant_mass_cut(const T & obj, std::vector<double> params = {})
     {
 
-    double mass = utilities::pi0_invariant_mass(obj);
+    double mass = utilities::get_pi0_invariant_mass(obj);
 
     if (mass == PLACEHOLDERVALUE) return false;
 
