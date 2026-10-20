@@ -1049,6 +1049,29 @@ namespace cuts
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, leading_photon_energy_cut, leading_photon_energy_cut);
 
+// subleading photon energy 
+
+    template<class T>
+    bool secondary_photon_energy_cut(const T & obj, std::vector<double> params={25.0})
+    {
+        if(params.size() != 1)
+            throw std::invalid_argument("subleading_photon_energy_cut requires exactly the energy threshold");
+
+        size_t i = selectors::secondary_photon(obj);
+        if (i == kNoMatch) return false;
+        const auto & p = obj.particles[i];
+
+        double energy_threshold = params[0];
+
+        if (std::isnan(pvars::energy(p)))
+        {
+            return false; // or true, depending on how you want to handle NaN values
+        }
+        return pvars::energy(p) > energy_threshold;
+        
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Both, secondary_photon_energy_cut, secondary_photon_energy_cut);
+
     // Dan's cuts
     template<class T>
     bool at_least_one_pi0(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params = {0.0,})
