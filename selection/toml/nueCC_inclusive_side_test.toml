@@ -394,6 +394,7 @@ branch = [
     { name = "energy",                   type = "true_particle", selector = "leading_pion" },
         #pions mass
     {name = "pi0_invariant_mass", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+    {name = "two_photons",                type = "reco", parameters =["@photon_threshold"]},
 #    {name = "pi0_momentum", type = "both"},
 ]
 
