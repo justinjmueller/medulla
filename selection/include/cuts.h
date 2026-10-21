@@ -71,7 +71,7 @@ namespace cuts
             if(pvars::pid(p) == 0 && pvars::primary_classification(p) && pvars::ke(p) >= params[0])
               ++count;
         }
-        return count >= 2;
+        return count == 2;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, two_photons, two_photons);
     /**
