@@ -20,6 +20,17 @@ use_additional_hash = true
 path = '/exp/icarus/data/users/micarrig/debug_g4.root'
 histogram_destination = 'variations/'
 
+# run_systematics requires at least one [[sysvar]]. They only set the
+# diagnostic 2D histograms (variable vs universe), not the weights.
+# bins = [nbins, min, max] (SysVariable reads exactly these three values).
+[[sysvar]]
+name = 'reco_leading_electron_energy'
+bins = [47, 300, 5000]
+
+[[sysvar]]
+name = 'reco_ele_beam_open_angle'
+bins = [40, -1, 1]
+
 [[tree]]
 origin = 'events/g4/all_signal'
 destination = 'events/g4/'

@@ -14,8 +14,10 @@ def makePlot(var, dir):
         if leg is not None:
             leg.get_frame().set_facecolor('white')
             leg.get_frame().set_alpha(0.2)
-    plt.savefig(f'{dir}/plot_{var}.png', dpi=300, bbox_inches='tight')
-    with open(f'{dir}/plot_{var}.pkl', 'wb') as f:
+    os.makedirs(f'{dir}/png', exist_ok=True)
+    os.makedirs(f'{dir}/pkl', exist_ok=True)
+    plt.savefig(f'{dir}/png/plot_{var}.png', dpi=300, bbox_inches='tight')
+    with open(f'{dir}/pkl/plot_{var}.pkl', 'wb') as f:
         pickle.dump(fig, f)
     plt.close()
 

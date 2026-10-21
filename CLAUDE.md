@@ -235,9 +235,9 @@ Standard inputs (use these unless the owner says otherwise):
   `--expected-lifetime`; it is not jobsub's default. If jobs die at the lifetime
   limit, tell the owner rather than guessing a larger value.
 - Project dirs: `/pnfs/icarus/scratch/users/micarrig/nueCCInclusiveSpine<X>` (main),
-  `.../nueCCInclusiveSpine_nue<X>` (nue-enhanced), and `.../nueCCInclusiveSpine_g4<X>`
+  `.../nueCCInclusiveSpine_nue_<X>` (nue-enhanced), and `.../nueCCInclusiveSpine_g4_<X>`
   (g4), `<X>` = version number. The next version is 31, so `nueCCInclusiveSpine31`,
-  `nueCCInclusiveSpine_nue31`, and `nueCCInclusiveSpine_g431`.
+  `nueCCInclusiveSpine_nue_31`, and `nueCCInclusiveSpine_g4_31`.
   Version 30 is the previous one; never reuse or modify it. Always create a new
   project dir (`-c` refuses an existing `project.db`).
 - The right systematics TOML must be passed at EVERY stage that takes one, or the
@@ -336,7 +336,7 @@ Notes:
   `-V` TOML and copies that file into the jobs. `NuMI_nue_gundam.toml` currently
   points it at an old project (`/pnfs/icarus/scratch/users/micarrig/nueCCInclusiveSpine30/`).
   Before stage 4 it must be `<proj_nue>/variation_splines.root` (for version 31,
-  `/pnfs/icarus/scratch/users/micarrig/nueCCInclusiveSpine_nue31/variation_splines.root`); show the owner
+  `/pnfs/icarus/scratch/users/micarrig/nueCCInclusiveSpine_nue_31/variation_splines.root`); show the owner
   the line and the proposed change and wait before editing a shared TOML. The
   main splines come from `<proj>/variation_splines.root`, not from `splines_file`
   (that key is overwritten). `[input]`/`[output]` paths in these TOMLs are

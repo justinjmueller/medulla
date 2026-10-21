@@ -97,8 +97,8 @@ def dry_run(args):
               f'-> applied to {n_artists} SpineSystematics artist(s)')
     for name in args.figures:
         miss = '' if name in known else ' (NOT in TOML variables/figures - would be skipped)'
-        over = ' (would OVERWRITE)' if (out / f'{stem_for(name)}.png').exists() else ''
-        print(f'[DRY RUN] Figure {name} -> {stem_for(name)}.png/.pkl{miss}{over}')
+        over = ' (would OVERWRITE)' if (out / 'png' / f'{stem_for(name)}.png').exists() else ''
+        print(f'[DRY RUN] Figure {name} -> png/{stem_for(name)}.png / pkl/{stem_for(name)}.pkl{miss}{over}')
     print('[DRY RUN] Memory: each sample loads its tree(s) with the listed branches into '
           'pandas (all rows). Check free memory before a real run.')
 
@@ -118,6 +118,8 @@ def run_figures(args):
 
     out = Path(args.output_dir)
     out.mkdir(parents=True, exist_ok=True)
+    (out / 'png').mkdir(exist_ok=True)
+    (out / 'pkl').mkdir(exist_ok=True)
 
     # If a systematics set was chosen, write a temp TOML with the overridden
     # `systematics` lists and hand that to Analysis. The original is untouched.
@@ -151,8 +153,8 @@ def run_figures(args):
                 if leg is not None:
                     leg.get_frame().set_facecolor('white')
                     leg.get_frame().set_alpha(0.8)  # hides cut lines behind it; data is kept below by the headroom
-            plt.savefig(out / f'{stem}.png', dpi=300, bbox_inches='tight')
-            with open(out / f'{stem}.pkl', 'wb') as f:
+            plt.savefig(out / 'png' / f'{stem}.png', dpi=300, bbox_inches='tight')
+            with open(out / 'pkl' / f'{stem}.pkl', 'wb') as f:
                 pickle.dump(fig, f)
         except Exception as e:  # keep going so one bad figure does not lose the rest
             print(f'[ERROR] -- {name} failed: {type(e).__name__}: {e}', flush=True)
