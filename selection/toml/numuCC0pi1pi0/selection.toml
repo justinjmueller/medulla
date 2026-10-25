@@ -1,0 +1,380 @@
+##############################################
+# numuCC 0pi 1pi0 selection for batch/campaign running.
+#
+# This file defines the selection and which catalog samples it *may*
+# run on. Which samples each batch role actually runs is chosen in
+# meta.toml beside this file (its [toml.enable.sbnd] lists).
+##############################################
+
+######## Analysis Configuration #############
+
+[general]
+output  = "output"
+primfn  = "default_primary_classification"
+pidfn   = "default_pid"
+calofn  = "default_calo_ke"
+fsthresh = [
+    "@photon_threshold",
+    "@electron_threshold",
+    "@muon_threshold",
+    "@pion_threshold",
+    "@proton_threshold",
+]
+
+[parameters]
+photon_threshold =          25.0    # photon threshold
+leading_photon_threshold =  0.0     # leading photon threshold for pi0 reconstruction
+subleading_photon_threshold = 0.0   # subleading photon threshold for pi0 reconstruction
+electron_threshold =        0.0     # electron threshold
+muon_threshold =            143.425 # muon threshold
+pi0_threshold =             0.0     # neutral pion threshold
+pion_threshold =            25.0    # charged pion threshold
+proton_threshold =          0.0     # proton threshold
+pi0_mass_veto_low =         0.0     # pi0 mass veto low
+pi0_mass_veto_high =        400.0   # pi0 mass veto high
+
+##########################################
+######## Sample Definitions ##############
+
+# Pull samples from the shared catalog (selection/toml/common/osc.toml)
+# by key, instead of writing [[sample]] blocks by hand. Every key listed
+# here becomes a [[sample]]; a sample only runs if it is also enabled.
+[[include_samples]]
+file = "common/osc.toml"
+keys = [
+    # Central value MC, carries GENIE/flux systematic weights. mc1e20 is
+    # also the nominal for charge_scale, p5/m5_gain and smear15, which are
+    # reprocessings of its events.
+    "sbnd_ar23p_mc5e18", "sbnd_ar23p_mc1e20",
+    # Detector variations, plus the CV they are compared against
+    "sbnd_detvar_cv", "sbnd_detvar_dent",
+    "sbnd_detvar_charge_scale",
+    "sbnd_detvar_p5_gain", "sbnd_detvar_m5_gain",
+    "sbnd_detvar_smear15",
+    "sbnd_detvar_wiremod_xthetaxw", "sbnd_detvar_wiremod_yz",
+]
+# Batch jobs ignore this line and use meta.toml. For an interactive run
+# (./medulla selection.toml), uncomment it to choose the samples to run:
+# enable = ["sbnd_detvar_cv"]
+
+##########################################
+######## Categories ######################
+
+# Truth categories, filled into the true_category branch. An interaction
+# gets the first category whose cuts it passes, so category 1 is
+# effectively ">1 pi0". Same scheme as ../numuCC0pi1pi0_batch_sys.toml
+# and the spineplot config
+# (spineplot/configurations/analyses/numuCC0pi1pi0/systematics.toml).
+#
+# single_pi0 and at_least_one_pi0 are not in release/v1.1.0; they are on
+# the rlazur_pi0_migration branch of the fork github.com/rlazur/medulla.
+# Grid jobs build medulla from the campaign's --repo at its --tag, so
+# create campaigns that use this file with
+#   --repo https://github.com/rlazur/medulla.git --tag rlazur_pi0_migration
+
+[[category]] # 0 : Signal: fiducial, cc, single muon, zero charged pions, single pi0
+cuts = [
+    {name = "neutrino"},
+    {name = "iscc"},
+    {name = "fiducial_cut"},
+    {name = "fiducialize_cathode"},
+    {name = "single_muon",          parameters = ["@muon_threshold"]},
+    {name = "no_charged_pions",     parameters = ["@pion_threshold"]},
+    {name = "single_pi0",           parameters = ["@pi0_threshold"]},
+]
+[[category]] # 1 : fiducial, cc, single muon, zero charged pions, more than one pi0
+cuts = [
+    {name = "neutrino"},
+    {name = "iscc"},
+    {name = "fiducial_cut"},
+    {name = "fiducialize_cathode"},
+    {name = "single_muon",          parameters = ["@muon_threshold"]},
+    {name = "no_charged_pions",     parameters = ["@pion_threshold"]},
+    {name = "at_least_one_pi0",     parameters = ["@pi0_threshold"]},
+]
+[[category]] # 2 : fiducial, cc, single muon, at least one charged pion, any number of pi0s
+cuts = [
+    {name = "neutrino"},
+    {name = "iscc"},
+    {name = "fiducial_cut"},
+    {name = "fiducialize_cathode"},
+    {name = "single_muon",          parameters = ["@muon_threshold"]},
+    {name = "!no_charged_pions",    parameters = ["@pion_threshold"]},
+]
+[[category]] # 3 : fiducial, NC, zero muons, at least one charged pion
+cuts = [
+    {name = "!iscc"},
+    {name = "fiducial_cut"},
+    {name = "fiducialize_cathode"},
+    {name = "no_muons",             parameters = ["@muon_threshold"]},
+    {name = "!no_charged_pions",    parameters = ["@pion_threshold"]},
+]
+[[category]] # 4 : Other neutrino
+cuts = [
+    {name = "neutrino"},
+]
+[[category]] # 5 : Cosmic
+cuts = [
+    {name = "!neutrino"},
+]
+
+########################################
+######## Tree Definitions ##############
+
+[[tree]]
+name                = "selected"
+mode                = "reco"
+sim_only            = false
+add_systematics     = true
+cut = [
+    {name = "valid_flashmatch",             type = "reco"},
+    {name = "fiducial_cut",                 type = "reco"},
+    {name = "fiducialize_cathode",          type = "reco"},
+    {name = "single_muon",                  type = "reco",  parameters = ["@muon_threshold"]},
+    {name = "no_charged_pions",             type = "reco",  parameters = ["@pion_threshold"]},
+    {name = "two_photons",                  type = "reco",  parameters = ["@photon_threshold"]},
+    {name = "valid_pi0_mass_cut",           type = "reco",  parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+]
+branch = [
+    # Event-level branches
+    # { name = "largest_flash_pe",      type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    # { name = "largest_flash_time",    type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    { name = "first_neutrino_energy", type = "event" },
+    { name = "max_neutrino_energy",   type = "event" },
+    { name = "mc_nnu",                type = "event" },
+
+    # Required by add_systematics: these match each selected interaction
+    # to its neutrino's universe weights in the input CAF file.
+    {name = "neutrino_id",              type = "true"},     
+    {name = "neutrino_energy",          type = "mctruth"},  
+
+    # Truth category (see the [[category]] blocks) and interaction info
+    {name = "category",                 type = "true"},     
+    {name = "cc",                       type = "mctruth"},
+    {name = "interaction_type",         type = "mctruth"},
+    {name = "pdg",                      type = "mctruth"},
+    {name = "baseline",                 type = "mctruth"},
+
+    {name = "visible_energy",           type = "both"},    
+
+    # # Event Information
+    {name = "containment",              type = "both"},
+    {name = "fiducial",                 type = "true"},
+    {name = "photon_multiplicity",      type = "both",  parameters = ["@photon_threshold"]},
+    {name = "electron_multiplicity",    type = "both",  parameters = ["@electron_threshold"]},
+    {name = "muon_multiplicity",        type = "both",  parameters = ["@muon_threshold"]},
+    {name = "pion_multiplicity",        type = "both",  parameters = ["@pion_threshold"]},
+    {name = "proton_multiplicity",      type = "both",  parameters = ["@proton_threshold"]},
+
+    # # Flux ancestry (flux-reweighting maps: flavour, parent, E, parent |p| and angle)
+    { name = "initpdg",               type = "mctruth" },
+    { name = "parent_pdg",            type = "mctruth" },
+    { name = "parent_dcy_mom_x",      type = "mctruth" },
+    { name = "parent_dcy_mom_y",      type = "mctruth" },
+    { name = "parent_dcy_mom_z",      type = "mctruth" },
+    { name = "parent_dcy_p",          type = "mctruth" },
+    { name = "parent_dcy_theta",      type = "mctruth" },
+
+    { name = "interaction_mode",      type = "mctruth" },
+    { name = "interaction_type",      type = "mctruth" },
+    { name = "off_axis_angle",        type = "mctruth" },
+    { name = "W",                     type = "mctruth" },
+    { name = "q0",                    type = "mctruth" },
+    { name = "q3",                    type = "mctruth" },
+
+    # Vertex (reco_vertex_x is used by the spineplot presel)
+    {name = "vertex_x",                 type = "both"},
+    {name = "vertex_y",                 type = "both"},
+    {name = "vertex_z",                 type = "both"},
+
+    # Transverse kinematic imbalance
+    {name = "dpT",                      type = "both"},
+    {name = "dpL",                      type = "both"},
+    {name = "pn",                       type = "both"},
+    {name = "dphiT",                    type = "both"},
+    {name = "dalphaT",                  type = "both"},
+
+    # Pi0 candidate (the reco photon pair and its true counterpart)
+    {name = "pi0_invariant_mass",       type = "reco_bivar", biselector = "pi0_photon_pair"},  # -> reco_bivar_pi0_photon_pair_pi0_invariant_mass (MeV)
+    {name = "pi0_opening_costheta",     type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "pi0_beam_costheta",        type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "leading_ke",               type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "subleading_ke",            type = "both_bivar", biselector = "pi0_photon_pair"},
+
+    # Leading muon
+    {name = "ke",                       type = "both_particle", selector = "leading_muon"},
+    {name = "polar_angle",              type = "both_particle", selector = "leading_muon"},
+    {name = "length",                   type = "both_particle", selector = "leading_muon"},
+]
+
+########################################
+############### SIGNAL #################
+[[tree]]
+name = "signal"
+sim_only = true
+mode = "true"
+cut = [
+    {name = "valid_flashmatch",             type = "reco"},
+    {name = "fiducial_cut",                 type = "reco"},
+    {name = "fiducialize_cathode",          type = "reco"},
+    {name = "single_muon",                  type = "reco",  parameters = ["@muon_threshold"]},
+    {name = "no_charged_pions",             type = "reco",  parameters = ["@pion_threshold"]},
+    {name = "two_photons",                  type = "reco",  parameters = ["@photon_threshold"]},
+    {name = "valid_pi0_mass_cut",           type = "reco",  parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+]
+branch = [
+    # Event-level branches
+    # { name = "largest_flash_pe",      type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    # { name = "largest_flash_time",    type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    { name = "first_neutrino_energy", type = "event" },
+    { name = "max_neutrino_energy",   type = "event" },
+    { name = "mc_nnu",                type = "event" },
+
+    # Required by add_systematics: these match each selected interaction
+    # to its neutrino's universe weights in the input CAF file.
+    {name = "neutrino_id",              type = "true"},     
+    {name = "neutrino_energy",          type = "mctruth"},  
+
+    # Truth category (see the [[category]] blocks) and interaction info
+    {name = "category",                 type = "true"},     
+    {name = "cc",                       type = "mctruth"},
+    {name = "interaction_type",         type = "mctruth"},
+    {name = "pdg",                      type = "mctruth"},
+    {name = "baseline",                 type = "mctruth"},
+
+    {name = "visible_energy",           type = "both"},    
+
+    # # Event Information
+    {name = "containment",              type = "both"},
+    {name = "fiducial",                 type = "true"},
+    {name = "photon_multiplicity",      type = "both",  parameters = ["@photon_threshold"]},
+    {name = "electron_multiplicity",    type = "both",  parameters = ["@electron_threshold"]},
+    {name = "muon_multiplicity",        type = "both",  parameters = ["@muon_threshold"]},
+    {name = "pion_multiplicity",        type = "both",  parameters = ["@pion_threshold"]},
+    {name = "proton_multiplicity",      type = "both",  parameters = ["@proton_threshold"]},
+
+    # # Flux ancestry (flux-reweighting maps: flavour, parent, E, parent |p| and angle)
+    { name = "initpdg",               type = "mctruth" },
+    { name = "parent_pdg",            type = "mctruth" },
+    { name = "parent_dcy_mom_x",      type = "mctruth" },
+    { name = "parent_dcy_mom_y",      type = "mctruth" },
+    { name = "parent_dcy_mom_z",      type = "mctruth" },
+    { name = "parent_dcy_p",          type = "mctruth" },
+    { name = "parent_dcy_theta",      type = "mctruth" },
+
+    { name = "interaction_mode",      type = "mctruth" },
+    { name = "interaction_type",      type = "mctruth" },
+    { name = "off_axis_angle",        type = "mctruth" },
+    { name = "W",                     type = "mctruth" },
+    { name = "q0",                    type = "mctruth" },
+    { name = "q3",                    type = "mctruth" },
+
+    # Vertex (reco_vertex_x is used by the spineplot presel)
+    {name = "vertex_x",                 type = "both"},
+    {name = "vertex_y",                 type = "both"},
+    {name = "vertex_z",                 type = "both"},
+
+    # Transverse kinematic imbalance
+    {name = "dpT",                      type = "both"},
+    {name = "dpL",                      type = "both"},
+    {name = "pn",                       type = "both"},
+    {name = "dphiT",                    type = "both"},
+    {name = "dalphaT",                  type = "both"},
+
+    # Pi0 candidate (the reco photon pair and its true counterpart)
+    {name = "pi0_invariant_mass",       type = "reco_bivar", biselector = "pi0_photon_pair"},  # -> reco_bivar_pi0_photon_pair_pi0_invariant_mass (MeV)
+    {name = "pi0_opening_costheta",     type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "pi0_beam_costheta",        type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "leading_ke",               type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "subleading_ke",            type = "both_bivar", biselector = "pi0_photon_pair"},
+
+    # Leading muon
+    {name = "ke",                       type = "both_particle", selector = "leading_muon"},
+    {name = "polar_angle",              type = "both_particle", selector = "leading_muon"},
+    {name = "length",                   type = "both_particle", selector = "leading_muon"},
+
+    # Cuts (for efficiency studies)
+    {name = "valid_flashmatch",             type = "reco"},
+    {name = "fiducial_cut",                 type = "reco"},
+    {name = "fiducialize_cathode",          type = "reco"},
+    {name = "single_muon",                  type = "reco",  parameters = ["@muon_threshold"]},
+    {name = "no_charged_pions",             type = "reco",  parameters = ["@pion_threshold"]},
+    {name = "two_photons",                  type = "reco",  parameters = ["@photon_threshold"]},
+    {name = "valid_pi0_mass_cut",           type = "reco",  parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+]
+
+########################################
+############## EVENTS ##################
+[[tree]]
+name = "events"
+sim_only = false
+mode = "event"
+cut = [
+    { name = "no_cut",                type = "event" },
+]
+branch = [
+    { name = "is_first_in_subrun",    type = "event" },
+    { name = "pot",                   type = "event" },
+    { name = "pot_from_spillinfo",    type = "event" },
+    # { name = "largest_flash_pe",      type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    # { name = "largest_flash_time",    type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
+    { name = "unfolded_pot_bnb",      type = "event" },
+    { name = "unfolded_nbnb",         type = "event" },
+    { name = "gate_delta",            type = "event" },
+    { name = "nbnb",                  type = "event" },
+    { name = "noffbeambnb",           type = "event" },
+    { name = "ngenevt",               type = "event" },
+    { name = "nreco",                 type = "event" },
+    { name = "ntrue",                 type = "event" },
+    { name = "first_neutrino_energy", type = "event" },
+    { name = "max_neutrino_energy",   type = "event" },
+    { name = "mc_nnu",                type = "event" },
+]
+
+########################################
+############## PURITY ##################
+[[tree]]
+name = "purity"
+sim_only = false
+mode = "reco"
+cut = [
+    { name = "no_cut",                type = "reco" },
+]
+branch = [
+    # Generic interaction-level information
+    { name = "category",              type = "true" },
+    { name = "neutrino_id",           type = "true" },
+    { name = "neutrino_energy",       type = "mctruth" },
+    { name = "cc",                    type = "mctruth" },
+    { name = "pdg",                   type = "mctruth" },
+    { name = "interaction_mode",      type = "mctruth" },
+    { name = "interaction_type",      type = "mctruth" },
+    { name = "W",                     type = "mctruth" },
+    { name = "q0",                    type = "mctruth" },
+    { name = "q3",                    type = "mctruth" },
+
+    # Quantities for building differential plots
+    { name = "vertex_x",              type = "both" },
+    { name = "vertex_y",              type = "both" },
+    { name = "vertex_z",              type = "both" },
+    { name = "pn",                    type = "both" },
+    { name = "dpT",                   type = "both" },
+    { name = "dalphaT",               type = "both" },
+    { name = "dphiT",                 type = "both" },
+    { name = "dpL",                   type = "both" },
+    { name = "visible_energy",        type = "both" },
+    {name = "pi0_invariant_mass",       type = "reco_bivar", biselector = "pi0_photon_pair"},  # -> reco_bivar_pi0_photon_pair_pi0_invariant_mass (MeV)
+    {name = "pi0_opening_costheta",     type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "leading_ke",               type = "both_bivar", biselector = "pi0_photon_pair"},
+    {name = "subleading_ke",            type = "both_bivar", biselector = "pi0_photon_pair"},
+    
+
+    # Selection cuts (for calculating purity)
+    {name = "valid_flashmatch",             type = "reco"},
+    {name = "fiducial_cut",                 type = "reco"},
+    {name = "fiducialize_cathode",          type = "reco"},
+    {name = "single_muon",                  type = "reco",  parameters = ["@muon_threshold"]},
+    {name = "no_charged_pions",             type = "reco",  parameters = ["@pion_threshold"]},
+    {name = "two_photons",                  type = "reco",  parameters = ["@photon_threshold"]},
+    {name = "valid_pi0_mass_cut",           type = "reco",  parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
+]

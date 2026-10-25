@@ -1,0 +1,46 @@
+[meta]
+analysis = "numuCC0pi1pi0"
+description = "SBND numu CC 0pi 1pi0: CV MC with GENIE/flux weights, and detector-variation samples"
+owners = ["rlazur"]
+experiments = ["sbnd"]
+
+[defaults]
+batch_size = 50
+
+# Central value MC. The 'selected' tree has add_systematics = true, so
+# each job also writes the GENIE/flux universe weights for the selected
+# events (output_systematics_jobid*.root -> *_wsyst.root at finalize).
+[[toml]]
+role = "primary"
+file = "selection.toml"
+output_pattern = "numuCC0pi1pi0_%e_%t"
+# Weight template generated against the Generation 1 (ar23p) SBND CAFs.
+# The generic batch/sys_template.toml assigns different names to some
+# weight indices in these files, so it must not be used here.
+sys_template = "sys_sbnd.toml"
+
+  # Output directories: events/sbnd_small (5e18) and events/sbnd_large (1e20).
+  [toml.enable.sbnd]
+  keys = ["sbnd_ar23p_mc5e18", "sbnd_ar23p_mc1e20"]
+
+# Detector variations. These samples carry no GENIE/flux weights, so
+# systematics = false copies every tree through the systematics step
+# instead of reweighting it. Each sample lands in its own directory,
+# events/<sample name>/selected, of one merged file; the detector
+# systematic is the difference between a variation and sbnd_detvar_cv.
+[[toml]]
+role = "detvar"
+file = "selection.toml"
+systematics = false
+# Trailing '#': merge only the plain selection output, since there are
+# no weights to merge for this role.
+output_pattern = "numuCC0pi1pi0_%e_%t_detvar#"
+
+  [toml.enable.sbnd]
+  keys = [
+    "sbnd_detvar_cv", "sbnd_detvar_dent",
+    "sbnd_detvar_charge_scale",
+    "sbnd_detvar_p5_gain", "sbnd_detvar_m5_gain",
+    "sbnd_detvar_smear15",
+    "sbnd_detvar_wiremod_xthetaxw", "sbnd_detvar_wiremod_yz",
+  ]

@@ -29,12 +29,14 @@ keys = [
     "sbnd_offbeam",
     "sbnd_intime_mc5e18", "sbnd_intime_mc1e20",
     "sbnd_detvar_cv", "sbnd_detvar_dent",
+    "sbnd_detvar_newcv", "sbnd_detvar_newdent",
     "sbnd_detvar_sce0x", "sbnd_detvar_sce2x", "sbnd_detvar_charge_scale",
     "sbnd_detvar_p5_gain", "sbnd_detvar_m5_gain", "sbnd_detvar_smear15",
-    "sbnd_detvar_wiremod_xthetaxw", "sbnd_detvar_wiremod_yz",
+    "sbnd_detvar_wiremod_xthetaxw", "sbnd_detvar_wiremod_yz", "sbnd_detvar_mattmod_yz",
     "icarus_ar23p_run2", "icarus_ar23p_run4",
     "icarus_ar23p_dirt_run2", "icarus_ar23p_dirt_run4",
     "icarus_offbeam_run2", "icarus_offbeam_run4",
+    "icarus_detvar_sce0x_run2", "icarus_detvar_sce2x_run2", "icarus_detvar_charge_scale_run2",
     "icarus_detvar_sce0x_run4", "icarus_detvar_sce2x_run4", "icarus_detvar_charge_scale_run4",
     "icarus_wiremod_xthetaxw_run2", "icarus_wiremod_xthetaxw_run4",
     "icarus_wiremod_yz_run2", "icarus_wiremod_yz_run4",
@@ -62,6 +64,7 @@ branch = [
     { name = "largest_flash_time",    type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
     { name = "first_neutrino_energy", type = "event" },
     { name = "max_neutrino_energy",   type = "event" },
+    { name = "mc_nnu",                type = "event" },
 
     # Interaction-level branches
     { name = "neutrino_id",           type = "true"    },
@@ -69,6 +72,16 @@ branch = [
     { name = "baseline",              type = "mctruth" },
     { name = "cc",                    type = "mctruth" },
     { name = "pdg",                   type = "mctruth" },
+
+    # Flux ancestry (flux-reweighting maps: flavour, parent, E, parent |p| and angle)
+    { name = "initpdg",               type = "mctruth" },
+    { name = "parent_pdg",            type = "mctruth" },
+    { name = "parent_dcy_mom_x",      type = "mctruth" },
+    { name = "parent_dcy_mom_y",      type = "mctruth" },
+    { name = "parent_dcy_mom_z",      type = "mctruth" },
+    { name = "parent_dcy_p",          type = "mctruth" },
+    { name = "parent_dcy_theta",      type = "mctruth" },
+
     { name = "interaction_mode",      type = "mctruth" },
     { name = "interaction_type",      type = "mctruth" },
     { name = "off_axis_angle",        type = "mctruth" },
@@ -80,6 +93,7 @@ branch = [
     { name = "category",              type = "true"    },
     { name = "visible_energy",        type = "both"    },
     { name = "energy_qel",            type = "both"    },
+    { name = "qel_visible_diff",      type = "both"    },
     { name = "dpT",                   type = "both"    },
     { name = "dalphaT",               type = "both"    },
     { name = "dphiT",                 type = "both"    },
@@ -173,6 +187,7 @@ branch = [
     { name = "largest_flash_time",    type = "event", parameters = [ "@intime_lb", "@intime_ub" ] },
     { name = "first_neutrino_energy", type = "event" },
     { name = "max_neutrino_energy",   type = "event" },
+    { name = "mc_nnu",                type = "event" },
     
     # Interaction-level branches
     { name = "neutrino_id",           type = "true"    },
@@ -180,6 +195,16 @@ branch = [
     { name = "baseline",              type = "mctruth" },
     { name = "cc",                    type = "mctruth" },
     { name = "pdg",                   type = "mctruth" },
+
+    # Flux ancestry (flux-reweighting maps: flavour, parent, E, parent |p| and angle)
+    { name = "initpdg",               type = "mctruth" },
+    { name = "parent_pdg",            type = "mctruth" },
+    { name = "parent_dcy_mom_x",      type = "mctruth" },
+    { name = "parent_dcy_mom_y",      type = "mctruth" },
+    { name = "parent_dcy_mom_z",      type = "mctruth" },
+    { name = "parent_dcy_p",          type = "mctruth" },
+    { name = "parent_dcy_theta",      type = "mctruth" },
+
     { name = "interaction_mode",      type = "mctruth" },
     { name = "interaction_type",      type = "mctruth" },
     { name = "off_axis_angle",        type = "mctruth" },
@@ -191,6 +216,7 @@ branch = [
     { name = "category",              type = "true"    },
     { name = "visible_energy",        type = "both"    },
     { name = "energy_qel",            type = "both"    },
+    { name = "qel_visible_diff",      type = "both"    },
     { name = "dpT",                   type = "both"    },
     { name = "dalphaT",               type = "both"    },
     { name = "dphiT",                 type = "both"    },
@@ -306,6 +332,7 @@ branch = [
     { name = "dpL",                   type = "both" },
     { name = "visible_energy",        type = "both" },
     { name = "energy_qel",            type = "both" },
+    { name = "qel_visible_diff",      type = "both" },
 
     # Selection cuts (for calculating purity)
     { name = "fiducial_cut_osc",      type = "reco" },
@@ -343,6 +370,7 @@ branch = [
     { name = "ntrue",                 type = "event" },
     { name = "first_neutrino_energy", type = "event" },
     { name = "max_neutrino_energy",   type = "event" },
+    { name = "mc_nnu",                type = "event" },
 ]
 
 [[category]] # 0 : Fiducial, contained, single muon, single proton

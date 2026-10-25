@@ -23,7 +23,7 @@
 
 [[sample]]
 key = "sbnd_ar23p_mc5e18"
-name = "sbnd"
+name = "sbnd_small"
 experiment = "sbnd"
 path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/mc_MCP2025B_5e18_v10_06_00_09_prodgenie_corsika_proton_rockbox_sbnd_CV_caf_sbnd/*/*/*ar23p.flat.caf.root"
 ismc = true
@@ -37,7 +37,7 @@ ismc = true
 
 [[sample]]
 key = "sbnd_ar23p_mc1e20"
-name = "sbnd"
+name = "sbnd_large"
 experiment = "sbnd"
 path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/mc_MCP2025C_1e20_v10_06_00_09_prodgenie_corsika_proton_rockbox_sbnd_CV_caf_sbnd/*/*/*ar23p.flat.caf.root"
 ismc = true
@@ -81,11 +81,25 @@ ismc = false
 key = "sbnd_bnblight"
 name = "sbnd_bnblight"
 experiment = "sbnd"
-path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/data_MCP2025C_Spring25_reprocess_FixedDev_bnblight_v10_06_00_09_caf_sbnd/*/*/*flat.caf.root"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_bnblight_fixed_dev_reproc_full/*/*/*flat.caf.root"
 ismc = false
 
   [sample.metadata]
   description = "SBND BNB on-beam+light fixed development sample."
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.6.0"
+  spine_config = "full_chain_co_250901.yaml"
+
+[[sample]]
+key = "sbnd_bnblight_full"
+name = "sbnd_bnblight_full"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_bnblight_full_reproc_lite/*/*/*flat.caf.root"
+ismc = false
+
+  [sample.metadata]
+  description = "SBND BNBLight Full (reprocessed lite)."
   parent_production = "Generation 1"
   production_version = "v10_06_00_09"
   spine_production = "v0.6.0"
@@ -232,6 +246,20 @@ ismc = false
   spine_config = "full_chain_co_250901.yaml + modifier/data/mod_data_common.yaml"
 
 [[sample]]
+key = "sbnd_detvar_mattmod_yz"
+name = "sbnd_detvar_mattmod_yz"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_run1_detvar_mattmodyz/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND Run 1 BNB MattMod YZ DetVar"
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.17.1" # TODO: confirm version
+  spine_config = "full_chain_co_250901.yaml + modifier/transp/mod_transp_240720.yaml"
+
+[[sample]]
 key = "sbnd_detvar_cv"
 name = "sbnd_detvar_cv"
 experiment = "sbnd"
@@ -257,6 +285,34 @@ ismc = true
   parent_production = "Generation 1"
   production_version = "v10_06_00_09"
   spine_production = "v0.10.9"
+  spine_config = "full_chain_co_250901.yaml"
+
+[[sample]]
+key = "sbnd_detvar_newcv"
+name = "sbnd_detvar_newcv"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_newcv_lite/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND New CV Lite (DENT SystVar2 production)"
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.10.9" #TODO confirm version
+  spine_config = "full_chain_co_250901.yaml"
+
+[[sample]]
+key = "sbnd_detvar_newdent"
+name = "sbnd_detvar_newdent"
+experiment = "sbnd"
+path = "/pnfs/sbn/persistent/users/mueller/osc/sbnd/flatcaf/sbnd_newdent_lite/*/*/*.root"
+ismc = true
+
+  [sample.metadata]
+  description = "SBND New DENT Lite (DENT SystVar2 production)"
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_09"
+  spine_production = "v0.10.9" #TODO confirm version
   spine_config = "full_chain_co_250901.yaml"
 
 # ─── ICARUS Run 4 Samples ─────────────────────────────────────────────
@@ -440,6 +496,20 @@ ismc = false
 
   [sample.metadata]
   description = "ICARUS BNB on-beam+light Run 2."
+  parent_production = "Generation 1"
+  production_version = "v10_06_00_12"
+  spine_production = "v0.10.9"
+  spine_config = "full_chain_co_260501.yaml"
+
+[[sample]]
+key = "icarus_run2_bnblight_full"
+name = "icarus_run2_bnblight_full"
+experiment = "icarus_run2"
+path = "/pnfs/sbn/persistent/users/mueller/osc/icarus/flatcaf/icarus_run2_onbeam/*/*/*.root"
+ismc = false
+
+  [sample.metadata]
+  description = "Full ICARUS Run 2 On-beam dataset (BLIND)."
   parent_production = "Generation 1"
   production_version = "v10_06_00_12"
   spine_production = "v0.10.9"
