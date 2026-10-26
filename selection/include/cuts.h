@@ -741,8 +741,9 @@ namespace cuts
      * @return true if the interaction has a single primary photon.
      */
     template<class T>
-    bool single_photon(const T & obj, std::vector<double> params={25.0,})
+    bool single_photon(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {25.0};
         return particle_multiplicity(obj, 1, 0, params) == 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, single_photon, single_photon);
@@ -759,8 +760,9 @@ namespace cuts
      * @return true if the interaction contains exactly two primary photons above threshold.
      */
     template<class T>
-    bool two_photons(const T & obj, std::vector<double> params={25.0,})
+    bool two_photons(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {25.0};
         return particle_multiplicity(obj, 2, 0, params) == 2;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, two_photons, two_photons);
@@ -783,8 +785,9 @@ namespace cuts
      * @return true if a valid photon pair exists and its invariant mass is in [params[0], params[1]).
      */
     template<class T>
-    bool valid_pi0_mass_cut(const T & obj, std::vector<double> params={60.0, 300.0})
+    bool valid_pi0_mass_cut(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {60.0, 300.0};
         std::vector<double> pair_params;
         if(params.size() > 2) pair_params = {params[2]};
         auto [i0, i1] = biselectors::pi0_photon_pair(obj, pair_params);
@@ -811,8 +814,9 @@ namespace cuts
      * @return true if the interaction has a single primary electron.
      */
     template<class T>
-    bool single_electron(const T & obj, std::vector<double> params={25.0,})
+    bool single_electron(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {25.0};
         return particle_multiplicity(obj, 1, 1, params) == 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, single_electron, single_electron);
@@ -830,8 +834,9 @@ namespace cuts
      * @return true if the interaction has a single primary muon.
      */
     template<class T>
-    bool single_muon(const T & obj, std::vector<double> params={143.425,})
+    bool single_muon(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {143.425};
         return particle_multiplicity(obj, 1, 2, params) == 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, single_muon, single_muon);
@@ -848,8 +853,9 @@ namespace cuts
      * @return true if the interaction has a single primary charged pion.
      */
     template<class T>
-    bool single_pion(const T & obj, std::vector<double> params={25.0,})
+    bool single_pion(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {25.0};
         return particle_multiplicity(obj, 1, 3, params) == 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, single_pion, single_pion);
@@ -866,8 +872,9 @@ namespace cuts
      * @return true if the interaction has a single primary proton.
      */
     template<class T>
-    bool single_proton(const T & obj, std::vector<double> params={50.0,})
+    bool single_proton(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {50.0};
         return particle_multiplicity(obj, 1, 4, params) == 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, single_proton, single_proton);
@@ -886,8 +893,9 @@ namespace cuts
      * @return true if the interaction has a nonzero primary photon.
      */
     template<class T>
-    bool no_photons(const T & obj, std::vector<double> params={25.0,})
+    bool no_photons(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {25.0};
         return particle_multiplicity(obj, 0, 0, params) == 0;
     }
 
@@ -907,8 +915,9 @@ namespace cuts
      * @return true if the interaction has a nonzero primary electron.
      */
     template<class T>
-    bool no_electrons(const T & obj, std::vector<double> params={25.0,})
+    bool no_electrons(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {25.0};
         return particle_multiplicity(obj, 0, 1, params) == 0;
     }
 
@@ -929,8 +938,9 @@ namespace cuts
      */
 
     template<class T>
-    bool no_muons(const T & obj, std::vector<double> params={143.425,})
+    bool no_muons(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {143.425};
         return particle_multiplicity(obj, 0, 2, params) == 0;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, no_muons, no_muons);
@@ -949,8 +959,9 @@ namespace cuts
      * @return true if the interaction has a nonzero primary charged pion.
      */
     template<class T>
-    bool no_charged_pions(const T & obj, std::vector<double> params={25.0,})
+    bool no_charged_pions(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {25.0};
         return particle_multiplicity(obj, 0, 3, params) == 0;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, no_charged_pions, no_charged_pions);
@@ -966,22 +977,25 @@ namespace cuts
      * @return true if the interaction has no such primary particle.
      */
     template<class T>
-    bool no_electrons_nan_ke(const T & obj, std::vector<double> params={25.0,})
+    bool no_electrons_nan_ke(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {25.0};
         return particle_multiplicity(obj, 0, 1, params, true) == 0;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, no_electrons_nan_ke, no_electrons_nan_ke);
 
     template<class T>
-    bool no_muons_nan_ke(const T & obj, std::vector<double> params={143.425,})
+    bool no_muons_nan_ke(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {143.425};
         return particle_multiplicity(obj, 0, 2, params, true) == 0;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, no_muons_nan_ke, no_muons_nan_ke);
 
     template<class T>
-    bool no_charged_pions_nan_ke(const T & obj, std::vector<double> params={25.0,})
+    bool no_charged_pions_nan_ke(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {25.0};
         return particle_multiplicity(obj, 0, 3, params, true) == 0;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, no_charged_pions_nan_ke, no_charged_pions_nan_ke);
@@ -998,8 +1012,9 @@ namespace cuts
      * @return true if the interaction has no such primary particle.
      */
     template<class T>
-    bool no_muons_min_length(const T & obj, std::vector<double> params={143.425, 3.0})
+    bool no_muons_min_length(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {143.425, 3.0};
         if(params.size() != 2)
             throw std::invalid_argument("no_muons_min_length requires two parameters: the kinetic energy threshold and the minimum length.");
         return particle_multiplicity(obj, 0, 2, {params[0]}, false, params[1]) == 0;
@@ -1007,8 +1022,9 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::Both, no_muons_min_length, no_muons_min_length);
 
     template<class T>
-    bool no_charged_pions_min_length(const T & obj, std::vector<double> params={25.0, 3.0})
+    bool no_charged_pions_min_length(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {25.0, 3.0};
         if(params.size() != 2)
             throw std::invalid_argument("no_charged_pions_min_length requires two parameters: the kinetic energy threshold and the minimum length.");
         return particle_multiplicity(obj, 0, 3, {params[0]}, false, params[1]) == 0;
@@ -1025,8 +1041,9 @@ namespace cuts
      * @return true if the interaction has no such primary particle.
      */
     template<class T>
-    bool no_muons_nan_ke_min_length(const T & obj, std::vector<double> params={143.425, 3.0})
+    bool no_muons_nan_ke_min_length(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {143.425, 3.0};
         if(params.size() != 2)
             throw std::invalid_argument("no_muons_nan_ke_min_length requires two parameters: the kinetic energy threshold and the minimum length.");
         return particle_multiplicity(obj, 0, 2, {params[0]}, true, params[1]) == 0;
@@ -1034,8 +1051,9 @@ namespace cuts
     REGISTER_CUT_SCOPE(RegistrationScope::Both, no_muons_nan_ke_min_length, no_muons_nan_ke_min_length);
 
     template<class T>
-    bool no_charged_pions_nan_ke_min_length(const T & obj, std::vector<double> params={25.0, 3.0})
+    bool no_charged_pions_nan_ke_min_length(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {25.0, 3.0};
         if(params.size() != 2)
             throw std::invalid_argument("no_charged_pions_nan_ke_min_length requires two parameters: the kinetic energy threshold and the minimum length.");
         return particle_multiplicity(obj, 0, 3, {params[0]}, true, params[1]) == 0;
@@ -1056,8 +1074,9 @@ namespace cuts
      * @return true if the interaction has a nonzero primary proton.
      */
     template<class T>
-    bool no_protons(const T & obj, std::vector<double> params={50.0,})
+    bool no_protons(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {50.0};
         return particle_multiplicity(obj, 0, 4, params) == 0;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, no_protons, no_protons);
@@ -1072,8 +1091,9 @@ namespace cuts
      * @return true if the interaction has more than one proton.
      */
     template<class T>
-    bool multiproton(const T & obj, std::vector<double> params={50.0,})
+    bool multiproton(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {50.0};
         return particle_multiplicity(obj, 1, 4, params) > 1;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, multiproton, multiproton);
@@ -1090,8 +1110,9 @@ namespace cuts
      * @return true if the interaction has a single Michel electron.
      */
     template<class T>
-    bool single_michel(const T & obj, std::vector<double> params={10.0,})
+    bool single_michel(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {10.0};
         size_t count(0);
         for(const auto & p : obj.particles)
         {
@@ -1177,8 +1198,9 @@ namespace cuts
     * specified particle species above the energy threshold.
     */
     template<class T>
-    bool has_particle_multiplicity(const T & obj, std::vector<double> params={1.0, 2.0, 0.0})
+    bool has_particle_multiplicity(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {1.0, 2.0, 0.0};
         if(params.size() < 2)
         {
             throw std::runtime_error("has_particle_multiplicity requires at least 2 parameters: [multiplicity, particle_species, (optional) ke_threshold]");
@@ -1210,8 +1232,9 @@ namespace cuts
      * primary tracks.
      */
     template<class T>
-    bool track_multiplicity(const T & obj, std::vector<double> params={2.0})
+    bool track_multiplicity(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {2.0};
         size_t desired_mult = static_cast<size_t>(params[0]);
 
         size_t count(0);
@@ -1280,8 +1303,9 @@ namespace cuts
      * @return true if the interaction's longest track length is below the threshold.
     */
     template<class T>
-    bool track_length(const T & obj, std::vector<double> params={25.0})
+    bool track_length(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {25.0};
 
         if(params.size() < 1)
         {
@@ -1314,8 +1338,9 @@ namespace cuts
      * @return true if the interaction has a leading electron with dE/dx below the threshold.
     */
     template<class T>
-    bool particle_dedx(const T & obj, std::vector<double> params={0.0,})
-    {   
+    bool particle_dedx(const T & obj, std::vector<double> params={})
+    {
+        if(params.empty()) params = {0.0};
         size_t i = selectors::leading_electron(obj);
         if (i == kNoMatch) return false;
         const auto & p = obj.particles[i];
@@ -1333,8 +1358,9 @@ namespace cuts
      * @return true if the interaction has a leading electron with vertex distance below the threshold.
     */
     template<class T>
-    bool vertex_distance_cut(const T & obj, std::vector<double> params={0.0,})
-    {   
+    bool vertex_distance_cut(const T & obj, std::vector<double> params={})
+    {
+        if(params.empty()) params = {0.0};
         size_t i = selectors::leading_electron(obj);
         if (i == kNoMatch) return false;
         const auto & p = obj.particles[i];
@@ -1351,8 +1377,9 @@ namespace cuts
      * @return true if the interaction has a neutrino matching the given PDG code.
     */
     template<class T>
-    bool neutrino_pdg(const T & obj, std::vector<double> params={12.0})
+    bool neutrino_pdg(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {12.0};
         for (const auto & pdg : params)
         {
             if (obj.pdg_code == pdg)

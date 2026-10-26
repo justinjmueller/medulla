@@ -48,8 +48,9 @@ namespace mctruth
      * @return true if exactly one muon above threshold.
      */
     template<typename T>
-    bool single_muon(const T & obj, std::vector<double> params={143.425,})
+    bool single_muon(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {143.425};
         int num_muons(0);
         for(const auto & p : obj.prim)
         {
@@ -74,8 +75,9 @@ namespace mctruth
      * @return true if no charged pions above threshold.
      */
     template<typename T>
-    bool no_charged_pions(const T & obj, std::vector<double> params={25.0,})
+    bool no_charged_pions(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {25.0};
         for(const auto & p : obj.prim)
         {
             if(abs(p.pdg) == 211)
@@ -120,8 +122,9 @@ namespace mctruth
      * @return true if no photons above threshold.
      */
     template<typename T>
-    bool no_photons(const T & obj, std::vector<double> params={25.0,})
+    bool no_photons(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {25.0};
         for(const auto & p : obj.prim)
         {
             if(p.pdg == 22)
@@ -145,8 +148,9 @@ namespace mctruth
      * @return true if no electrons above threshold.
      */
     template<typename T>
-    bool no_electrons(const T & obj, std::vector<double> params={25.0,})
+    bool no_electrons(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {25.0};
         for(const auto & p : obj.prim)
         {
             if(abs(p.pdg) == 11)
@@ -170,8 +174,9 @@ namespace mctruth
      * @return true if exactly one proton above threshold.
      */
     template<typename T>
-    bool single_proton(const T & obj, std::vector<double> params={50.0,})
+    bool single_proton(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {50.0};
         int count(0);
         for(const auto & p : obj.prim)
         {
@@ -199,8 +204,9 @@ namespace mctruth
      * @return true if the energy transfer is below the given value
      */
     template<class T>
-    bool is_below_max_e_transfer(const T & obj, std::vector<double> params={0.1,})
+    bool is_below_max_e_transfer(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {0.1};
       return obj.q0_lab<params[0];
     }
     REGISTER_CUT_SCOPE(RegistrationScope::MCTruth, is_below_max_e_transfer, is_below_max_e_transfer);

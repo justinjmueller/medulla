@@ -108,8 +108,9 @@ namespace cuts::pi0ana
      * @return true if number of true primary neutral pions above threshold is one.
      */
     template<class T>
-    bool single_pi0(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params = {0.0,})
+    bool single_pi0(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {0.0};
         double num_primary_pi0s = utilities::true_primary_pi0_multiplicity(obj, params);
 	    return num_primary_pi0s == 1;
     }
@@ -125,8 +126,9 @@ namespace cuts::pi0ana
      * @return true if the interaction contains exactly one primary shower.
      */
     template<class T>
-    bool single_shower(const T & obj, std::vector<double> params={25.0})
+    bool single_shower(const T & obj, std::vector<double> params={})
     {
+        if(params.empty()) params = {25.0};
         return (cuts::particle_multiplicity(obj, 1, 0, params) 
               + cuts::particle_multiplicity(obj, 1, 1, params)) == 1;
     }
