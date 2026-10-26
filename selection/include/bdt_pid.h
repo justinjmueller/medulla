@@ -206,6 +206,60 @@ namespace pvars
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_pid, bdt_pid);
 
     /**
+     * @brief Variable for the binary-BDT PID of a shower (photon / electron).
+     * @details Uses the shower_ge model (trained on true photons and
+     * electrons only): P(photon) > 0.5 gives a photon, otherwise an electron.
+     * @tparam T the type of particle (reco).
+     * @param p the particle to apply the variable on.
+     * @return the PID of the particle according to the binary shower BDT.
+     */
+    template<class T>
+    double bdt_binary_shower_pid(const T & p)
+    {
+        return bdt_scores(p, kShowerGE)[0] > 0.5 ? kPhoton : kElectron;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_binary_shower_pid, bdt_binary_shower_pid);
+
+    /**
+     * @brief Variable for the binary-BDT PID of a track (muon / proton / pion).
+     * @details Uses the track_muon and track_proton models: if either score
+     * is above 0.5 the track takes the species with the larger score;
+     * otherwise (no pion model) it is a pion.
+     * @tparam T the type of particle (reco).
+     * @param p the particle to apply the variable on.
+     * @return the PID of the particle according to the binary track BDTs.
+     */
+    template<class T>
+    double bdt_binary_track_pid(const T & p)
+    {
+        const double muon(bdt_scores(p, kTrackMuon)[0]);
+        const double proton(bdt_scores(p, kTrackProton)[0]);
+        if(std::max(muon, proton) > 0.5)
+            return muon >= proton ? kMuon : kProton;
+        return kPion;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_binary_track_pid, bdt_binary_track_pid);
+
+    /**
+     * @brief Variable for assigning PID with the binary BDTs.
+     * @details As @ref bdt_pid, but primary showers use
+     * @ref bdt_binary_shower_pid and primary tracks @ref bdt_binary_track_pid;
+     * all other particles keep @ref boosted_muon_pid.
+     * @tparam T the type of particle (reco).
+     * @param p the particle to apply the variable on.
+     * @return the PID of the particle.
+     */
+    template<class T>
+    double bdt_binary_pid(const T & p)
+    {
+        if(!(*primfn)(p)) return boosted_muon_pid(p);
+        if(p.shape == 0) return bdt_binary_shower_pid(p);
+        if(p.shape == 1) return bdt_binary_track_pid(p);
+        return boosted_muon_pid(p);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_binary_pid, bdt_binary_pid);
+
+    /**
      * @brief Score of one class of a BDT model.
      * @tparam T the type of particle (reco).
      * @param p the particle to evaluate.
