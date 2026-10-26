@@ -101,7 +101,9 @@ namespace pvars
     /**
      * @brief Evaluate a BDT model on a particle.
      * @details The PID function is called many times per particle by the
-     * cuts and selectors, so results are cached on the feature vector.
+     * cuts and selectors, so results are cached. The cache key is a handful
+     * of fields that identify the particle (cheaper to read than the full
+     * feature vector); the features are only built on a cache miss.
      * @tparam T the type of particle (reco).
      * @param p the particle to evaluate.
      * @param m the model to evaluate.
@@ -111,15 +113,17 @@ namespace pvars
     std::vector<double> bdt_scores(const T & p, BDTModel_t m)
     {
         static std::array<std::unordered_map<std::string, std::vector<double>>, kNumBDTModels> cache;
-        const bdt::Features f = bdt::build_features(bdt_inputs(p));
-        std::string key(reinterpret_cast<const char *>(f.data()), sizeof(f));
+        const std::array<double, 8> id = {(double)p.id, (double)p.interaction_id, (double)p.size,
+                                          (double)p.depositions_sum, (double)p.length, (double)p.start_point[0],
+                                          (double)p.start_point[1], (double)p.start_point[2]};
+        std::string key(reinterpret_cast<const char *>(id.data()), sizeof(id));
         auto & c = cache[m];
         auto it = c.find(key);
         if(it != c.end())
             return it->second;
         if(c.size() > 100000)
             c.clear();
-        return c.emplace(std::move(key), bdt_model(m).predict(f)).first->second;
+        return c.emplace(std::move(key), bdt_model(m).predict(bdt::build_features(bdt_inputs(p)))).first->second;
     }
 
     /**
@@ -180,10 +184,13 @@ namespace pvars
 
     /**
      * @brief Variable for assigning PID with the BDTs.
-     * @details Showers use @ref bdt_shower_pid and tracks use
-     * @ref bdt_track_pid. The BDTs were not trained on the other semantic
-     * types (Michel, delta, low energy), so these keep the SPINE PID with
-     * the boosted muon score (@ref boosted_muon_pid).
+     * @details Primary showers use @ref bdt_shower_pid and primary tracks
+     * use @ref bdt_track_pid. The BDTs were trained only on primaries
+     * (primary_scores[1] > 0.10) of these two semantic types, so other
+     * particles (non-primaries per the configured primfn, Michel, delta, low
+     * energy) keep the SPINE PID with the boosted muon score
+     * (@ref boosted_muon_pid). Skipping non-primaries also avoids evaluating
+     * the BDTs on the many particles every PID cut ignores.
      * @tparam T the type of particle (reco).
      * @param p the particle to apply the variable on.
      * @return the PID of the particle.
@@ -191,6 +198,7 @@ namespace pvars
     template<class T>
     double bdt_pid(const T & p)
     {
+        if(!(*primfn)(p)) return boosted_muon_pid(p);
         if(p.shape == 0) return bdt_shower_pid(p);
         if(p.shape == 1) return bdt_track_pid(p);
         return boosted_muon_pid(p);
