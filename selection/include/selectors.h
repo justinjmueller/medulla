@@ -459,6 +459,12 @@ namespace selectors
     /// when no parameter is supplied.
     constexpr double kDefaultPi0PairThreshold = 0.0;
 
+    /// If true, pi0_photon_pair selects reco photon candidates with the
+    /// configured PID and primary functions (pvars::pid and
+    /// pvars::primary_classification) instead of the upstream SPINE
+    /// p.pid / p.is_primary. Set by `general.pi0pair_use_pidfn`.
+    inline bool pi0pair_use_pidfn = false;
+
     /**
      * @brief Selects the leading and subleading photon forming the best pi0 candidate.
      * Helper function. Not registered.
@@ -467,7 +473,8 @@ namespace selectors
      * at or above a per-shower threshold, computes the diphoton invariant mass
      * using the vertex-to-shower-start opening angle, and selects the pair
      * whose mass is closest to PI0_MASS (135 MeV). Leading photon has higher
-     * calo KE.
+     * calo KE. Photon candidates use the SPINE PID and primary flag unless
+     * pi0pair_use_pidfn is set, in which case the configured functions are used.
      *
      * True branch: groups photon daughters by parent pi0 track ID via
      * utilities::get_true_pi0s, requires exactly two photon daughters, and
@@ -513,12 +520,17 @@ namespace selectors
         {
             const double threshold = params.empty() ? kDefaultPi0PairThreshold : params[0];
             double vx = obj.vertex[0], vy = obj.vertex[1], vz = obj.vertex[2];
+            auto is_primary_photon = [](const auto & p) {
+                if(pi0pair_use_pidfn)
+                    return pvars::pid(p) == pvars::kPhoton && pvars::primary_classification(p);
+                return p.is_primary && p.pid == 0;
+            };
 
             std::vector<std::pair<std::pair<size_t,size_t>, double>> candidates;
             for(size_t i = 0; i < obj.particles.size(); ++i)
             {
                 const auto & p = obj.particles[i];
-                if(!(p.is_primary && p.pid == 0)) continue;
+                if(!is_primary_photon(p)) continue;
 
                 double dx0 = p.start_point[0] - vx;
                 double dy0 = p.start_point[1] - vy;
@@ -529,7 +541,7 @@ namespace selectors
                 {
                     if(j == i) continue;
                     const auto & q = obj.particles[j];
-                    if(!(q.is_primary && q.pid == 0)) continue;
+                    if(!is_primary_photon(q)) continue;
 
                     double ke_p = pvars::calo_ke(p), ke_q = pvars::calo_ke(q);
                     double leading_ke    = (ke_p > ke_q) ? ke_p : ke_q;

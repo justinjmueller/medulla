@@ -26,6 +26,7 @@ namespace pvars
         kMuon     =  2,
         kPion     =  3,
         kProton   =  4,
+        kOther    =  5,
         kUnknown  = -1
     };
 

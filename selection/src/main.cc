@@ -21,6 +21,7 @@
 #include "configuration.h"
 #include "framework.h"
 #include "scorers.h"
+#include "bdt_pid.h"
 #include "cuts.h"
 #include "variables.h"
 #include "mctruth_variables.h"
@@ -206,6 +207,10 @@ int main(int argc, char * argv[])
         set_fcn(pvars::pidfn,  config.get_string_field("general.pidfn",  "default_pid"));
         set_fcn(pvars::calofn<TParticleType>, config.get_string_field("general.calofn", "default_calo_ke"));
         set_fcn(pvars::calofn<RParticleType>, config.get_string_field("general.calofn", "default_calo_ke"));
+
+        // Configure the BDT PID models and the pi0 photon pair PID source.
+        pvars::bdt_model_dir = config.get_string_field("general.bdt_model_dir", pvars::bdt_model_dir);
+        selectors::pi0pair_use_pidfn = config.get_bool_field("general.pi0pair_use_pidfn", false);
 
         // Configure the samples in the analysis
         std::vector<cfg::ConfigurationTable> samples = config.get_subtables("sample");

@@ -50,7 +50,7 @@ namespace utilities
             std::vector<uint32_t> counts(5, 0);
             for(auto &p : obj.particles)
             {
-                if(pcuts::final_state_signal(p))
+                if(pcuts::final_state_signal(p) && pvars::pid(p) < counts.size())
                     ++counts[pvars::pid(p)];
             }
             return counts;

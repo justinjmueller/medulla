@@ -119,7 +119,9 @@ namespace pcuts
     template<class T>
     bool final_state_signal(const T & p)
     {
-        return pvars::primary_classification(p) && pvars::ke(p) > final_state_signal_thresholds[pvars::pid(p)];
+        const size_t pid(pvars::pid(p));
+        if(pid >= final_state_signal_thresholds.size()) return false;
+        return pvars::primary_classification(p) && pvars::ke(p) > final_state_signal_thresholds[pid];
     }
     REGISTER_CUT_SCOPE(RegistrationScope::BothParticle, final_state_signal, final_state_signal);
 
