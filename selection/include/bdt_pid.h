@@ -42,6 +42,7 @@ namespace pvars
         kShowerGE,      ///< binary: P(photon) vs. electron
         kTrackProton,   ///< binary: P(proton)
         kTrackMuon,     ///< binary: P(muon)
+        kTrackNoOther,  ///< proton / muon / pion (no "other" class)
         kNumBDTModels
     };
 
@@ -54,7 +55,7 @@ namespace pvars
     {
         static std::array<bdt::XGBForest, kNumBDTModels> models;
         static const std::array<std::string, kNumBDTModels> names =
-            {"shower_multi", "track_multi", "shower_ge", "track_proton", "track_muon"};
+            {"shower_multi", "track_multi", "shower_ge", "track_proton", "track_muon", "track_multi_noother"};
         if(!models[m].loaded())
             models[m].load(bdt_model_dir + "/" + names[m] + ".txt");
         return models[m];
@@ -260,6 +261,40 @@ namespace pvars
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_binary_pid, bdt_binary_pid);
 
     /**
+     * @brief Variable for the PID of a track from the no-"other" track BDT.
+     * @details Argmax of the track_multi_noother model (proton / muon / pion),
+     * so every track is assigned a particle species.
+     * @tparam T the type of particle (reco).
+     * @param p the particle to apply the variable on.
+     * @return the PID of the particle according to the no-"other" track BDT.
+     */
+    template<class T>
+    double bdt_noother_track_pid(const T & p)
+    {
+        return bdt_argmax_pid(p, kTrackNoOther);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_noother_track_pid, bdt_noother_track_pid);
+
+    /**
+     * @brief Variable for assigning PID with the no-"other" track BDT.
+     * @details Primary tracks use @ref bdt_noother_track_pid and primary
+     * showers @ref bdt_binary_shower_pid (photon / electron switch); all
+     * other particles keep @ref boosted_muon_pid.
+     * @tparam T the type of particle (reco).
+     * @param p the particle to apply the variable on.
+     * @return the PID of the particle.
+     */
+    template<class T>
+    double bdt_noother_pid(const T & p)
+    {
+        if(!(*primfn)(p)) return boosted_muon_pid(p);
+        if(p.shape == 0) return bdt_binary_shower_pid(p);
+        if(p.shape == 1) return bdt_noother_track_pid(p);
+        return boosted_muon_pid(p);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_noother_pid, bdt_noother_pid);
+
+    /**
      * @brief Score of one class of a BDT model.
      * @tparam T the type of particle (reco).
      * @param p the particle to evaluate.
@@ -317,5 +352,17 @@ namespace pvars
     /// @brief Binary track BDT score: P(muon).
     template<class T> double bdt_muon_binary_score(const T & p) { return bdt_class_score(p, kTrackMuon, 1, 0); }
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_muon_binary_score, bdt_muon_binary_score);
+
+    /// @brief No-"other" track BDT proton score.
+    template<class T> double bdt_noother_proton_score(const T & p) { return bdt_class_score(p, kTrackNoOther, 1, 0); }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_noother_proton_score, bdt_noother_proton_score);
+
+    /// @brief No-"other" track BDT muon score.
+    template<class T> double bdt_noother_muon_score(const T & p) { return bdt_class_score(p, kTrackNoOther, 1, 1); }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_noother_muon_score, bdt_noother_muon_score);
+
+    /// @brief No-"other" track BDT pion score.
+    template<class T> double bdt_noother_pion_score(const T & p) { return bdt_class_score(p, kTrackNoOther, 1, 2); }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_noother_pion_score, bdt_noother_pion_score);
 } // namespace pvars
 #endif // BDT_PID_H
