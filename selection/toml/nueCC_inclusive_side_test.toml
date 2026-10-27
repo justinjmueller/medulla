@@ -976,7 +976,7 @@ branch = [
 ]
 
 [[tree]]
-name = "nc_sideband_we"
+name = "nc_sideband_wc"
 sim_only = false
 issignal = true
 isdata = false
@@ -987,17 +987,17 @@ cut = [
     { name = "no_cut",                    type = "reco" },
     { name = "fiducial_cut",              type = "reco" },
     { name = "flash_cut",                 type = "reco", parameters = [ "@flash_low_t", "@flash_high_t" ] },
-    { name = "containment_cut",           type = "reco" },
+    #{ name = "containment_cut",           type = "reco" },
     #{ name = "vertex_distance_cut",       type = "reco", parameters = [ "@vertex_threshold" ] },
     #{ name = "has_particle_multiplicity", type = "reco", parameters = [1, 1] },
-    { name = "no_muons",                  type = "reco", parameters = [ 0 ] },
+    #{ name = "no_muons",                  type = "reco", parameters = [ 0 ] },
     #{ name = "electron_softmax_cut",      type = "reco", parameters = [ "@electron_softmax", "@greater_than" ] },
     #{ name = "primary_softmax_cut",       type = "reco", parameters = [ "@primary_softmax", "@greater_than" ] },
     #{ name = "leading_ele_energy_cut",    type = "reco", parameters = [ "@electron_threshold" ] },
     #{name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto", 9999.9]}, 
     {name = "pi0_invariant_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
     {name = "two_photons",                type = "reco", parameters =["@photon_threshold"]},
-    #{name = "no_electrons",                type = "reco", parameters =[0]},
+    {name = "no_electrons",                type = "reco", parameters =[0]},
     
 
 ]
