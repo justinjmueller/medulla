@@ -261,6 +261,46 @@ namespace pvars
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_binary_pid, bdt_binary_pid);
 
     /**
+     * @brief Variable for the binary-BDT PID of a track with the muon score boosted.
+     * @details As @ref bdt_binary_track_pid, but the muon binary score is
+     * doubled before the comparison (cf. @ref boosted_muon_pid): if either
+     * 2 * P(muon) or P(proton) is above 0.5 the track takes the species with
+     * the larger value, otherwise it is a pion.
+     * @tparam T the type of particle (reco).
+     * @param p the particle to apply the variable on.
+     * @return the PID of the particle according to the boosted binary track BDTs.
+     */
+    template<class T>
+    double bdt_binary_boosted_track_pid(const T & p)
+    {
+        static constexpr double kMuonBoost = 2.0;
+        const double muon(kMuonBoost * bdt_scores(p, kTrackMuon)[0]);
+        const double proton(bdt_scores(p, kTrackProton)[0]);
+        if(std::max(muon, proton) > 0.5)
+            return muon >= proton ? kMuon : kProton;
+        return kPion;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_binary_boosted_track_pid, bdt_binary_boosted_track_pid);
+
+    /**
+     * @brief Variable for assigning PID with the binary BDTs, muon score boosted.
+     * @details As @ref bdt_binary_pid, but primary tracks use
+     * @ref bdt_binary_boosted_track_pid.
+     * @tparam T the type of particle (reco).
+     * @param p the particle to apply the variable on.
+     * @return the PID of the particle.
+     */
+    template<class T>
+    double bdt_binary_boosted_pid(const T & p)
+    {
+        if(!(*primfn)(p)) return boosted_muon_pid(p);
+        if(p.shape == 0) return bdt_binary_shower_pid(p);
+        if(p.shape == 1) return bdt_binary_boosted_track_pid(p);
+        return boosted_muon_pid(p);
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_binary_boosted_pid, bdt_binary_boosted_pid);
+
+    /**
      * @brief Variable for the PID of a track from the no-"other" track BDT.
      * @details Argmax of the track_multi_noother model (proton / muon / pion),
      * so every track is assigned a particle species.
