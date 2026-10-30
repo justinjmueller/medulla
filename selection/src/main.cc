@@ -210,6 +210,8 @@ int main(int argc, char * argv[])
 
         // Configure the BDT PID models and the pi0 photon pair PID source.
         pvars::bdt_model_dir = config.get_string_field("general.bdt_model_dir", pvars::bdt_model_dir);
+        if(config.has_field("general.bdt_muon_boost"))
+            pvars::bdt_muon_boost = config.get_double_field("general.bdt_muon_boost");
         selectors::pi0pair_use_pidfn = config.get_bool_field("general.pi0pair_use_pidfn", false);
 
         // Configure the samples in the analysis

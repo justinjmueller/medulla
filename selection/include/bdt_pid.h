@@ -34,6 +34,13 @@ namespace pvars
     inline std::string bdt_model_dir = "/exp/sbnd/app/users/bmweiss/workdir/pi0_analysis/BDTs/models/cpp";
 
     /**
+     * @brief Factor applied to P(mu) by @ref bdt_binary_boosted_pid.
+     * @details Set from `general.bdt_muon_boost` in the configuration file;
+     * defaults to 2.
+     */
+    inline double bdt_muon_boost = 2.0;
+
+    /**
      * @brief Enumeration of the available BDT models.
      */
     enum BDTModel_t
@@ -204,9 +211,11 @@ namespace pvars
 
     /**
      * @brief Variable for the binary-BDT PID of a track with the muon score boosted.
-     * @details As @ref bdt_binary_track_pid, but the muon value is doubled
-     * (cf. @ref boosted_muon_pid): the largest of 2 * P(mu),
-     * (1 - P(mu)) * (1 - P(p)) and P(p), see @ref bdt_binary_argmax_track_pid.
+     * @details As @ref bdt_binary_track_pid, but the muon value is boosted
+     * (cf. @ref boosted_muon_pid): the largest of b * P(mu),
+     * (1 - P(mu)) * (1 - P(p)) and P(p), with b = @ref bdt_muon_boost
+     * (`general.bdt_muon_boost`, default 2), see
+     * @ref bdt_binary_argmax_track_pid.
      * @tparam T the type of particle (reco).
      * @param p the particle to apply the variable on.
      * @return the PID of the particle according to the boosted binary track BDTs.
@@ -214,8 +223,7 @@ namespace pvars
     template<class T>
     double bdt_binary_boosted_track_pid(const T & p)
     {
-        static constexpr double kMuonBoost = 2.0;
-        return bdt_binary_argmax_track_pid(p, kMuonBoost);
+        return bdt_binary_argmax_track_pid(p, bdt_muon_boost);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_binary_boosted_track_pid, bdt_binary_boosted_track_pid);
 
