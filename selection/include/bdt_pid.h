@@ -222,10 +222,34 @@ namespace pvars
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_binary_shower_pid, bdt_binary_shower_pid);
 
     /**
+     * @brief Track PID from the binary BDTs as the largest of three values.
+     * @details With P(mu) from track_muon and P(p) from track_proton (there
+     * is no pion model), the three values are muon_boost * P(mu),
+     * (1 - P(mu)) * (1 - P(p)) (neither switch) and P(p); the track takes the
+     * species with the largest value. Ties go to muon, then proton, then pion.
+     * Not registered; used by @ref bdt_binary_track_pid and
+     * @ref bdt_binary_boosted_track_pid.
+     * @tparam T the type of particle (reco).
+     * @param p the particle to classify.
+     * @param muon_boost the factor applied to the muon value.
+     * @return the PID of the particle.
+     */
+    template<class T>
+    double bdt_binary_argmax_track_pid(const T & p, double muon_boost)
+    {
+        const double p_muon(bdt_scores(p, kTrackMuon)[0]);
+        const double p_proton(bdt_scores(p, kTrackProton)[0]);
+        const double muon(muon_boost * p_muon);
+        const double pion((1 - p_muon) * (1 - p_proton));
+        if(muon >= pion && muon >= p_proton) return kMuon;
+        if(p_proton >= pion) return kProton;
+        return kPion;
+    }
+
+    /**
      * @brief Variable for the binary-BDT PID of a track (muon / proton / pion).
-     * @details Uses the track_muon and track_proton models: if either score
-     * is above 0.5 the track takes the species with the larger score;
-     * otherwise (no pion model) it is a pion.
+     * @details The largest of P(mu), (1 - P(mu)) * (1 - P(p)) and P(p), see
+     * @ref bdt_binary_argmax_track_pid.
      * @tparam T the type of particle (reco).
      * @param p the particle to apply the variable on.
      * @return the PID of the particle according to the binary track BDTs.
@@ -233,11 +257,7 @@ namespace pvars
     template<class T>
     double bdt_binary_track_pid(const T & p)
     {
-        const double muon(bdt_scores(p, kTrackMuon)[0]);
-        const double proton(bdt_scores(p, kTrackProton)[0]);
-        if(std::max(muon, proton) > 0.5)
-            return muon >= proton ? kMuon : kProton;
-        return kPion;
+        return bdt_binary_argmax_track_pid(p, 1.0);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_binary_track_pid, bdt_binary_track_pid);
 
@@ -262,10 +282,9 @@ namespace pvars
 
     /**
      * @brief Variable for the binary-BDT PID of a track with the muon score boosted.
-     * @details As @ref bdt_binary_track_pid, but the muon binary score is
-     * doubled before the comparison (cf. @ref boosted_muon_pid): if either
-     * 2 * P(muon) or P(proton) is above 0.5 the track takes the species with
-     * the larger value, otherwise it is a pion.
+     * @details As @ref bdt_binary_track_pid, but the muon value is doubled
+     * (cf. @ref boosted_muon_pid): the largest of 2 * P(mu),
+     * (1 - P(mu)) * (1 - P(p)) and P(p), see @ref bdt_binary_argmax_track_pid.
      * @tparam T the type of particle (reco).
      * @param p the particle to apply the variable on.
      * @return the PID of the particle according to the boosted binary track BDTs.
@@ -274,11 +293,7 @@ namespace pvars
     double bdt_binary_boosted_track_pid(const T & p)
     {
         static constexpr double kMuonBoost = 2.0;
-        const double muon(kMuonBoost * bdt_scores(p, kTrackMuon)[0]);
-        const double proton(bdt_scores(p, kTrackProton)[0]);
-        if(std::max(muon, proton) > 0.5)
-            return muon >= proton ? kMuon : kProton;
-        return kPion;
+        return bdt_binary_argmax_track_pid(p, kMuonBoost);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_binary_boosted_track_pid, bdt_binary_boosted_track_pid);
 
