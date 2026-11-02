@@ -28,7 +28,7 @@ usage() {
 
 # Initialize variables
 PROJECT=""
-TAG="rlazur_numuCC0pi1pi0"  # Default to the branch with the numuCC0pi1pi0 selection
+TAG="feature/rlazur_numuCC0pi1pi0"  # Default to the branch with the numuCC0pi1pi0 selection
 # TAG="feature/rlazur_numuCC0pi1pi0"
 SAMPLE=""
 FORCE=""

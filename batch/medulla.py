@@ -14,7 +14,7 @@ def main(
     tml : str = None,
     batch_size : int = None,
     systematic : str = None,
-    tag : str = 'develop',
+    tag : str = 'feature/rlazur_numuCC0pi1pi0',
     memory : int = 1800,
     disk : Optional[int] = None,
     lifetime : str = '1h',
