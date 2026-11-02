@@ -11,6 +11,8 @@
 .DS_Store
 
 build/
+selection/toml/*.toml
+spineplot
 */CMakeFiles/*
 *.cmake
 Makefile

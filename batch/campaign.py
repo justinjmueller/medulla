@@ -22,7 +22,7 @@ from catalog import resolve_samples
 from utilities import (create_new_project, check_project_status, launch_jobsub,
                        safe_copy, safe_write_text, survey_project_output)
 
-# Repo root is two levels above this script (batch/ -> repo root).
+# Repo root is two levels above this script (batch/ -> repo root)
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TOML_DIR = REPO_ROOT / 'selection' / 'toml'
 

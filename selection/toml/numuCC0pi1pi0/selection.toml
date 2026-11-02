@@ -40,7 +40,7 @@ pi0_mass_veto_high =        400.0   # pi0 mass veto high
 # by key, instead of writing [[sample]] blocks by hand. Every key listed
 # here becomes a [[sample]]; a sample only runs if it is also enabled.
 [[include_samples]]
-file = "common/osc.toml"
+file = "/exp/sbnd/data/users/rlazur/medullas/medulla_develop/selection/toml/common/osc.toml"
 keys = [
     # Central value MC, carries GENIE/flux systematic weights. mc1e20 is
     # also the nominal for charge_scale, p5/m5_gain and smear15, which are
@@ -48,8 +48,8 @@ keys = [
     "sbnd_ar23p_mc5e18", "sbnd_ar23p_mc1e20",
     # Detector variations, plus the CV they are compared against
     "sbnd_detvar_cv", "sbnd_detvar_dent",
-    "sbnd_detvar_charge_scale",
-    "sbnd_detvar_p5_gain", "sbnd_detvar_m5_gain",
+    # "sbnd_detvar_charge_scale",
+    # "sbnd_detvar_p5_gain", "sbnd_detvar_m5_gain",
     "sbnd_detvar_smear15",
     "sbnd_detvar_wiremod_xthetaxw", "sbnd_detvar_wiremod_yz",
 ]

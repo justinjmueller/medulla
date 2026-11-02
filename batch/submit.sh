@@ -28,7 +28,8 @@ usage() {
 
 # Initialize variables
 PROJECT=""
-TAG="develop"
+TAG="rlazur_numuCC0pi1pi0"  # Default to the branch with the numuCC0pi1pi0 selection
+# TAG="feature/rlazur_numuCC0pi1pi0"
 SAMPLE=""
 FORCE=""
 
@@ -116,7 +117,7 @@ copy_output() {
 }
 
 # Setup CVMFS area
-source /cvmfs/icarus.opensciencegrid.org/products/icarus/setup_icarus.sh
+source /cvmfs/sbnd.opensciencegrid.org/products/sbnd/setup_sbnd.sh
 
 # Setup the required dependencies
 setup sbnana v10_01_04 -q e26:prof

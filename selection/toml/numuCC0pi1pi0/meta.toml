@@ -1,11 +1,11 @@
 [meta]
 analysis = "numuCC0pi1pi0"
-description = "SBND numu CC 0pi 1pi0: CV MC with GENIE/flux weights, and detector-variation samples"
+description = "SBND numuCC0pi1pi0"
 owners = ["rlazur"]
 experiments = ["sbnd"]
 
 [defaults]
-batch_size = 50
+batch_size = 1
 
 # Central value MC. The 'selected' tree has add_systematics = true, so
 # each job also writes the GENIE/flux universe weights for the selected
@@ -39,8 +39,8 @@ output_pattern = "numuCC0pi1pi0_%e_%t_detvar#"
   [toml.enable.sbnd]
   keys = [
     "sbnd_detvar_cv", "sbnd_detvar_dent",
-    "sbnd_detvar_charge_scale",
-    "sbnd_detvar_p5_gain", "sbnd_detvar_m5_gain",
+    # "sbnd_detvar_charge_scale",
+    # "sbnd_detvar_p5_gain", "sbnd_detvar_m5_gain",
     "sbnd_detvar_smear15",
     "sbnd_detvar_wiremod_xthetaxw", "sbnd_detvar_wiremod_yz",
   ]
