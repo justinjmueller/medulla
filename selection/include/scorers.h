@@ -308,19 +308,19 @@ namespace pvars
     }
 
     /**
-     * @brief Variable for the binary-BDT PID of a shower (photon / electron).
+     * @brief Binary-BDT PID of a shower (photon / electron).
      * @details Uses the shower_ge model (trained on true photons and
      * electrons only): P(photon) > 0.5 gives a photon, otherwise an electron.
      * @tparam T the type of particle (reco).
      * @param p the particle to apply the variable on.
      * @return the PID of the particle according to the binary shower BDT.
+     * @note Not registered; used by @ref bdt_binary_pid and @ref bdt_binary_boosted_pid.
      */
     template<class T>
     double bdt_binary_shower_pid(const T & p)
     {
         return bdt_scores(p, kShowerGE)[0] > 0.5 ? kPhoton : kElectron;
     }
-    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_binary_shower_pid, bdt_binary_shower_pid);
 
     /**
      * @brief Track PID from the binary BDTs as the largest of three values.
@@ -348,19 +348,19 @@ namespace pvars
     }
 
     /**
-     * @brief Variable for the binary-BDT PID of a track (muon / proton / pion).
+     * @brief Binary-BDT PID of a track (muon / proton / pion).
      * @details The largest of P(mu), (1 - P(mu)) * (1 - P(p)) and P(p), see
      * @ref bdt_binary_argmax_track_pid.
      * @tparam T the type of particle (reco).
      * @param p the particle to apply the variable on.
      * @return the PID of the particle according to the binary track BDTs.
+     * @note Not registered; used by @ref bdt_binary_pid.
      */
     template<class T>
     double bdt_binary_track_pid(const T & p)
     {
         return bdt_binary_argmax_track_pid(p, 1.0);
     }
-    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_binary_track_pid, bdt_binary_track_pid);
 
     /**
      * @brief Variable for assigning PID with the binary BDTs.
@@ -386,7 +386,7 @@ namespace pvars
     REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_binary_pid, bdt_binary_pid);
 
     /**
-     * @brief Variable for the binary-BDT PID of a track with the muon score boosted.
+     * @brief Binary-BDT PID of a track with the muon score boosted.
      * @details As @ref bdt_binary_track_pid, but the muon value is boosted
      * (cf. @ref boosted_muon_pid): the largest of b * P(mu),
      * (1 - P(mu)) * (1 - P(p)) and P(p), with b = @ref bdt_muon_boost
@@ -395,13 +395,13 @@ namespace pvars
      * @tparam T the type of particle (reco).
      * @param p the particle to apply the variable on.
      * @return the PID of the particle according to the boosted binary track BDTs.
+     * @note Not registered; used by @ref bdt_binary_boosted_pid.
      */
     template<class T>
     double bdt_binary_boosted_track_pid(const T & p)
     {
         return bdt_binary_argmax_track_pid(p, bdt_muon_boost);
     }
-    REGISTER_VAR_SCOPE(RegistrationScope::RecoParticle, bdt_binary_boosted_track_pid, bdt_binary_boosted_track_pid);
 
     /**
      * @brief Variable for assigning PID with the binary BDTs, muon score boosted.
