@@ -21,7 +21,6 @@
 #include "configuration.h"
 #include "framework.h"
 #include "scorers.h"
-#include "bdt_pid.h"
 #include "cuts.h"
 #include "variables.h"
 #include "mctruth_variables.h"
