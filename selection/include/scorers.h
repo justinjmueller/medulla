@@ -327,7 +327,8 @@ namespace pvars
      * @details With P(mu) from track_muon and P(p) from track_proton (there
      * is no pion model), the three values are muon_boost * P(mu),
      * (1 - P(mu)) * (1 - P(p)) (neither switch) and P(p); the track takes the
-     * species with the largest value. Ties go to muon, then proton, then pion.
+     * species with the largest value. Ties go to the lower SPINE index (muon,
+     * then pion, then proton), as in @ref boosted_muon_pid.
      * Not registered; used by @ref bdt_binary_track_pid and
      * @ref bdt_binary_boosted_track_pid.
      * @tparam T the type of particle (reco).
@@ -343,8 +344,8 @@ namespace pvars
         const double muon(muon_boost * p_muon);
         const double pion((1 - p_muon) * (1 - p_proton));
         if(muon >= pion && muon >= p_proton) return kMuon;
-        if(p_proton >= pion) return kProton;
-        return kPion;
+        if(pion >= p_proton) return kPion;
+        return kProton;
     }
 
     /**
