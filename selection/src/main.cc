@@ -293,7 +293,7 @@ int main(int argc, char * argv[])
                 // Wrap each SpillMultiVar to set pvars::g_shower_scale before
                 // event-level execution. Scale is captured by value so trees with
                 // different scales on the same loader remain independent.
-                double shower_scale = tree.get_double_field("shower_energy_scale", 1.0);
+                double shower_scale = tree.has_field("shower_energy_scale") ? tree.get_double_field("shower_energy_scale") : 1.0;
                 if(shower_scale != 1.0)
                 {
                     for(auto & [vname, var] : vars_map)
