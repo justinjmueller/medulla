@@ -839,3 +839,8 @@ variable = [ "reco_visible_energy", "reco_leading_photon_energy",]
 bins = [ [ 0.0, 0.81, 1.1, 1.4, 5.0,], [ 400.0, 500.0, 600.0, 800.0, 1000.0, 1500.0, 5000.0,],]
 nuniverses = 1000
 variable_length = false
+# POT per variation from the CSV (column corrected_pot), not from the exposure trees.
+# recombination_residual reuses the Recomb files, shower_scale_* the cv files.
+pot_csv = "/exp/icarus/app/users/micarrig/nuESpine/medulla/plots_v31/pot/detsys_corrected_pot.csv"
+pot_csv_set = "main"
+pot_csv_alias = { recombination_residual = "recombination", shower_scale_up = "cv", shower_scale_down = "cv" }

@@ -13,6 +13,9 @@
 #include <vector>
 #include <random>
 #include <algorithm>
+#include <fstream>
+#include <sstream>
+#include <stdexcept>
 
 #include "detsys.h"
 #include "configuration.h"
@@ -22,6 +25,47 @@
 #include "TH2D.h"
 #include "TSpline.h"
 #include "TFile.h"
+
+namespace
+{
+    // Read the POT of every sample in one "set" of a POT CSV (header row with
+    // at least the columns "set", "sample" and pot_column; plain comma split, no
+    // quoted fields). Returns sample -> POT.
+    std::map<std::string, double> read_pot_csv(const std::string & path, const std::string & set, const std::string & pot_column)
+    {
+        std::ifstream in(path);
+        if(!in)
+            throw cfg::ConfigurationError("Cannot open variations.pot_csv file: " + path);
+        auto split = [](const std::string & line) {
+            std::vector<std::string> cells;
+            std::stringstream ss(line);
+            std::string cell;
+            while(std::getline(ss, cell, ',')) cells.push_back(cell);
+            return cells;
+        };
+        std::string line;
+        std::getline(in, line);
+        std::vector<std::string> header(split(line));
+        auto column = [&](const std::string & name) {
+            auto it = std::find(header.begin(), header.end(), name);
+            if(it == header.end())
+                throw cfg::ConfigurationError("Column '" + name + "' not found in " + path);
+            return static_cast<size_t>(it - header.begin());
+        };
+        size_t iset(column("set")), isample(column("sample")), ipot(column(pot_column));
+        std::map<std::string, double> pots;
+        while(std::getline(in, line))
+        {
+            if(line.empty()) continue;
+            std::vector<std::string> cells(split(line));
+            if(cells.size() <= std::max({iset, isample, ipot}) || cells[iset] != set) continue;
+            pots[cells[isample]] = std::stod(cells[ipot]);
+        }
+        if(pots.empty())
+            throw cfg::ConfigurationError("No rows with set = '" + set + "' in " + path);
+        return pots;
+    }
+}
 
 std::string sys::detsys::DetsysCalculator::make_hist_key(const std::string & variable_name, const std::string & variation_name) const
 {
@@ -106,6 +150,22 @@ sys::detsys::DetsysCalculator::DetsysCalculator(cfg::ConfigurationTable & table,
     // Loop over the variations and create the histograms. A "variation" is a
     // single sample that implements some change w.r.t. the nominal sample in
     // the detector model.
+    // Optional POT override from a CSV (e.g. detsys_corrected_pot.csv): when
+    // variations.pot_csv is set, every variation's POT comes from the CSV row
+    // with set = variations.pot_csv_set and sample = the variation key (or its
+    // entry in variations.pot_csv_alias, for keys made from another sample's
+    // files). A key missing from the CSV is an error, never a silent fallback.
+    std::map<std::string, double> csv_pots;
+    const bool use_pot_csv = table.has_field("variations.pot_csv");
+    if(use_pot_csv)
+    {
+        std::string csv_path = table.get_string_field("variations.pot_csv");
+        std::string csv_set = table.get_string_field("variations.pot_csv_set");
+        std::string csv_column = table.get_string_field("variations.pot_csv_column", "corrected_pot");
+        csv_pots = read_pot_csv(csv_path, csv_set, csv_column);
+        std::cout << "Using POT from " << csv_path << " (set " << csv_set << ", column " << csv_column << ")." << std::endl;
+    }
+
     for(std::string variation : variations)
     {
         std::cout << "Processing variation: " << variation << std::endl;
@@ -132,6 +192,16 @@ sys::detsys::DetsysCalculator::DetsysCalculator(cfg::ConfigurationTable & table,
             std::string pot_name = table.get_string_field("variations.origin") + variation + '/' + "POT";
             TH1D * h = (TH1D *) input->Get(pot_name.c_str());
             pot = h->GetBinContent(1) / 1e18; // Convert to 1e18 POT
+        }
+        if(use_pot_csv)
+        {
+            std::string csv_sample = table.get_string_field("variations.pot_csv_alias." + variation, variation);
+            auto it = csv_pots.find(csv_sample);
+            if(it == csv_pots.end())
+                throw cfg::ConfigurationError("Variation '" + variation + "' (CSV sample '" + csv_sample + "') not found in variations.pot_csv.");
+            std::cout << "Variation " << variation << ": file POT " << pot << "e18, CSV POT (" << csv_sample << ") "
+                      << it->second / 1e18 << "e18; using the CSV value." << std::endl;
+            pot = it->second / 1e18;
         }
         std::cout << "Variation " << variation << " has " << pot << "e18 POT." << std::endl;
 
