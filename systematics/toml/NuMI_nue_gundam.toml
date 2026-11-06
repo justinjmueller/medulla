@@ -15,7 +15,7 @@ name = 'reco_leading_electron_energy'
 bins = [300, 390, 490, 600, 730, 870, 1030, 1240, 1500, 2000, 5000]
 
 [variations]
-keys = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination', 'cathode_bend', 'null', 'cv']
+keys = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination_residual', 'cathode_bend', 'null', 'shower_scale_up', 'shower_scale_down', 'cv']
 origin = 'events/'
 tree = 'selected'
 result_destination = 'detsys_results/'
@@ -289,13 +289,22 @@ ordinate = 'cv'
 points = ['yz_uniformity', 'yz_uniformity', 'yz_uniformity', 'cv', 'yz_uniformity', 'yz_uniformity', 'yz_uniformity']
 
 [[sys]]
-name = 'recombination'
+name = 'recombination_residual'
 type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1 ,2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
 ordinate = 'cv'
-points = ['recombination', 'recombination', 'recombination', 'cv', 'recombination', 'recombination', 'recombination']
+points = ['recombination_residual', 'recombination_residual', 'recombination_residual', 'cv', 'recombination_residual', 'recombination_residual', 'recombination_residual']
+
+[[sys]]
+name = 'shower_scale'
+type = 'variation'
+index = -1
+nsigma = [-3, -2, -1, 0, 1 ,2, 3]
+scale = [-3, -2, -1, 1, 1, 2, 3]
+ordinate = 'cv'
+points = ['shower_scale_down', 'shower_scale_down', 'shower_scale_down', 'cv', 'shower_scale_up', 'shower_scale_up', 'shower_scale_up']
 
 [[sys]]
 name = 'null'

@@ -289,6 +289,26 @@ int main(int argc, char * argv[])
                 // (IsData, IsSignal in variables.h) reflect the current tree.
                 g_isdata   = tree.get_bool_field("isdata",   false);
                 g_issignal = tree.get_bool_field("issignal", false);
+
+                // Wrap each SpillMultiVar to set pvars::g_shower_scale before
+                // event-level execution. Scale is captured by value so trees with
+                // different scales on the same loader remain independent.
+                double shower_scale = tree.get_double_field("shower_energy_scale", 1.0);
+                if(shower_scale != 1.0)
+                {
+                    for(auto & [vname, var] : vars_map)
+                    {
+                        auto inner = var;
+                        var = ana::SpillMultiVar([fn = std::move(inner), s = shower_scale](const caf::SRSpillProxy* sr) {
+                            double prev = pvars::g_shower_scale;
+                            pvars::g_shower_scale = s;
+                            auto result = fn(sr);
+                            pvars::g_shower_scale = prev;
+                            return result;
+                        });
+                    }
+                }
+
                 analysis.AddTreeForSample(sample.get_string_field("name"), tree.get_string_field("name"), vars_map, tree.get_bool_field("sim_only"));
 
                 // Add the exposure tree.
@@ -301,6 +321,21 @@ int main(int argc, char * argv[])
                     // Add the exposure variables to the map.
                     for(const auto & exposure_var : exposure_vars)
                         exposure_vars_map.try_emplace(exposure_var.first, exposure_var.second);
+
+                    if(shower_scale != 1.0)
+                    {
+                        for(auto & [vname, var] : exposure_vars_map)
+                        {
+                            auto inner = var;
+                            var = ana::SpillMultiVar([fn = std::move(inner), s = shower_scale](const caf::SRSpillProxy* sr) {
+                                double prev = pvars::g_shower_scale;
+                                pvars::g_shower_scale = s;
+                                auto result = fn(sr);
+                                pvars::g_shower_scale = prev;
+                                return result;
+                            });
+                        }
+                    }
 
                     // Add the exposure tree for the sample.
                     analysis.AddTreeForSample(sample.get_string_field("name"), tree.get_string_field("name")+"_exposure", exposure_vars_map, tree.get_bool_field("sim_only"));

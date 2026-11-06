@@ -144,7 +144,7 @@ name = "recombination"
 path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/Recomb_Model/*.flat.root"
 ismc = true
 tag = "detector_variation"
-disable = false # Optional: default = false
+disable = true # replaced by recombination_residual in selection_nue_recomb_residual.toml
 
 # ICARUS var09 null
 [[sample]]
@@ -910,15 +910,12 @@ sim_only = false
 issignal = false
 isdata = false
 mode = "reco"
-add_systematics = true
-add_exposure = true
 cut = [
     { name = "no_cut",                    type = "reco" },
     { name = "fiducial_cut",              type = "reco" },
     { name = "flash_cut",                 type = "reco", parameters = [ "@flash_low_t", "@flash_high_t" ] },
     { name = "containment_cut",           type = "reco" },
     { name = "no_muons",                  type = "reco", parameters = [ "@muon_threshold" ] },
-    {name = "pi0_invariant_mass_cut", type = "reco", parameters = ["@pi0_invariant_mass_low", "@pi0_invariant_mass_high"]},
     {name = "two_photons",                type = "reco", parameters =["@photon_threshold"]},
     {name = "no_electrons",                type = "reco", parameters =["@electron_threshold_sb"]},
 ]

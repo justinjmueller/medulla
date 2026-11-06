@@ -15,7 +15,7 @@ name = 'reco_leading_electron_energy'
 bins = [300, 390, 490, 600, 730, 870, 1030, 1240, 1500, 2000, 5000]
 
 [variations]
-keys = ['NuMI_nue', 'induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination', 'null', 'cathode_bend']
+keys = ['NuMI_nue', 'induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination_residual', 'null', 'cathode_bend', 'shower_scale_up', 'shower_scale_down']
 origin = 'events/'
 tree = 'selected'
 result_destination = 'detsys_results/'
@@ -163,13 +163,22 @@ ordinate = 'NuMI_nue'
 points = ['yz_uniformity', 'yz_uniformity', 'yz_uniformity', 'NuMI_nue', 'yz_uniformity', 'yz_uniformity', 'yz_uniformity']
 
 [[sys]]
-name = 'recombination'
+name = 'recombination_residual'
 type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1 ,2, 3]
 scale = [-3, -2, -1, 1, 1, 2, 3]
 ordinate = 'NuMI_nue'
-points = ['recombination', 'recombination', 'recombination', 'NuMI_nue', 'recombination', 'recombination', 'recombination']
+points = ['recombination_residual', 'recombination_residual', 'recombination_residual', 'NuMI_nue', 'recombination_residual', 'recombination_residual', 'recombination_residual']
+
+[[sys]]
+name = 'shower_scale'
+type = 'variation'
+index = -1
+nsigma = [-3, -2, -1, 0, 1 ,2, 3]
+scale = [-3, -2, -1, 1, 1, 2, 3]
+ordinate = 'NuMI_nue'
+points = ['shower_scale_down', 'shower_scale_down', 'shower_scale_down', 'NuMI_nue', 'shower_scale_up', 'shower_scale_up', 'shower_scale_up']
 
 [[sys]]
 name = 'null'

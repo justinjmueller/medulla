@@ -33,6 +33,8 @@
  */
 namespace pvars
 {
+    inline double g_shower_scale = 1.0;
+
     /**
      * @brief Variable for the particle's primary classification.
      * @details This variable returns the primary classification of the particle.
@@ -218,7 +220,10 @@ namespace pvars
     template<class T>
     double calo_ke(const T & p)
     {
-        return p.calo_ke;
+        if constexpr (std::is_same_v<T, caf::SRParticleTruthDLPProxy>)
+            return p.calo_ke;
+        else
+            return p.calo_ke * g_shower_scale;
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, calo_ke, calo_ke);
 

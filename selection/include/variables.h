@@ -303,7 +303,7 @@ namespace vars
                 if(pvars::pid(p) == pvars::kProton) energy -= PROTON_MASS - PROTON_BINDING_ENERGY;
             }
             else if(pcuts::is_primary(p))
-                energy += p.calo_ke;
+                energy += pvars::calo_ke(p);
         }
         return energy/1000.0;
     }
