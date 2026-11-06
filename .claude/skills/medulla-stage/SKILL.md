@@ -1,6 +1,6 @@
 ---
 name: medulla-stage
-description: Run one stage of the medulla grid workflow (create project, selection jobs, merges, phase 1, phase 2, flux systematics, to_gundam) with the owner's approval protocol - preflight, dry-run, ask, run, wait, verify, record, notify. Use when asked to run, relaunch, or check a stage for a project such as nueCCInclusiveSpine31.
+description: Run one stage of the medulla grid workflow (create project, selection jobs, merges, phase 1, phase 2, flux systematics, to_gundam, final gundam merge) with the owner's approval protocol - preflight, dry-run, ask (grid submissions only), run, wait, verify, record, notify. Use when asked to run, relaunch, or check a stage for a project such as nueCCInclusiveSpine31.
 ---
 
 # medulla-stage
@@ -12,7 +12,7 @@ do not rely on memory of them. This skill is the order of operations.
 
 Input: a stage name and a project. Stages: `1` create, `2` selection jobs, `A`
 merge for phase 1, `3` phase 1, `4` phase 2, `B` final merge, `5` flux systematics
-(`add_numi_flux_sys.py`), `6` `to_gundam`. Projects: main
+(`add_numi_flux_sys.py`), `6` `to_gundam`, `7` final gundam merge (main + g4). Projects: main
 `nueCCInclusiveSpine<X>` or nue-enhanced `nueCCInclusiveSpine_nue<X>` under
 `/pnfs/icarus/scratch/users/micarrig`. If the stage or project is missing or
 ambiguous, ask once; do not guess.
@@ -34,17 +34,26 @@ ambiguous, ask once; do not guess.
 - Grid and project stages: run the exact command with `--dry-run` and show the
   owner the summary (job count, tag and SHA, memory/disk, the `jobsub_submit`
   command, any stub/zombie files it would delete).
-- Local stages with no dry-run (merges, 5, 6): print the command, the input and
+- Local stages with no dry-run (merges, 5, 6, 7): print the command, the input and
   output paths, input sizes, and the memory/disk risk. Do not run them to "test".
+  The output must not exist yet (the guard asks before a merge overwrites one).
 - Stage 4 with `-Z`, merges, stage 5: say they are heavy.
 
-## 3. Ask
+## 3. Ask (grid submissions and --yes deletions only)
 
-One question: the exact command(s), the environment (host or `scripts/in_sl7.sh`),
-and the log path. For a stage that submits grid jobs, also ask whether the
-owner wants a push notification to their phone when it finishes (needs Remote
-Control, `/remote-control`). Wait for a yes. A yes covers this stage only, and so
-does the notification choice.
+- Stages that submit grid jobs (2, 4, grid phase 1, relaunches), and any
+  `medulla.py --yes` outside interactive phase 1 and `--test-job`: one question
+  with the exact command(s), the environment, and the log path, plus whether the
+  owner wants a push notification when it finishes (needs Remote Control,
+  `/remote-control`). Wait for a yes. A yes covers this stage only, and so does
+  the notification choice. The guard blocks these in auto mode; the owner
+  switches out of it to approve.
+- Everything else the owner asked for (1 create, a single `--test-job`, merges
+  A/B/7, interactive phase 1, 5, 6): no question. Show the plan from step 2 in a
+  few lines and go on. Push only if the owner asked for one in that request.
+- Interactive phase 1 and `--test-job` carry `-y` (they answer their own
+  confirm prompt, and would also delete stub/zombie outputs). Run the read-only
+  status check first; if it lists any files to delete, stop and ask instead.
 
 ## 4. Run
 
@@ -68,7 +77,7 @@ point to the log file and `<proj>/STATE.md`.
 - Grid stages: `python3 batch/medulla.py -p <proj> -e icarus -Z < /dev/null` without
   `-y` (a delete prompt dying on EOF means failed files exist: list the job IDs).
 - Merges: "X of Y files are readable" and the output file exists. X < Y is reported.
-- Stage 5: each of the four trees processed. Stage 6: a `Processing ...` line per tree.
+- Stage 5: main `all_signal`, `selected`, `true_signal`, `nc_sideband`, `photon_sideband` (productions from 2026-11-03 on) and g4 `selected` processed, each into its `--output` file. Stage 6: a `Processing ...` line per tree.
 
 ## 7. Record
 
@@ -78,11 +87,12 @@ does not exist yet, record it after the project is created.
 
 ## 8. Notify, then stop
 
-If the owner opted in at step 3, `PushNotification`; otherwise the same text in
+If the owner opted in, `PushNotification`; otherwise the same text in
 the chat (under 200 characters, result first, then the question), for
 example `Stage 2 done: 1180/1200 ok, 20 failed. Relaunch the 20, or merge?`. Also
-ask whether to refresh the token before the next submit. Then stop. Do not start
-the next stage or a relaunch until the owner answers.
+ask whether to refresh the token before the next submit. Then stop, unless the
+owner asked for several local stages in one go. Never submit grid jobs or relaunch
+until the owner answers.
 
 ## Stop and report instead of continuing when
 

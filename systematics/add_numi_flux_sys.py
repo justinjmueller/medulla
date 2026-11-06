@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+import os
+import shutil
 import sys
 import uproot
 from ROOT import TFile, TEfficiency, TH1D, TGraphAsymmErrors, RDataFrame, TCanvas
@@ -10,13 +12,29 @@ import ROOT, json
 from math import nan
 
 
-file_name = sys.argv[1]
+# Optional "--output OUT.root": copy the input to OUT.root and write there,
+# so the input file is only read. Without it the input is edited in place.
+args = sys.argv[1:]
+output_name = None
+if '--output' in args:
+    i = args.index('--output')
+    output_name = args[i + 1]
+    del args[i:i + 2]
+
+file_name = args[0]
 if not file_name.endswith('.root'):
     print("Please provide a valid root file")
     sys.exit(1)
+if output_name is not None:
+    if not output_name.endswith('.root'):
+        print("--output must be a .root file")
+        sys.exit(1)
+    if os.path.exists(output_name):
+        print(f"--output {output_name} already exists; refusing to overwrite")
+        sys.exit(1)
 
-numi_dir = sys.argv[2] if len(sys.argv) > 2 else 'events/NuMIFull'
-explicit_trees = sys.argv[3:] if len(sys.argv) > 3 else None
+numi_dir = args[1] if len(args) > 1 else 'events/NuMIFull'
+explicit_trees = args[2:] if len(args) > 2 else None
 
 horn_current = 'fhc'
 file_nu = uproot.open(file_name)
@@ -404,7 +422,16 @@ def write_flux_tree(root_file, directory, treeName, weights):
     main_tree.Write("", ROOT.TObject.kOverwrite)
 
 
-f = ROOT.TFile(file_name, "UPDATE")
+if output_name is not None:
+    print(f"Copying {file_name} -> {output_name}", flush=True)
+    shutil.copyfile(file_name, output_name)
+    write_name = output_name
+else:
+    write_name = file_name
+f = ROOT.TFile(write_name, "UPDATE")
+if not f or f.IsZombie():
+    print(f"Could not open {write_name} for update")
+    sys.exit(1)
 
 for treeName in tree_names:
     print(f"\n--- Processing tree: {treeName} ---")

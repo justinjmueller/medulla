@@ -1,0 +1,18 @@
+# guard_allow.txt -- commands the OWNER has marked as not causing memory issues.
+#
+# Read by scripts/guard_bash.py. One Python regex per line; lines starting with #
+# are comments. Each regex must match a whole simple command (re.fullmatch), i.e.
+# one part of a chain split at ; & | && || or a newline. For
+# `scripts/in_sl7.sh '<cmd>'` the regex is matched against <cmd>.
+#
+# A matching command skips the guard's "ask" rules (so it also runs in auto mode).
+# It never skips the "deny" rules, and a command with $(...) or backticks never
+# matches. The auto-mode classifier and the permission rules in
+# .claude/settings.local.json still apply.
+#
+# Only the owner edits this file: the guard denies Bash writes to it and
+# settings.local.json denies Edit/Write. Claude may propose lines in the chat.
+#
+# Put a note above each line saying why it is light. Examples (not active):
+#   # checkGundamDuplicates.py reads only the gundam trees (< 1 GB)
+#   python3 analysis/checkGundamDuplicates\.py [^ ]+\.root( [^ ]+)*

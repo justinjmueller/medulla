@@ -146,6 +146,7 @@ class SpineSpectra2D(SpineSpectra):
         if self._plotdata is None:
             self._plotdata = {}
             self._binedges = {}
+            self._binedges_y = {}
         if self._plotdata_diagonal is None:
             self._plotdata_diagonal = {}
             self._binedges_diagonal = {}
@@ -176,6 +177,7 @@ class SpineSpectra2D(SpineSpectra):
                 range=(xr, yr), weights=weights[category])
             self._plotdata[self._categories[category]] += h[0]
             self._binedges[self._categories[category]] = h[1]
+            self._binedges_y[self._categories[category]] = h[2]
 
             if self._categories[category] not in self._plotdata_diagonal:
                 self._plotdata_diagonal[self._categories[category]] = np.zeros(self._variables[0]._nbins)
@@ -246,7 +248,8 @@ class SpineSpectra2D(SpineSpectra):
         if show_option == '2d' and self._plotdata is not None:
             values = np.sum([v for v in self._plotdata.values()], axis=0)
             binedges = self._binedges[list(self._plotdata.keys())[0]]
-            
+            binedges_y = self._binedges_y[list(self._plotdata.keys())[0]]
+
             # Find the minimum power of ten that is higher than the
             # maximum value in the plot. This will be used to set the
             # colorbar limits. The power of vmax is then given by the
@@ -257,7 +260,7 @@ class SpineSpectra2D(SpineSpectra):
 
             if (self._variables[0]._custom_bins is None) and (self._variables[1]._custom_bins is None):
                 # Draw uniform bins histogram using imshow
-                ax.imshow(values.T, extent=(binedges[0], binedges[-1], binedges[0], binedges[-1]),
+                ax.imshow(values.T, extent=(binedges[0], binedges[-1], binedges_y[0], binedges_y[-1]),
                         aspect='auto', origin='lower', norm=ln if logz else None)
                 mesh = None
             else:
@@ -306,17 +309,17 @@ class SpineSpectra2D(SpineSpectra):
 
             ax.set_xlabel(self._variables[0]._xlabel if self._xtitle is None else self._xtitle)
             ax.set_ylabel(self._variables[1]._xlabel)
-            ax.set_aspect('equal')
+            # Square only when both axes cover the same range; otherwise a
+            # narrow x range would squash the plot into a tall strip.
+            same_range = np.isclose(binedges[0], binedges_y[0]) and np.isclose(binedges[-1], binedges_y[-1])
+            ax.set_aspect('equal' if same_range else 'auto')
 
-            
-            
-            # Draw the identity line. This must span the full range
-            # of the plot, so we need to find the minimum and maximum
-            # of the range for the plot.
+            # Draw the identity line over the range both axes cover.
             if draw_identity:
-                min_range = min([binedges[0], binedges[-1]])
-                max_range = max([binedges[0], binedges[-1]])
-                ax.plot([min_range, max_range], [min_range, max_range], 'k--')
+                min_range = max(binedges[0], binedges_y[0])
+                max_range = min(binedges[-1], binedges_y[-1])
+                if max_range > min_range:
+                    ax.plot([min_range, max_range], [min_range, max_range], 'k--')
 
             # Draw the colorbar if requested. The color axis may also
             # be logarithmic if requested.

@@ -1,0 +1,18 @@
+# plot_jobs_v32.toml -- plot jobs for the v32 processing (first one with the all_nc truth tree
+# and the reco/true no_electrons, two_photons, pi0_invariant_mass_cut branches).
+# The input path is the expected v32 post-stage-5 file; plot_all.py skips a job whose input is
+# missing. Copy the other jobs from plot_jobs_v31.toml here when v32 is processed.
+# Run: python3 analysis/plot_all.py --manifest analysis/plot_jobs_v32.toml [--only ...] [--dry-run]
+
+# Disabled 2026-11-03: the all_nc truth tree was removed from the selection TOMLs (the
+# sideband is now a background control region, photon_sideband, with no efficiency of its
+# own). Kept for reference; it needs a processing that still has all_nc.
+# # NC pi0 sideband selection efficiency (all_nc + true fiducial/containment as denominator).
+# [[job]]
+# name = "efficiency_nc_sideband"
+# cli = "analysis/plotEfficiencyCLI.py"
+# toml = "analysis/efficiency_nc_sideband.toml"
+# input = "/exp/icarus/data/users/micarrig/merged_final_v32_flux.root"
+# output_dir = "plots_v32/efficiency_nc_sideband"
+# figures = ["selection_efficiency_table", "efficiency_vs_trueVisibleEnergy", "efficiency_vs_truePi0Mass",
+#            "efficiency_vs_trueLeadingPhotonEnergy", "efficiency_vs_trueNeutrinoEnergy"]

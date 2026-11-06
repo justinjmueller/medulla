@@ -13,8 +13,10 @@ the order of the pipeline.
 ## Rules for agents (read first)
 
 1. Never submit grid jobs without explicit approval in the current conversation.
-   This covers `medulla.py --launch-jobs`, `--test-job`, `--variation-phase1`,
-   `--variation-phase2`, and any raw `jobsub_submit`. Approval is per stage: an
+   This covers `medulla.py --launch-jobs`, grid `--variation-phase1`,
+   `--variation-phase2`, relaunches, and any raw `jobsub_submit`. Exception
+   (owner, 2026-10-23): a single `--test-job` (selection, or phase 2 with
+   `--variation-phase2`) runs without approval; still show its dry-run first. Approval is per stage: an
    OK to launch stage 2 is not an OK to start stage 3 or to relaunch failures.
    Before asking, run the same command with `--dry-run` and show the owner its
    output: project, number of jobs, `--tag` and the git SHA it resolves to,
@@ -57,29 +59,45 @@ the order of the pipeline.
    and leave the original untouched. Edits the owner asked for in this
    conversation are fine.
 
-10. Ask before running anything heavy, including scripts you wrote yourself in
-   this session. Plotting scripts load whole trees into memory (the plotting
-   inputs are 30 GB+ files) and have nearly crashed the shared node. Before any
-   such run: use `--dry-run` if it has one, say what it will read, how much
-   memory it may use, and where it writes, and wait for a yes. Never start these
-   with `&`/`nohup` and walk away. Do not `pkill -f` by script name from Bash
-   (the pattern matches the shell running the command); use
-   `pgrep -fa "[n]ame"` to look and kill by PID.
+10. Heavy local work runs when the owner asks for it, without a separate yes
+   (owner's decision, 2026-10-23): plotting, merges (A, B, 7), interactive
+   phase 1, stage 5 (with `--output`), stage 6, and every `--dry-run` or status
+   check, and a single `--test-job`. Only submitting grid jobs (rule 1) and
+   `--yes` deletions (rule 2) wait for an explicit yes. Still check memory first: plotting scripts load whole
+   trees (30 GB+ inputs) and have nearly crashed the ~11 GB GPVM. Use
+   `plot_all.py` (it has its own memory gate); the single plotting CLIs only run
+   where the guard sees at least 64 GB available. Run heavy commands with
+   `run_in_background` and a log, never `&`/`nohup`. Do not start a stage or a
+   rerun the owner did not ask for (a request to change a config is not a
+   request to rerun). Do not `pkill -f` by script name from Bash (the pattern
+   matches the shell running the command); use `pgrep -fa "[n]ame"` to look and
+   kill by PID, and only with the owner's yes.
 
 Enforcement and shortcuts:
 - `scripts/guard_bash.py` is a PreToolUse hook for Bash (wired in
-  `.claude/settings.local.json`). It denies `pkill`/`killall`, `setup_icarus_env.sh`,
-  raw `jobsub_*` and deleting under `/pnfs` or a project dir, and asks for
-  `medulla.py` without `--dry-run`, plotting scripts, merges, stages 5 and 6, and
-  `htgettoken`, and `kill` (even by PID). In auto mode (and `bypassPermissions`/
-  `dontAsk`) every "ask" becomes "deny", because those modes would approve it
-  without the owner seeing a prompt; the owner switches out of auto mode
-  (shift+tab) to approve such a command. Exception: a plotting run (alone, not
-  chained with another guarded command) stays "ask" in auto mode, and
-  `autoMode.soft_deny` in `.claude/settings.local.json` lets it through only when
-  the owner's latest message explicitly approves that run, so they can approve
-  from a phone. Grid/merge/flux/gundam stages and `kill` are in
-  `autoMode.hard_deny` as a second layer. If a command
+  `.claude/settings.local.json`). It checks each part of a chained command on
+  its own, and read-only commands (grep, ls, cat, `sed -n '<range>p'`, find
+  without `-exec`/`-delete`, ...) never trip it by mentioning a name.
+  - deny: `pkill`/`killall`, `setup_icarus_env.sh`, raw `jobsub_*`, deleting or
+    moving under `/pnfs` or a project dir, any write to `scripts/guard_allow.txt`.
+  - ask: `medulla.py` that submits (`--launch-jobs`, `--variation-phase2`,
+    `-r/--relaunch-missing`, grid `--variation-phase1`) unless it is a single
+    `--test-job`/`-T`; `medulla.py --yes` except interactive phase 1 and `--test-job`; plotting CLIs other than
+    `plot_all.py` on a node with < 64 GB available; `hadd`/`mergeFiles.sh` onto an
+    existing output file; `add_numi_flux_sys.py` without `--output`; rm/mv;
+    `kill` (even by PID); `htgettoken`.
+  - everything else runs without asking: all `--dry-run`/`--help`, the status
+    check, `-c`, interactive phase 1, one `--test-job` (with `-y`), `merge_list.py`, merges into a new file,
+    stage 5 with `--output`, `to_gundam`, `plot_all.py`.
+  In auto mode (and `bypassPermissions`/`dontAsk`) every "ask" becomes "deny",
+  because those modes would approve it without the owner seeing a prompt; the
+  owner switches out of auto mode (shift+tab) to approve such a command, which
+  in practice means only real grid submissions. `scripts/guard_allow.txt` is the
+  owner's list of commands marked as not causing memory issues (one regex per
+  line, full match; skips the ask rules, never the deny rules). Only the owner
+  edits it; propose lines in the chat. The `autoMode` block in
+  `settings.local.json` is NOT applied by Claude Code (`claude auto-mode config`
+  shows only the defaults), so the guard is the only enforcement. If a command
   is denied or asked, do not rephrase it to get around the guard; tell the owner.
   Tests: `batch/test_guard_bash.py`.
 - The skill `/medulla-stage <stage> <project>` (`.claude/skills/medulla-stage/`) is
@@ -156,8 +174,9 @@ Python unit tests; it cannot run `jobsub_submit`, `ifdh`, or the C++ binaries.
     those slots, so it cannot share a project or a systematics TOML with
     `selection.toml`. Used only with `NuMI_g4_gundam.toml` (see below).
 - Selection TOML layout: `[parameters]` (thresholds, referenced as `"@name"`),
-  `[general]`, `[[sample]]`, `[[tree]]` (6: event/reco/true modes with `[[cut]]`
-  and `[[branch]]`, including `nc_sideband`, a reco-mode NC control region), `[[category]]`
+  `[general]`, `[[sample]]`, `[[tree]]` (7: event/reco/true modes with `[[cut]]`
+  and `[[branch]]`, including `nc_sideband`, a reco-mode NC pi0 control region, and
+  `photon_sideband`, a reco-mode control region for the photon background), `[[category]]`
   (6 signal/background categories). Samples carry a `tag` (`nominal`,
   `nue_enhanced`, `data`, `detector_variation`, `g4`) that later steps use to
   pick output filenames. Reference: tutorial.md, "The medulla Selection
@@ -197,23 +216,23 @@ above) and so cannot share a project, a per-job systematics template, or a
 |---------|----------------|------------------|----------|
 | main `<proj>` | `selection.toml` | `NuMI_nue_gundam.toml` | nominal splines; the final merged output |
 | nue-enhanced `<proj_nue>` | `selection_nue.toml` | `NuMI_nueEnhanced_gundam.toml` | nue splines |
-| g4 `<proj_g4>` | `selection_g4.toml` | `NuMI_g4_gundam.toml` | G4 reinteraction systematics for the `g4` sample only; combined into the main project's gundam output by hand at the end (stage G) |
+| g4 `<proj_g4>` | `selection_g4.toml` | `NuMI_g4_gundam.toml` | G4 reinteraction systematics for the `g4` sample only; combined into the main project's gundam output by hand at the end (stage 7) |
 
 In phase 2 (main project only), every true electron-neutrino event uses the
 nue-enhanced splines and everything else uses the nominal splines. Phase 2
 therefore needs both `<proj>/variation_splines.root` and the nue splines, so
 `<proj_nue>` must have finished phase 1 before the main project's phase 2.
 The g4 project is independent of all of this: it carries no detector-variation
-samples, so it never touches phase 1/2 or stage 5, and nothing in the main or
+samples, so it never touches phase 1/2, and nothing in the main or
 nue-enhanced projects depends on it finishing first (or at all -- it can run
-whenever, and stage G can wait for it).
+whenever, and stage 7 can wait for it).
 Selection TOML paths are under `selection/toml/icarus_nueCC_inclusive_2026/`,
 systematics TOMLs under `systematics/toml/`.
 
 Run from the repo root on the GPVM. Each Bash call is a fresh shell, so
 environment setup does not carry over; see "Where things run" for which stages
 run on the host (grid submission, outside the container) and which in the SL7
-container (merges A and B, interactive phase 1, stages 5, 6 and G). Project dirs are on
+container (merges A and B, interactive phase 1, stages 5, 6 and 7). Project dirs are on
 PNFS scratch. Merged files and logs live in the project directory (logs
 in `<proj>/logs/`). Capture output:
 `... 2>&1 < /dev/null | tee -a <proj>/logs/<stage>.log` (`< /dev/null` makes an
@@ -263,17 +282,18 @@ that counts too. Set `BEARER_TOKEN_FILE` in every command that submits or runs
 main:  1 create -> 2 selection -> [A merge] -> 3 phase 1 -----------\
 nue:   1 create -> 2 selection -> [A merge] -> 3 phase 1 -> nue splines -> 4 phase 2 (main)
                                                                             -> [B merge] -> 5 flux -> 6 gundam -\
-g4:    1 create -> 2 selection -------------------------------------------[B merge] -> 6 gundam (g4 TOML) -----+-> G merge -> merged_gundam_final.root
+g4:    1 create -> 2 selection -----------------------------[B merge] -> 5 flux (selected) -> 6 gundam (g4 TOML) -+-> 7 merge -> merged_gundam_final.root
 ```
 
 Stages 1 to 3 run once per project (they can run side by side if the owner
 approves both). Stages 4 to 6 run on the main project. The nue-enhanced project
 needs nothing after phase 1 (no phase 2, merge B, or stages 5 and 6). The g4
 project needs only 1, 2, its own merge B (now that `merge_list.py` knows the
-`g4` tag), and its own stage 6 with `NuMI_g4_gundam.toml` -- no phase 1/2 (it
-has no detector-variation samples) and no stage 5 (its tree blocks are all
-`gundam_store_syst = false`, so there is no `_NuMIfluxsimTree` for flux
-systematics to populate). Stage G (new, below) combines the main project's
+`g4` tag), its own stage 5 on the `events/g4/selected` tree only (owner's
+rule: always run it, for `ppfx_cv_weight` and the flux trees, even though
+`NuMI_g4_gundam.toml`'s trees are all `gundam_store_syst = false`), and its
+own stage 6 with `NuMI_g4_gundam.toml` -- no phase 1/2 (it has no
+detector-variation samples). Stage 7 (new, below) combines the main project's
 and the g4 project's gundam outputs; it can run whenever both are ready and
 does not block or get blocked by phase 2/stage 4-5 on the main project.
 
@@ -290,16 +310,17 @@ does not block or get blocked by phase 2/stage 4-5 on the main project.
 | 3 | Phase 1 splines (interactive, no grid; main/nue only) | `python3 batch/medulla.py -p <proj> -e icarus -y --variation-phase1 --variation-interactive -V <T>/NuMI_nue_gundam.toml -I <proj>/merged_stage0.root` (nue project: its own TOML) | `<proj>/variation_splines.root` exists |
 | 4 | Phase 2 apply (main only) | `python3 batch/medulla.py -p <proj> -e icarus -Z -y --variation-phase2 -V <T>/NuMI_nue_gundam.toml [--dataset-tag nominal] <G>` (`--test-job` first for 1 job) | one `output/output_varsys_jobid<NNNN>.root` per `output_systematics_jobid<NNNN>.root` of the selected tag |
 | B | Final merge | `python3 batch/merge_list.py <proj> --output <proj>/merge_list_final.txt` (all tags plus `output_varsys*.root`), then `~/scripts/mergeFiles.sh -d -l <proj>/merge_list_final.txt <proj>/merged_final.root` | `<proj>/merged_final.root` exists; "N of N files are readable" (for g4, `<proj>` = `<proj_g4>`, and there is no `output_varsys*.root` to include) |
-| 5 | Flux systematics + PPFX (main only) | `python3 systematics/add_numi_flux_sys.py <proj>/merged_final.root events/NuMIFull all_signal all_signal_nonmatched selected selected_nonmatched` | log shows each tree processed; `events/NuMIFull/<tree>_NuMIfluxsimTree` and the `ppfx_cv_weight` branch exist |
-| 6 | GUNDAM format | `mkdir -p <proj>/gundam_tmp && cd <proj>/gundam_tmp && <repo>/build/systematics/to_gundam <repo>/<T>/NuMI_nue_gundam.toml <proj>/merged_final.root`, then `mv output.root <proj>/merged_gundam.root` (g4: `<T>/NuMI_g4_gundam.toml` and `<proj_g4>/merged_final.root`) | `<proj>/merged_gundam.root` exists; log has a `Processing events/...` line per `[[tree]]` |
-| G | Final gundam merge (main + g4) | `hadd <proj>/merged_gundam_final.root <proj>/merged_gundam.root <proj_g4>/merged_gundam.root` | `<proj>/merged_gundam_final.root` exists; `events/NuMIFull/...` and `events/g4/...` are both present with no duplicate `(Run, Subrun, Evt)` within either (check with `checkGundamDuplicates.py`, per directory -- the two inputs populate disjoint `events/` subdirectories so plain `hadd` is safe, there is nothing to deduplicate across them) |
+| 5 | Flux systematics + PPFX (main AND g4) | main: `python3 systematics/add_numi_flux_sys.py <proj>/merged_final.root --output <proj>/merged_final_flux.root events/NuMIFull all_signal selected true_signal nc_sideband photon_sideband` (drop `photon_sideband` for productions made before 2026-11-03, which lack it); g4: `python3 systematics/add_numi_flux_sys.py <proj_g4>/merged_final.root --output <proj_g4>/merged_final_flux.root events/g4 selected` | both logs show each tree processed and exit 0; `events/NuMIFull/{all_signal,selected,true_signal,nc_sideband,photon_sideband}_NuMIfluxsimTree` and `events/g4/selected_NuMIfluxsimTree` exist with the same entry counts as their trees, and `ppfx_cv_weight` is in each tree |
+| 6 | GUNDAM format | `mkdir -p <proj>/gundam_tmp && cd <proj>/gundam_tmp && <repo>/build/systematics/to_gundam <repo>/<T>/NuMI_nue_gundam.toml <proj>/merged_final_flux.root`, then `mv output.root <proj>/merged_gundam.root` (g4: `<T>/NuMI_g4_gundam.toml` and `<proj_g4>/merged_final_flux.root`) | `<proj>/merged_gundam.root` exists; log has a `Processing events/...` line per `[[tree]]` |
+| 7 | Final gundam merge (main + g4) | `hadd <proj>/merged_gundam_final.root <proj>/merged_gundam.root <proj_g4>/merged_gundam.root` | `<proj>/merged_gundam_final.root` exists; `events/NuMIFull/...` and `events/g4/...` are both present with no duplicate `(Run, Subrun, Evt)` within either (check with `checkGundamDuplicates.py`, per directory -- the two inputs populate disjoint `events/` subdirectories so plain `hadd` is safe, there is nothing to deduplicate across them) |
 
 Where each stage runs: stages 1, 2 and 4 (and `jobsub_q`) on the host. Merge A,
-phase 1 (interactive), merge B, stage 5, stage 6, and stage G inside the
+phase 1 (interactive), merge B, stage 5, stage 6, and stage 7 inside the
 container: wrap the whole command, e.g. `scripts/in_sl7.sh 'python3 batch/medulla.py -p <proj> -e icarus -y --variation-phase1 --variation-interactive -V ... -I ...'`
 or `scripts/in_sl7.sh 'python3 batch/merge_list.py ... && ~/scripts/mergeFiles.sh -d -l ... ...'`.
-The g4 project only ever uses stages 1, 2, B and 6, so it only ever needs the
-host (1, 2) and the container (B, 6); it never touches phase 1/2 or stage 5.
+The g4 project only ever uses stages 1, 2, B, 5 (g4 `selected` only) and 6,
+so it only ever needs the host (1, 2) and the container (B, 5, 6); it never
+touches phase 1/2.
 
 Phase 1 runs on the node itself (`--variation-interactive`), not on the grid:
 it takes no `--tag`/`--memory`/`--disk`, runs `build/systematics/run_systematics`
@@ -343,13 +364,24 @@ Notes:
   hard-coded to `/exp/icarus/...` and are also rewritten per job by phases 1 and 2.
 - Stage 5 (`add_numi_flux_sys.py`): needs `uproot`, `pandas`, `tqdm` and PyROOT
   (setup script), and reads `/nashome/m/micarrig/icarus/nuESpine/flux.root`
-  (hard-coded, horn current `fhc`). It opens the file in `UPDATE` mode, so it
-  edits `merged_final.root` in place; if it dies midway, redo merge B. Always
-  pass the tree names: with none it processes every TTree in the directory, which
-  includes the `*_multisigmaTree`/`*_variationTree`/`*_NuMIfluxsimTree` trees and
-  will fail or write junk. It loops over events in Python, so it is slow: run it
-  in the background with a log. It reads `Run`, `Subrun`, `Evt`, `true_pdg`,
-  `true_parent_pdg`, `true_neutrino_energy` from each tree.
+  (hard-coded, horn current `fhc`). Always pass `--output <new>.root`: the
+  script then copies the input there and writes only to the copy, so a crash
+  cannot damage `merged_final.root` (without `--output` it edits the input in
+  `UPDATE` mode; that is how v31's first run corrupted its merged file). It
+  refuses an `--output` that already exists. Always pass the tree names: with
+  none it processes every TTree in the directory, which includes the
+  `*_multisigmaTree`/`*_variationTree`/`*_NuMIfluxsimTree` trees and will fail
+  or write junk. Do NOT pass the `*_nonmatched` trees: it crashes on them
+  (`hysyst_beam_horn_2kA_v: length 0 != N`), and v30 never had flux trees for
+  them. The trees are main `all_signal selected true_signal nc_sideband photon_sideband`
+  and g4 `selected` (`nc_sideband` added as a default by the owner on 2026-10-22,
+  `photon_sideband` on 2026-11-03; both have the same truth branches as `selected`; drop
+  `photon_sideband` for productions made before it existed). Do not pass `all` (54M entries).
+  It loops over events in Python (about 1 minute per few thousand events): run
+  it in the background with a log. It reads `Run`, `Subrun`, `Evt`, `true_pdg`,
+  `true_parent_pdg`, `true_neutrino_energy` from each tree, and takes the flux
+  weights from `flux.root`, not from `rec.mc.nu.wgt`, so it works on the g4
+  sample despite that sample's different weight layout.
 - Stage 6 (`to_gundam`): the argument order is `<config.toml> [input.root]`; if
   the input is omitted it uses `output.path` from the TOML (a debug file), so
   always pass it. It writes `output.root` in the CURRENT directory with
@@ -359,11 +391,12 @@ Notes:
   adds), so stage 6 before stage 5 gives a broken file for those trees -- this
   is why `NuMI_nue_gundam.toml`'s trees need stage 5 first. `NuMI_g4_gundam.toml`
   sets `gundam_store_syst = false` on every tree (it only has `multisim`-type
-  `[[sys]]` entries, which this conversion pass does not touch), so the g4
-  project's stage 6 does not need stage 5 and can run right after its merge B.
+  `[[sys]]` entries, which this conversion pass does not touch), so g4 stage 6
+  does not read the flux tree; it still runs on `<proj_g4>/merged_final_flux.root`
+  (after g4 stage 5) so the `ppfx_cv_weight` branch is there.
   The binary is `build/systematics/to_gundam`; rebuild with `make` in `build/`
   after any C++ change (ask first).
-- Stage G (final gundam merge): plain `hadd` of `<proj>/merged_gundam.root` and
+- Stage 7 (final gundam merge): plain `hadd` of `<proj>/merged_gundam.root` and
   `<proj_g4>/merged_gundam.root`. Safe as a flat `hadd` (no need for
   `merge_list.py`/`mergeFiles.sh`'s per-file corruption skipping, since there
   are only two whole, already-verified inputs) because each `to_gundam` run
@@ -373,6 +406,76 @@ Notes:
   overlapping tree paths to deduplicate. Run `checkGundamDuplicates.py` on the
   result anyway (per the owner's `events/g4/selected` and `events/NuMIFull/selected`
   trees) as a sanity check before calling this stage done.
+
+## nc_sideband detector systematics (v31 patch, 2026-10-22)
+
+The normal phase 2 only covers the `[[tree]]` blocks of `NuMI_nue_gundam.toml`
+with splines in `reco_leading_electron_energy`. The sideband has no electrons,
+so those weights are 1. The sideband therefore gets its own detector splines in
+`reco_visible_energy` (GeV, bins `[0.0, 0.33, 0.48, 0.67, 0.96, 5.0]`), built from
+the variation samples' `nc_sideband` tree. Everything runs locally (SL7
+container, `run_systematics`, no grid), in `/exp/icarus/data/users/micarrig/v31_sideband/`.
+On 2026-11-03 the three `NuMI_*sideband_phase*.toml` files were switched to `photon_sideband`
+(see the next section); the v31 `nc_sideband` versions used below are kept as
+`systematics/toml/NuMI_*sideband_phase*_ncpi0_v31.toml`:
+1. main splines: `run_systematics <repo>/systematics/toml/NuMI_nue_sideband_phase1.toml`
+   (input `merged_v31.root`) -> `variation_splines_sideband.root`
+2. nue splines: `run_systematics <repo>/systematics/toml/NuMI_nueEnhanced_sideband_phase1.toml`
+   (input `merged_nue_v31.root`) -> `variation_splines_sideband_nue.root`
+3. apply: `run_systematics <repo>/systematics/toml/NuMI_nue_sideband_phase2.toml` on the
+   merged `events/NuMIFull/nc_sideband` -> `sideband_varsys.root` (only `nc_sideband_variationTree`)
+4. `python3 scripts/graft_tree.py --base merged_final_v31d_flux.root --extra sideband_varsys.root
+   --tree events/NuMIFull/nc_sideband_variationTree --ref events/NuMIFull/nc_sideband
+   --output merged_final_v31e_flux.root` (`--dry-run` first). It copies the base, never writes to it,
+   and checks entry count and Run/Subrun/Evt order (`to_gundam` pairs syst trees by entry index).
+5. stage 6 on `merged_final_v31e_flux.root`. `NuMI_nue_gundam.toml` now has `nc_sideband`
+   `[[tree]]` blocks for NuMIFull (with syst) and data/dataBeamOff/rock (copy).
+Traps:
+- `detsys.cc` single-variable bug: with one entry in `[variations].variable`, `make_hist_key`
+  gives every variation the same histogram key, so all splines are flat. Always list
+  at least two variables. Weights use only the FIRST one (`reco_visible_energy`). The
+  second (`reco_pi0_invariant_mass`) is just for diagnostics.
+- Step 3 must read the pre-stage-5 file (`merged_final_v31d.root`). `copy_with_detsys_weights`
+  assumes Run/Subrun/Evt are the last 3 branches, and stage 5 appends `ppfx_cv_weight`.
+- A future full phase 2 with `NuMI_nue_gundam.toml` would now also write an
+  `nc_sideband_variationTree` with electron-energy (flat) weights. Do not use that one; redo
+  steps 1-4, or add a per-tree detsys variable in C++.
+
+## photon_sideband (added 2026-11-03); `all_nc` removed
+
+- `photon_sideband` (reco mode, in all three selection TOMLs) is a control region for the
+  photon-producing background (NC + numu CC), replacing the idea of an NC-only sideband.
+  Cuts: fiducial, flash, containment, `no_muons`, `no_electrons` with threshold 0 (no primary
+  reco electron at all, so it is orthogonal to `selected`), `leading_photon_energy_cut`
+  (`@photon_sb_threshold` = 400 MeV) and `photon_primary_softmax_cut` (`@primary_softmax`,
+  `@greater_than`; new C++ cut in `selection/include/cuts.h`, the leading-photon version of
+  `primary_softmax_cut`). Branch list copied from `nc_sideband`.
+- Why: the NC pi0 sideband is ~70% RES at low W, while the selected background is ~56% DIS;
+  the v31p2 DIS x0.5/x1.5 fake studies gave +8.0%/-5.9% EleE bias. In MC the photon sideband
+  matches the selected background's DIS fraction and W in each reco_visible_energy bin
+  (~4,600 events, 3.6% signal). Study: gundam `configsNue/notes/sideband_note/`.
+- Bin it in `reco_visible_energy` in the fit. Like `nc_sideband` it has no electrons, so the
+  normal phase 2 gives it flat detector weights. Its detector splines are made with the same
+  local procedure as "nc_sideband detector systematics" above (steps 1-5), using
+  `systematics/toml/NuMI_nue_sideband_phase1.toml`, `NuMI_nueEnhanced_sideband_phase1.toml` and
+  `NuMI_nue_sideband_phase2.toml`, which now target `photon_sideband`: `reco_visible_energy`
+  bins `[0.0, 0.81, 1.1, 1.4, 5.0]` GeV (from `determine_bins` in `analysis/binning.ipynb`,
+  purity/stability >= 0.5, same settings as for `nc_sideband`; the GUNDAM files are
+  `binnings/binning_PhotonSidebandVisE{Nominal,}.txt`, the plain one with each bin halved),
+  diagnostic second variable
+  `reco_leading_photon_energy` (needed only for the single-variable bug), outputs
+  `variation_splines_photon_sideband{,_nue}.root` and `photon_sideband_varsys.root`. Their input
+  and splines paths are `CHANGE_ME` placeholders: set them to a production that has the tree
+  (v31 does not). Step 4 grafts `events/NuMIFull/photon_sideband_variationTree` with
+  `--ref events/NuMIFull/photon_sideband`. `NuMI_nue_gundam.toml` has its `[[tree]]` blocks
+  (NuMIFull add_weights; data/dataBeamOff/rock copy).
+- It overlaps `nc_sideband` (most events have >= 2 photons). They cannot both go into the
+  GUNDAM fit as independent samples unless one is made orthogonal (e.g. a pi0 mass veto).
+- `all_nc` (the NC pi0 sideband's truth tree for an efficiency) was removed from the
+  selection TOMLs on 2026-11-03: a background control region has no efficiency to measure.
+  `analysis/efficiency_nc_sideband.toml` and its `plot_jobs_v32.toml` job are kept but
+  disabled. Every interaction tree still carries the `no_electrons`, `two_photons` and
+  `pi0_invariant_mass_cut` `type = "both"` branches.
 
 ## Failures and relaunching
 
@@ -399,13 +502,16 @@ deleted and the jobs are resubmitted. Do not run `-y` to just look.
 ## Stage protocol: notify, then ask (required)
 
 The owner decides a stage at a time whether to get phone notifications.
-When asking to start a plotting run or a grid submission (any job-submitting
-stage), also ask in the same question: "Push notifications to your phone when
-it finishes, so you can answer from there?" If yes, check that Remote Control is
+When asking to start a grid submission (any job-submitting stage), also ask in
+the same question: "Push notifications to your phone when it finishes, so you
+can answer from there?" Local stages and plots that the owner asked for start
+without a question; send a push for them if the owner asked for one in that
+request (otherwise report in the chat). If yes, check that Remote Control is
 connected (the owner runs `/remote-control`) and send a `PushNotification` at
 step 3 below; if no, report in the chat only. The answer covers that run only;
-ask again next time. Either way, nothing moves on without the owner's decision.
-After submitting a stage (once approved):
+ask again next time. Either way, nothing moves on to a stage the owner did not
+ask for.
+After submitting or starting a stage:
 1. Start a background watch (Bash `run_in_background` with an `until` loop on
    the queue, or `Monitor`) so you are woken when the jobs leave the queue. For
    the local stages (merges A and B, stages 5 and 6) there is no queue: run the
@@ -419,8 +525,9 @@ After submitting a stage (once approved):
    with the result and the question); otherwise put the same text in the chat.
    For example: `Stage 2 done: 1180/1200 ok, 20 failed. Relaunch the 20, or go on to merge?`
    or `Merge A done, 1200/1200 readable. Start phase 1?`
-4. Stop and wait for the owner's reply. Do not start the next stage, relaunch,
-   or run `-y` before they answer.
+4. Stop and wait for the owner's reply, unless they asked for a sequence of
+   stages in one go (then continue with the next local stage in it). Never
+   submit grid jobs, relaunch, or run `-y` before they answer.
 
 Notification caveats: `PushNotification` reaches the phone only if Remote
 Control is connected for this session, and it is skipped when the owner is

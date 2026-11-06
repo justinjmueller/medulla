@@ -944,6 +944,33 @@ namespace cuts
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Reco, primary_softmax_cut, primary_softmax_cut);
 
+    /**
+     * @brief Cut on the primary softmax score of the leading photon.
+     * @details Same as primary_softmax_cut, but on the leading photon (highest
+     * kinetic energy particle with photon PID) instead of the leading electron.
+     * Used by the photon sideband.
+     * @tparam T the type of interaction (reco).
+     * @param obj the interaction to select on.
+     * @param params the softmax threshold and the direction of the cut (1.0
+     * for greater than, -1.0 for less than, 0.0 for equal to).
+     * @return true if the leading photon's primary softmax passes the cut.
+    */
+    template<class T>
+    bool photon_primary_softmax_cut(const T & obj, std::vector<double> params={0.5, 1.0})
+    {
+        if(params.size() != 2)
+            throw std::invalid_argument("photon_primary_softmax_cut requires exactly two parameters: the softmax threshold and the direction of the cut.");
+
+        size_t i = selectors::leading_photon(obj);
+        if (i == kNoMatch) return false;
+        const auto & p = obj.particles[i];
+
+        if (std::isnan(pvars::primary_softmax(p)))
+            return false;
+        return checkSoftmax(pvars::primary_softmax(p), params[0], params[1]);
+    }
+    REGISTER_CUT_SCOPE(RegistrationScope::Reco, photon_primary_softmax_cut, photon_primary_softmax_cut);
+
     template<class T>
     bool leading_ele_energy_cut(const T & obj, std::vector<double> params={25.0})
     {

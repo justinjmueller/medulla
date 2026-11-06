@@ -1,0 +1,244 @@
+# NOTE 2026-11-03: the all_nc tree was removed from the selection TOMLs, so no processing
+# after that date has this config's signal tree. Kept for reference.
+# efficiency_nc_sideband.toml -- selection efficiency of the NC pi0 sideband (tree nc_sideband).
+# Signal = the all_nc truth tree (true NC, no e >= 100 MeV, no mu, exactly two primary photons
+# >= 25 MeV, true pi0 mass in [100, 180) MeV) with true fiducial and true containment applied
+# below as `presel`. Numerator = the nc_sideband reco cuts, read from the reco_* cut-flag
+# branches of the matched reco interaction (same cuts and order as selection.toml's nc_sideband).
+# NuMIFullNonSel adds the signal events with no reco match to the denominator.
+# Needs a selection processing that has all_nc (v32 or later); v31 does not.
+# Run: analysis/plot_jobs_v32.toml, job 'efficiency_nc_sideband'.
+
+[[this_includes]]
+file = '/nashome/m/micarrig/icarus/nuESpine/medulla/spineplot/configurations/common/styles.toml'
+
+[[this_includes]]
+file = '/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/systematic_recipes.toml'
+
+[samples]
+[samples.NuMIFull]
+key = "NuMIFull"
+exposure_type = "pot"
+trees = ['all_nc']
+systematics = []
+branches = ["true_category",
+            "true_fiducial_cut",
+            "true_containment_cut",
+            "reco_no_cut",
+            "reco_fiducial_cut",
+            "reco_flash_cut",
+            "reco_containment_cut",
+            "reco_no_muons",
+            "reco_two_photons",
+            "reco_pi0_invariant_mass_cut",
+            "reco_no_electrons",
+            "true_neutrino_energy",
+            "true_visible_energy",
+            "true_pi0_invariant_mass",
+            "true_leading_photon_energy",
+            ]
+presel = "true_fiducial_cut == 1 and true_containment_cut == 1"
+
+[samples.NuMIFullNonSel]
+key = "NuMIFull"
+exposure_type = "pot"
+trees = ['all_nc_nonmatched']
+systematics = []
+branches = ["true_category",
+            "true_fiducial_cut",
+            "true_containment_cut",
+            "reco_no_cut",
+            "reco_fiducial_cut",
+            "reco_flash_cut",
+            "reco_containment_cut",
+            "reco_no_muons",
+            "reco_two_photons",
+            "reco_pi0_invariant_mass_cut",
+            "reco_no_electrons",
+            "true_neutrino_energy",
+            "true_visible_energy",
+            "true_pi0_invariant_mass",
+            "true_leading_photon_energy",
+            ]
+presel = "true_fiducial_cut == 1 and true_containment_cut == 1"
+
+[output]
+path = 'plots/'
+
+[analysis]
+ordinate_sample = 'NuMIFull'
+category_branch = 'true_category'
+# Every all_nc event is signal; one group for all categories.
+category_assignment = [
+    [0, 1, 2, 3, 4, 5, 6],
+]
+category_labels = ['NC $\pi^0$']
+category_colors = ['C0']
+category_types = ['histogram']
+
+[variables]
+[variables.true_visible_energy]
+key = 'true_visible_energy'
+nbins = 5
+range = [0.0, 5.0]
+binning_scheme = 'custom_bins'
+custom_bins = [0.0, 0.33, 0.48, 0.67, 0.96, 5.0]   # sideband detector-systematic bins
+xlabel = 'True Visible Energy [GeV]'
+
+[variables.true_pi0_invariant_mass]
+key = 'true_pi0_invariant_mass'
+nbins = 30
+range = [0.0, 300.0]
+xlabel = 'True $\pi^0$ Invariant Mass [MeV]'
+
+[variables.true_leading_photon_energy]
+key = 'true_leading_photon_energy'
+nbins = 24
+range = [0.0, 1200.0]
+xlabel = 'True Leading Photon Energy [MeV]'
+
+[variables.true_neutrino_energy]
+key = 'true_neutrino_energy'
+nbins = 20
+range = [0, 5]
+xlabel = 'True Neutrino Energy [GeV]'
+
+# FIGURE 1: cut-by-cut table
+[[figure]]
+name = 'selection_efficiency_table'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+title = 'NC $\pi^0$ Sideband Selection Efficiency'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'true_visible_energy'
+groups = ['NC $\pi^0$']
+
+[figure.artists.cuts]
+reco_no_cut = 'Total Events'
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_no_muons = 'No Muon-like Particles'
+reco_pi0_invariant_mass_cut = '100 < $m_{\gamma\gamma}$ < 180 MeV'
+reco_two_photons = 'Exactly Two Photons'
+reco_no_electrons = 'No Electrons > 100 MeV'
+
+[figure.artists.draw_kwargs]
+show_option = 'table'
+percentage = true
+show_seqeff = true
+show_unseqeff = true
+show_purity = false
+show_counts = true
+
+# FIGURES 2-5: efficiency vs a true variable (cumulative over all cuts)
+[[figure]]
+name = 'efficiency_vs_trueVisibleEnergy'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+title = 'NC $\pi^0$ Sideband Efficiency vs True Visible Energy'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'true_visible_energy'
+groups = ['NC $\pi^0$']
+xtitle = 'True Visible Energy [GeV]'
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_no_muons = 'No Muon-like Particles'
+reco_pi0_invariant_mass_cut = '100 < $m_{\gamma\gamma}$ < 180 MeV'
+reco_two_photons = 'Exactly Two Photons'
+reco_no_electrons = 'No Electrons > 100 MeV'
+
+[figure.artists.draw_kwargs]
+show_option = 'differential'
+percentage = true
+show_seqeff = true
+show_unseqeff = false
+
+[[figure]]
+name = 'efficiency_vs_truePi0Mass'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+title = 'NC $\pi^0$ Sideband Efficiency vs True $\pi^0$ Mass'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'true_pi0_invariant_mass'
+groups = ['NC $\pi^0$']
+xtitle = 'True $\pi^0$ Invariant Mass [MeV]'
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_no_muons = 'No Muon-like Particles'
+reco_pi0_invariant_mass_cut = '100 < $m_{\gamma\gamma}$ < 180 MeV'
+reco_two_photons = 'Exactly Two Photons'
+reco_no_electrons = 'No Electrons > 100 MeV'
+
+[figure.artists.draw_kwargs]
+show_option = 'differential'
+percentage = true
+show_seqeff = true
+show_unseqeff = false
+
+[[figure]]
+name = 'efficiency_vs_trueLeadingPhotonEnergy'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+title = 'NC $\pi^0$ Sideband Efficiency vs True Leading Photon Energy'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'true_leading_photon_energy'
+groups = ['NC $\pi^0$']
+xtitle = 'True Leading Photon Energy [MeV]'
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_no_muons = 'No Muon-like Particles'
+reco_pi0_invariant_mass_cut = '100 < $m_{\gamma\gamma}$ < 180 MeV'
+reco_two_photons = 'Exactly Two Photons'
+reco_no_electrons = 'No Electrons > 100 MeV'
+
+[figure.artists.draw_kwargs]
+show_option = 'differential'
+percentage = true
+show_seqeff = true
+show_unseqeff = false
+
+[[figure]]
+name = 'efficiency_vs_trueNeutrinoEnergy'
+type = 'SimpleFigure'
+style = 'basic_icarus'
+title = 'NC $\pi^0$ Sideband Efficiency vs True Neutrino Energy'
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'true_neutrino_energy'
+groups = ['NC $\pi^0$']
+xrange = [0, 5]
+xtitle = 'True Neutrino Energy [GeV]'
+
+[figure.artists.cuts]
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_no_muons = 'No Muon-like Particles'
+reco_pi0_invariant_mass_cut = '100 < $m_{\gamma\gamma}$ < 180 MeV'
+reco_two_photons = 'Exactly Two Photons'
+reco_no_electrons = 'No Electrons > 100 MeV'
+
+[figure.artists.draw_kwargs]
+show_option = 'differential'
+percentage = true
+show_seqeff = true
+show_unseqeff = false

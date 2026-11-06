@@ -756,6 +756,11 @@ def run_variation_phase1_interactive(
     cfg['input']['path'] = variation_input
     cfg['output']['path'] = 'variation_splines.root'
     cfg.pop('tree', None)
+    # Phase 1 builds splines. With splines_file set, run_systematics loads
+    # pre-built splines instead and writes an empty output. Phase 2 sets
+    # these keys itself, so drop them here.
+    for k in ('splines_file', 'splines_file_nue'):
+        cfg.get('variations', {}).pop(k, None)
 
     print(f"{_INFO} -- Running Phase 1 interactively:")
     print(f"{_INFO} --   TOML:   {variation_toml_path}")
