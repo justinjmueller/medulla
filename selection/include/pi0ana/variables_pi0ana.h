@@ -260,7 +260,7 @@ namespace vars::pi0ana
      * @return the enumerated topology of the interaction.
      */
     template<class T>
-    double category_topology_ncpi0_simple2(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params={})
+    double category_topology_ncpi0_complete(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params={})
     {
 		double num_primary_pi0s = utilities::true_primary_pi0_multiplicity(obj, {0.0});
 
@@ -283,7 +283,7 @@ namespace vars::pi0ana
 	    }
 	    return cat;
     }
-    REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_ncpi0_simple2, category_topology_ncpi0_simple2);
+    REGISTER_VAR_SCOPE(RegistrationScope::True, category_topology_ncpi0_complete, category_topology_ncpi0_complete);
 
 	/**
      * @brief Variable for enumerating interaction topologies.
