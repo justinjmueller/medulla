@@ -617,6 +617,12 @@ Notify on both success and failure. A silent failure is worse than a noisy one.
 ## Open items for the owner
 
 - The GUNDAM fit commands themselves (after stage 6).
+- TODO (found 2026-11-09, v32): `run_systematics` silently drops events. In the nue project's
+  `NuMI_nue` sample, jobs 49 and 74 (same in v31 and v32) each have one more event in
+  `output_jobid*.root` `selected` than in `output_systematics_jobid*.root` `selected` +
+  `selected_nonmatched` combined (206 vs 205, 228 vs 227). Over all 80 jobs: 16,555 selected,
+  16,551 in the systematics `selected`, 2 in `selected_nonmatched`, 2 lost with no record.
+  Find why (weight matching / entry loop in `systematics/src/trees.cc`, `weight_reader.cc`).
 
 ## Where we left off (2026-10-09)
 

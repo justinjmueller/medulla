@@ -29,7 +29,7 @@ pot_csv = '/exp/icarus/app/users/micarrig/nuESpine/medulla/plots_v31/pot/detsys_
 pot_csv_set = 'main'
 pot_csv_alias = { recombination_residual = 'recombination', shower_scale_up = 'cv', shower_scale_down = 'cv' }
 splines_file = '/pnfs/icarus/scratch/users/micarrig/nueCCInclusiveSpine30/variation_splines.root'
-splines_file_nue = '/pnfs/icarus/scratch/users/micarrig/nueCCInclusiveSpine_nue_31/variation_splines.root'
+splines_file_nue = '/pnfs/icarus/scratch/users/micarrig/nueCCInclusiveSpine_nue_32/variation_splines.root'
 nue_categories = [0, 1]
 
 [[tree]]
