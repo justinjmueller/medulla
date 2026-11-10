@@ -386,5 +386,36 @@ namespace vars::pi0ana
     }
     REGISTER_VAR_SCOPE(RegistrationScope::True, ncpi0_truth_cut_study, ncpi0_truth_cut_study);
 
+	/**
+     * @brief Variable counting true primary pi0s that underwent a Dalitz decay.
+     * @details A primary pi0 is counted as a Dalitz decay (pi0 -> e+ e- gamma)
+     * if any of its primary daughters (grouped by parent track ID, as in
+     * utilities::get_true_pi0s, i.e. the same pi0s counted by the pi0
+     * multiplicity) is an electron or positron. Conversion e+e- of the decay
+     * photons have a photon parent and are therefore not counted.
+     * @param obj the interaction to apply the variable on.
+     * @param params params[0] is the pi0 KE threshold in MeV (default 0).
+     * @return the number of primary pi0s with a Dalitz decay (0 for none).
+     */
+	template<class T>
+    double pi0_dalitz(const caf::SRInteractionTruthDLPProxy & obj, std::vector<double> params={})
+    {
+		if(params.empty()) params = {0.0};
+		double n_dalitz = 0;
+		for(const auto & entry : utilities::get_true_pi0s(obj, true, params))
+		{
+			for(size_t idx : entry.second)
+			{
+				if(std::abs(obj.particles[idx].pdg_code) == 11)
+				{
+					++n_dalitz;
+					break;
+				}
+			}
+		}
+		return n_dalitz;
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::True, pi0_dalitz, pi0_dalitz);
+
 }
 #endif // VARS_PI0ANA_H
