@@ -59,6 +59,47 @@ namespace selectors
     }
 
     /**
+     * @brief Finds the index corresponding to the subleading particle of the
+     * specified particle type.
+     * @details The subleading particle is defined as the particle with the
+     * second highest kinetic energy among particles of the given type. The
+     * same selection rules as @ref leading_particle_index apply (particles
+     * with a kinetic energy that is not strictly positive are ignored), so
+     * the leading and subleading indices are never the same particle.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @param pid of the particle type.
+     * @return the index of the subleading particle (second highest KE), or
+     * kNoMatch if there are fewer than two such particles.
+     */
+    template <class T>
+    size_t subleading_particle_index(const T & obj, uint16_t pid)
+    {
+        double leading_ke(0), subleading_ke(0);
+        size_t index(kNoMatch), subleading_index(kNoMatch);
+        for(size_t i(0); i < obj.particles.size(); ++i)
+        {
+            const auto & p = obj.particles[i];
+            if(pvars::pid(p) != pid)
+                continue;
+            double energy(pvars::ke(p));
+            if(energy > leading_ke)
+            {
+                subleading_ke = leading_ke;
+                subleading_index = index;
+                leading_ke = energy;
+                index = i;
+            }
+            else if(energy > subleading_ke)
+            {
+                subleading_ke = energy;
+                subleading_index = i;
+            }
+        }
+        return subleading_index;
+    }
+
+    /**
      * @brief Finds the index corresponding to the leading primary particle of
      * the specified particle type.
      * @details Like leading_particle_index, but restricted to particles
@@ -306,6 +347,23 @@ namespace selectors
         return leading_particle_index(obj, pvars::kProton);
     }
     REGISTER_SELECTOR(leading_proton, leading_proton);
+
+    /**
+     * @brief Finds the index corresponding to the subleading proton.
+     * @details The subleading proton is defined as the proton with the second
+     * highest kinetic energy.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return the index of the subleading proton (second highest KE), or
+     * kNoMatch if the interaction has fewer than two protons (the framework
+     * then returns NaN for any variable using this selector).
+     */
+    template<class T>
+    size_t subleading_proton(const T & obj)
+    {
+        return subleading_particle_index(obj, pvars::kProton);
+    }
+    REGISTER_SELECTOR(subleading_proton, subleading_proton);
 
     /**
      * @brief Finds the index corresponding to the leading primary photon.

@@ -47,6 +47,23 @@ namespace biselectors
     REGISTER_BISELECTOR(muon_proton, muon_proton);
 
     /**
+     * @brief Selects the leading muon and subleading proton.
+     * @details The leading muon is the muon with the highest kinetic energy
+     * and the subleading proton is the proton with the second highest kinetic
+     * energy.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to operate on.
+     * @return pair of indices: {leading_muon, subleading_proton}. The second
+     * index is kNoMatch if there are fewer than two protons.
+     */
+    template<class T>
+    std::pair<size_t, size_t> muon_subleading_proton(const T & obj)
+    {
+        return { selectors::leading_muon(obj), selectors::subleading_proton(obj) };
+    }
+    REGISTER_BISELECTOR(muon_subleading_proton, muon_subleading_proton);
+
+    /**
      * @brief Selects the two longest tracks in the interaction.
      * @details The longest and second longest tracks are defined by their
      * track length as calculated upstream in SPINE.
