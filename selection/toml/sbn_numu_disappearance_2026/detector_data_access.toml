@@ -104,6 +104,23 @@ branch = [
     { name = "proton_softmax",    type = "reco_particle", selector = "leading_proton" },
     { name = "mip_softmax",       type = "reco_particle", selector = "leading_proton" },
     { name = "hadron_softmax",    type = "reco_particle", selector = "leading_proton" },
+    { name = "start_x",           type = "reco_particle", selector = "subleading_proton" },
+    { name = "start_y",           type = "reco_particle", selector = "subleading_proton" },
+    { name = "start_z",           type = "reco_particle", selector = "subleading_proton" },
+    { name = "end_x",             type = "reco_particle", selector = "subleading_proton" },
+    { name = "end_y",             type = "reco_particle", selector = "subleading_proton" },
+    { name = "end_z",             type = "reco_particle", selector = "subleading_proton" },
+    { name = "start_dir_x",       type = "reco_particle", selector = "subleading_proton" },
+    { name = "start_dir_y",       type = "reco_particle", selector = "subleading_proton" },
+    { name = "start_dir_z",       type = "reco_particle", selector = "subleading_proton" },
+    { name = "calo_csda_diff",    type = "reco_particle", selector = "subleading_proton" },
+    { name = "primary_softmax",   type = "reco_particle", selector = "subleading_proton" },
+    { name = "secondary_softmax", type = "reco_particle", selector = "subleading_proton" },
+    { name = "muon_softmax",      type = "reco_particle", selector = "subleading_proton" },
+    { name = "pion_softmax",      type = "reco_particle", selector = "subleading_proton" },
+    { name = "proton_softmax",    type = "reco_particle", selector = "subleading_proton" },
+    { name = "mip_softmax",       type = "reco_particle", selector = "subleading_proton" },
+    { name = "hadron_softmax",    type = "reco_particle", selector = "subleading_proton" },
 ]
 
 [[tree]]
