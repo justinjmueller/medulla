@@ -66,6 +66,7 @@ Run with:
 
 import re
 import shlex
+import shutil
 import sqlite3
 import subprocess
 import textwrap
@@ -1513,6 +1514,7 @@ class TestFinalizePrefix:
         dry_run = True
         workers = 1
         prefix = ''
+        exclude_roles = None
 
         def __init__(self, campaign_dir, prefix=''):
             self.campaign = str(campaign_dir)
@@ -1571,6 +1573,93 @@ class TestFinalizePrefix:
         run2 = {n for n in names if n.startswith("run2_")}
         assert run1 and run2
         assert run1.isdisjoint(run2)
+
+
+@skip_finalize
+class TestFinalizeExcludeRoles:
+    """cmd_finalize's --exclude-roles drops whole roles from the merge plan,
+    so a role finalized in an earlier run (detector variations, say) is not
+    merged a second time when the rest of the campaign is finalized."""
+
+    def _make_campaign(self, workspace, name):
+        """Build an alpha campaign, which carries two roles (primary and
+        data_blind_safe) across two experiments, and give every project one
+        completed output file so a merge can actually be planned."""
+        analyses = discover_analyses(workspace["toml_root"])
+        units = expand_campaign(
+            analyses, workspace["catalog"], analysis_filter=["alpha"]
+        )
+        campaign_dir = workspace["root"] / f"campaign_{name}"
+        fake_sample = {"name": "sbnd_mc", "path": ["/fake/0.root"],
+                       "ismc": True, "disable": False}
+        with mock.patch("utilities.get_samples", return_value=[fake_sample]):
+            create_campaign(
+                campaign_dir=campaign_dir,
+                project_units=units,
+                catalog_path=workspace["catalog"],
+                name=f"campaign_{name}",
+                tag="v1.0",
+            )
+        for proj_dir in campaign_dir.iterdir():
+            if proj_dir.is_dir() and (proj_dir / "project.db").exists():
+                (proj_dir / "output" / "output_jobid0000.root").write_bytes(b"x" * 2048)
+        return campaign_dir
+
+    class _Args:
+        experiment = None
+        dry_run = True
+        workers = 1
+        prefix = ''
+        exclude_roles = None
+
+        def __init__(self, campaign_dir, exclude_roles=None):
+            self.campaign = str(campaign_dir)
+            self.name = None
+            self.exclude_roles = exclude_roles
+
+    def _plan(self, campaign_dir, exclude_roles=None):
+        """Run a dry-run finalize and return the names it planned to write."""
+        with mock.patch("builtins.input",
+                        side_effect=AssertionError("must not prompt in dry-run")):
+            campaign.cmd_finalize(self._Args(campaign_dir, exclude_roles))
+        d = campaign_dir / "filelists"
+        return {p.name for p in d.iterdir()} if d.exists() else set()
+
+    def test_excluded_role_is_left_out_of_the_merge_plan(self, workspace):
+        campaign_dir = self._make_campaign(workspace, "excl")
+
+        everything = self._plan(campaign_dir)
+        assert any("data_blind_safe" in n for n in everything), \
+            "fixture should produce a data_blind_safe project to exclude"
+        assert any("primary" in n for n in everything)
+
+        shutil.rmtree(campaign_dir / "filelists")
+        kept = self._plan(campaign_dir, exclude_roles=["data_blind_safe"])
+
+        assert kept, "excluding one role must still finalize the others"
+        assert not any("data_blind_safe" in n for n in kept)
+        assert any("primary" in n for n in kept)
+
+    def test_unmatched_role_warns_and_changes_nothing(self, workspace, capsys):
+        """A typo'd role would otherwise silently re-merge exactly what the
+        caller was trying to skip, so it has to be reported."""
+        campaign_dir = self._make_campaign(workspace, "excltypo")
+
+        everything = self._plan(campaign_dir)
+        shutil.rmtree(campaign_dir / "filelists")
+        capsys.readouterr()
+
+        kept = self._plan(campaign_dir, exclude_roles=["detvars"])
+        out = capsys.readouterr().out
+
+        assert kept == everything
+        assert "detvars" in out and "matched no project" in out
+
+    def test_excluding_every_role_plans_nothing(self, workspace):
+        campaign_dir = self._make_campaign(workspace, "exclall")
+        kept = self._plan(campaign_dir,
+                          exclude_roles=["primary", "data_blind_safe"])
+        assert kept == set()
 
 
 class TestFinalizeCatalogSplit:

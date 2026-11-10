@@ -1753,6 +1753,27 @@ def cmd_finalize(args):
             curs.execute("SELECT * FROM projects ORDER BY analysis, role, experiment")
         rows = list(curs.fetchall())
 
+    # Drop any roles the caller asked to leave alone. The motivating case is a
+    # role whose outputs were merged in an earlier run (detector variations,
+    # say) and that should not be re-merged when finalizing the rest of the
+    # campaign.
+    excluded = set(args.exclude_roles or [])
+    if excluded:
+        present = {row['role'] for row in rows}
+        # A role that matches nothing is almost certainly a typo, and staying
+        # quiet about it would silently re-merge exactly what the caller was
+        # trying to skip.
+        for role in sorted(excluded - present):
+            print(f"{_TAG_FINALIZE} {_A.YELLOW}Warning:{_A.RESET} --exclude-roles "
+                  f"'{role}' matched no project. Roles present: "
+                  f"{', '.join(sorted(present)) or '(none)'}")
+        kept = [row for row in rows if row['role'] not in excluded]
+        n_dropped = len(rows) - len(kept)
+        if n_dropped:
+            print(f"{_TAG_FINALIZE} Excluding {n_dropped} project(s) with role(s): "
+                  f"{', '.join(sorted(excluded & present))}")
+        rows = kept
+
     if not rows:
         print(f"{_TAG_FINALIZE} No projects matched.")
         return
@@ -1960,6 +1981,12 @@ def main():
                               help='Registered short name (see campaigns subcommand)')
     p_finalize.add_argument('--experiment', metavar='EXP',
                             help='Restrict finalization to one experiment')
+    p_finalize.add_argument('--exclude-roles', metavar='ROLE', nargs='+',
+                            dest='exclude_roles',
+                            help='Skip projects with these roles (repeatable list). '
+                                 'Useful to avoid re-merging a role that was already '
+                                 'finalized in an earlier run, e.g. --exclude-roles detvar. '
+                                 'A role that matches no project is reported as a warning.')
     p_finalize.add_argument('--prefix', metavar='PREFIX', default='',
                             help='Prepend PREFIX to every merged output filename '
                                  '(and its @filelist / dry-run script), to avoid '
