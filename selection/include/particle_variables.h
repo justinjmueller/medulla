@@ -803,23 +803,63 @@ namespace pvars
 
     /**
      * @brief Variable for the magnitude of the particle momentum.
-     * @details The momentum is calculated upstream in the SPINE reconstruction
-     * using the kinetic energy and mass of the particle.
+     * @details For true particles this is the true momentum magnitude. For
+     * reconstructed particles it is derived from the same kinetic energy and
+     * mass used everywhere else in the framework, i.e. @ref pvars::ke and
+     * @ref pvars::mass, which follow the configured PID function (pidfn):
+     * p = sqrt(ke * (ke + 2 * mass)). It therefore stays consistent with the
+     * chosen PID scheme, unlike the value stored upstream in SPINE, which
+     * assumes the PID and energy estimator used by SPINE itself.
      * @tparam T the type of particle (true or reco).
      * @param p the particle to apply the variable on.
-     * @return the magnitude of the particle momentum.
+     * @return the magnitude of the particle momentum in MeV/c, or NaN if the
+     * kinetic energy or mass is unavailable (or the kinetic energy is
+     * negative).
      */
     template<class T>
     double p(const T & p)
     {
-        return p.p;
+        if constexpr (std::is_same_v<T, caf::SRParticleTruthDLPProxy>)
+            return p.p;
+        else
+        {
+            double kinetic(pvars::ke(p)), m(pvars::mass(p));
+            if(!std::isfinite(kinetic) || !std::isfinite(m) || kinetic < 0)
+                return PLACEHOLDERVALUE;
+            return std::sqrt(kinetic * (kinetic + 2.0 * m));
+        }
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, p, p);
 
     /**
+     * @brief Component of the particle momentum along axis i.
+     * @details For true particles this is the true momentum component. For
+     * reconstructed particles it is the momentum magnitude from @ref pvars::p
+     * times the component i of the start direction (a unit vector).
+     * @tparam T the type of particle (true or reco).
+     * @param p the particle to apply the variable on.
+     * @param i the axis (0 = x, 1 = y, 2 = z).
+     * @return the momentum component in MeV/c, or NaN if unavailable.
+     */
+    template<class T>
+    double momentum_component(const T & p, size_t i)
+    {
+        if constexpr (std::is_same_v<T, caf::SRParticleTruthDLPProxy>)
+            return p.momentum[i];
+        else
+        {
+            double direction(p.start_dir[i]);
+            if(!std::isfinite(direction))
+                return PLACEHOLDERVALUE;
+            return pvars::p(p) * direction;
+        }
+    }
+
+    /**
      * @brief Variable for the x-component of the particle momentum.
-     * @details The momentum is calculated upstream in the SPINE reconstruction
-     * using the kinetic energy and mass of the particle.
+     * @details See @ref pvars::momentum_component. Reconstructed momentum is
+     * built from the configured-PID kinetic energy and mass and the start
+     * direction.
      * @tparam T the type of particle (true or reco).
      * @param p the particle to apply the variable on.
      * @return the x-component of the particle momentum.
@@ -827,29 +867,27 @@ namespace pvars
     template<class T>
     double px(const T & p)
     {
-        return p.momentum[0];
+        return momentum_component(p, 0);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, px, px);
     
     /**
      * @brief Variable for the y-component of the particle momentum.
-     * @details The momentum is calculated upstream in the SPINE reconstruction
-     * using the kinetic energy and mass of the particle.
+     * @details See @ref pvars::momentum_component.
      * @tparam T the type of particle (true or reco).
      * @param p the particle to apply the variable on.
-     * @return the x-component of the particle momentum.
+     * @return the y-component of the particle momentum.
      */
     template<class T>
     double py(const T & p)
     {
-        return p.momentum[1];
+        return momentum_component(p, 1);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, py, py);
 
     /**
      * @brief Variable for the z-component of the particle momentum.
-     * @details The momentum is calculated upstream in the SPINE reconstruction
-     * using the kinetic energy and mass of the particle.
+     * @details See @ref pvars::momentum_component.
      * @tparam T the type of particle (true or reco).
      * @param p the particle to apply the variable on.
      * @return the z-component of the particle momentum.
@@ -857,7 +895,7 @@ namespace pvars
     template<class T>
     double pz(const T & p)
     {
-        return p.momentum[2];
+        return momentum_component(p, 2);
     }
     REGISTER_VAR_SCOPE(RegistrationScope::BothParticle, pz, pz);
     
