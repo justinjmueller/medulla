@@ -31,6 +31,7 @@ keys = [
     "sbnd_detvar_p5_gain", "sbnd_detvar_m5_gain", "sbnd_detvar_smear15",
     "sbnd_detvar_wiremod_xthetaxw", "sbnd_detvar_wiremod_yz", "sbnd_detvar_mattmod_yz",
     "icarus_ar23p_run2", "icarus_ar23p_run4",
+    "icarus_detvar_sce0x_run2", "icarus_detvar_sce2x_run2", "icarus_detvar_charge_scale_run2",
     "icarus_detvar_sce0x_run4", "icarus_detvar_sce2x_run4", "icarus_detvar_charge_scale_run4",
     "icarus_wiremod_xthetaxw_run2", "icarus_wiremod_xthetaxw_run4",
     "icarus_wiremod_yz_run2", "icarus_wiremod_yz_run4",
