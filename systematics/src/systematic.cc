@@ -11,6 +11,12 @@
 
 #include "TTree.h"
 
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <stdexcept>
+#include <string>
+
 // Construct a new Systematic object.
 sys::Systematic::Systematic(cfg::ConfigurationTable & table, TTree * t, std::vector<double> default_clip)
     : name(table.get_string_field("name")),
@@ -37,15 +43,19 @@ sys::Systematic::Systematic(cfg::ConfigurationTable & table, TTree * t, std::vec
     }
 
     std::vector<double> clip_vals = table.has_field("clip") ? table.get_double_vector("clip") : default_clip;
-    if(clip_vals.size() >= 2)
+    if(clip_vals.empty())
+    {
+        clip_min = -std::numeric_limits<double>::infinity();
+        clip_max =  std::numeric_limits<double>::infinity();
+    }
+    else if(clip_vals.size() == 2)
     {
         clip_min = clip_vals[0];
         clip_max = clip_vals[1];
     }
     else
     {
-        clip_min = -std::numeric_limits<double>::infinity();
-        clip_max =  std::numeric_limits<double>::infinity();
+        throw std::invalid_argument("Systematic " + name + ": the weight clip range (\"clip\" or general.weight_clip) must contain exactly two values [min, max], but " + std::to_string(clip_vals.size()) + " were given.");
     }
 }
 
@@ -79,8 +89,11 @@ std::vector<double> * & sys::Systematic::get_nsigma()
     return nsigma;
 }
 
-// Clip a weight to the configured [min, max] range.
+// Clip a weight to the configured [min, max] range. A NaN weight is replaced
+// by 1.0 (no reweighting), since std::clamp returns NaN unchanged.
 double sys::Systematic::clip(double weight) const
 {
+    if(std::isnan(weight))
+        return 1.0;
     return std::clamp(weight, clip_min, clip_max);
 }

@@ -117,9 +117,13 @@ namespace sys
          * @details This function clamps the input weight to the range
          * resolved for this systematic (either its own "clip" field, the
          * general default passed in at construction, or, if neither is
-         * present, no clipping at all).
+         * present, no clipping at all). A NaN weight is always replaced by
+         * 1.0 (no reweighting), regardless of the configured range, because
+         * std::clamp would otherwise pass it through unchanged. The range
+         * must contain exactly two values; the constructor throws
+         * std::invalid_argument otherwise.
          * @param weight the weight to clip.
-         * @return double the clipped weight.
+         * @return double the clipped weight, or 1.0 if the weight is NaN.
          */
         double clip(double weight) const;
     };
