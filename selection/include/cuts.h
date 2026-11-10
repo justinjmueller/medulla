@@ -506,11 +506,12 @@ namespace cuts
      * @brief Apply a cut to veto the high-y, high-z region of SBND.
      * @details This cut is intended to be used in analyses that wish to veto
      * the high-y, high-z region of SBND. The high-y, high-z region is the
-     * region in positive x where y > 100 cm and z > 250 cm. This region is the
-     * subject of some unusual detector effect that hasn't been fully diagnosed
-     * at the current date. We apply a cut to veto any activity (has any
-     * particle terminating in this region) in this region to mitigate the
-     * impact of this effect on analyses.
+     * region in *negative* x (the EE TPC, which is the affected one) where
+     * y > 150 cm and z > 240 cm. This region is the subject of some unusual
+     * detector effect that hasn't been fully diagnosed at the current date. We
+     * apply a cut to veto any activity (has any particle terminating in this
+     * region) in this region to mitigate the impact of this effect on
+     * analyses.
      * @tparam T the type of interaction (true or reco).
      * @param obj the interaction to select on.
      * @return true if no particles in the interaction start or end in the
@@ -525,8 +526,8 @@ namespace cuts
             bool in_veto_region = false;
             for(const auto & p : obj.particles)
             {
-                if((pvars::start_y(p) > 100 && pvars::start_z(p) > 250 && pvars::start_x(p) > 0)
-                    || (pvars::end_y(p) > 100 && pvars::end_z(p) > 250 && pvars::end_x(p) > 0))
+                if((pvars::start_y(p) > 150 && pvars::start_z(p) > 240 && pvars::start_x(p) < 0)
+                    || (pvars::end_y(p) > 150 && pvars::end_z(p) > 240 && pvars::end_x(p) < 0))
                 {
                     in_veto_region = true;
                     break;

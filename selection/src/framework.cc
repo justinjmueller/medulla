@@ -733,6 +733,40 @@ NamedSpillMultiVar construct(const std::vector<cfg::ConfigurationTable> & cuts,
             auto var_fn = factory(varPars);
             return std::make_pair(var_name, spill_collection_multivar_helper<NuMISpillType>(event_cut, var_fn));
         }
+        else if(var_type == "bnb_singleton")
+        {
+            // Reuses the same bnb_spill_<name> registry entry the "bnb_spill"
+            // (whole-collection) type does, but applies it to the single spill
+            // the event is actually associated with (hdr.spillbnbinfo) instead
+            // of iterating the full hdr.bnbinfo vector -- one value per event
+            // rather than one per spill. This generalizes the hand-written
+            // pattern already used by evar::bnb_fom, without requiring a
+            // bespoke Event-scoped wrapper function per spill variable.
+            auto factory = VarFactoryRegistry<BNBSpillType>::instance().get("bnb_spill_" + var_name);
+            auto spill_var_fn = factory(varPars);
+            VarFn<EventType> var_fn = [spill_var_fn](const EventType & sr) -> double
+            {
+                if(std::isnan(sr.hdr.spillbnbinfo.TOR860)) return kNoMatchValue;
+                return spill_var_fn(sr.hdr.spillbnbinfo);
+            };
+            var_name = "bnb_singleton_" + var_name;
+            return std::make_pair(var_name, spill_multivar_helper(event_cut, var_fn));
+        }
+        else if(var_type == "numi_singleton")
+        {
+            // See "bnb_singleton" above; the NuMI analogue of hdr.spillbnbinfo
+            // is hdr.spillnumiinfo, and TRTGTD is its primary toroid (the
+            // NuMI counterpart of BNB's TOR860) used as the validity guard.
+            auto factory = VarFactoryRegistry<NuMISpillType>::instance().get("numi_spill_" + var_name);
+            auto spill_var_fn = factory(varPars);
+            VarFn<EventType> var_fn = [spill_var_fn](const EventType & sr) -> double
+            {
+                if(std::isnan(sr.hdr.spillnumiinfo.TRTGTD)) return kNoMatchValue;
+                return spill_var_fn(sr.hdr.spillnumiinfo);
+            };
+            var_name = "numi_singleton_" + var_name;
+            return std::make_pair(var_name, spill_multivar_helper(event_cut, var_fn));
+        }
         else
         {
             throw std::runtime_error("Illegal variable type '" + var_type + "' for variable " + var_name);

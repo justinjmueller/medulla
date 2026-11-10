@@ -1,4 +1,5 @@
 # Utilities for batch processing in medulla projects using jobsub
+import copy
 import os
 import re
 import shutil
@@ -6,6 +7,7 @@ import sqlite3
 import tempfile
 import time
 import toml
+from concurrent.futures import ThreadPoolExecutor
 from catalog import resolve_samples
 from glob import glob
 import subprocess
@@ -77,6 +79,59 @@ def command(
     except Exception as e:
         print(e)
 
+def local_tmp_dir():
+    """
+    Resolve the local (non-/pnfs) directory to stage temporary copies of
+    project.db/campaign.db in for SQLite access.
+
+    Checks MEDULLA_TMPDIR first; falls back to tempfile.gettempdir()
+    (i.e. $TMPDIR/$TEMP/$TMP, or /tmp if none of those are set). Set
+    MEDULLA_TMPDIR to a roomier local directory if that default doesn't
+    have enough free space -- a project.db for a project with many jobs
+    can run to several GB. This must be a genuinely local filesystem,
+    not /pnfs: SQLite needs real local-disk locking semantics, and even
+    a plain buffered write to /pnfs can fail outright (dCache does not
+    reliably support it), independent of free space.
+
+    Returns
+    -------
+    str
+        Directory path suitable for tempfile's `dir=` argument.
+
+    Raises
+    ------
+    RuntimeError
+        If MEDULLA_TMPDIR resolves under /pnfs. The copy itself can
+        appear to succeed there, but sqlite3.connect() or a query
+        against the result fails with a cryptic "disk I/O error" --
+        better to reject it up front with an explanation.
+    """
+    result = os.environ.get('MEDULLA_TMPDIR', tempfile.gettempdir())
+    if str(Path(result).resolve()).startswith('/pnfs/'):
+        raise RuntimeError(
+            f"MEDULLA_TMPDIR resolves to {result}, which is under /pnfs. SQLite needs real "
+            f"POSIX file locking for random-access reads, which dCache's NFS layer does not "
+            f"provide -- the copy itself may succeed, but sqlite3.connect() or a query against "
+            f"it will fail with a cryptic 'disk I/O error'. Point MEDULLA_TMPDIR at a genuinely "
+            f"local (or at least non-/pnfs, e.g. NFS/BlueArc) directory instead."
+        )
+    return result
+
+def _ifdh_cp(src, dst):
+    """
+    Run `ifdh cp src dst`, raising a clear, single error (rather than a
+    confusing FileNotFoundError buried under whatever OSError triggered
+    this fallback) when ifdh itself is not on PATH.
+    """
+    if shutil.which('ifdh') is None:
+        raise RuntimeError(
+            f"Could not copy {src} -> {dst}: the direct copy failed, and "
+            f"the ifdh fallback is unavailable because 'ifdh' is not on "
+            f"PATH in this environment. Set up ifdhc (e.g. `setup ifdhc`) "
+            f"and try again."
+        )
+    subprocess.run(['ifdh', 'cp', str(src), str(dst)], check=True)
+
 def safe_copy(src, dst):
     """
     Copy a file, working around dCache access quirks that break both
@@ -119,7 +174,7 @@ def safe_copy(src, dst):
             shutil.copyfileobj(fsrc, fdst)
     except OSError:
         dst.unlink(missing_ok=True)
-        subprocess.run(['ifdh', 'cp', str(src), str(dst)], check=True)
+        _ifdh_cp(src, dst)
 
 def safe_write_text(dst, content):
     """
@@ -151,11 +206,11 @@ def safe_write_text(dst, content):
     try:
         dst.write_text(content)
     except OSError:
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.tmp') as f:
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.tmp', dir=local_tmp_dir()) as f:
             f.write(content)
             tmp = Path(f.name)
         try:
-            subprocess.run(['ifdh', 'cp', str(tmp), str(dst)], check=True)
+            _ifdh_cp(tmp, dst)
         finally:
             tmp.unlink(missing_ok=True)
 
@@ -297,6 +352,7 @@ def create_systematics_cfg(
     base_cfg : dict,
     trees : list[dict],
     samples : list[dict],
+    add_weights : bool = True,
 ):
     """
     Create a TOML configuration for running systematics on the given
@@ -315,6 +371,13 @@ def create_systematics_cfg(
         List of tree configurations in the selection configuration.
     samples : list[dict]
         List of sample configurations in the selection configuration.
+    add_weights : bool
+        If False, every tree is configured with the "copy" action,
+        whatever its add_systematics setting. For projects whose MC
+        samples carry no systematic weights (e.g. detector variations),
+        which would otherwise be given the CV recipe and fail when the
+        weights are not there. See the per-role `systematics` switch in
+        meta.toml.
     
     Returns
     -------
@@ -335,11 +398,22 @@ def create_systematics_cfg(
             if key in syst_trees:
                 continue
 
+            # A sim_only tree is never created by the selection stage for
+            # a non-MC sample (see analysis.h's Analysis::Go(), which
+            # skips it outright: `if(t.is_sim && !s.is_sim) continue;`).
+            # Configuring or requiring it here would ask this stage's
+            # copy/add_weights step -- and validate_pair.C's manifest
+            # check -- for an origin tree that structurally never exists,
+            # which is a false failure, not a signal of anything broken.
+            if tree.get('sim_only', False) and not sample['ismc']:
+                continue
+
             # Data samples and samples not requesting systematics are
             # configured with a "copy" action that just copies the
             # selected events to the output without applying any
             # systematics.
-            if not sample['ismc'] or not tree.get('add_systematics', False):
+            if (not add_weights or not sample['ismc']
+                    or not tree.get('add_systematics', False)):
                 syst_trees[key] = {
                     'origin' : key,
                     'destination' : f'events/{sample["name"]}/',
@@ -373,12 +447,23 @@ def create_systematics_cfg(
     # configuration. For grid submission purposes, we always set the
     # following:
     # - input.path = "output.root"
-    # - input.weights = "data/*flat*.root"
+    # - input.weights = "data/*.root"
     # - output.path = "output_sys.root"
     # - tree = list of syst_trees values
-    syst_cfg = base_cfg.copy()
+    #
+    # input.weights matches every staged input rather than filtering on a
+    # "flat" substring in the filename: data/ only ever holds this job's
+    # own sample's files (nothing else is staged there), so all of them
+    # are a valid weight source regardless of naming convention -- some
+    # samples' flat CAF files are not literally named with "flat" in
+    # them (see submit.sh's matching input.weights glob and its
+    # add_weights precheck).
+    # A shallow copy would share base_cfg['input']/['output'] with the
+    # caller's dict, so the assignments below would silently mutate
+    # whatever object the caller passed in as base_cfg.
+    syst_cfg = copy.deepcopy(base_cfg)
     syst_cfg['input']['path'] = 'output.root'
-    syst_cfg['input']['weights'] = 'data/*flat*.root'
+    syst_cfg['input']['weights'] = 'data/*.root'
     syst_cfg['output']['path'] = 'output_sys.root'
     syst_cfg['tree'] = list(syst_trees.values())
     return syst_cfg
@@ -442,6 +527,7 @@ def create_new_project(
     catalog_path = None,
     enable_keys = None,
     experiment : str = 'sbnd',
+    systematics : bool = True,
 ):
     """
     Create a new project directory with the necessary subdirectories
@@ -465,6 +551,10 @@ def create_new_project(
         Experiment name used to configure the SAMWeb client for samples
         whose path is a SAMWeb definition (see DEFNAME_PREFIX in
         get_samples).
+    systematics : bool
+        If False, no tree is reweighted: systematics.toml copies every
+        tree, and the validation manifest checks them as copies. See
+        create_systematics_cfg's add_weights.
 
     Returns
     -------
@@ -497,7 +587,8 @@ def create_new_project(
     # after the selection step.
     if sys is None:
         sys = Path(__file__).resolve().parent / 'sys_template.toml'
-    sys = create_systematics_cfg(toml.load(sys), cfg.get('tree', []), samples)
+    sys = create_systematics_cfg(toml.load(sys), cfg.get('tree', []), samples,
+                                 add_weights=systematics)
     with open(project_dir / 'systematics.toml', 'w') as f:
         toml.dump(sys, f)
 
@@ -532,6 +623,111 @@ def create_new_project(
 # left behind by a job that failed after creating its output.
 MIN_OUTPUT_BYTES = 1024
 
+# ---------------------------------------------------------------------------
+# Output layout
+#
+# A job's files live in a bucket directory keyed on its job ID:
+#
+#     output/<bucket>/output_jobid0042.root
+#     output/<bucket>/output_systematics_jobid0042.root
+#     output/<bucket>/bad_files_jobid0042.log
+#     output/val/<bucket>/validation_jobid0042.txt
+#
+# with bucket = jobid // OUTPUT_BUCKET_SIZE, zero-padded to three digits. A
+# flat output/ directory holding every job's files does not survive a large
+# campaign: 3M input files at 25 per job is 240k output files plus 120k
+# records in two directories, which dCache listings, globbing and hadd all
+# degrade badly on.
+#
+# The bucket is keyed on the job ID rather than on the grid process that ran
+# it, so a job ID lands in the same directory however many times it is
+# submitted. That keeps a duplicate run of the same job ID colliding loudly
+# at copy-back rather than scattering into a second directory unnoticed.
+#
+# submit.sh computes the same bucket independently; the two must agree.
+#
+# Everything that reads output goes through iter_output_files() and
+# find_output_file(), which look in both the bucketed layout and the legacy
+# flat one, so projects written before the change keep working unmodified.
+# ---------------------------------------------------------------------------
+
+OUTPUT_BUCKET_SIZE = 1000
+
+# Filename format and matching glob for each kind of per-job file.
+OUTPUT_KINDS = {
+    'nosyst':   ('output_jobid{:04d}.root',             'output_jobid*.root'),
+    'wsyst':    ('output_systematics_jobid{:04d}.root', 'output_systematics_jobid*.root'),
+    'badfiles': ('bad_files_jobid{:04d}.log',           'bad_files_jobid*.log'),
+    'record':   ('validation_jobid{:04d}.txt',          'validation_jobid*.txt'),
+}
+
+def output_bucket(jobid : int) -> str:
+    """The bucket directory name for a job ID, e.g. 42 -> '000'."""
+    return f'{int(jobid) // OUTPUT_BUCKET_SIZE:03d}'
+
+def _kind_root(project_dir : Path, kind : str) -> Path:
+    """The directory a kind of file is bucketed under."""
+    if kind not in OUTPUT_KINDS:
+        raise ValueError(f"Unknown output kind '{kind}'; expected one of {sorted(OUTPUT_KINDS)}")
+    out = Path(project_dir) / 'output'
+    return out / 'val' if kind == 'record' else out
+
+def output_path_for(project_dir : Path, jobid : int, kind : str) -> Path:
+    """Where a job's file of the given kind is written (bucketed layout)."""
+    root = _kind_root(project_dir, kind)   # validates kind first
+    return root / output_bucket(jobid) / OUTPUT_KINDS[kind][0].format(int(jobid))
+
+def find_output_file(project_dir : Path, jobid : int, kind : str) -> Optional[Path]:
+    """
+    Locate a job's file of the given kind, preferring the bucketed layout
+    and falling back to the legacy flat one. None if neither exists.
+    """
+    nested = output_path_for(project_dir, jobid, kind)
+    if nested.exists():
+        return nested
+    flat = _kind_root(project_dir, kind) / OUTPUT_KINDS[kind][0].format(int(jobid))
+    return flat if flat.exists() else None
+
+def jobid_of(path) -> Optional[int]:
+    """Job ID parsed from a per-job filename, or None if it has none."""
+    stem = Path(path).stem
+    if 'jobid' not in stem:
+        return None
+    try:
+        return int(stem.split('jobid')[-1])
+    except ValueError:
+        return None
+
+def output_globs(project_dir : Path, kind : str) -> list:
+    """
+    Glob patterns covering every file of a kind in both layouts: legacy flat
+    first, then bucketed. For callers that need patterns rather than paths
+    (e.g. building a hadd file list).
+    """
+    root = _kind_root(project_dir, kind)
+    pattern = OUTPUT_KINDS[kind][1]
+    return [str(root / pattern), str(root / '*' / pattern)]
+
+def iter_output_files(project_dir : Path, kind : str) -> dict:
+    """
+    Every file of the given kind in a project, keyed by job ID.
+
+    Both layouts are searched. Should a job ID somehow have a file in each,
+    the bucketed one wins: it is where anything written after the layout
+    change goes, so it is the more recent.
+
+    Returns
+    -------
+    dict[int, Path]
+    """
+    found = {}
+    # Flat first, then bucketed, so the bucketed entry overwrites.
+    for f in [f for pat in output_globs(project_dir, kind) for f in glob(pat)]:
+        jid = jobid_of(f)
+        if jid is not None:
+            found[jid] = Path(f)
+    return found
+
 def survey_project_output(
     project_dir : Path,
 ):
@@ -565,23 +761,12 @@ def survey_project_output(
             Output files (either kind) below MIN_OUTPUT_BYTES.
     """
     project_dir = Path(project_dir)
-    out_dir = project_dir / 'output'
 
-    def _by_id(pattern):
-        found = {}
-        for f in glob(str(out_dir / pattern)):
-            path = Path(f)
-            try:
-                jid = int(path.stem.split('jobid')[-1])
-            except ValueError:
-                continue
-            found[jid] = path
-        return found
-
+    # Both layouts (bucketed and legacy flat) are covered by the helper.
     # 'output_jobid*' cannot match 'output_systematics_jobid*', so the two
-    # globs stay disjoint without further filtering.
-    nosyst = _by_id('output_jobid*.root')
-    wsyst = _by_id('output_systematics_jobid*.root')
+    # sets stay disjoint without further filtering.
+    nosyst = iter_output_files(project_dir, 'nosyst')
+    wsyst = iter_output_files(project_dir, 'wsyst')
 
     def _ok(path):
         return path is not None and path.stat().st_size >= MIN_OUTPUT_BYTES
@@ -603,6 +788,319 @@ def survey_project_output(
         'orphaned':   sorted(orphaned),
         'stub_files': sorted(stub_files),
     }
+
+# ---------------------------------------------------------------------------
+# Reconciliation
+#
+# The question this answers is not "did any job report an error" but "is the
+# dataset complete, and if not, exactly what is missing and why". It joins
+# three things the workflow already produces -- project.db (every job ID and
+# the input files it owns), the output pairs, and the per-job validation
+# records -- and places every job ID in exactly one category, so that nothing
+# can be missing without appearing somewhere in the report. It is read-only.
+# ---------------------------------------------------------------------------
+
+_RECORD_HEADER = re.compile(r'^JOB \((\d+),(-?\d+)\) VALIDATION')
+
+# Record statuses that mean the job's output was validated and transferred.
+RECORD_SUCCESS = frozenset({'ok', 'match_partial'})
+
+# Categories, in the order a report should list them.
+RECONCILE_CATEGORIES = (
+    'complete',               # pair present, record says success
+    'complete_unrecorded',    # pair present, no record (pre-validation, or record copy failed)
+    'complete_stale_record',  # pair present, record says failure (a failed attempt's record)
+    'failed',                 # no pair, record says failure: pending, will be resubmitted
+    'output_lost',            # no pair, record says success: output vanished after the fact
+    'no_trace',               # no pair, no record: never ran, or died without leaving one
+)
+
+def parse_validation_record(text : str) -> dict:
+    """
+    Parse one validation record into a dict.
+
+    Scalar fields keep their first occurrence (SAMPLE appears twice, once from
+    submit.sh and once from the validator). ERROR and WARN lines are gathered
+    into lists, and TREE_<name>=in,matched,nonmatched lines into
+    record['trees'][name] as a tuple of ints.
+    """
+    rec = {'errors': [], 'warns': [], 'trees': {}}
+    for line in text.splitlines():
+        m = _RECORD_HEADER.match(line)
+        if m:
+            rec['jobid'], rec['process'] = int(m.group(1)), int(m.group(2))
+            continue
+        if '=' not in line:
+            continue
+        key, val = line.split('=', 1)
+        if key == 'ERROR':
+            rec['errors'].append(val)
+        elif key == 'WARN':
+            rec['warns'].append(val)
+        elif key.startswith('TREE_'):
+            try:
+                rec['trees'][key[5:]] = tuple(int(x) for x in val.split(','))
+            except ValueError:
+                pass
+        elif key not in rec:
+            rec[key] = val
+    return rec
+
+def _record_int(rec : dict, key : str) -> Optional[int]:
+    try:
+        return int(rec[key])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+# The sample block's path value in a stored job configuration: either a list
+# or a single string. Configurations are written by toml.dumps, so the layout
+# is regular.
+_SAMPLE_PATH = re.compile(r'^\[\[sample\]\]\s*$.*?^path\s*=\s*(\[.*?\]|"[^"]*")',
+                          re.MULTILINE | re.DOTALL)
+
+def _job_input_files(cfg_text : str) -> list:
+    """
+    The input files a job's stored configuration lists.
+
+    A job's configuration carries the whole selection -- every tree, cut and
+    branch -- and runs to ~1400 lines, of which only the sample's path list is
+    needed here. Parsing it with the pure-Python toml library cost ~12 ms per
+    job, which for a 15,000-job project was minutes of CPU; extracting the one
+    array is ~100x faster. Full parsing remains the fallback if the layout is
+    ever not what toml.dumps writes.
+    """
+    m = _SAMPLE_PATH.search(cfg_text)
+    if m:
+        return re.findall(r'"([^"]*)"', m.group(1))
+    try:
+        cfg = toml.loads(cfg_text)
+        paths = []
+        for sample in cfg.get('sample', []):
+            p = sample.get('path', [])
+            paths.extend([p] if isinstance(p, str) else p)
+        return paths
+    except Exception:
+        # Last resort: the same extraction submit.sh uses.
+        return re.findall(r'"(/pnfs[^"]*)"', cfg_text)
+
+def reconcile_project(project_dir : Path) -> dict:
+    """
+    Account for every job ID and every input file in a project.
+
+    Parameters
+    ----------
+    project_dir : Path
+        A project directory (containing project.db and output/).
+
+    Returns
+    -------
+    dict with keys:
+        n_jobs : int
+        categories : dict[str, list[int]]
+            Every job ID in project.db, in exactly one RECONCILE_CATEGORIES
+            entry.
+        failed_by_status : dict[str, list[int]]
+            The 'failed' job IDs, split by their record's STATUS.
+        orphaned : list[int]
+            Job IDs with a selection output but no usable systematics
+            partner (a subset of the incomplete categories).
+        unknown_records : list[int]
+            Records whose job ID is not in project.db at all.
+        files : dict
+            Input-file accounting: 'expected', 'processed', 'dropped',
+            'in_incomplete', 'unverified' (belonging to complete jobs with no
+            record, so their dropped inputs cannot be known), and 'balanced'
+            (whether those add up to 'expected').
+        dropped_files : list[str]
+            Named dropped inputs, from the bad_files logs.
+        events : dict
+            For complete, recorded jobs: 'checked', 'mismatched' (job IDs
+            whose INPUT_EVENTS differs from the events written), 'unknown'
+            (job IDs with INPUT_EVENTS = -1).
+        duplicate_claims : dict[int, list[str]]
+            Job IDs claimed by more than one grid process, with the
+            processes that claimed them.
+        pot : float
+            Summed POT over complete, recorded jobs.
+    """
+    project_dir = Path(project_dir)
+    db_path = project_dir / 'project.db'
+    if not db_path.exists():
+        raise FileNotFoundError(f"Project database {db_path} does not exist.")
+
+    # Read a local copy: sqlite over dCache NFS is unreliable for locking.
+    with tempfile.NamedTemporaryFile(suffix='.db', prefix='medulla_recon_', delete=False, dir=local_tmp_dir()) as f:
+        tmp = Path(f.name)
+    try:
+        safe_copy(db_path, tmp)
+        conn = sqlite3.connect(tmp)
+        jobids = [r[0] for r in conn.execute("SELECT jobid FROM jobs ORDER BY jobid")]
+        inputs = {jid: _job_input_files(cfg)
+                  for jid, cfg in conn.execute("SELECT jobid, cfg FROM configuration")}
+        conn.close()
+    finally:
+        tmp.unlink(missing_ok=True)
+
+    survey = survey_project_output(project_dir)
+    complete = set(survey['completed'])
+
+    # Records are small, numerous, and on dCache: read serially, each one is a
+    # network round-trip, and a 5000-record project took minutes. The reads
+    # are pure I/O, so a thread pool cuts that by roughly the worker count.
+    record_paths = iter_output_files(project_dir, 'record')
+    with ThreadPoolExecutor(max_workers=16) as ex:
+        texts = list(ex.map(lambda p: p.read_text(), record_paths.values()))
+    records = {jid: parse_validation_record(t) for jid, t in zip(record_paths, texts)}
+
+    categories = {c: [] for c in RECONCILE_CATEGORIES}
+    failed_by_status = {}
+    for jid in jobids:
+        rec = records.get(jid)
+        succeeded = rec is not None and rec.get('STATUS') in RECORD_SUCCESS
+        if jid in complete:
+            cat = ('complete' if succeeded else
+                   'complete_unrecorded' if rec is None else
+                   'complete_stale_record')
+        elif rec is None:
+            cat = 'no_trace'
+        elif succeeded:
+            cat = 'output_lost'
+        else:
+            cat = 'failed'
+            failed_by_status.setdefault(rec.get('STATUS', '(none)'), []).append(jid)
+        categories[cat].append(jid)
+
+    # Input files. A complete job with a record says exactly how many of its
+    # inputs it processed and dropped; one without a record cannot, so its
+    # files are counted as processed but flagged unverified.
+    known = set(jobids)
+    files = {'expected': 0, 'processed': 0, 'dropped': 0, 'in_incomplete': 0, 'unverified': 0}
+    for jid in jobids:
+        n = len(inputs.get(jid, []))
+        files['expected'] += n
+        if jid not in complete:
+            files['in_incomplete'] += n
+            continue
+        rec = records.get(jid)
+        n_in, n_drop = (_record_int(rec, 'N_INPUTS'), _record_int(rec, 'N_DROPPED_INPUTS')) if rec else (None, None)
+        if n_in is None or n_drop is None:
+            files['processed'] += n
+            files['unverified'] += n
+        else:
+            files['processed'] += n_in
+            files['dropped'] += n_drop
+    files['balanced'] = (files['processed'] + files['dropped'] + files['in_incomplete'] == files['expected'])
+
+    dropped_files = []
+    for jid, p in sorted(iter_output_files(project_dir, 'badfiles').items()):
+        if jid in complete:
+            dropped_files.extend(l.strip() for l in p.read_text().splitlines() if l.strip())
+
+    # Events read against events written, for complete recorded jobs.
+    events = {'checked': 0, 'mismatched': [], 'unknown': []}
+    pot = 0.0
+    for jid in categories['complete']:
+        rec = records[jid]
+        n_read = _record_int(rec, 'INPUT_EVENTS')
+        written = rec['trees'].get('events')
+        try:
+            pot += float(rec.get('POT', 0) or 0)
+        except ValueError:
+            pass
+        if n_read is None or written is None:
+            continue
+        events['checked'] += 1
+        if n_read < 0:
+            events['unknown'].append(jid)
+        elif n_read != written[0]:
+            events['mismatched'].append(jid)
+
+    # Job IDs claimed by more than one grid process. Two cases that look alike
+    # but mean opposite things:
+    #   - claims from *different* launches (clusters) are retries: a failed
+    #     job ID stays pending and the next launch picks it up. Expected.
+    #   - claims from two processes of the *same* launch are duplicate work:
+    #     the rank-based assignment in submit.sh shifting under a concurrent
+    #     sync. That is a bug, and the only one of the two to act on.
+    claimers = {}
+    for rec in records.values():
+        claimed = rec.get('CLAIMED_JOBIDS')
+        if not claimed:
+            continue
+        who = (rec.get('CLUSTER', '?'), rec.get('PROCESS', '?'), rec.get('PROCESS_START', '?'))
+        for c in claimed.split(','):
+            try:
+                claimers.setdefault(int(c), set()).add(who)
+            except ValueError:
+                pass
+    duplicate_claims, retried = {}, {}
+    for j, who in claimers.items():
+        if len(who) < 2:
+            continue
+        by_cluster = {}
+        for cluster, proc, start in who:
+            by_cluster.setdefault(cluster, set()).add((proc, start))
+        label = sorted(f"{c}.{p}@{s}" for c, p, s in who)
+        if any(len(v) > 1 for v in by_cluster.values()):
+            duplicate_claims[j] = label
+        else:
+            retried[j] = label
+
+    return {
+        'n_jobs':           len(jobids),
+        'categories':       categories,
+        'failed_by_status': {k: sorted(v) for k, v in sorted(failed_by_status.items())},
+        'orphaned':         survey['orphaned'],
+        'unknown_records':  sorted(set(records) - known),
+        'files':            files,
+        'dropped_files':    dropped_files,
+        'events':           events,
+        'duplicate_claims': duplicate_claims,
+        'retried':          retried,
+        'pot':              pot,
+    }
+
+def format_reconcile_report(name : str, r : dict, max_ids : int = 50) -> str:
+    """A plain-text report of a reconcile_project() result, listing job IDs."""
+    def ids(xs):
+        xs = list(xs)
+        shown = ', '.join(str(x) for x in xs[:max_ids])
+        return shown + (f' ... (+{len(xs) - max_ids} more)' if len(xs) > max_ids else '')
+
+    lines = [f"Reconciliation: {name}", '=' * 72, f"job IDs in project.db: {r['n_jobs']}", '']
+    lines.append('Job IDs by category:')
+    for c in RECONCILE_CATEGORIES:
+        lines.append(f"  {c:24s} {len(r['categories'][c]):7d}   {ids(r['categories'][c])}")
+    if r['failed_by_status']:
+        lines += ['', 'Failed, by status:']
+        for s, js in r['failed_by_status'].items():
+            lines.append(f"  {s:24s} {len(js):7d}   {ids(js)}")
+    if r['orphaned']:
+        lines += ['', f"Orphaned (selection output without systematics): {len(r['orphaned'])}   {ids(r['orphaned'])}"]
+    if r['unknown_records']:
+        lines += ['', f"Records for job IDs not in project.db: {ids(r['unknown_records'])}"]
+    f = r['files']
+    lines += ['', 'Input files:',
+              f"  expected       {f['expected']}",
+              f"  processed      {f['processed']}   (of which unverified: {f['unverified']})",
+              f"  dropped        {f['dropped']}",
+              f"  in incomplete  {f['in_incomplete']}",
+              f"  accounted for: {'yes' if f['balanced'] else 'NO -- processed + dropped + incomplete != expected'}"]
+    if r['dropped_files']:
+        lines.append('  dropped inputs:')
+        lines += [f"    {p}" for p in r['dropped_files'][:max_ids]]
+    e = r['events']
+    lines += ['', f"Events read vs written (complete, recorded jobs): {e['checked']} checked",
+              f"  mismatched   {len(e['mismatched'])}   {ids(e['mismatched'])}",
+              f"  count unknown (INPUT_EVENTS = -1)   {len(e['unknown'])}   {ids(e['unknown'])}"]
+    lines += ['', f"Duplicate work -- job IDs claimed by two processes of one launch: "
+                  f"{len(r['duplicate_claims'])}"]
+    for j, who in list(r['duplicate_claims'].items())[:max_ids]:
+        lines.append(f"  {j}: {', '.join(who)}")
+    lines.append(f"Retried across launches (expected for failed job IDs): "
+                 f"{len(r['retried'])}   {ids(sorted(r['retried']))}")
+    lines += ['', f"POT over complete, recorded jobs: {r['pot']:.6g}"]
+    return '\n'.join(lines) + '\n'
 
 def check_project_status(
     project_dir : str,
@@ -767,6 +1265,114 @@ def _submit_jobsub_once(
         print(f"{_CAMPAIGN} Submitted {njobs} job(s){label}. Job ID: {job_id}")
     return True
 
+# The worker-side output validator. It is transferred with every job
+# (jobsub_submit -f dropbox://) rather than read out of the checkout the
+# job builds, because that checkout is whatever --tag names: a release tag
+# that predates the validator would otherwise fail validation on every job
+# and copy nothing back. Shipping it from here keeps the validator in step
+# with the submit.sh it is shipped alongside.
+VALIDATE_MACRO_PATH = Path(__file__).resolve().parent / 'validate_pair.C'
+
+# The ROOT macros every job needs on the worker node, transferred with the job
+# for the reason above. check_inputs.C verifies the staged input files in one
+# ROOT process rather than one per file.
+JOB_MACRO_PATHS = (
+    VALIDATE_MACRO_PATH,
+    Path(__file__).resolve().parent / 'check_inputs.C',
+)
+
+# File name of the job database shipped with each submission. submit.sh
+# --shipped-db looks for exactly this name in $CONDOR_DIR_INPUT.
+SUBMISSION_DB_NAME = 'submission.db.gz'
+
+def write_submission_db(
+    project_db,
+    dst,
+    count : int,
+    sample : Optional[str] = None,
+):
+    """
+    Write the job database one submission ships with its jobs: the rows of
+    project_db that the submission's processes can claim, gzip-compressed.
+
+    Every grid process used to copy the whole of project.db from dCache,
+    although it reads only the rows of the job IDs it claims. project.db
+    holds the full resolved configuration of every job (about 32 KB each),
+    so for a large project that is gigabytes per process, multiplied by
+    hundreds of processes. The configurations differ only in their file
+    lists, so the snapshot also compresses ~15x.
+
+    The rows kept are exactly those submit.sh's claim query can reach: the
+    first `count` job IDs whose status is not 'completed' (within `sample`,
+    if given), in job ID order. Process P claims ranks P*M .. P*M+M-1 of
+    that ordering, capped at --total-jobs=count, so the snapshot gives every
+    process the same job IDs the full database would have given it at
+    launch. Statuses are copied unchanged.
+
+    Parameters
+    ----------
+    project_db : str | Path
+        The project database to take the rows from (a local copy).
+    dst : str | Path
+        Where to write the compressed snapshot.
+    count : int
+        Number of job IDs the submission covers.
+    sample : str | None
+        Restrict to this sample, as a per-sample submission does.
+
+    Returns
+    -------
+    int
+        Number of job IDs written.
+    """
+    import gzip
+
+    dst = Path(dst)
+    raw = dst.with_name(dst.name + '.tmp')
+    raw.unlink(missing_ok=True)
+    conn = sqlite3.connect(raw)
+    try:
+        curs = conn.cursor()
+        curs.execute(SCHEMA_CONFIGURATION)
+        curs.execute(SCHEMA_JOBS)
+        curs.execute("ATTACH DATABASE ? AS src", (str(project_db),))
+        # A project created before the sample/catalog_experiment columns has
+        # fewer; copy what it has, and leave the rest NULL.
+        curs.execute("PRAGMA src.table_info(jobs)")
+        columns = [row[1] for row in curs.fetchall()]
+        cols = ', '.join(columns)
+
+        where, params = "status != 'completed'", []
+        if sample is not None:
+            where += " AND sample = ?"
+            params.append(sample)
+        curs.execute(
+            f"CREATE TEMP TABLE picked AS SELECT jobid FROM src.jobs "
+            f"WHERE {where} ORDER BY jobid LIMIT ?",
+            (*params, count),
+        )
+        curs.execute(
+            f"INSERT INTO main.jobs ({cols}) SELECT {cols} FROM src.jobs "
+            f"WHERE jobid IN (SELECT jobid FROM picked)"
+        )
+        curs.execute(
+            "INSERT INTO main.configuration (jobid, cfg) SELECT jobid, cfg "
+            "FROM src.configuration WHERE jobid IN (SELECT jobid FROM picked)"
+        )
+        curs.execute("SELECT COUNT(*) FROM main.jobs")
+        n_written = curs.fetchone()[0]
+        conn.commit()
+        curs.execute("DETACH DATABASE src")
+    finally:
+        conn.close()
+
+    try:
+        with open(raw, 'rb') as fsrc, gzip.open(dst, 'wb', compresslevel=6) as fdst:
+            shutil.copyfileobj(fsrc, fdst)
+    finally:
+        raw.unlink(missing_ok=True)
+    return n_written
+
 def launch_jobsub(
     project_dir : str,
     exp : str = 'sbnd',
@@ -779,6 +1385,7 @@ def launch_jobsub(
     lifetime : str = '1h',
     verbose : bool = False,
     force : bool = False,
+    jobs_per_process : int = 1,
 ):
     """
     Launch jobs using jobsub for the given project directory. If njobs
@@ -827,6 +1434,15 @@ def launch_jobsub(
         same job) instead of failing. Off by default, since silently
         overwriting could mask two jobs unexpectedly racing to write the
         same output.
+    jobs_per_process : int
+        Number of job IDs each grid process takes on (default 1). njobs
+        and njobs_per_sample still count job IDs; the number of processes
+        submitted is that count divided by jobs_per_process, rounded up.
+        submit.sh is also told the job-ID total, so the last process stops
+        at the requested count instead of claiming a full jobs_per_process.
+        The build and environment setup are paid once per process, so this
+        trades submission overhead against the lifetime each process needs:
+        raise lifetime to cover jobs_per_process job IDs.
 
     Returns
     -------
@@ -836,6 +1452,18 @@ def launch_jobsub(
     """
     if njobs_per_sample is not None and njobs != -1:
         raise ValueError("njobs and njobs_per_sample are mutually exclusive.")
+    if jobs_per_process < 1:
+        raise ValueError("jobs_per_process must be at least 1.")
+
+    # Refuse before touching anything if a macro the job needs cannot be
+    # shipped. Discovering it on the grid would cost every job its full event
+    # loop, or leave its input unverified.
+    for macro in JOB_MACRO_PATHS:
+        if not macro.is_file():
+            raise FileNotFoundError(
+                f"Job macro {macro} not found; it is transferred with every job "
+                f"and must exist to launch."
+            )
 
     # Check if the project database exists.
     if not (project_dir / 'project.db').exists():
@@ -907,6 +1535,28 @@ def launch_jobsub(
 
         targets = [(None, njobs)]
 
+    # Each submission ships its own slice of the job database instead of
+    # having every process copy project.db; see write_submission_db. The
+    # files must exist until jobsub_submit has uploaded them, and are removed
+    # once every submission has been made.
+    ship_dir = Path(tempfile.mkdtemp(prefix='medulla_submission_', dir='.')).resolve()
+    try:
+        return _launch_targets(
+            project_dir, exp, targets, ship_dir, confirm, tag, memory, disk,
+            lifetime, verbose, force, jobs_per_process,
+        )
+    finally:
+        shutil.rmtree(ship_dir, ignore_errors=True)
+
+def _launch_targets(
+    project_dir, exp, targets, ship_dir, confirm, tag, memory, disk,
+    lifetime, verbose, force, jobs_per_process,
+):
+    """
+    Build, confirm and run the jobsub_submit call for each (sample, count)
+    target of launch_jobsub, shipping each its own job database written
+    under ship_dir. Returns True if at least one submission succeeded.
+    """
     # Determine the disk request.
     if disk is not None:
         disk_flag = f'--disk={disk}GB'
@@ -915,13 +1565,34 @@ def launch_jobsub(
     else:
         disk_flag = '--disk=25GB'
 
-    # Form the jobsub command(s) to launch the jobs, one per target.
+    # Form the jobsub command(s) to launch the jobs, one per target. count
+    # is a number of job IDs, while -N is a number of grid processes, each
+    # of which takes up to jobs_per_process of them.
     submissions = []
-    for sample, count in targets:
+    for i, (sample, count) in enumerate(targets):
+        # jobsub places a dropbox file in $CONDOR_DIR_INPUT under its own
+        # name, which submit.sh expects to be SUBMISSION_DB_NAME, so each
+        # submission's copy gets a directory of its own.
+        shipped_db = ship_dir / str(i) / SUBMISSION_DB_NAME
+        shipped_db.parent.mkdir()
+        n_rows = write_submission_db('./project.db', shipped_db, count, sample)
+        if n_rows != count:
+            # Cannot happen unless project.db changed under us; the processes
+            # would then claim against a different set than was counted.
+            raise RuntimeError(
+                f"Job database snapshot holds {n_rows} job IDs, expected {count}"
+                f"{f' for sample {sample!r}' if sample is not None else ''}."
+            )
+        if confirm or verbose:
+            size_mb = shipped_db.stat().st_size / 1e6
+            print(f"{_INFO} -- Job database for this submission: {n_rows} job IDs, "
+                  f"{size_mb:.1f} MB compressed.")
+
+        n_processes = -(-count // jobs_per_process)  # ceil(count / jobs_per_process)
         cmd = [
             'jobsub_submit',
             '-G', exp,
-            '-N', str(count),
+            '-N', str(n_processes),
             f'--memory={memory}MB',
             disk_flag,
             f'--expected-lifetime={lifetime}',
@@ -929,16 +1600,26 @@ def launch_jobsub(
             '--site=FermiGrid',
             "--append_condor_requirements='(TARGET.HAS_Singularity==true)'",
             '--singularity-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest',
+            # Ship the job's ROOT macros; see JOB_MACRO_PATHS. The batch
+            # directory is not grid-accessible, hence dropbox://.
+            *[arg for macro in JOB_MACRO_PATHS for arg in ('-f', f'dropbox://{macro}')],
+            '-f', f'dropbox://{shipped_db}',
             f'file://{Path(__file__).resolve().parent / "submit.sh"}',
             '--',
             f'--project={project_dir.resolve()}',
             f'--tag={tag}',
+            f'--jobs-per-process={jobs_per_process}',
+            # Lets the last process stop at the requested count.
+            f'--total-jobs={count}',
+            '--shipped-db',
         ]
         if sample is not None:
             cmd.append(f'--sample={sample}')
         if force:
             cmd.append('--force')
         label = f" for sample '{sample}'" if sample is not None else ""
+        if jobs_per_process > 1:
+            label += f" ({n_processes} process(es) of up to {jobs_per_process} job IDs)"
         submissions.append((cmd, count, label))
 
     # Show what will be launched and confirm once for the whole set.

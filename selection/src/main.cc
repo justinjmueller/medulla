@@ -276,7 +276,9 @@ int main(int argc, char * argv[])
                             || var_type == "reco_bivar"
                             || var_type == "event"
                             || var.get_string_field("type") == "bnb_spill"
-                            || var.get_string_field("type") == "numi_spill")
+                            || var.get_string_field("type") == "numi_spill"
+                            || var.get_string_field("type") == "bnb_singleton"
+                            || var.get_string_field("type") == "numi_singleton")
                     {
                         if(var.get_string_field("name") == "category" && var_type == "true")
                         {

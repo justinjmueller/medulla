@@ -51,7 +51,7 @@ RC_TREES = 5
 
 def _make_fixture(path, sample=SAMPLE, tree=TREE, n_main=10, n_non=0,
                   n_table=None, pot=1.0e19, livetime=0.0, tables=(),
-                  include_tree=True, include_dir=True):
+                  include_tree=True, include_dir=True, nonmatched_fixed_evt=-1):
     """Build one output file by invoking make_fixture.C."""
     n_table = n_main if n_table is None else n_table
     args = ', '.join([
@@ -61,6 +61,7 @@ def _make_fixture(path, sample=SAMPLE, tree=TREE, n_main=10, n_non=0,
         f'"{",".join(tables)}"',
         'true' if include_tree else 'false',
         'true' if include_dir else 'false',
+        str(nonmatched_fixed_evt),
     ])
     proc = subprocess.run(
         ["root", "-l", "-b", "-q", f"{FIXTURE_MACRO}({args})"],
@@ -75,14 +76,15 @@ def _write_nosyst(path, n_events=10, pot=1.0e19, livetime=0.0, tree=TREE):
 
 def _write_syst(path, n_sel=10, n_non=0, pot=1.0e19, livetime=0.0,
                 tables=("multisim", "multisigma"), n_table=None,
-                include_tree=True, include_dir=True):
+                include_tree=True, include_dir=True, nonmatched_fixed_evt=-1):
     """
     Write a systematics output. The knobs correspond one-to-one with the
     ways this file has been observed to go wrong in production.
     """
     _make_fixture(path, n_main=n_sel, n_non=n_non, n_table=n_table,
                   pot=pot, livetime=livetime, tables=tables,
-                  include_tree=include_tree, include_dir=include_dir)
+                  include_tree=include_tree, include_dir=include_dir,
+                  nonmatched_fixed_evt=nonmatched_fixed_evt)
 
 
 def _write_manifest(path, action="add_weights",
@@ -149,6 +151,95 @@ def test_large_nonmatched_fraction_warns_but_passes(tmp_path):
     assert rc == RC_OK, report
     assert "WARN=match_partial" in report
     assert _status(report) == "match_partial"
+
+
+def test_single_nonmatched_in_a_small_tree_does_not_warn(tmp_path):
+    """The real tree holds ~35 candidates, so one cosmic is already 3%. A
+    fraction-only threshold fired on a quarter of all jobs; cosmics belong in
+    _nonmatched, so their presence alone is not a warning."""
+    _write_nosyst(tmp_path / "nosyst.root", n_events=33)
+    _write_syst(tmp_path / "syst.root", n_sel=32, n_non=1, n_table=32)
+    _write_manifest(tmp_path / "manifest.txt")
+
+    rc, report = _run(tmp_path)
+    assert rc == RC_OK, report
+    assert "WARN=match_partial" not in report
+    assert _status(report) == "ok"
+
+
+def test_nonmatched_below_the_minimum_count_does_not_warn(tmp_path):
+    """Two of 33 is 6% -- over the fraction, under the minimum count."""
+    _write_nosyst(tmp_path / "nosyst.root", n_events=33)
+    _write_syst(tmp_path / "syst.root", n_sel=31, n_non=2, n_table=31)
+    _write_manifest(tmp_path / "manifest.txt")
+
+    rc, report = _run(tmp_path)
+    assert rc == RC_OK, report
+    assert "WARN=match_partial" not in report
+
+
+def test_nonmatched_at_the_minimum_count_warns(tmp_path):
+    """Three of 33 clears both the count and the fraction."""
+    _write_nosyst(tmp_path / "nosyst.root", n_events=33)
+    _write_syst(tmp_path / "syst.root", n_sel=30, n_non=3, n_table=30)
+    _write_manifest(tmp_path / "manifest.txt")
+
+    rc, report = _run(tmp_path)
+    assert rc == RC_OK, report
+    assert "WARN=match_partial:selectedNu:3/33" in report
+    assert _status(report) == "match_partial"
+
+
+def test_small_fraction_in_a_large_tree_does_not_warn(tmp_path):
+    """Four non-matched clears the count, but 0.4% of 1000 is well under the
+    fraction: the fraction still governs once counts are large."""
+    _write_nosyst(tmp_path / "nosyst.root", n_events=1000)
+    _write_syst(tmp_path / "syst.root", n_sel=996, n_non=4, n_table=996)
+    _write_manifest(tmp_path / "manifest.txt")
+
+    rc, report = _run(tmp_path)
+    assert rc == RC_OK, report
+    assert "WARN=match_partial" not in report
+
+
+def test_nonmatched_rows_keep_their_own_identity(tmp_path):
+    """The normal case: each _nonmatched row is a row of the selection output
+    under its own event identity."""
+    _write_nosyst(tmp_path / "nosyst.root", n_events=33)
+    _write_syst(tmp_path / "syst.root", n_sel=31, n_non=2, n_table=31)
+    _write_manifest(tmp_path / "manifest.txt")
+
+    rc, report = _run(tmp_path)
+    assert rc == RC_OK, report
+    assert "nonmatched_identity" not in report
+
+
+def test_nonmatched_identity_not_in_the_selection_is_rejected(tmp_path):
+    """The bug as it happened: every cosmic stamped with the weight reader's
+    final event, which is not an event the selection output contains. Row
+    counts are right, so nothing but an identity check can see it."""
+    _write_nosyst(tmp_path / "nosyst.root", n_events=33)
+    _write_syst(tmp_path / "syst.root", n_sel=31, n_non=2, n_table=31,
+                nonmatched_fixed_evt=99)
+    _write_manifest(tmp_path / "manifest.txt")
+
+    rc, report = _run(tmp_path)
+    assert rc == RC_TREES, report
+    assert f"ERROR=nonmatched_identity:{TREE}:2 row(s), e.g. (1,1,99)" in report
+
+
+def test_repeated_identity_is_rejected_even_when_it_is_a_real_event(tmp_path):
+    """If the stamped identity happens to belong to a real candidate, a set
+    comparison would pass it. Compared as multisets, the second copy is still
+    one more than the selection output holds."""
+    _write_nosyst(tmp_path / "nosyst.root", n_events=33)
+    _write_syst(tmp_path / "syst.root", n_sel=31, n_non=2, n_table=31,
+                nonmatched_fixed_evt=5)
+    _write_manifest(tmp_path / "manifest.txt")
+
+    rc, report = _run(tmp_path)
+    assert rc == RC_TREES, report
+    assert f"ERROR=nonmatched_identity:{TREE}:1 row(s), e.g. (1,1,5)" in report
 
 
 def test_offbeam_sample_with_zero_pot_passes(tmp_path):

@@ -38,6 +38,7 @@
 #include <fstream>
 #include <map>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "TFile.h"
@@ -93,6 +94,38 @@ namespace
         return static_cast<TTree *>(obj)->GetEntries();
     }
 
+    using event_id_t = std::tuple<Int_t, Int_t, Int_t>;
+
+    // The (Run, Subrun, Evt) of every row of a tree, as a multiset. Returns
+    // false -- and the caller skips its check rather than failing on it --
+    // if the tree or any of the three branches is missing, or if they cannot
+    // be read as Int_t: a type mismatch would otherwise read as all zeros and
+    // turn this check into a false alarm on every job.
+    bool event_ids(TDirectory * dir, const std::string & name,
+                   std::map<event_id_t, Long64_t> & out)
+    {
+        TObject * obj = get_checked(dir, name, TTree::Class());
+        if(obj == nullptr) return false;
+        TTree * t = static_cast<TTree *>(obj);
+        if(!t->GetBranch("Run") || !t->GetBranch("Subrun") || !t->GetBranch("Evt")) return false;
+
+        Int_t run(0), subrun(0), evt(0);
+        t->SetBranchStatus("*", 0);
+        for(const char * b : {"Run", "Subrun", "Evt"}) t->SetBranchStatus(b, 1);
+        const bool ok = t->SetBranchAddress("Run", &run) >= 0
+                     && t->SetBranchAddress("Subrun", &subrun) >= 0
+                     && t->SetBranchAddress("Evt", &evt) >= 0;
+        if(ok)
+            for(Long64_t i(0); i < t->GetEntries(); ++i)
+            {
+                t->GetEntry(i);
+                ++out[std::make_tuple(run, subrun, evt)];
+            }
+        t->ResetBranchAddresses();
+        t->SetBranchStatus("*", 1);
+        return ok;
+    }
+
     // Bin-1 content of a 1-D exposure histogram, or NaN when absent.
     double exposure_value(TDirectory * dir, const std::string & name)
     {
@@ -119,7 +152,8 @@ void validate_pair(const char * nosyst_path,
                    const char * sample,
                    const char * manifest_path,
                    const char * report_path,
-                   double nonmatched_warn_frac = 0.01)
+                   double nonmatched_warn_frac = 0.01,
+                   int nonmatched_warn_min = 3)
 {
     std::ofstream rep(report_path);
     rep << "SAMPLE=" << sample << "\n";
@@ -197,14 +231,13 @@ void validate_pair(const char * nosyst_path,
         rep << "ERROR=nosyst_missing_exposure\n";
         finish(rep, "output_empty", 2);
     }
-    // Offbeam/intime samples legitimately carry zero POT and are bookkept
-    // by livetime instead, so require only that *some* exposure was
-    // recorded rather than POT > 0 specifically.
-    if(!(pot_no > 0.0 || live_no > 0.0))
-    {
-        rep << "ERROR=nosyst_zero_exposure\n";
-        finish(rep, "output_empty", 2);
-    }
+    // A hard requirement that POT or Livetime be nonzero was removed here:
+    // some upstream productions have a confirmed bug where the CAF files'
+    // own exposure metadata is genuinely zero, which is not something a
+    // rerun of this job can fix. POT=0/LIVETIME=0 is still recorded above
+    // for every job, so a zero exposure remains visible in the record for
+    // anyone auditing a sample's totals -- it just no longer blocks the
+    // job from completing.
 
     // Every tree the manifest names must exist in the selection output.
     std::map<std::string, Long64_t> n_nosyst;
@@ -296,39 +329,100 @@ void validate_pair(const char * nosyst_path,
                 if(fail_status.empty()) fail_status = "match_unknown";
                 continue;
             }
-            if(n_in > 0 && n_sel == 0)
+            // Everything fell through to _nonmatched. This can mean the
+            // weights were never actually applied to anything, but it is
+            // also the physically expected outcome for some sample types
+            // -- dirt MC in particular, where an in-volume-reconstructed
+            // candidate generated outside the active volume often has no
+            // single GENIE-generated parent to truth-match against.
+            // Treating this as fatal was inconsistent besides: a job with
+            // *zero* selected candidates already sails through this same
+            // check untouched (it only triggers when n_in > 0), so a job
+            // with one candidate that fails to match was held to a
+            // stricter standard than one with none at all. Warn rather
+            // than fail -- the TREE_ line above already records the full
+            // picture for auditing a sample's match rate -- and skip the
+            // weight-table checks below, since there is nothing
+            // meaningful to check in them when nothing matched.
+            bool any_matched = n_sel > 0;
+            if(n_in > 0 && !any_matched)
             {
-                // Everything fell through to _nonmatched: the weights were
-                // never actually applied to anything.
-                rep << "ERROR=match_empty:" << e.name << "\n";
-                rc = 5;
-                if(fail_status.empty()) fail_status = "match_empty";
-                continue;
+                rep << "WARN=match_empty:" << e.name << "\n";
+                warn_match = true;
             }
             // Each weight table is filled once per matched record.
-            for(const std::string & t : e.table_types)
+            if(any_matched)
             {
-                const std::string tname = e.name + "_" + t + "Tree";
-                const Long64_t n_tab = tree_entries(dsy, tname);
-                if(n_tab < 0)
+                for(const std::string & t : e.table_types)
                 {
-                    rep << "ERROR=missing_weight_table:" << tname << "\n";
-                    rc = 5;
-                    if(fail_status.empty()) fail_status = "match_empty";
-                    continue;
+                    const std::string tname = e.name + "_" + t + "Tree";
+                    const Long64_t n_tab = tree_entries(dsy, tname);
+                    if(n_tab < 0)
+                    {
+                        rep << "ERROR=missing_weight_table:" << tname << "\n";
+                        rc = 5;
+                        if(fail_status.empty()) fail_status = "match_empty";
+                        continue;
+                    }
+                    if(n_tab != n_sel)
+                    {
+                        rep << "ERROR=weight_table_entries:" << tname
+                            << ":" << n_tab << "!=" << n_sel << "\n";
+                        rc = 5;
+                        if(fail_status.empty()) fail_status = "match_unknown";
+                    }
                 }
-                if(n_tab != n_sel)
+            }
+            // Every _nonmatched row is a row of the selection output, so its
+            // (Run, Subrun, Evt) must be one the selection output contains --
+            // and no more often than it does there. The counts above cannot
+            // see identities: systematics once stamped every cosmic in a job
+            // with the weight reader's final event, leaving the row count
+            // right and every row's event wrong. Compared as multisets, so a
+            // single identity repeated across rows is caught even when that
+            // identity happens to be a real candidate.
+            if(n_non > 0)
+            {
+                std::map<event_id_t, Long64_t> in_ids, non_ids;
+                if(event_ids(dno, e.name, in_ids) && event_ids(dsy, e.name + "_nonmatched", non_ids))
                 {
-                    rep << "ERROR=weight_table_entries:" << tname
-                        << ":" << n_tab << "!=" << n_sel << "\n";
-                    rc = 5;
-                    if(fail_status.empty()) fail_status = "match_unknown";
+                    Long64_t n_bad(0);
+                    event_id_t example{};
+                    for(const auto & [id, n] : non_ids)
+                    {
+                        const auto it = in_ids.find(id);
+                        const Long64_t have = (it == in_ids.end()) ? 0 : it->second;
+                        if(n > have)
+                        {
+                            if(n_bad == 0) example = id;
+                            n_bad += n - have;
+                        }
+                    }
+                    if(n_bad > 0)
+                    {
+                        rep << "ERROR=nonmatched_identity:" << e.name << ":" << n_bad
+                            << " row(s), e.g. (" << std::get<0>(example) << ","
+                            << std::get<1>(example) << "," << std::get<2>(example) << ")\n";
+                        rc = 5;
+                        if(fail_status.empty()) fail_status = "sys_error";
+                    }
                 }
             }
             // Soft signal only: a partial match is often a real physics
             // effect rather than a broken job, so it is reported for later
             // triage but does not block the transfer.
-            if(n_in > 0 && n_non_eff > nonmatched_warn_frac * n_in)
+            //
+            // Both a fraction and a minimum count must be exceeded. A tree
+            // holds ~35 candidates, so a single cosmic is already 3% and a
+            // fraction alone fired on a quarter of all jobs -- noise that
+            // buries the cases worth looking at. Cosmics and truth-matching
+            // failures legitimately land in "_nonmatched" (that is what it is
+            // for), and after the -Ofast fix they land there in numbers, so the
+            // warning must key on an excess rather than on presence. The exact
+            // counts are in the TREE_ lines regardless, so nothing is lost by
+            // warning less.
+            if(n_in > 0 && n_non_eff >= nonmatched_warn_min
+               && n_non_eff > nonmatched_warn_frac * n_in)
             {
                 rep << "WARN=match_partial:" << e.name
                     << ":" << n_non_eff << "/" << n_in << "\n";

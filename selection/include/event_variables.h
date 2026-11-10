@@ -136,6 +136,22 @@ namespace evar
     REGISTER_VAR_SCOPE(RegistrationScope::Event, nnu, nnu);
 
     /**
+     * @brief Variable for the number of true neutrinos in the MC truth record.
+     * @details This variable returns the length of the "rec.mc.nu" vector,
+     * i.e. the flat CAF's "rec.mc.nu..length": every neutrino the generator
+     * produced in the spill, whether or not SPINE reconstructed or matched an
+     * interaction to it. This is distinct from @ref nnu and @ref ntrue, which
+     * count SPINE truth interactions, and is what indexes the per-neutrino
+     * MC truth (and hence the flux ancestry and systematic weights).
+     * @tparam T the top-level record.
+     * @param sr the StandardRecord to apply the variable on.
+     * @return double the number of neutrinos in the MC truth record.
+     */
+    template<typename T>
+    double mc_nnu(const T & sr) { return sr.mc.nu.size(); }
+    REGISTER_VAR_SCOPE(RegistrationScope::Event, mc_nnu, mc_nnu);
+
+    /**
      * @brief Variable for the multiplicity of in-time interactions in the
      * event.
      * @details This variable counts the number of in-time interactions in the

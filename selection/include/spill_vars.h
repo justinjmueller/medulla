@@ -18,7 +18,6 @@
 #include "sbnanaobj/StandardRecord/Proxy/SRProxy.h"
 #include "sbnanaobj/StandardRecord/SRBNBInfo.h"
 #include "sbnanaobj/StandardRecord/SRNuMIInfo.h"
-#include "sbnana/SBNAna/Vars/getBNBFoM.h"
 
 #include "framework.h"
 
@@ -339,32 +338,16 @@ namespace svar
     REGISTER_VAR_SCOPE(RegistrationScope::BNBSpill, btjt2, btjt2);
 
     /**
-     * @brief Computed BNB Figure of Merit (FOM) from individual beam monitors.
-     * @details Computes the FOM from the individual beam monitoring device
-     * readings using getBNBFoM(), taking into account both position/intensity
-     * monitors and multi-wire beam-width measurements. This is the equivalent
-     * of kSpillFoM in sbnana/SBNAna/Vars/BNBVars.cxx.
+     * @brief Variable for the BNB Figure of Merit (FOM).
+     * @details Reads the FOM directly from the spill info object's own FOM
+     * attribute (see SBN DocDB 41901), rather than recomputing it locally
+     * from the individual beam monitor readings.
      * @tparam T the BNB spill container type.
      * @param spill the BNB spill info object to apply the variable on.
-     * @return the computed FOM value for the spill.
+     * @return the FOM reading for the spill.
      */
     template<typename T>
-    double fom(const T & spill) {
-        return getBNBFoM(
-            spill_time_sec(spill),
-            tor860(spill),
-            tor875(spill),
-            hp875(spill),
-            hptg1(spill),
-            hptg2(spill),
-            vp873(spill),
-            vp875(spill),
-            m875hs(spill),
-            m875vs(spill),
-            m876hs(spill),
-            m876vs(spill)
-        );
-    }
+    double fom(const T & spill) { SAFE_SPILL_VAR(spill.FOM); }
     REGISTER_VAR_SCOPE(RegistrationScope::BNBSpill, fom, fom);
 
     //=========================================================================
