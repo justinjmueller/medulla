@@ -16,3 +16,14 @@
 # output_dir = "plots_v32/efficiency_nc_sideband"
 # figures = ["selection_efficiency_table", "efficiency_vs_trueVisibleEnergy", "efficiency_vs_truePi0Mass",
 #            "efficiency_vs_trueLeadingPhotonEnergy", "efficiency_vs_trueNeutrinoEnergy"]
+
+# Photon sideband plots on the final v32 file (merged_final_v32b_flux.root = post-stage-5 file
+# with events/NuMIFull/photon_sideband_variationTree grafted in).
+
+[[job]]
+name = "photon_sideband"
+cli = "analysis/makeSelectionPlotsCLI.py"
+toml = "analysis/photon_sideband_plots.toml"
+input = "/exp/icarus/data/users/micarrig/merged_final_v32b_flux.root"
+output_dir = "plots_v32/photon_sideband_plots"
+figures = ["reco_pi0_invariant_mass", "true_pi0_invariant_mass", "reco_visible_energy", "true_visible_energy", "reco_leading_photon_energy", "true_leading_photon_energy", "reco_secondary_photon_energy", "true_secondary_photon_energy", "reco_photon_opening_angle", "true_photon_opening_angle", "reco_leading_photon_start_dedx", "reco_secondary_photon_start_dedx", "reco_leading_photon_axial_spread", "reco_secondary_photon_axial_spread", "reco_leading_photon_directional_spread", "reco_secondary_photon_directional_spread", "reco_leading_photon_photon_softmax", "reco_secondary_photon_photon_softmax", "reco_leading_photon_primary_softmax", "reco_secondary_photon_primary_softmax", "reco_photon_multiplicity", "reco_flash_time_mod", "true_neutrino_energy", "pi0_mass_diff", "visible_energy_diff", "leading_photon_energy_diff", "secondary_photon_energy_diff", "photon_opening_angle_diff", "true_vs_reco_pi0_invariant_mass", "true_vs_reco_visible_energy", "true_vs_reco_leading_photon_energy", "true_vs_reco_secondary_photon_energy", "true_vs_reco_photon_opening_angle"]

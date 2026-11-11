@@ -111,50 +111,6 @@ nan_category_replacement = 5.0
 # reco_visible_energy patch: NuMI_nue_sideband_phase{1,2}_ncpi0_v31.toml +
 # scripts/graft_tree.py. See CLAUDE.md, "nc_sideband detector systematics".
 [[tree]]
-origin = 'events/NuMIFull/nc_sideband'
-destination = 'events/NuMIFull/'
-name = 'nc_sideband'
-action = 'add_weights'
-table_types = ['multisim', 'multisigma', 'variation', 'NuMIfluxsim']
-gundam_store_syst = true
-is_nu = true
-is_data = false
-
-[[tree]]
-origin = 'events/data/nc_sideband'
-destination = 'events/data/'
-name = 'nc_sideband'
-action = 'copy'
-gundam_store_syst = false
-is_nu = false
-is_data = true
-nan_category_replacement = -1
-
-[[tree]]
-origin = 'events/dataBeamOff/nc_sideband'
-destination = 'events/dataBeamOff/'
-name = 'nc_sideband'
-action = 'copy'
-gundam_store_syst = false
-is_nu = false
-is_data = true
-nan_category_replacement = 5.0
-
-[[tree]]
-origin = 'events/rock/nc_sideband'
-destination = 'events/rock/'
-name = 'nc_sideband'
-action = 'copy'
-gundam_store_syst = false
-is_nu = false
-is_data = true
-nan_category_replacement = 5.0
-
-# photon_sideband (photon background control region). Like nc_sideband it has no
-# electrons, so the normal phase 2 (reco_leading_electron_energy splines) gives it
-# flat detector weights; its detector splines come from NuMI_nue_sideband_phase{1,2}.toml,
-# NuMI_nueEnhanced_sideband_phase1.toml + scripts/graft_tree.py. See CLAUDE.md, "photon_sideband".
-[[tree]]
 origin = 'events/NuMIFull/photon_sideband'
 destination = 'events/NuMIFull/'
 name = 'photon_sideband'
@@ -307,7 +263,8 @@ name = 'shower_scale'
 type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1 ,2, 3]
-scale = [-3, -2, -1, 1, 1, 2, 3]
+# two-sided: -sigma uses the down sample as is, so no negative (mirroring) scale
+scale = [3, 2, 1, 1, 1, 2, 3]
 ordinate = 'cv'
 points = ['shower_scale_down', 'shower_scale_down', 'shower_scale_down', 'cv', 'shower_scale_up', 'shower_scale_up', 'shower_scale_up']
 

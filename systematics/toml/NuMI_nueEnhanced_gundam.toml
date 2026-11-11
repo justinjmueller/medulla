@@ -181,7 +181,8 @@ name = 'shower_scale'
 type = 'variation'
 index = -1
 nsigma = [-3, -2, -1, 0, 1 ,2, 3]
-scale = [-3, -2, -1, 1, 1, 2, 3]
+# two-sided: -sigma uses the down sample as is, so no negative (mirroring) scale
+scale = [3, 2, 1, 1, 1, 2, 3]
 ordinate = 'NuMI_nue'
 points = ['shower_scale_down', 'shower_scale_down', 'shower_scale_down', 'NuMI_nue', 'shower_scale_up', 'shower_scale_up', 'shower_scale_up']
 

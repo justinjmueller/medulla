@@ -13,8 +13,14 @@ file; to_gundam needs that tree next to nc_sideband in the stage-5 file.
         --ref    events/NuMIFull/nc_sideband \
         --output /exp/icarus/data/users/micarrig/merged_final_v31e_flux.root [--dry-run]
 
+With --replace, --tree must ALREADY be in --base (e.g. v32: phase 2 writes
+events/NuMIFull/photon_sideband_variationTree with electron-energy weights
+that are meaningless for the sideband); every cycle of it is deleted in the
+copy and the --extra version is written in its place.
+
 What it does:
-  1. Checks (read-only) that --tree is in --extra and NOT in --base, that --ref
+  1. Checks (read-only) that --tree is in --extra and NOT in --base (with
+     --replace: that it IS in --base), that --ref
      is in --base, that both trees have the same number of entries, and that
      Run/Subrun/Evt match entry by entry (to_gundam pairs them by entry index).
   2. Stops here with --dry-run.
@@ -87,6 +93,8 @@ def main():
     p.add_argument('--ref', required=True, help='tree in --base that --tree must line up with')
     p.add_argument('--output', required=True, help='new file; must not exist')
     p.add_argument('--dry-run', action='store_true', help='run the checks only, copy and write nothing')
+    p.add_argument('--replace', action='store_true',
+                   help='--tree must already exist in --base; replace it (all cycles) in the copy')
     a = p.parse_args()
 
     base, extra, out = (os.path.abspath(x) for x in (a.base, a.extra, a.output))
@@ -110,8 +118,14 @@ def main():
     fb, fe = open_read(base), open_read(extra)
     if get_tree(fe, a.tree, '--extra') is None:
         fail(f'{a.tree} not found in {extra}')
-    if get_tree(fb, a.tree, '--base') is not None:
-        fail(f'{a.tree} already exists in {base}; nothing to graft')
+    in_base = get_tree(fb, a.tree, '--base') is not None
+    if in_base and not a.replace:
+        fail(f'{a.tree} already exists in {base}; use --replace to overwrite it in the copy')
+    if a.replace and not in_base:
+        fail(f'--replace given but {a.tree} is not in {base}; drop --replace to add it')
+    if a.replace:
+        old_n = fb.Get(a.tree).GetEntries()
+        print(f'[INFO] --replace: existing {a.tree} in --base has {old_n} entries; it will be replaced in the copy.')
     if get_tree(fb, a.ref, '--base') is None:
         fail(f'{a.ref} not found in {base}')
     dest_dir_path = os.path.dirname(a.tree)
@@ -121,7 +135,8 @@ def main():
     fb.Close()
 
     if a.dry_run:
-        print(f'[DRY RUN] would copy {base} -> {partial}, add {a.tree} ({n} entries), re-check, rename to {out}.')
+        verb = 'replace' if a.replace else 'add'
+        print(f'[DRY RUN] would copy {base} -> {partial}, {verb} {a.tree} ({n} entries), re-check, rename to {out}.')
         return 0
 
     t0 = time.time()
@@ -134,6 +149,10 @@ def main():
         fail(f'cannot open {partial} for update (left in place)')
     d = fo.GetDirectory(dest_dir_path) if dest_dir_path else fo
     d.cd()
+    if a.replace:
+        d.Delete(os.path.basename(a.tree) + ';*')
+        if d.Get(os.path.basename(a.tree)):
+            fail(f'could not delete the old {a.tree} in {partial} (left in place)')
     src = fe.Get(a.tree)
     clone = src.CloneTree(-1, 'fast')
     clone.SetDirectory(d)
@@ -146,6 +165,10 @@ def main():
     if get_tree(fo, a.tree, 'output') is None:
         fail(f'{a.tree} missing after write; {partial} left in place')
     check_alignment(fo, a.tree, fo, a.ref)
+    d = fo.GetDirectory(dest_dir_path) if dest_dir_path else fo
+    cycles = [k.GetCycle() for k in d.GetListOfKeys() if k.GetName() == os.path.basename(a.tree)]
+    if len(cycles) != 1:
+        fail(f'{a.tree} has {len(cycles)} key cycles after write (expected 1); {partial} left in place')
     fo.Close()
     os.rename(partial, out)
     print(f'[INFO] wrote {out} ({os.path.getsize(out)/1e9:.2f} GB) in {time.time() - t0:.0f} s')

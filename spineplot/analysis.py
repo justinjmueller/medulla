@@ -4,6 +4,7 @@ import uproot
 from matplotlib import pyplot as plt
 
 from sample import Sample
+from systematic import Systematic, BinnedCovarianceSystematic, read_gundam_binning, g4_fractional_covariance
 from figure import SpineFigure, SimpleFigure
 from spectra1d import SpineSpectra1D, SpineSpectraCutFlow, SpineSystematics, SpineSpectraNMinus1
 from spectra2d import SpineSpectra2D
@@ -94,6 +95,12 @@ class Analysis:
             for v in self._variables.values():
                 s.register_variable(v, self._categories)
             s.process_systematics(recipes)
+
+        # Systematics defined by a fractional covariance in bins of one
+        # variable (e.g. GEANT4 reinteractions, built GUNDAM-style from a
+        # separate sample's multisim universes). Added after the recipes so
+        # they appear as ordinary systematics of their target sample.
+        self._add_binned_covariance_systematics()
 
         # Load the artists table
         if 'figure' not in self._config.keys():
@@ -285,6 +292,49 @@ class Analysis:
                             )
                             self._figures[fig['name']].register_spine_artist(art, draw_kwargs=x.get('draw_kwargs', {}))
                             self._artists.append(art)
+
+    def _add_binned_covariance_systematics(self) -> None:
+        """
+        Build the `[[analysis.binned_covariance_systematic]]` entries.
+
+        Each entry is either
+          - a dial: a fractional covariance in bins of `bin_variable` (binning
+            from the GUNDAM-format `binning_file`), computed from the multisim
+            universes of `dial` in `dial_tree` of `source_file` exactly like
+            calc_geant4_covariance.py, then propagated to `target_sample` by
+            throwing p ~ N(1, cov) and weighting each event by p[its bin]; or
+          - a combination: `combine = [names...]` of entries defined above it,
+            summed as independent systematics (Systematic.combine).
+        """
+        specs = self._config['analysis'].get('binned_covariance_systematic', [])
+        for spec in specs:
+            name = spec['name']
+            target = self._samples.get(spec.get('target_sample'))
+            if target is None:
+                raise ConfigException(f"binned_covariance_systematic '{name}': target_sample '{spec.get('target_sample')}' is not a sample.")
+            if 'combine' in spec:
+                missing = [n for n in spec['combine'] if n not in target._systematics]
+                if missing:
+                    raise ConfigException(f"binned_covariance_systematic '{name}': cannot combine {missing}; define them first.")
+                syst = Systematic.combine([target._systematics[n] for n in spec['combine']], name, spec.get('label', None))
+            else:
+                var_name, edges = read_gundam_binning(spec['binning_file'])
+                bin_variable = spec.get('bin_variable', var_name)
+                if bin_variable != var_name:
+                    raise ConfigException(f"binned_covariance_systematic '{name}': bin_variable '{bin_variable}' but {spec['binning_file']} bins '{var_name}'.")
+                frac_cov, _, _ = g4_fractional_covariance(
+                    spec['source_file'], spec['source_tree'], spec['dial_tree'], spec['dial'],
+                    bin_variable, edges, spec.get('weight_branch', 'ppfx_cv_weight'))
+                syst = BinnedCovarianceSystematic(name, spec.get('label', None), bin_variable, edges, frac_cov,
+                                                  nthrows=spec.get('nthrows', 1000), seed=spec.get('seed', 1))
+                for v in self._variables.values():
+                    syst.register_variable(v)
+                cv_weights = None
+                if getattr(target, '_weight_branch', None) is not None and target._weight_branch in target._data.columns:
+                    cv_weights = target._data[target._weight_branch].to_numpy()
+                syst.process(target, target._presel_mask, cv_weights=cv_weights)
+            target._systematics[name] = syst
+            print(f"Added binned-covariance systematic '{name}' to sample '{target._name}'.")
 
     def _resolve_category_groups(self, group_setting, artist_type, fig_name, key='groups') -> dict:
         """

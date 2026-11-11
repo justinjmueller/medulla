@@ -55,6 +55,61 @@ category_labels = ['$\nu_{e}$ Signal', '$\nu_{e}$ OOFV', '$\nu_{\mu}$', '$\nu$ O
 category_colors = ['#011959', '#1C5A62', '#687B3E', '#D29343', '#FDB7BC', '#ca80a0ff']
 category_types = ['histogram', 'histogram', 'histogram', 'histogram','histogram','histogram']
 
+# GEANT4 reinteraction systematics, built the GUNDAM way (same as
+# gundam-icarus/configsNue/Configs_ParameterSet/G4/calc_geant4_covariance.py):
+# a fractional covariance per dial in reco_visible_energy bins, from the 2000
+# multisim universes of the separate g4 sample (weighted by ppfx_cv_weight),
+# then propagated to NuMIFull by throwing p ~ N(1, cov) and weighting each event
+# by p[its reco_visible_energy bin]. Proton, pi+ and pi- are the dials in the fit.
+# 'g4' sums the three (independent) and is the line used in the total breakdown.
+[[analysis.binned_covariance_systematic]]
+name = 'g4_proton'
+label = 'G4 proton reinteraction'
+target_sample = 'NuMIFull'
+source_file = '/exp/icarus/data/users/micarrig/merged_final_g4_v32_flux.root'
+source_tree = 'events/g4/selected'
+dial_tree = 'events/g4/selected_multisimTree'
+dial = 'reinteractions_proton_Geant4'
+bin_variable = 'reco_visible_energy'
+binning_file = '/exp/icarus/app/users/micarrig/gundam/gundam-icarus/configsNue/binnings/binning_PhotonSidebandVisENominal.txt'
+weight_branch = 'ppfx_cv_weight'
+nthrows = 1000
+seed = 1
+
+[[analysis.binned_covariance_systematic]]
+name = 'g4_piplus'
+label = 'G4 $\pi^{+}$ reinteraction'
+target_sample = 'NuMIFull'
+source_file = '/exp/icarus/data/users/micarrig/merged_final_g4_v32_flux.root'
+source_tree = 'events/g4/selected'
+dial_tree = 'events/g4/selected_multisimTree'
+dial = 'reinteractions_piplus_Geant4'
+bin_variable = 'reco_visible_energy'
+binning_file = '/exp/icarus/app/users/micarrig/gundam/gundam-icarus/configsNue/binnings/binning_PhotonSidebandVisENominal.txt'
+weight_branch = 'ppfx_cv_weight'
+nthrows = 1000
+seed = 2
+
+[[analysis.binned_covariance_systematic]]
+name = 'g4_piminus'
+label = 'G4 $\pi^{-}$ reinteraction'
+target_sample = 'NuMIFull'
+source_file = '/exp/icarus/data/users/micarrig/merged_final_g4_v32_flux.root'
+source_tree = 'events/g4/selected'
+dial_tree = 'events/g4/selected_multisimTree'
+dial = 'reinteractions_piminus_Geant4'
+bin_variable = 'reco_visible_energy'
+binning_file = '/exp/icarus/app/users/micarrig/gundam/gundam-icarus/configsNue/binnings/binning_PhotonSidebandVisENominal.txt'
+weight_branch = 'ppfx_cv_weight'
+nthrows = 1000
+seed = 3
+
+[[analysis.binned_covariance_systematic]]
+name = 'g4'
+label = 'Geant4'
+target_sample = 'NuMIFull'
+combine = ['g4_proton', 'g4_piplus', 'g4_piminus']
+
 [variables]
 [variables.true_neutrino_energy]
 key = 'true_neutrino_energy'  

@@ -623,6 +623,74 @@ Notify on both success and failure. A silent failure is worse than a noisy one.
   `selected_nonmatched` combined (206 vs 205, 228 vs 227). Over all 80 jobs: 16,555 selected,
   16,551 in the systematics `selected`, 2 in `selected_nonmatched`, 2 lost with no record.
   Find why (weight matching / entry loop in `systematics/src/trees.cc`, `weight_reader.cc`).
+- TODO v32p2: also carry the STANDARD recombination variation (owner, 2026-11-10), so the fit can
+  use either it or `recombination_residual`. v32 never processed it (`recombination` is disabled in
+  `selection.toml`/`selection_nue.toml`; the recomb projects apply `shower_energy_scale = 1.046`).
+  Needs: new selection TOMLs (= `selection*_recomb_residual.toml` without `shower_energy_scale`,
+  sample name `recombination`), two new projects (~210 + ~78 jobs), add them to the stage-0 merges,
+  both keys in `[variations]` and `[[sys]]` of `NuMI_nue_gundam.toml`/`NuMI_nueEnhanced_gundam.toml`
+  and the three `NuMI_*sideband_phase*.toml`, then phase 1, phase 2 (all 2,472 jobs) and sideband splines again.
+- TODO: the recomb projects' `output_systematics_jobid*.root` are all ~980-byte stubs: `run_systematics`
+  throws `WeightReader: Index out of range in 'get_nuniv()'` when a selected event has `nwgt = 0`
+  (reproduced in `/exp/icarus/data/users/micarrig/v32_work/recomb_debug`). Not used downstream, but a
+  `-y` status check there would delete the good selection files with them.
+- TODO: phase 2 `run_systematics` (add_detsys_weights from splines) segfaults at random, ~8% of grid
+  jobs in v32. Reproduced locally with job 635 (crashed 2 of 3 identical runs, at different trees) and
+  job 0. Completed runs give identical weights, and `set -e` in `submit_variation_phase2.sh` keeps
+  crashed jobs from uploading, so outputs are fine; it only costs relaunches. Likely uninitialized or
+  freed memory in the detsys apply path (`DetsysCalculator` splines ctor / `copy_with_detsys_weights`).
+  Debug inputs: `/exp/icarus/data/users/micarrig/v32_work/p2debug_0635*`.
+- TODO (v32, 2026-11-10): the main photon-sideband detector splines
+  (`/exp/icarus/data/users/micarrig/v32_sideband/variation_splines_photon_sideband.root`) sit
+  ABOVE 1 by ~5-10% for nearly every variation in 3 of the 4 `reco_visible_energy` bins. The CV
+  sample's photon_sideband rate is low compared with the variations (cv 1998/326.9e18 = 6.11 per
+  1e18 POT vs induction_high 1388/217.7e18 = 6.37, +4%), while `selected` agrees (16.29 vs 16.16).
+  ~2 sigma per variation from stats, but coherent across variations: check whether the CV production
+  (`spine/NuMI/Nu_det_sys/CV`) differs from the `dcarber/.../NuMI_Nu_det_sys_flat_cafs` variations
+  for photon-like events. The nue sideband splines scatter around 1 with no direction.
+  UPDATE 2026-11-10 (`analysis/photonSidebandDetsysCheck.py`, plots in `plots_v32/photon_sideband_detsys/`):
+  NuMIFull (nominal, 7.095834e20 POT as in the plotting TOMLs) gives 6.44 per 1e18 POT, the pooled
+  14 variations 6.50 (+0.9%), the det-var CV 6.11 (-5.1%, 1.9 sigma vs NuMIFull). In the TOTAL the CV
+  looks like the odd one out, but NOT conclusive: per reco_visible_energy bin, CV/NuMIFull =
+  0.92/0.91/0.96/1.02 (+-5% each) while pooled-variations/NuMIFull = 0.99/0.98/0.92/1.15, i.e. NuMIFull
+  (a different production) differs in shape from both det-var productions; in `selected` CV/NuMIFull
+  = 0.985 and variations/NuMIFull = 0.967. Also depends on the NuMIFull POT (7.0958e20 hard-coded in the
+  plotting TOMLs vs 1.538e21 in the merged POT histogram). If real, the sideband splines (variation/CV)
+  carry a ~+5% offset; options: normalize to NuMIFull/pooled variations, or shape-only splines.
+  UPDATE (by production, standard/main variations only; plot
+  `plots_v32/photon_sideband_detsys/summary_vs_NuMIFull.png`): ratio to NuMIFull per visE bin is
+  0.98/0.99/0.92/1.15 for the 9 dcarber flat_cafs variations, 0.99/0.97/0.94/1.15 for the 4 spine
+  Nu_det_sys ones (intrinsic_*, wire_gap, cathode_bend), and 0.92/0.91/0.96/1.02 for the CV (same spine
+  production as those 4). So NOT a production effect: all 13 variations agree with each other; they are
+  ~15% above NuMIFull above 1.4 GeV (~4 sigma); the CV alone is ~8% low below 1.1 GeV and matches NuMIFull
+  (not the variations) above 1.4 GeV. Splines (var/CV) get ~+7% (low bins) and ~+13% (top bin) for nearly
+  every variation. Ask the CV sample's producer whether it differs (flux/generator/reco version).
+- TODO (v32, 2026-11-10, owner deciding the method): the MAIN det-var CV
+  (`spine/NuMI/Nu_det_sys/CV`) shares 0% of its generated interactions with the main variations, which
+  share 62-86% with each other (matched on Evt + true_neutrino_energy; the nue set's NuMI_nue DOES share
+  with its variations). So every main spline (selected AND sidebands) carries the CV's independent
+  statistical fluctuation as a common offset in all variations (`null` included): photon_sideband
+  +6/+9/-4/+13% per visE bin, nc_sideband ~+3%, selected -13..+8% per eleE bin. In the fit that inflates
+  the detector uncertainty: quadrature over 12 variations ~29% (sideband) / ~22% (selected) vs ~9% / ~11%
+  with a pseudo-CV = POT-normalized mean of the 4 high/low pairs (induction, coherent, intrinsic, lifetime),
+  which removes the offset to <1.5%. Checked alternatives: NuMIFull as CV (different production; fixes
+  low sideband bins, not the top bin; selected offset -3.3%), null x overall CV/null scale (25%/17%),
+  average(pairs, scaled null) (15%/13%). Photon energy scale is NOT the cause (reco/true agrees to 0.2%).
+  A fix needs a multi-key (POT-weighted average) ordinate option in `systematics/src/detsys.cc`, then
+  phase 1 + phase 2 + merge B + stage 5 + sideband splines again. Scripts:
+  `analysis/photonSidebandVariationsVsCV.py`, `analysis/photonEnergyScaleCheck.py`,
+  `analysis/photonSidebandMatchedCheck.py`; plots in `plots_v32/photon_sideband_detsys/`.
+  v32 was finished with the det-var CV as is.
+  Supporting evidence (2026-11-10): a colleague's CC Np0pi muon selection with the same main det-var
+  samples (CV 41,770 events at 3.312e20 POT, variations 17,361-27,843 events; plot in
+  gundam-icarus/configsNue/dump/image (4).png) shows no visible common offset: their CV stat is +-0.5%
+  total (~+-1% per visE bin), below their +-2% variation scatter, as expected if the offset is the
+  independent CV's fluctuation (~1/sqrt(N_CV)). Open question for them: 3.312e20 is the CV's RAW file
+  POT; the corrected POT (used by phase 1) is 3.269e20 (-1.3%), while their variation POTs look like
+  the corrected ones (cathode_bend 1.91e20). If so, their var/CV ratios are all 1.3% too high, which
+  could hide a 1-2% common offset; ask them to recheck with 3.269e20 and to add `null`.
+- TODO: `medulla.py` prints "Submitted N Phase 2 jobs" even when `jobsub_submit` bails out
+  (seen 2026-11-09, condor_vault_storer exit 256). Check the jobsub return code.
 
 ## Where we left off (2026-10-09)
 

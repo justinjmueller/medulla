@@ -123,7 +123,8 @@ name = "shower_scale"
 type = "variation"
 index = -1
 nsigma = [ -3, -2, -1, 0, 1, 2, 3,]
-scale = [ -3, -2, -1, 1, 1, 2, 3,]
+# two-sided: -sigma uses the down sample as is, so no negative (mirroring) scale
+scale = [ 3, 2, 1, 1, 1, 2, 3,]
 ordinate = "cv"
 points = [ "shower_scale_down", "shower_scale_down", "shower_scale_down", "cv", "shower_scale_up", "shower_scale_up", "shower_scale_up",]
 
@@ -824,7 +825,7 @@ index = 25
 
 [input]
 # CHANGE ME: a production that has the photon_sideband tree (v31 and earlier do not).
-path = "/exp/icarus/data/users/micarrig/CHANGE_ME_merged_stage0.root"
+path = "/exp/icarus/data/users/micarrig/merged_stage0_v32.root"
 
 [output]
 path = "variation_splines_photon_sideband.root"

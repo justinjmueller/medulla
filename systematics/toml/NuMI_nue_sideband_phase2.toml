@@ -118,13 +118,23 @@ ordinate = "cv"
 points = [ "yz_uniformity", "yz_uniformity", "yz_uniformity", "cv", "yz_uniformity", "yz_uniformity", "yz_uniformity",]
 
 [[sys]]
-name = "recombination"
+name = "recombination_residual"
 type = "variation"
 index = -1
 nsigma = [ -3, -2, -1, 0, 1, 2, 3,]
 scale = [ -3, -2, -1, 1, 1, 2, 3,]
 ordinate = "cv"
-points = [ "recombination", "recombination", "recombination", "cv", "recombination", "recombination", "recombination",]
+points = [ "recombination_residual", "recombination_residual", "recombination_residual", "cv", "recombination_residual", "recombination_residual", "recombination_residual",]
+
+[[sys]]
+name = "shower_scale"
+type = "variation"
+index = -1
+nsigma = [ -3, -2, -1, 0, 1, 2, 3,]
+# two-sided: -sigma uses the down sample as is, so no negative (mirroring) scale
+scale = [ 3, 2, 1, 1, 1, 2, 3,]
+ordinate = "cv"
+points = [ "shower_scale_down", "shower_scale_down", "shower_scale_down", "cv", "shower_scale_up", "shower_scale_up", "shower_scale_up",]
 
 [[sys]]
 name = "null"
@@ -824,14 +834,14 @@ index = 25
 [input]
 # CHANGE ME: the pre-stage-5 merged_final of a production that has photon_sideband
 # (copy_with_detsys_weights needs Run/Subrun/Evt as the last branches; stage 5 appends ppfx_cv_weight).
-path = "/exp/icarus/data/users/micarrig/CHANGE_ME_merged_final.root"
+path = "/exp/icarus/data/users/micarrig/merged_final_v32.root"
 
 [output]
 path = "photon_sideband_varsys.root"
 histogram_destination = "variations/"
 
 [variations]
-keys = [ "induction_high", "induction_low", "coherent_high", "coherent_low", "intrinsic_high", "intrinsic_low", "lifetime_high", "lifetime_low", "scintillation", "wire_gap", "yz_uniformity", "recombination", "cathode_bend", "null", "cv",]
+keys = [ "induction_high", "induction_low", "coherent_high", "coherent_low", "intrinsic_high", "intrinsic_low", "lifetime_high", "lifetime_low", "scintillation", "wire_gap", "yz_uniformity", "recombination_residual", "cathode_bend", "null", "shower_scale_up", "shower_scale_down", "cv",]
 origin = "events/"
 tree = "photon_sideband"
 result_destination = "detsys_results/"
@@ -840,6 +850,6 @@ bins = [ [ 0.0, 0.81, 1.1, 1.4, 5.0,], [ 400.0, 500.0, 600.0, 800.0, 1000.0, 150
 nuniverses = 1000
 variable_length = false
 # CHANGE ME: where steps 1 and 2 wrote their splines.
-splines_file = "/exp/icarus/data/users/micarrig/CHANGE_ME_photon_sideband/variation_splines_photon_sideband.root"
-splines_file_nue = "/exp/icarus/data/users/micarrig/CHANGE_ME_photon_sideband/variation_splines_photon_sideband_nue.root"
+splines_file = "/exp/icarus/data/users/micarrig/v32_sideband/variation_splines_photon_sideband.root"
+splines_file_nue = "/exp/icarus/data/users/micarrig/v32_sideband/variation_splines_photon_sideband_nue.root"
 nue_categories = [ 0, 1,]

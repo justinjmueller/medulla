@@ -714,3 +714,117 @@ class Systematic:
     @property
     def std(self):
         return self._std
+
+
+def read_gundam_binning(path):
+    """
+    Read a single-variable GUNDAM binning file and return its bin edges.
+
+    The format is a header line ``variables: X X`` followed by one
+    ``lo hi`` pair per bin. Bins must be contiguous (each ``lo`` equals
+    the previous ``hi``).
+
+    Returns
+    -------
+    (str, numpy.ndarray)
+        The variable name and the bin edges (length nbins + 1).
+    """
+    with open(path) as f:
+        lines = [l.split() for l in f if l.strip() and not l.strip().startswith('#')]
+    header = lines[0]
+    if header[0] != 'variables:' or len(header) != 3 or header[1] != header[2]:
+        raise ValueError(f"{path}: expected a single-variable header 'variables: X X', got {' '.join(header)}")
+    pairs = [(float(a), float(b)) for a, b in lines[1:]]
+    for (lo0, hi0), (lo1, hi1) in zip(pairs[:-1], pairs[1:]):
+        if not np.isclose(hi0, lo1):
+            raise ValueError(f"{path}: bins are not contiguous ({lo0}-{hi0} then {lo1}-{hi1})")
+    edges = np.array([p[0] for p in pairs] + [pairs[-1][1]], dtype=float)
+    return header[1], edges
+
+
+def g4_fractional_covariance(file_path, tree_key, dial_tree_key, dial, bin_variable, bin_edges,
+                             weight_branch='ppfx_cv_weight'):
+    """
+    Fractional bin-to-bin covariance of one GEANT4 reinteraction dial,
+    computed exactly like gundam-icarus/configsNue/Configs_ParameterSet/G4/
+    calc_geant4_covariance.py: per-bin universe yields weighted by the CV
+    weight, normalized by the universe MEAN,
+
+        Cov[i][j] = sum_u (N_u[i]-Nbar[i]) (N_u[j]-Nbar[j]) / (NUniv-1) / Nbar[i] / Nbar[j]
+
+    The event tree and the dial tree must be row-for-row aligned; this is
+    checked on Run/Subrun/Evt.
+
+    Returns
+    -------
+    (numpy.ndarray, numpy.ndarray, numpy.ndarray)
+        frac_cov (nbins x nbins), cv_yield (nbins), mean_yield (nbins).
+    """
+    bin_edges = np.asarray(bin_edges, dtype=float)
+    nbins = len(bin_edges) - 1
+    with uproot.open(file_path) as f:
+        ev = f[tree_key].arrays([bin_variable, weight_branch, 'Run', 'Subrun', 'Evt'], library='np')
+        dt = f[dial_tree_key]
+        ids = dt.arrays(['Run', 'Subrun', 'Evt'], library='np')
+        if len(ids['Run']) != len(ev['Run']):
+            raise RuntimeError(f"{tree_key} ({len(ev['Run'])}) and {dial_tree_key} ({len(ids['Run'])}) differ in length")
+        for b in ('Run', 'Subrun', 'Evt'):
+            if not np.array_equal(ev[b], ids[b]):
+                raise RuntimeError(f"{tree_key} and {dial_tree_key} are not row-aligned on {b}")
+        rw = np.stack(dt[dial].array(library='np')).astype(np.float64)  # (nevents, nuniv)
+
+    x = np.asarray(ev[bin_variable], dtype=float)
+    w = np.asarray(ev[weight_branch], dtype=float)
+    # Bins are [lo, hi) like GUNDAM's binning cuts.
+    idx = np.digitize(x, bin_edges) - 1
+    ok = (idx >= 0) & (idx < nbins)
+
+    cv_yield = np.zeros(nbins)
+    np.add.at(cv_yield, idx[ok], w[ok])
+    univ = np.zeros((rw.shape[1], nbins))
+    for i in range(nbins):
+        sel = ok & (idx == i)
+        univ[:, i] = w[sel] @ rw[sel]
+    mean_yield = univ.mean(axis=0)
+    d = univ - mean_yield
+    frac_cov = (d.T @ d) / (rw.shape[1] - 1) / np.outer(mean_yield, mean_yield)
+    print(f"[g4 covariance] {dial}: bins {bin_edges.tolist()} in {bin_variable}")
+    print(f"[g4 covariance]   CV yield {np.round(cv_yield, 3).tolist()}, universe-mean/CV {np.round(mean_yield / cv_yield, 4).tolist()}")
+    print(f"[g4 covariance]   fractional sigma {np.round(np.sqrt(np.diag(frac_cov)), 4).tolist()}")
+    return frac_cov, cv_yield, mean_yield
+
+
+class BinnedCovarianceSystematic(Systematic):
+    """
+    A systematic defined by a fractional covariance matrix in the bins of
+    one variable, propagated like a binned GUNDAM dial: parameter sets
+    p ~ N(1, frac_cov) are thrown once (seeded), and in each throw every
+    event is reweighted by p[bin(event's bin_variable)]. Events outside
+    the binning get weight 1. The resulting per-event "universe" weights
+    go through the standard Systematic.process / category_covariance code,
+    so the systematic works for any plotted variable and for category
+    (signal/background) restrictions, and combines like any other.
+    """
+    def __init__(self, name, label, bin_variable, bin_edges, frac_cov, nthrows=1000, seed=1):
+        # Non-None handle so the universe-weight branches of process() and
+        # category_covariance() are used; weights come from the override below.
+        super().__init__(name, handle=True, label=label)
+        self._bin_variable = bin_variable
+        self._bin_edges = np.asarray(bin_edges, dtype=float)
+        self._frac_cov = np.asarray(frac_cov, dtype=float)
+        nbins = len(self._bin_edges) - 1
+        if self._frac_cov.shape != (nbins, nbins):
+            raise ValueError(f"{name}: covariance shape {self._frac_cov.shape} does not match {nbins} bins")
+        rng = np.random.default_rng(seed)
+        self._throws = rng.multivariate_normal(np.ones(nbins), self._frac_cov, size=int(nthrows))  # (nthrows, nbins)
+
+    def get_universe_weights(self, sample, mask, nuniv=1000, seed=None) -> np.ndarray:
+        mask = np.asarray(mask, dtype=bool)
+        if self._bin_variable not in sample._data.columns:
+            raise ValueError(f"Systematic '{self._name}': sample '{sample._name}' has no column '{self._bin_variable}'")
+        x = sample._data[self._bin_variable].to_numpy(dtype=float)[mask]
+        idx = np.digitize(x, self._bin_edges) - 1
+        ok = (idx >= 0) & (idx < len(self._bin_edges) - 1)
+        weights = np.ones((len(x), self._throws.shape[0]))
+        weights[ok, :] = self._throws[:, idx[ok]].T
+        return weights

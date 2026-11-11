@@ -37,4 +37,11 @@ flux = [
 
 detector = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination', 'cathode_bending']
 
-total = ['flux', 'xsec_total', 'detector', 'total_stat']
+total = ['flux', 'xsec_total', 'detector', 'g4', 'total_stat']
+
+# GEANT4 reinteraction dials (proton, pi+, pi-), built from the g4 sample's
+# multisim universes as a fractional covariance in reco_visible_energy and
+# propagated to NuMIFull (see [[analysis.binned_covariance_systematic]] in
+# analysis/systematics.toml). 'g4' (their sum) is the line in `total`; it is left
+# out here because the plot's Total already sums these three in quadrature.
+g4 = ['g4_proton', 'g4_piplus', 'g4_piminus']

@@ -1,0 +1,21 @@
+# plot_jobs_v31_g4.toml -- v31 G4 reinteraction systematics, and the total breakdown
+# now including the g4 line. Uses analysis/systematics_v31g4.toml (= systematics.toml
+# with the g4 source_file pointed at the v31 g4 sample, merged_g4_v31_flux.root).
+# The total goes to a new dir so plots_v31/systematics_total (no g4) is kept.
+# Run: python3 analysis/plot_all.py --manifest analysis/plot_jobs_v31_g4.toml [--only ...] [--dry-run]
+
+[[job]]
+name = "systematic_g4"
+cli = "analysis/makeSystematicPlotsCLI.py"
+toml = "analysis/systematics_v31g4.toml"
+input = "/exp/icarus/data/users/micarrig/merged_final_v31e_flux.root"
+output_dir = "plots_v31/systematics_g4"
+args = ["--systematics-set", "g4"]
+
+[[job]]
+name = "systematic_total_g4"
+cli = "analysis/makeSystematicPlotsCLI.py"
+toml = "analysis/systematics_v31g4.toml"
+input = "/exp/icarus/data/users/micarrig/merged_final_v31e_flux.root"
+output_dir = "plots_v31/systematics_total_g4"
+args = ["--systematics-set", "total"]
