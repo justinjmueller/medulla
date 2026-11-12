@@ -456,8 +456,10 @@ namespace selectors
     REGISTER_SELECTOR(target_michel, target_michel);
 
     /// Default per-shower reco calo KE threshold (MeV) used by pi0_photon_pair
-    /// when no parameter is supplied.
-    constexpr double kDefaultPi0PairThreshold = 0.0;
+    /// when no parameter is supplied. Matches the default photon threshold of
+    /// cuts::two_photons (25 MeV), so a cut or branch that uses the pair without
+    /// a threshold parameter picks the same two photons that two_photons counts.
+    constexpr double kDefaultPi0PairThreshold = 25.0;
 
     /// If true, pi0_photon_pair selects reco photon candidates with the
     /// configured PID and primary functions (pvars::pid and
