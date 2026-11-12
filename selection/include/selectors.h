@@ -12,6 +12,9 @@
 #ifndef SELECTORS_H
 #define SELECTORS_H
 #include <vector>
+#include <algorithm>
+#include <cmath>
+#include <limits>
 
 #include "framework.h"
 #include "include/particle_cuts.h"
@@ -557,19 +560,21 @@ namespace selectors
 
                     double costheta = (dx0*dx1 + dy0*dy1 + dz0*dz1) / (r0 * r1);
                     double mass = std::sqrt(2.0 * leading_ke * subleading_ke * (1.0 - costheta));
-                    
-                    // TODO: this currently results in a "no-op" when sorting
-                    // candidate pairs. This is needed to match Lane's thesis
-                    // analysis, but should be revisited in the future to see
-                    // if it can be improved by using a more sophisticated
-                    // metric for selecting the best pi0 candidate.
-                    candidates.push_back({{i, j}, PLACEHOLDERVALUE});
+
+                    // A pair without a valid mass (e.g. a shower starting at the
+                    // vertex, r = 0) ranks last instead of breaking the sort.
+                    if(!std::isfinite(mass))
+                        mass = std::numeric_limits<double>::infinity();
+                    candidates.push_back({{i, j}, mass});
                 }
             }
 
             if(candidates.empty()) return {kNoMatch, kNoMatch};
 
-            std::sort(candidates.begin(), candidates.end(),
+            // Pick the pair whose reconstructed mass is closest to PI0_MASS.
+            // stable_sort keeps particle order among equally close pairs (e.g.
+            // the two orderings (i, j) and (j, i) of the same photons).
+            std::stable_sort(candidates.begin(), candidates.end(),
                 [](const auto & a, const auto & b) {
                     return std::abs(a.second - PI0_MASS) < std::abs(b.second - PI0_MASS);
                 });
