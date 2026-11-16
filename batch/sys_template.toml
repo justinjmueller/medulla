@@ -12,96 +12,85 @@ name = 'reco_visible_energy'
 bins = [25, 0, 3]
 
 [[sysvar]]
+name = 'reco_vertex_x'
+bins = [25, 0, 3]
+
+[[sysvar]]
+name = 'reco_vertex_y'
+bins = [25, 0, 3]
+
+[[sysvar]]
+name = 'reco_vertex_z'
+bins = [25, 0, 3]
+
+[[sysvar]]
 name = 'reco_bivar_pi0_photon_pair_pi0_invariant_mass'
 bins = [25, 0, 3]
 
-# [[sysvar]]
-# name = 'reco_bivar_pi0_photon_pair_pi0_opening_costheta'
-# bins = [25, 0, 3]
+[[sysvar]]
+name = 'reco_bivar_pi0_photon_pair_pi0_opening_costheta'
+bins = [25, 0, 3]
 
-# [[sysvar]]
-# name = "reco_bivar_pi0_photon_pair_leading_ke"
-# bins = [25, 0, 3]
+[[sysvar]]
+name = "reco_bivar_pi0_photon_pair_leading_ke"
+bins = [25, 0, 3]
 
-# [[sysvar]]
-# name = "reco_bivar_pi0_photon_pair_subleading_ke"
-# bins = [25, 0, 3]
+[[sysvar]]
+name = "reco_bivar_pi0_photon_pair_subleading_ke"
+bins = [25, 0, 3]
 
-# [[sysvar]]
-# name = 'reco_bivar_pi0_photon_pair_pi0_beam_costheta'
-# bins = [25, 0, 3]
+[[sysvar]]
+name = 'reco_dpT'
+bins = [25, 0, 3]
 
-# [[sysvar]]
-# name = 'reco_dpT'
-# bins = [25, 0, 3]
+[[sysvar]]
+name = 'reco_dphiT'
+bins = [25, 0, 3]
 
-# [[sysvar]]
-# name = 'reco_dphiT'
-# bins = [25, 0, 3]
+[[sysvar]] 
+name = 'reco_dalphaT'
+bins = [25, 0, 3]
 
-# [[sysvar]] 
-# name = 'reco_dalphaT'
-# bins = [25, 0, 3]
+[[sysvar]]
+name = 'reco_pn'
+bins = [25, 0, 3]
 
-# [[sysvar]]
-# name = 'reco_pn'
-# bins = [25, 0, 3]
+[[sysvar]]
+name = 'reco_dpL'
+bins = [25, 0, 3]
 
-# [[sysvar]]
-# name = 'reco_dpL'
-# bins = [25, 0, 3]
+[[sysvar]]
+name = "dalpha_3D"
+bins = [25, 0, 3]
 
-# [[sysvar]]
-# name = 'reco_leading_muon_ke'
-# bins = [25, 0, 3]
+[[sysvar]]
+name = "dphi_3D"
+bins = [25, 0, 3]
 
-# [[sysvar]]
-# name = 'reco_leading_muon_polar_angle'
-# bins = [25, 0, 3]
+[[sysvar]]
+name = 'reco_leading_muon_ke'
+bins = [25, 0, 3]
 
-# [[sysvar]]
-# name = 'reco_leading_muon_azimuthal_angle'
-# bins = [25, 0, 3]
+[[sysvar]]
+name = 'reco_leading_muon_polar_angle'
+bins = [25, 0, 3]
 
-# [[sysvar]]
-# name = 'reco_leading_muon_length'
-# bins = [25, 0, 3]
+[[sysvar]]
+name = 'reco_leading_muon_length'
+bins = [25, 0, 3]
 
-# [[sysvar]]
-# name = 'reco_leading_muon_start_x'
-# bins = [25, 0, 3]
+[[sysvar]]
+name = 'reco_leading_muon_start_dir_x'
+bins = [25, 0, 3]
 
-# [[sysvar]]
-# name = 'reco_leading_muon_start_y'
-# bins = [25, 0, 3]
+[[sysvar]]
+name = 'reco_leading_muon_start_dir_y'
+bins = [25, 0, 3]
 
-# [[sysvar]]
-# name = 'reco_leading_muon_start_z'
-# bins = [25, 0, 3]
+[[sysvar]]
+name = 'reco_leading_muon_start_dir_z'
+bins = [25, 0, 3]
 
-# [[sysvar]]
-# name = 'reco_leading_muon_end_x'
-# bins = [25, 0, 3]
-
-# [[sysvar]]
-# name = 'reco_leading_muon_end_y'
-# bins = [25, 0, 3]
-
-# [[sysvar]]
-# name = 'reco_leading_muon_end_z'
-# bins = [25, 0, 3]
-
-# [[sysvar]]
-# name = 'reco_vertex_x'
-# bins = [25, 0, 3]
-
-# [[sysvar]]
-# name = 'reco_vertex_y'
-# bins = [25, 0, 3]
-
-# [[sysvar]]
-# name = 'reco_vertex_z'
-# bins = [25, 0, 3]
 
 [[sys]]
 name = "GENIEReWeight_SBN_v1_multisigma_ZExpA1CCQE"

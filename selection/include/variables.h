@@ -726,6 +726,241 @@ namespace vars
     double pn_lp(const T & obj) { return std::sqrt(std::pow(vars::dpT_lp(obj), 2) + std::pow(vars::dpL_lp(obj), 2)); }
     REGISTER_VAR_SCOPE(RegistrationScope::Both, pn_lp, pn_lp);
 
+        /**
+     * @brief Variable for dalpha_3D of the interaction.
+     * @details dalpha_3D is a generalized kinematic imbalance (GKI) variable
+     * defined as the 3D angle between the momentum transfer vector q and the
+     * missing momentum (struck nucleon momentum) vector pn. The neutrino
+     * energy is calculated using @ref vars::visible_energy, and the neutrino
+     * direction is assumed to either be the BNB axis direction (z-axis) or the
+     * unit vector pointing from the NuMI target to the interaction vertex.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the dalpha_3D of the interaction in radians.
+     * @note The switch to the NuMI beam direction instead of the BNB axis is
+     * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
+     */
+    template<class T>
+    double dalpha_3D(const T & obj)
+    {
+        utilities::three_vector lepton_pt = {0, 0, 0};
+        utilities::three_vector lepton_pl = {0, 0, 0};
+        utilities::three_vector total_pt = {0, 0, 0};
+        utilities::three_vector total_pl = {0, 0, 0};
+        for(const auto & p : obj.particles)
+        {
+            if(pcuts::final_state_signal(p))
+            {
+                // There should only be one lepton, so replace the lepton
+                // momentum components if the particle is a lepton.
+                utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+                utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+                utilities::three_vector this_pt = utilities::transverse_momentum(momentum, vtx);
+                utilities::three_vector this_pl = utilities::longitudinal_momentum(momentum, vtx);
+                if(pvars::pid(p) == pvars::kElectron || pvars::pid(p) == pvars::kMuon)
+                {
+                    lepton_pt = this_pt;
+                    lepton_pl = this_pl;
+                }
+                total_pt = utilities::add(total_pt, this_pt);
+                total_pl = utilities::add(total_pl, this_pl);
+            }
+        }
+        double enu = 1000.0 * vars::visible_energy(obj);
+        double q_l = enu - utilities::magnitude(lepton_pl);
+        double dp_l = utilities::magnitude(total_pl) - enu;
+
+        double q_mag = std::sqrt(std::pow(utilities::magnitude(lepton_pt), 2) + std::pow(q_l, 2));
+        double pn_mag = std::sqrt(std::pow(utilities::magnitude(total_pt), 2) + std::pow(dp_l, 2));
+        if(q_mag == 0 || pn_mag == 0)
+            return PLACEHOLDERVALUE;
+
+        double q_dot_pn = -1 * utilities::dot_product(total_pt, lepton_pt) + q_l * dp_l;
+        return std::acos(q_dot_pn / (q_mag * pn_mag));
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, dalpha_3D, dalpha_3D);
+
+    /**
+     * @brief Variable for dalpha_3D of the interaction counting only the
+     * leading charged lepton and proton.
+     * @details This function calculates the 3D angle between the momentum
+     * transfer vector q and the missing momentum vector pn using only the
+     * leading charged lepton and leading proton. The neutrino energy is
+     * calculated using @ref vars::visible_energy.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the dalpha_3D of the leading charged lepton and proton in radians.
+     * @note The switch to the NuMI beam direction instead of the BNB axis is
+     * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
+     */
+    template<class T>
+    double dalpha_3D_lp(const T & obj)
+    {
+        utilities::three_vector l_pt = {0, 0, 0};
+        utilities::three_vector p_pt = {0, 0, 0};
+        utilities::three_vector l_pl = {0, 0, 0};
+        utilities::three_vector p_pl = {0, 0, 0};
+        double l_ke(0), p_ke(0);
+        for(const auto & p : obj.particles)
+        {
+            if(pcuts::final_state_signal(p))
+            {
+                if((pvars::pid(p) == pvars::kElectron || pvars::pid(p) == pvars::kMuon) && pvars::ke(p) > l_ke)
+                {
+                    l_ke = pvars::ke(p);
+                    utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+                    utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+                    l_pt = utilities::transverse_momentum(momentum, vtx);
+                    l_pl = utilities::longitudinal_momentum(momentum, vtx);
+                }
+                else if(pvars::pid(p) == pvars::kProton && pvars::ke(p) > p_ke)
+                {
+                    p_ke = pvars::ke(p);
+                    utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+                    utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+                    p_pt = utilities::transverse_momentum(momentum, vtx);
+                    p_pl = utilities::longitudinal_momentum(momentum, vtx);
+                }
+            }
+        }
+        if(l_ke == 0 || p_ke == 0)
+            return PLACEHOLDERVALUE;
+
+        utilities::three_vector total_pt = utilities::add(l_pt, p_pt);
+        utilities::three_vector total_pl = utilities::add(l_pl, p_pl);
+
+        double enu = 1000.0 * vars::visible_energy(obj);
+        double q_l = enu - utilities::magnitude(l_pl);
+        double dp_l = utilities::magnitude(total_pl) - enu;
+
+        double q_mag = std::sqrt(std::pow(utilities::magnitude(l_pt), 2) + std::pow(q_l, 2));
+        double pn_mag = std::sqrt(std::pow(utilities::magnitude(total_pt), 2) + std::pow(dp_l, 2));
+        if(q_mag == 0 || pn_mag == 0)
+            return PLACEHOLDERVALUE;
+
+        double q_dot_pn = -1 * utilities::dot_product(total_pt, l_pt) + q_l * dp_l;
+        return std::acos(q_dot_pn / (q_mag * pn_mag));
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, dalpha_3D_lp, dalpha_3D_lp);
+
+    /**
+     * @brief Variable for dphi_3D of the interaction.
+     * @details dphi_3D is a generalized kinematic imbalance (GKI) variable
+     * defined as the 3D opening angle between the momentum transfer vector q
+     * and the total hadronic momentum vector. The neutrino energy is
+     * calculated using @ref vars::visible_energy, and the neutrino direction
+     * is assumed to either be the BNB axis direction (z-axis) or the unit
+     * vector pointing from the NuMI target to the interaction vertex.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the dphi_3D of the interaction in radians.
+     * @note The switch to the NuMI beam direction instead of the BNB axis is
+     * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
+     */
+    template<class T>
+    double dphi_3D(const T & obj)
+    {
+        utilities::three_vector lepton_pt = {0, 0, 0};
+        utilities::three_vector lepton_pl = {0, 0, 0};
+        utilities::three_vector hadronic_pt = {0, 0, 0};
+        utilities::three_vector hadronic_pl = {0, 0, 0};
+        for(const auto & p : obj.particles)
+        {
+            if(pcuts::final_state_signal(p))
+            {
+                // There should only be one lepton, so replace the lepton
+                // momentum components if the particle is a lepton.
+                utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+                utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+                utilities::three_vector this_pt = utilities::transverse_momentum(momentum, vtx);
+                utilities::three_vector this_pl = utilities::longitudinal_momentum(momentum, vtx);
+                if(pvars::pid(p) == pvars::kElectron || pvars::pid(p) == pvars::kMuon)
+                {
+                    lepton_pt = this_pt;
+                    lepton_pl = this_pl;
+                }
+                // Use `else` to include pi0 decay photons (kPhoton = 0) in the
+                // hadronic system, or `else if(pvars::pid(p) > 2)` to match dphiT/dpL.
+                else
+                {
+                    hadronic_pt = utilities::add(hadronic_pt, this_pt);
+                    hadronic_pl = utilities::add(hadronic_pl, this_pl);
+                }
+            }
+        }
+        double enu = 1000.0 * vars::visible_energy(obj);
+        double q_l = enu - utilities::magnitude(lepton_pl);
+        double h_l = utilities::magnitude(hadronic_pl);
+
+        double q_mag = std::sqrt(std::pow(utilities::magnitude(lepton_pt), 2) + std::pow(q_l, 2));
+        double h_mag = std::sqrt(std::pow(utilities::magnitude(hadronic_pt), 2) + std::pow(h_l, 2));
+        if(q_mag == 0 || h_mag == 0)
+            return PLACEHOLDERVALUE;
+
+        double q_dot_h = -1 * utilities::dot_product(lepton_pt, hadronic_pt) + q_l * h_l;
+        return std::acos(q_dot_h / (q_mag * h_mag));
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, dphi_3D, dphi_3D);
+
+    /**
+     * @brief Variable for dphi_3D of the interaction counting only the
+     * leading charged lepton and proton.
+     * @details This function calculates the 3D opening angle between the
+     * momentum transfer vector q and the leading proton momentum vector.
+     * The neutrino energy is calculated using @ref vars::visible_energy.
+     * @tparam T the type of interaction (true or reco).
+     * @param obj the interaction to apply the variable on.
+     * @return the dphi_3D of the leading charged lepton and proton in radians.
+     * @note The switch to the NuMI beam direction instead of the BNB axis is
+     * applied by the definition of a preprocessor macro (BEAM_IS_NUMI).
+     */
+    template<class T>
+    double dphi_3D_lp(const T & obj)
+    {
+        utilities::three_vector l_pt = {0, 0, 0};
+        utilities::three_vector p_pt = {0, 0, 0};
+        utilities::three_vector l_pl = {0, 0, 0};
+        utilities::three_vector p_pl = {0, 0, 0};
+        double l_ke(0), p_ke(0);
+        for(const auto & p : obj.particles)
+        {
+            if(pcuts::final_state_signal(p))
+            {
+                if((pvars::pid(p) == pvars::kElectron || pvars::pid(p) == pvars::kMuon) && pvars::ke(p) > l_ke)
+                {
+                    l_ke = pvars::ke(p);
+                    utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+                    utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+                    l_pt = utilities::transverse_momentum(momentum, vtx);
+                    l_pl = utilities::longitudinal_momentum(momentum, vtx);
+                }
+                else if(pvars::pid(p) == pvars::kProton && pvars::ke(p) > p_ke)
+                {
+                    p_ke = pvars::ke(p);
+                    utilities::three_vector momentum = {pvars::px(p), pvars::py(p), pvars::pz(p)};
+                    utilities::three_vector vtx = {pvars::start_x(p), pvars::start_y(p), pvars::start_z(p)};
+                    p_pt = utilities::transverse_momentum(momentum, vtx);
+                    p_pl = utilities::longitudinal_momentum(momentum, vtx);
+                }
+            }
+        }
+        if(l_ke == 0 || p_ke == 0)
+            return PLACEHOLDERVALUE;
+
+        double enu = 1000.0 * vars::visible_energy(obj);
+        double q_l = enu - utilities::magnitude(l_pl);
+        double p_l = utilities::magnitude(p_pl);
+
+        double q_mag = std::sqrt(std::pow(utilities::magnitude(l_pt), 2) + std::pow(q_l, 2));
+        double p_mag = std::sqrt(std::pow(utilities::magnitude(p_pt), 2) + std::pow(p_l, 2));
+        if(q_mag == 0 || p_mag == 0)
+            return PLACEHOLDERVALUE;
+
+        double q_dot_p = -1 * utilities::dot_product(l_pt, p_pt) + q_l * p_l;
+        return std::acos(q_dot_p / (q_mag * p_mag));
+    }
+    REGISTER_VAR_SCOPE(RegistrationScope::Both, dphi_3D_lp, dphi_3D_lp);
+
     /**
      * @brief Variable for the opening angle between leading muon and proton.
      * @details The leading muon and proton are defined as the particles with the

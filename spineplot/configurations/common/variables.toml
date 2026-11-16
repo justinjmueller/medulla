@@ -1,5 +1,47 @@
 [variables]
 
+[variables.reco_leading_muon_containment]
+key = "reco_leading_muon_containment"
+range = [-0.5, 1.5]
+nbins = 2
+xlabel = "Reconstructed Muon Containment"
+
+[variables.reco_vertex_x]
+key = "reco_vertex_x"
+range = [-300, 300]
+nbins = 30
+xlabel = "Reco. Vertex X Position [cm]"
+
+[variables.true_vertex_x]
+key = "true_vertex_x"
+range = [-300, 300]
+nbins = 30
+xlabel = "True Vertex X Position [cm]"
+
+[variables.reco_vertex_y]
+key = "reco_vertex_y"
+range = [-300, 300]
+nbins = 30
+xlabel = "Reco. Vertex Y Position [cm]"
+
+[variables.true_vertex_y]
+key = "true_vertex_y"
+range = [-300, 300]
+nbins = 30
+xlabel = "True Vertex Y Position [cm]"
+
+[variables.reco_vertex_z]
+key = "reco_vertex_z"
+range = [-100, 550]
+nbins = 30
+xlabel = "Reco. Vertex Z Position [cm]"
+
+[variables.true_vertex_z]
+key = "true_vertex_z"
+range = [-100, 550]
+nbins = 30
+xlabel = "True Vertex Z Position [cm]"
+
 [variables.true_visible_energy]
 key = "true_visible_energy"
 range = [0, 3]
@@ -16,7 +58,25 @@ xlabel = "Reconstructed Visible Energy [GeV]"
 key = "reco_bivar_pi0_photon_pair_pi0_invariant_mass"
 range = [0, 400]
 nbins = 25
-xlabel = 'Reconstructed $\pi^0$ Invariant Mass [GeV]'
+xlabel = 'Reconstructed $\pi^0$ Mass [GeV]'
+
+[variables.reco_pi0_opening_costheta]
+key = "reco_bivar_pi0_photon_pair_pi0_opening_costheta"
+range = [0.0, 1.0]
+nbins = 25
+xlabel = 'Reconstructed $\pi^0$ Opening cos($\theta$)'
+
+[variables.reco_pi0_leading_shower_ke]
+key = "reco_bivar_pi0_photon_pair_leading_ke"
+range = [0.0, 1.0]
+nbins = 25
+xlabel = 'Reconstructed Leading E$_\gamma$ [GeV]'
+
+[variables.reco_pi0_subleading_shower_ke]
+key = "reco_bivar_pi0_photon_pair_subleading_ke"
+range = [0.0, 0.5]
+nbins = 25
+xlabel = 'Reconstructed Subleading E$_\gamma$ [GeV]'
 
 [variables.true_dpT]
 key = "true_dpT"
@@ -38,19 +98,19 @@ xlabel = 'True $\delta p_L$ [MeV/c]'
 
 [variables.reco_dpL]
 key = "reco_dpL"
-range = [0,800]
+range = [-3000,600]
 nbins = 25
 xlabel = 'Reconstructed $\delta p_L$ [MeV/c]'
 
 [variables.true_pn]
 key = "true_pn"
-range = [0,1200]
+range = [0,3000]
 nbins = 25
 xlabel = 'True $p_n$ [MeV/c]'
 
 [variables.reco_pn]
 key = "reco_pn"
-range = [0,1200]
+range = [0,3000]
 nbins = 25
 xlabel = 'Reconstructed $p_n$ [MeV/c]'
 
@@ -58,22 +118,95 @@ xlabel = 'Reconstructed $p_n$ [MeV/c]'
 key = "true_dphiT"
 range = [0.0, 3.1415]
 nbins = 25
-xlabel = 'True $d\phi_T$ [Rad.]'
+xlabel = 'True $\delta\phi_T$ [Rad.]'
 
 [variables.reco_dphiT]
 key = "reco_dphiT"
 range = [0.0, 3.1415]
 nbins = 25
-xlabel = 'Reconstructed $d\phi_T$ [Rad.]'
+xlabel = 'Reconstructed $\delta\phi_T$ [Rad.]'
 
 [variables.true_dalphaT]
 key = "true_dalphaT"
 range = [0.0, 3.1415]
 nbins = 25
-xlabel = 'True $d\alpha_T$ [Rad.]'
+xlabel = 'True $\delta\alpha_T$ [Rad.]'
 
 [variables.reco_dalphaT]
 key = "reco_dalphaT"
 range = [0.0, 3.1415]
 nbins = 25
-xlabel = 'Reconstructed $d\alpha_T$ [Rad.]'
+xlabel = 'Reconstructed $\delta\alpha_T$ [Rad.]'
+
+[variables.reco_muon_ke]
+key = "reco_leading_muon_ke"
+range = [0, 3000]
+nbins = 25
+xlabel = 'Reconstructed Muon Kinetic Energy [MeV]'
+
+[variables.reco_muon_length]
+key = "reco_leading_muon_length"
+range = [0, 500]
+nbins = 25
+xlabel = 'Reconstructed Muon Length [cm]'
+
+[variables.reco_muon_polar_angle]
+key = "reco_leading_muon_polar_angle"
+range = [0.0, 3.1415]
+nbins = 25
+xlabel = 'Reconstructed Muon Polar Angle [Rad.]'
+
+[variables.reco_leading_muon_start_dir_x]
+key = "reco_leading_muon_start_dir_x"
+range = [-1, 1] 
+nbins = 25
+xlabel = 'Reconstructed Muon Start Direction X'
+
+[variables.reco_leading_muon_start_dir_y]
+key = "reco_leading_muon_start_dir_y"
+range = [-1, 1]
+nbins = 25
+xlabel = 'Reconstructed Muon Start Direction Y'
+
+[variables.reco_leading_muon_start_dir_z]
+key = "reco_leading_muon_start_dir_z"
+range = [-1, 1]
+nbins = 25
+xlabel = 'Reconstructed Muon Start Direction Z'
+
+
+[variables.reco_muon_end_x]
+key = "reco_leading_muon_end_x"
+range = [-300, 300]
+nbins = 30
+xlabel = "Reco. $\\mu^-$ End X [cm]"
+
+[variables.true_muon_end_x]
+key = "true_leading_muon_end_x"
+range = [-300, 300]
+nbins = 30
+xlabel = "True $\\mu^-$ End X [cm]"
+
+[variables.reco_muon_end_y]
+key = "reco_leading_muon_end_y"
+range = [-300, 300]
+nbins = 30
+xlabel = "Reco. $\\mu^-$ End Y [cm]"
+
+[variables.true_muon_end_y]
+key = "true_leading_muon_end_y"
+range = [-300, 300]
+nbins = 30
+xlabel = "True $\\mu^-$ End Y [cm]"
+
+[variables.reco_muon_end_z]
+key = "reco_leading_muon_end_z"
+range = [-100, 550]
+nbins = 30
+xlabel = "Reco. $\\mu^-$ End Z [cm]"
+
+[variables.true_muon_end_z]
+key = "true_leading_muon_end_z"
+range = [-100, 550]
+nbins = 30
+xlabel = "True $\\mu^-$ End Z [cm]"
