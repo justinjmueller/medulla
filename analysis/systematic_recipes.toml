@@ -515,9 +515,24 @@ label = 'YZ Uniformity'
 pattern = 'yz_uniformity'
 
 [[systematic_recipe]]
-name = 'recombination'
-label = 'Recombination'
-pattern = 'recombination'
+name = 'recombination_residual'
+label = 'Recombination residual'
+pattern = 'recombination_residual'
+
+# Standard recombination variation: disabled, the plots use
+# recombination_residual. Uncomment to plot it as its own band (and swap it
+# into the 'detector' recipe/set to use it in the total instead). The pattern
+# is a substring regex (spineplot/sample.py), so the residual variation is
+# excluded explicitly or it would be merged into this band.
+# [[systematic_recipe]]
+# name = 'recombination'
+# label = 'Recombination'
+# pattern = 'recombination(?!_residual)'
+
+[[systematic_recipe]]
+name = 'shower_scale'
+label = 'Shower energy scale'
+pattern = 'shower_scale'
 
 [[systematic_recipe]]
 name = 'cathode_bending'
@@ -527,7 +542,7 @@ pattern = 'cathode_bend'
 [[systematic_recipe]]
 name = 'detector'
 label = 'Detector'
-pattern = '^(induction_high|induction_low|coherent_high|coherent_low|intrinsic_high|intrinsic_low|lifetime_high|lifetime_low|scintillation|wire_gap|yz_uniformity|recombination|cathode_bending)$'
+pattern = '^(induction_high|induction_low|coherent_high|coherent_low|intrinsic_high|intrinsic_low|lifetime_high|lifetime_low|scintillation|wire_gap|yz_uniformity|recombination_residual|shower_scale|cathode_bend)$'
 
 #####################
 ## BNB flux recipes

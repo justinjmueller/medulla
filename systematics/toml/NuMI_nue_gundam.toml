@@ -94,6 +94,7 @@ gundam_store_syst = false
 is_nu = false
 is_data = true
 nan_category_replacement = 5.0
+data_category = 10  # gundam 'category' for this is_data tree: beam-off cosmics
 
 [[tree]]
 origin = 'events/rock/selected'
@@ -104,6 +105,7 @@ gundam_store_syst = false
 is_nu = false
 is_data = true
 nan_category_replacement = 5.0
+data_category = 11  # gundam 'category' for this is_data tree: rock (dirt) MC
 
 # nc_sideband (NC pi0 control region). Its variation tree is NOT made by the
 # normal phase 2 (that would use the reco_leading_electron_energy splines,
@@ -139,6 +141,7 @@ gundam_store_syst = false
 is_nu = false
 is_data = true
 nan_category_replacement = 5.0
+data_category = 10  # gundam 'category' for this is_data tree: beam-off cosmics
 
 [[tree]]
 origin = 'events/rock/photon_sideband'
@@ -149,6 +152,7 @@ gundam_store_syst = false
 is_nu = false
 is_data = true
 nan_category_replacement = 5.0
+data_category = 11  # gundam 'category' for this is_data tree: rock (dirt) MC
 
 [[sys]]
 name = 'induction_high'

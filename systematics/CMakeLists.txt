@@ -2,7 +2,11 @@ cmake_minimum_required(VERSION 3.12)
 include(FetchContent)
 project(systematics LANGUAGES CXX)
 
-add_compile_options(-Wall -Werror -Wno-error=maybe-uninitialized -Ofast -g)
+# -Ofast implies -ffinite-math-only, under which NaN checks (x >= 0, std::isnan,
+# std::isfinite) are compiled away: run_systematics silently dropped selected
+# entries with a NaN true_neutrino_id, and the NaN guards in detsys.cc and
+# to_gundam.cc never fired. Keep the rest of -Ofast but honour NaNs.
+add_compile_options(-Wall -Werror -Wno-error=maybe-uninitialized -Ofast -fno-finite-math-only -g)
 
 # Find packages
 find_package(ROOT REQUIRED)

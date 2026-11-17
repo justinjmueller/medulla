@@ -349,6 +349,10 @@ Notes:
   the output, so the output directory must already exist.
 - Each selection job runs `medulla` then `run_systematics` (`batch/submit.sh`),
   producing `output_jobid<NNNN>.root` and `output_systematics_jobid<NNNN>.root`.
+  Since 2026-11-16, jobs whose sample tag is `data`, `detector_variation` or `rock`
+  (`NO_SYSTEMATICS_TAGS` in `batch/utilities.py`, the tags `merge_list.py` takes from
+  `output_jobid*.root`) skip `run_systematics` and make only `output_jobid<NNNN>.root`;
+  the status check ignores their systematics files (older projects still have them).
 - `-Z` adds the PyROOT zombie/recovered check on top of the 1 KB size check.
   Stage 2 job completion in `project.db` is only updated when `medulla.py` runs
   and sees the output files, it is not updated by the grid.
@@ -394,6 +398,8 @@ Notes:
   `[[sys]]` entries, which this conversion pass does not touch), so g4 stage 6
   does not read the flux tree; it still runs on `<proj_g4>/merged_final_flux.root`
   (after g4 stage 5) so the `ppfx_cv_weight` branch is there.
+  `is_data` trees get `category = data_category` (per-tree TOML key, default 10; since
+  2026-11-17 `NuMI_nue_gundam.toml` sets dataBeamOff = 10, rock = 11, on-beam data keeps 10).
   The binary is `build/systematics/to_gundam`; rebuild with `make` in `build/`
   after any C++ change (ask first).
 - Stage 7 (final gundam merge): plain `hadd` of `<proj>/merged_gundam.root` and
@@ -616,30 +622,57 @@ Notify on both success and failure. A silent failure is worse than a noisy one.
 
 ## Open items for the owner
 
-- The GUNDAM fit commands themselves (after stage 6).
-- TODO (found 2026-11-09, v32): `run_systematics` silently drops events. In the nue project's
-  `NuMI_nue` sample, jobs 49 and 74 (same in v31 and v32) each have one more event in
-  `output_jobid*.root` `selected` than in `output_systematics_jobid*.root` `selected` +
-  `selected_nonmatched` combined (206 vs 205, 228 vs 227). Over all 80 jobs: 16,555 selected,
-  16,551 in the systematics `selected`, 2 in `selected_nonmatched`, 2 lost with no record.
-  Find why (weight matching / entry loop in `systematics/src/trees.cc`, `weight_reader.cc`).
-- TODO v32p2: also carry the STANDARD recombination variation (owner, 2026-11-10), so the fit can
-  use either it or `recombination_residual`. v32 never processed it (`recombination` is disabled in
-  `selection.toml`/`selection_nue.toml`; the recomb projects apply `shower_energy_scale = 1.046`).
-  Needs: new selection TOMLs (= `selection*_recomb_residual.toml` without `shower_energy_scale`,
-  sample name `recombination`), two new projects (~210 + ~78 jobs), add them to the stage-0 merges,
-  both keys in `[variations]` and `[[sys]]` of `NuMI_nue_gundam.toml`/`NuMI_nueEnhanced_gundam.toml`
-  and the three `NuMI_*sideband_phase*.toml`, then phase 1, phase 2 (all 2,472 jobs) and sideband splines again.
-- TODO: the recomb projects' `output_systematics_jobid*.root` are all ~980-byte stubs: `run_systematics`
-  throws `WeightReader: Index out of range in 'get_nuniv()'` when a selected event has `nwgt = 0`
-  (reproduced in `/exp/icarus/data/users/micarrig/v32_work/recomb_debug`). Not used downstream, but a
-  `-y` status check there would delete the good selection files with them.
-- TODO: phase 2 `run_systematics` (add_detsys_weights from splines) segfaults at random, ~8% of grid
-  jobs in v32. Reproduced locally with job 635 (crashed 2 of 3 identical runs, at different trees) and
-  job 0. Completed runs give identical weights, and `set -e` in `submit_variation_phase2.sh` keeps
-  crashed jobs from uploading, so outputs are fine; it only costs relaunches. Likely uninitialized or
-  freed memory in the detsys apply path (`DetsysCalculator` splines ctor / `copy_with_detsys_weights`).
-  Debug inputs: `/exp/icarus/data/users/micarrig/v32_work/p2debug_0635*`.
+- FIXED 2026-11-17 (local build; grid needs it pushed): `run_systematics` silently dropped selected
+  entries (nue v31/v32 jobs 49 and 74, one each). Cause: `systematics/` was built with `-Ofast`, whose
+  `-ffinite-math-only` compiles NaN checks away, so for `true_neutrino_id = NaN` both `nu_id >= 0`
+  and `!(nu_id >= 0)` were false (`trees.cc`) and the entry went to neither tree. NaN = reco
+  interaction with NO truth match (`kNoMatchValue`, `selection/src/framework.cc` reco mode); -1 =
+  matched to a cosmic true interaction (handled fine, e.g. jobs 25/32). Fix: `-fno-finite-math-only`
+  in `systematics/CMakeLists.txt` (keeps the rest of -Ofast; job 49 weights/trees bit-identical to the
+  grid output) and an explicit `std::isnan(nu_id) || nu_id < 0` check. Same flag also had disabled the
+  NaN guards in `detsys.cc` (get_weight/add_value) and `to_gundam.cc` (`nan_category_replacement`,
+  non-finite weight -> 1): in v31/v32 gundam files beam-off `true_category` is NaN instead of 5;
+  NaN weights in the gundam syst trees not yet checked. Second bug fixed: `selected_nonmatched`
+  entries with nu_id < 0 got Run/Subrun/Evt from the weight reader's LAST event instead of their own
+  (job 25: Evt 50 instead of 8), in every project so far; do not join old `_nonmatched` trees by RSE.
+  Verified: job 49 -> 205 + 1 = 206, job 25 nonmatched at Evt 8 (`v32_work/sysdrop/`).
+- v32p2 (configs DONE 2026-11-13, NOT processed): carry the STANDARD recombination variation next to
+  `recombination_residual` (owner, 2026-11-10), so the fit can use either. Owner: the next production
+  is a full rerun from scratch with both, so the configs were changed in place (they no longer work on
+  v32 files; the v32 versions are at commit 8c9887a). Done:
+  - `recombination` re-enabled (`disable = false`) in `selection.toml` and `selection_nue.toml`. It needs
+    no `shower_energy_scale`, so it rides in the main/nue projects (no new projects); merge A's
+    `--tags detector_variation` picks it up. `recombination_residual` still needs the separate
+    `selection*_recomb_residual.toml` projects, as in v32.
+  - `recombination` in `[variations].keys` and a `[[sys]]` block (ordinate cv / NuMI_nue) in
+    `NuMI_nue_gundam.toml`, `NuMI_nueEnhanced_gundam.toml` and the three `NuMI_*sideband_phase*.toml`.
+    POT comes from the existing `recombination` rows of the POT CSV (no alias needed).
+  - Plotting (done 2026-11-16): `analysis/systematic_recipes.toml` has a `recombination_residual` recipe;
+    the standard `recombination` recipe (pattern `recombination(?!_residual)`) is commented out, kept for
+    switching back. The `detector` total (recipe and `systematic_sets.toml` set) uses
+    `recombination_residual`. The `detector` recipe pattern also now matches `cathode_bend` (it had
+    `cathode_bending`, which never matched the branch, so earlier detector totals left it out).
+- FIXED 2026-11-16 (not yet used in a production): detector-variation jobs no longer run `run_systematics`.
+  Cause: the dcarber `NuMI_Nu_det_sys_flat_cafs` CAFs (Recomb, Null, High_Coh, YZ_unif checked) carry no
+  `rec.mc.nu.wgt` (`nwgt = 0` for every neutrino), so `add_weights` threw `WeightReader: Index out of range
+  in 'get_nuniv()'` and aborted. In the recomb projects that left ~980-byte stubs; in v32 main the
+  det-var systematics files are multi-MB but ROOT-"recovered" (e.g. jobs 4322/4323/4330, High_Coh), so
+  only `-Z` saw them. Nothing used them (det-var merges/phase 1 read `output_jobid*.root`). Fix, extended
+  to `data` and `rock` (also never read: merge B takes their `output_jobid*.root`, phase 2 only `nominal`):
+  `create_systematics_cfg` writes no `[[tree]]` for these tags, `batch/submit.sh` exits before
+  `run_systematics` for them, and `check_project_status` ignores their leftover systematics files (so old
+  projects' stubs no longer make a `-y` run delete the good selection outputs). Tests:
+  `batch/test_detvar_systematics.py`. Existing projects keep their old `systematics.toml`; that's harmless now.
+- FIXED 2026-11-16 (local build only; grid phase 2 needs it pushed to the `--tag`): phase 2
+  `run_systematics` segfaulted at random (~8% of v32 grid jobs). Cause: the splines-loading
+  `DetsysCalculator` ctor (`systematics/src/detsys.cc`) created its `hdummy` TH1Ds while the splines
+  file was gDirectory, then `splines_file->Close()` deleted them, so `get_weight`/`add_value` read freed
+  memory. Fix: unique names + `SetDirectory(nullptr)`. Also a NaN guard in both range checks (NaN would
+  index past the splines vector; now weight 1). Test (`v32_work/p2fix/`, `p2fix2/`): NaN guard alone,
+  job 635 still crashed 2/6; with the hdummy fix 0/12 for 635 and 0/3 each for 622 and 1001. New runs
+  are identical to each other; vs the old completed runs only `shower_scale` differs, from the
+  2026-11-10 19:10 shower-scale splines replacement, not this fix. v32 outputs were unaffected
+  (`set -e` kept crashed jobs from uploading).
 - TODO (v32, 2026-11-10): the main photon-sideband detector splines
   (`/exp/icarus/data/users/micarrig/v32_sideband/variation_splines_photon_sideband.root`) sit
   ABOVE 1 by ~5-10% for nearly every variation in 3 of the 4 `reco_visible_energy` bins. The CV
@@ -689,8 +722,39 @@ Notify on both success and failure. A silent failure is worse than a noisy one.
   POT; the corrected POT (used by phase 1) is 3.269e20 (-1.3%), while their variation POTs look like
   the corrected ones (cathode_bend 1.91e20). If so, their var/CV ratios are all 1.3% too high, which
   could hide a 1-2% common offset; ask them to recheck with 3.269e20 and to add `null`.
-- TODO: `medulla.py` prints "Submitted N Phase 2 jobs" even when `jobsub_submit` bails out
-  (seen 2026-11-09, condor_vault_storer exit 256). Check the jobsub return code.
+  UPDATE 2026-11-11: in main selected, ALL 13 variations vs the CV: background (cat>1, 800 CV events)
+  +7.6%, signal (cat 0) -3.4%, photon_sideband +6.6%. Counting BOTH sides' statistics (the variations share
+  their events, so they fluctuate as one sample of ~one variation's size): 1.4, 1.4 and 1.9 sigma, combined
+  p ~ 0.06, i.e. consistent with the CV and the variations being independent event samples (owner: the CV
+  was produced later with different events but should have the same processing). The background splines
+  carry the same kind of common offset as the sideband (7-19% per bin). TRUE interactions per POT (all tree, unique Evt+E) agree to
+  ~1% (nue CC 0.985, numu CC 0.995, NC 1.006), so the generated event mix/flux is the same and the
+  difference appears only after reconstruction/selection (CV selects more true nue, fewer photon-like
+  events). The CV files are `larcv_mc_2026{03,04}..._caf.root.flat_merged_geant4.root` (only sample
+  through a "merged_geant4" step); the dcarber variations are `larcv_mc_202506....flat.root` (reco ~9
+  months earlier); spine Cath_bend `larcv_mc_202603..._caf.root.flat.root`; spine Int_high
+  `caf-<uuid>_with_spine.flat.root`. ASK the producers: reco/SPINE + flattening versions of the CV vs
+  each variation directory, what flat_merged_geant4 does, and whether a CV exists from the same version
+  as the variations. If the reco differs, the CV is not a valid reference for the main splines and the
+  pseudo-CV (mean of the high/low pairs) is the fix.
+- FIXED 2026-11-17: `medulla.py` printed "Submitted N Phase 2 jobs" when `jobsub_submit` bailed out
+  (2026-11-09, condor_vault_storer exit 256). Cause: `jobsub_submit` exited 0 after "BAILING OUT", and
+  only the exit code was checked. Now `utilities._run_jobsub_submit` (used by selection, phase 1 and
+  phase 2 submits) requires the "Use job id ..." line and no "BAILING OUT", prints the jobsub output
+  (plus a `klist`/`kinit` hint for condor_vault_storer), and sets `SUBMIT_FAILED`; `medulla.py` then
+  exits 1. Dry runs and declined prompts still exit 0. Tests: `batch/test_jobsub_result.py`.
+- TODO (owner, 2026-11-17): add the PPFX reweights (`ppfx_cv_weight`) to the detector-variation
+  samples. Today only the merged main/g4 files get them, in stage 5 (`add_numi_flux_sys.py`), so the
+  variation samples (and the det-var CV) that phase 1 uses for the splines are not PPFX-weighted.
+  Plan (owner approved, for future productions, not v32; start after the dropped-events item):
+  (1) `scripts/make_ppfx_header.py` turns the four `ppfx_flux_weights/hweights_fhc_*` histograms of
+  `flux.root` into a generated `selection/include/ppfx_weights.h`; (2) MCTruth variable
+  `ppfx_cv_weight(pdg, E)` in `mctruth_variables.h` (1 for other flavors, out of range, no truth);
+  (3) a `[[branch]]` for it in every `[[tree]]` of the selection TOMLs; (4) optional
+  `[variations] weight = 'ppfx_cv_weight'` in `detsys.cc` phase 1 (fill weight/POT); (5) stage 5 keeps
+  only the flux-uncertainty trees (its ppfx branch becomes a check); (6) tests. Validate by running the
+  selection on one file locally and comparing the new branch with `add_numi_flux_sys.py`'s
+  `ppfx_cv_weight` entry by entry.
 
 ## Where we left off (2026-10-09)
 

@@ -14,6 +14,13 @@ _INFO     = '\033[1m\033[94m[INFO]\033[0m'      # bold blue
 _ERROR    = '\033[1m\033[91m[ERROR]\033[0m'     # bold red
 _CAMPAIGN = '\033[1m\033[96m[CAMPAIGN]\033[0m'  # bold cyan
 
+# Sample tags whose jobs make no systematics output: merge B takes their
+# output_jobid*.root (batch/merge_list.py), phase 2 takes only 'nominal', so a
+# systematics file for them is never read. submit.sh skips run_systematics for
+# the same tags. detector_variation CAFs carry no rec.mc.nu.wgt at all, so
+# add_weights aborted on them.
+NO_SYSTEMATICS_TAGS = ('data', 'detector_variation', 'rock')
+
 # When True (set by medulla.py --yes), every Y/N confirmation in this module is
 # answered "yes" automatically and the question is echoed so it shows in logs.
 ASSUME_YES = False
@@ -48,6 +55,44 @@ def _ifdh_cp(src: str, dest: str):
     """Copy src to dest via ifdh, removing dest first if it already exists."""
     subprocess.run(['rm', dest], capture_output=True)
     subprocess.run(['cp', src, dest], check=True)
+
+# Set by _run_jobsub_submit: True after a jobsub_submit that did not submit.
+# medulla.py exits 1 when it is set (dry runs and declined prompts never set it).
+SUBMIT_FAILED = False
+
+def _run_jobsub_submit(cmd: list) -> Optional[str]:
+    """
+    Run a jobsub_submit command and return its stdout if jobs were really
+    submitted, else print why not and return None.
+
+    jobsub_submit can exit 0 without submitting anything: on 2026-11-09 it
+    printed "condor_vault_storer failed: exit code 256 ... BAILING OUT" and
+    returned 0, so a plain exit-code check reported "Submitted 2471 Phase 2
+    jobs". A real submission always prints "Use job id <id> to retrieve
+    output", so that line is required as well. A failure also sets
+    SUBMIT_FAILED, so medulla.py can exit non-zero.
+    """
+    global SUBMIT_FAILED
+    SUBMIT_FAILED = True   # cleared below only on a confirmed submission
+    try:
+        out = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+        text = f"{e.stdout or ''}{e.stderr or ''}".strip()
+        if 'ExpiredSignatureError' in text:
+            print(f"{_ERROR} -- Submission failed: expired token. Run `htgettoken` and retry.")
+        else:
+            print(f"{_ERROR} -- Submission failed (exit code {e.returncode}): {text}")
+        return None
+    text = f"{out.stdout or ''}{out.stderr or ''}".strip()
+    if 'BAILING OUT' in text or not re.search(r'Use job id\s+\S+', text):
+        print(f"{_ERROR} -- jobsub_submit exited 0 but did NOT submit any jobs. Its output:")
+        print('\n'.join(text.split('\n')[-6:]))
+        if 'condor_vault_storer' in text:
+            print(f"{_ERROR} -- condor_vault_storer failed: usually an expired Kerberos ticket in this"
+                  " shell (check `klist`; run `kinit`), not the bearer token.")
+        return None
+    SUBMIT_FAILED = False
+    return out.stdout
 
 # SQL schema for the configuration table for storing job configurations
 SCHEMA_CONFIGURATION = """
@@ -189,6 +234,11 @@ def create_systematics_cfg(
     syst_trees = {}
     for tree in trees:
         for sample in samples:
+            # Data, rock and detector-variation samples get no
+            # systematics output at all (see NO_SYSTEMATICS_TAGS).
+            if sample.get('tag') in NO_SYSTEMATICS_TAGS:
+                continue
+
             # Check if this combination is already configured. If so,
             # skip it (this can happen due to the expansion of samples
             # into batches).
@@ -431,26 +481,33 @@ def check_project_status(
         for f in output_files
         if Path(f).stat().st_size < 1024
     ]
+    # Jobs with a NO_SYSTEMATICS_TAGS sample make no systematics output
+    # (submit.sh skips run_systematics for them). Older projects may still
+    # have one per job (a data copy, or a stub/recovered file left by an
+    # aborted run_systematics on a detector variation); it is never used,
+    # so it must not flag the job, or a -y run would delete the good
+    # selection output with it.
+    command(curs, "SELECT jobid, cfg FROM configuration")
+    no_sys_jobids = {
+        jobid for jobid, cfg_str in curs.fetchall()
+        if any(s.get('tag') in NO_SYSTEMATICS_TAGS for s in toml.loads(cfg_str).get('sample', []))
+    }
     stub_sys_jobs = [
-        int(Path(f).stem.split("jobid")[-1])    
+        int(Path(f).stem.split("jobid")[-1])
         for f in output_files_sys
         if Path(f).stat().st_size < 1024
+        and int(Path(f).stem.split("jobid")[-1]) not in no_sys_jobids
     ]
 
     stub_jobs = sorted(set(stub_jobs).union(stub_sys_jobs))
 
     if check_zombies:
-        command(curs, "SELECT jobid, cfg FROM configuration")
-        det_var_jobids = {
-            jobid for jobid, cfg_str in curs.fetchall()
-            if any(s.get('tag') == 'detector_variation' for s in toml.loads(cfg_str).get('sample', []))
-        }
         candidates = [
             (f, False) for f in output_files if Path(f).stat().st_size >= 1024
         ] + [
             (f, True) for f in output_files_sys
             if Path(f).stat().st_size >= 1024
-            and int(Path(f).stem.split('jobid')[-1]) not in det_var_jobids
+            and int(Path(f).stem.split('jobid')[-1]) not in no_sys_jobids
         ]
         total = len(candidates)
         print(f"[INFO] -- Checking {total} ROOT file(s) for zombies and recovered files...")
@@ -693,23 +750,18 @@ def launch_jobsub(
     # they need to run `htgettoken` to refresh it. The exception is
     # printed to stdout by jobsub, so we just need to catch it and
     # print a more user-friendly message.
-    try:
-        out = subprocess.run(cmd, check=True, capture_output=True, text=True)
-    except subprocess.CalledProcessError as e:
-        if 'ExpiredSignatureError' in (output := e.stderr.strip()):
-            print(f"{_ERROR} -- Job submission failed due to expired token. Please run `htgettoken` to refresh your token and try again.")
-        else:
-            print(f"[ERROR] -- Job submission failed with error: {output}")
+    stdout = _run_jobsub_submit(cmd)
+    if stdout is None:
         return False
 
     if confirm:
         # Single-project workflow: show full output so the user can verify.
-        stdout = out.stdout.strip()
+        stdout = stdout.strip()
         print('\n'.join(stdout.split('\n')[-4:]))
         print(f"{_INFO} -- Launched {njobs} jobs.")
     else:
         # Campaign workflow: one clean line per project.
-        match = re.search(r'job id\s+(\S+)', out.stdout)
+        match = re.search(r'job id\s+(\S+)', stdout)
         job_id = match.group(1) if match else 'unknown'
         print(f"{_CAMPAIGN} Submitted {njobs} job(s). Job ID: {job_id}")
     return True
@@ -895,16 +947,11 @@ def launch_variation_phase1_jobsub(
         print(f"{_INFO} -- User aborted.")
         return False
 
-    try:
-        out = subprocess.run(cmd, check=True, capture_output=True, text=True)
-    except subprocess.CalledProcessError as e:
-        if 'ExpiredSignatureError' in (output := e.stderr.strip()):
-            print(f"{_ERROR} -- Submission failed: expired token. Run `htgettoken` and retry.")
-        else:
-            print(f"{_ERROR} -- Submission failed: {output}")
+    stdout = _run_jobsub_submit(cmd)
+    if stdout is None:
         return False
 
-    stdout = out.stdout.strip()
+    stdout = stdout.strip()
     print('\n'.join(stdout.split('\n')[-4:]))
     print(f"{_INFO} -- Phase 1 job submitted.")
     return True
@@ -1214,18 +1261,13 @@ def launch_variation_phase2_jobsub(
         return False
 
     try:
-        out = subprocess.run(cmd, check=True, capture_output=True, text=True)
-    except subprocess.CalledProcessError as e:
-        if 'ExpiredSignatureError' in (output := e.stderr.strip()):
-            print(f"{_ERROR} -- Submission failed: expired token. Run `htgettoken` and retry.")
-        else:
-            print(f"{_ERROR} -- Submission failed: {output}")
-        splines_tar.unlink(missing_ok=True)
-        return False
+        stdout = _run_jobsub_submit(cmd)
     finally:
         splines_tar.unlink(missing_ok=True)
+    if stdout is None:
+        return False
 
-    stdout = out.stdout.strip()
+    stdout = stdout.strip()
     print('\n'.join(stdout.split('\n')[-4:]))
     print(f"{_INFO} -- Submitted {njobs} Phase 2 jobs.")
     return True

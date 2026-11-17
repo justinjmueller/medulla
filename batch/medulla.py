@@ -375,3 +375,10 @@ if __name__ == '__main__':
         dataset_tag=args.dataset_tag,
         dry_run=args.dry_run,
     )
+
+    # A jobsub_submit that did not submit (non-zero exit, or exit 0 with
+    # "BAILING OUT" / no job id) must fail the command, so logs and watchers
+    # see it. utilities is imported as a module here to read the flag live.
+    import utilities
+    if utilities.SUBMIT_FAILED:
+        raise SystemExit(1)

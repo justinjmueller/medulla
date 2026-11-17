@@ -21,6 +21,9 @@ import utilities  # noqa: E402
 BATCH_DIR = Path(__file__).parent
 GOOD = b'x' * 4096     # >= 1 KB: counts as a real output
 STUB = b'x' * 10       # < 1 KB: counts as a stub
+# What a real successful submission prints (utilities._run_jobsub_submit requires the job id line).
+JOBSUB_OK = ('Transferring files to web sandbox...\nSubmitting job(s).\n'
+             '1 job(s) submitted to cluster 1.\nUse job id 1.0@jobsub01.fnal.gov to retrieve output\n')
 
 
 # ---------------------------------------------------------------------------
@@ -100,7 +103,7 @@ def jobsub_calls(monkeypatch):
     def fake_run(cmd, *args, **kwargs):
         if isinstance(cmd, (list, tuple)) and cmd and cmd[0] == 'jobsub_submit':
             calls.append(list(cmd))
-            return SimpleNamespace(stdout='submitted\n', stderr='', returncode=0)
+            return SimpleNamespace(stdout=JOBSUB_OK, stderr='', returncode=0)
         return real_run(cmd, *args, **kwargs)
 
     monkeypatch.setattr(utilities.subprocess, 'run', fake_run)

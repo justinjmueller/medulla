@@ -132,6 +132,10 @@ void copy_no_syst(cfg::ConfigurationTable table, TTree * out_tree, TTree * in_tr
   try { nan_replacement = table.get_double_field("nan_category_replacement"); }
   catch(const cfg::ConfigurationError &) {}
 
+  // "category" written for is_data trees (default 10), so samples that are all
+  // flagged is_data (on-beam data, beam-off, rock) can still be told apart.
+  int data_category = table.has_field("data_category") ? (int)table.get_int_field("data_category") : 10;
+
   // Copy entries from input tree to output tree
   for(int i(0); i < in_tree->GetEntries(); ++i)
   {
@@ -154,7 +158,7 @@ void copy_no_syst(cfg::ConfigurationTable table, TTree * out_tree, TTree * in_tr
     if(table.get_bool_field("is_data") == true)
     {
       is_data = 1;
-      category = (int)10;
+      category = data_category;
     }
     else
     {

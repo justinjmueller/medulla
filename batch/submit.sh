@@ -153,6 +153,15 @@ ls -lrth
 printf -v RAWNAME "output_jobid%04d.root" "$JOBID"
 ifdh cp output.root $PROJECT/output/$RAWNAME
 
+# Data, rock and detector-variation samples get no systematics output:
+# merge B and phase 1 read their output_jobid*.root, and the detector-
+# variation CAFs carry no rec.mc.nu.wgt. Keep this tag list in sync with
+# NO_SYSTEMATICS_TAGS in batch/utilities.py.
+if grep -Eq '^tag = "(data|detector_variation|rock)"' job_config.toml; then
+    echo "Sample tag is data/detector_variation/rock: skipping run_systematics."
+    exit 0
+fi
+
 # Run medulla (systematics)
 ./systematics/run_systematics systematics.toml
 ls -lrth

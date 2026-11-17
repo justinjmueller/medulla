@@ -8,6 +8,7 @@
  * candidates and the configured systematics.
  * @author mueller@fnal.gov
  */
+#include <cmath>
 #include <iostream>
 #include <set>
 
@@ -444,14 +445,15 @@ void sys::trees::copy_with_weight_systematics(cfg::ConfigurationTable & config, 
         // TTree to capture these cases.
         for(int i(0); i < input_tree->GetEntries(); ++i)
         {
+            // GetEntry already loads this entry's own Run/Subrun/Evt through
+            // the branch addresses. (They used to be overwritten with the
+            // weight reader's last event, so nonmatched entries had the wrong
+            // Run/Subrun/Evt.) nu_id is -1 for a reco interaction matched to a
+            // cosmic and NaN for one with no truth match; NaN needs a build
+            // without -ffinite-math-only (see systematics/CMakeLists.txt).
             input_tree->GetEntry(i);
-            if(!(nu_id >= 0))
-            {
-                run = reader.get_run();
-                subrun = reader.get_subrun();
-                event = reader.get_event();
+            if(std::isnan(nu_id) || nu_id < 0)
                 nonmatched_tree->Fill();
-            }
         }
 
         directory->WriteObject(nonmatched_tree, nonmatched_tree->GetName());

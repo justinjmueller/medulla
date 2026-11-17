@@ -9,6 +9,7 @@
  * @see cfg::ConfigurationTable 
  * @author mueller@fnal.gov
  */
+#include <cmath>
 #include <map>
 #include <vector>
 #include <random>
@@ -416,7 +417,12 @@ sys::detsys::DetsysCalculator::DetsysCalculator(cfg::ConfigurationTable & table,
 
             int nbins = h->GetXaxis()->GetNbins();
             const double * xedges = h->GetXaxis()->GetXbins()->GetArray();
-            hdummies.insert(std::make_pair(spline_key, new TH1D("hdummy", "hdummy", nbins, xedges)));
+            // Detach from the splines file: TFile::Open made it gDirectory, and
+            // splines_file->Close() below deletes every histogram it owns, which
+            // left these as dangling pointers (random phase-2 segfaults).
+            TH1D * hdummy = new TH1D(("hdummy_" + spline_key).c_str(), "hdummy", nbins, xedges);
+            hdummy->SetDirectory(nullptr);
+            hdummies.insert(std::make_pair(spline_key, hdummy));
         }
 
         std::cout << "Loaded " << splines[make_spline_key(name, variable)].size()
@@ -524,7 +530,9 @@ TH1D * sys::detsys::DetsysCalculator::operator[](std::string key)
 double sys::detsys::DetsysCalculator::get_weight(std::string name, double value, double zscore)
 {
     std::string spline_key = make_spline_key(name, variable);
-    if(value < hdummies[spline_key]->GetXaxis()->GetXmin() || value >= hdummies[spline_key]->GetXaxis()->GetXmax())
+    // NaN fails both range checks and FindBin(NaN) returns the overflow bin, which
+    // would index one past the end of the splines vector: treat it as out of range.
+    if(!std::isfinite(value) || value < hdummies[spline_key]->GetXaxis()->GetXmin() || value >= hdummies[spline_key]->GetXaxis()->GetXmax())
         return 1;
     else
     {
@@ -557,7 +565,7 @@ void sys::detsys::DetsysCalculator::add_value(std::string varname, double binvar
 
         std::string spline_key = make_spline_key(detsysname, configured_variable);
         double configured_value = value_it->second;
-        if(configured_value < hdummies[spline_key]->GetXaxis()->GetXmin() || configured_value >= hdummies[spline_key]->GetXaxis()->GetXmax())
+        if(!std::isfinite(configured_value) || configured_value < hdummies[spline_key]->GetXaxis()->GetXmin() || configured_value >= hdummies[spline_key]->GetXaxis()->GetXmax())
             continue;
 
         int bin = hdummies[spline_key]->FindBin(configured_value);

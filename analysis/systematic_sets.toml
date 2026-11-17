@@ -35,7 +35,7 @@ flux = [
     'hysyst_hpc_10', 'hysyst_hpc_11', 'hysyst_hpc_12', 'hysyst_hpc_13', 'hysyst_hpc_14',
 ]
 
-detector = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination', 'cathode_bending']
+detector = ['induction_high', 'induction_low', 'coherent_high', 'coherent_low', 'intrinsic_high', 'intrinsic_low', 'lifetime_high', 'lifetime_low', 'scintillation', 'wire_gap', 'yz_uniformity', 'recombination_residual', 'shower_scale', 'cathode_bending']
 
 total = ['flux', 'xsec_total', 'detector', 'g4', 'total_stat']
 
