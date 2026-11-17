@@ -119,6 +119,15 @@ ordinate = "cv"
 points = [ "recombination_residual", "recombination_residual", "recombination_residual", "cv", "recombination_residual", "recombination_residual", "recombination_residual",]
 
 [[sys]]
+name = "recombination"
+type = "variation"
+index = -1
+nsigma = [ -3, -2, -1, 0, 1, 2, 3,]
+scale = [ -3, -2, -1, 1, 1, 2, 3,]
+ordinate = "cv"
+points = [ "recombination", "recombination", "recombination", "cv", "recombination", "recombination", "recombination",]
+
+[[sys]]
 name = "shower_scale"
 type = "variation"
 index = -1
@@ -832,7 +841,7 @@ path = "variation_splines_photon_sideband.root"
 histogram_destination = "variations/"
 
 [variations]
-keys = [ "induction_high", "induction_low", "coherent_high", "coherent_low", "intrinsic_high", "intrinsic_low", "lifetime_high", "lifetime_low", "scintillation", "wire_gap", "yz_uniformity", "recombination_residual", "cathode_bend", "null", "shower_scale_up", "shower_scale_down", "cv",]
+keys = [ "induction_high", "induction_low", "coherent_high", "coherent_low", "intrinsic_high", "intrinsic_low", "lifetime_high", "lifetime_low", "scintillation", "wire_gap", "yz_uniformity", "recombination_residual", "recombination", "cathode_bend", "null", "shower_scale_up", "shower_scale_down", "cv",]
 origin = "events/"
 tree = "photon_sideband"
 result_destination = "detsys_results/"

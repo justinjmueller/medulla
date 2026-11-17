@@ -1105,6 +1105,8 @@ class SpineSystematics(SpineSpectra):
         else:
             self._allowed_names = None   # truly no filter — show everything
         self._covdata        = {}             # {recipe_name: cov_matrix}
+        self._ranking_rows   = None           # filled by draw(); see ranking()
+        self._ranking_total  = None
         self._recipe_labels  = {}             # {recipe_name: label}
         self._cv             = None
         self._normalize_cv   = None
@@ -1204,6 +1206,18 @@ class SpineSystematics(SpineSpectra):
             self._recipe_labels[sysname] = syst._label if syst._label else sysname
 
     # ------------------------------------------------------------------
+    def ranking(self, top=None):
+        """
+        The systematics drawn by the last `draw`, sorted from largest to smallest
+        integrated fractional uncertainty (uncertainty on the total event count,
+        bin-to-bin correlations included). Each row has name, label, integrated,
+        max_bin and rms_bins (per-bin fractional uncertainties). Returns
+        (rows, total_row); rows is cut to `top` entries if given. Empty before draw.
+        """
+        rows = sorted(self._ranking_rows or [],
+                      key=lambda r: (-r['integrated'] if np.isfinite(r['integrated']) else 0.0))
+        return (rows[:top] if top else rows), self._ranking_total
+
     def draw(self, ax, style,
              mode='fractional',
              show_total=True,
@@ -1291,7 +1305,14 @@ class SpineSystematics(SpineSpectra):
         linestyles = ['-', '--', '-.', ':']
 
         total_var = np.zeros(len(cv))
+        total_cov = None
         plotted   = 0
+        # Summary of every plotted line, for the ranking tables written next to the
+        # figures (see `ranking`). integrated = sqrt(sum of all covariance elements)
+        # / total CV, i.e. the fractional uncertainty on the total event count,
+        # bin-to-bin correlations included.
+        cv_total = np.nansum(normalize_cv)
+        self._ranking_rows = []
 
         for sysname, cov in self._covdata.items():
             # Skip statistical uncertainty unless explicitly requested
@@ -1300,6 +1321,14 @@ class SpineSystematics(SpineSpectra):
             sigma = np.sqrt(np.diag(cov))
             y     = sigma / safe_cv if mode == 'fractional' else sigma
             label = self._recipe_labels.get(sysname, sysname)
+            frac = sigma / safe_cv
+            self._ranking_rows.append({
+                'name': sysname, 'label': label,
+                'integrated': float(np.sqrt(max(np.nansum(cov), 0.0)) / cv_total) if cv_total > 0 else float('nan'),
+                'max_bin': float(np.nanmax(frac)) if np.any(np.isfinite(frac)) else float('nan'),
+                'rms_bins': float(np.sqrt(np.nanmean(frac ** 2))) if np.any(np.isfinite(frac)) else float('nan'),
+            })
+            total_cov = cov.copy() if total_cov is None else total_cov + cov
             color     = colors[plotted % len(colors)]
             linestyle = linestyles[(plotted // len(colors)) % len(linestyles)]
             ax.stairs(y, bin_edges, label=label, color=color,
@@ -1307,6 +1336,15 @@ class SpineSystematics(SpineSpectra):
             print("covariance trace for {}: {:.6g}".format(sysname, np.nansum(np.diag(cov))))
             total_var += np.diag(cov)
             plotted   += 1
+
+        if total_cov is not None and cv_total > 0:
+            frac_t = np.sqrt(total_var) / safe_cv
+            self._ranking_total = {
+                'name': 'Total', 'label': 'Total (quadrature sum of the lines)',
+                'integrated': float(np.sqrt(max(np.nansum(total_cov), 0.0)) / cv_total),
+                'max_bin': float(np.nanmax(frac_t)) if np.any(np.isfinite(frac_t)) else float('nan'),
+                'rms_bins': float(np.sqrt(np.nanmean(frac_t ** 2))) if np.any(np.isfinite(frac_t)) else float('nan'),
+            }
 
         if show_total and plotted > 1:
             sigma_total = np.sqrt(total_var)

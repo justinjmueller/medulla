@@ -8,6 +8,7 @@ file = '/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/systematic_recipes.
 # Define your samples
 [samples]
 [samples.NuMIFull]
+override_exposure = 7.095834e+20  # standard NuMIFull POT (as in nue_plots.toml), not the file value
 key = "NuMIFull"
 exposure_type = "pot"
 trees = ['all_signal']
@@ -173,7 +174,7 @@ xlabel = 'True Neutrino Energy [GeV]'
 name = 'selection_efficiency_table'
 type = 'SimpleFigure'
 style = 'basic_icarus'  # This references a style defined in the included styles.toml
-title = 'Signal Selection Efficiency'
+figsize = [10.0, 8.0]  # the table font is fitted to this size; the CLI crops the png to the table
 
 [[figure.artists]]
 type = 'SpineEfficiency'
@@ -193,6 +194,40 @@ reco_vertex_distance_cut = 'Vertex Distance < 3.5 cm'
 reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
 
 [figure.artists.draw_kwargs]
+show_option = 'table'
+percentage = true
+show_seqeff = true
+show_unseqeff = true
+show_purity = true
+show_counts = true
+draw_error = 'flux'
+
+# Same table, Signal section only
+[[figure]]
+name = 'selection_efficiency_table_signalOnly'
+type = 'SimpleFigure'
+style = 'basic_icarus'  # This references a style defined in the included styles.toml
+figsize = [10.0, 5.0]  # one section of rows; the CLI crops the png to the table
+
+[[figure.artists]]
+type = 'SpineEfficiency'
+variable = 'reco_leading_electron_energy'
+groups = ['Signal', 'Background']
+
+[figure.artists.cuts]
+reco_no_cut = 'Total Events'
+reco_fiducial_cut = 'Fiducial Volume'
+reco_flash_cut = 'Flash Cut'
+reco_containment_cut = 'Interaction Containment Cut'
+reco_has_particle_multiplicity = '>=1 Electron-like Particle'
+reco_electron_softmax_cut = 'Leading Electron Electron-Softmax > 0.6'
+reco_primary_softmax_cut = 'Leading Electron Primary-Softmax > 0.95'
+reco_no_muons = 'No Muon-like Particles'
+reco_vertex_distance_cut = 'Vertex Distance < 3.5 cm'
+reco_leading_ele_energy_cut = 'Leading Electron Energy > 300 MeV'
+
+[figure.artists.draw_kwargs]
+show_groups = ['Signal']  # table shows Signal only; purity still uses Background
 show_option = 'table'
 percentage = true
 show_seqeff = true

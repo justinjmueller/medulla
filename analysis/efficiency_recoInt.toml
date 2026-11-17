@@ -12,6 +12,7 @@ file = '/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/systematic_recipes.
 # Define your samples
 [samples]
 [samples.NuMIFull]
+override_exposure = 7.095834e+20  # standard NuMIFull POT (as in nue_plots.toml), not the file value
 key = "NuMIFull"
 exposure_type = "pot"
 trees = ['true_signal']
@@ -46,6 +47,7 @@ precompute = {"reco_category" = "np.where(true_category == 0, reco_reco_interact
 # weight_branch = 'ppfx_cv_weight'
 
 [samples.NuMIFullNonSel]
+override_exposure = 7.095834e+20  # standard NuMIFull POT (as in nue_plots.toml), not the file value
 key = "NuMIFull"
 exposure_type = "pot"
 trees = ['true_signal_nonmatched']
@@ -182,7 +184,7 @@ xlabel = 'True Neutrino Energy [GeV]'
 name = 'selection_efficiency_table'
 type = 'SimpleFigure'
 style = 'basic_icarus'  # This references a style defined in the included styles.toml
-title = 'Signal Selection Efficiency'
+figsize = [10.0, 8.0]  # 5 groups need the full height; the CLI crops the png to the table
 
 [[figure.artists]]
 type = 'SpineEfficiency'

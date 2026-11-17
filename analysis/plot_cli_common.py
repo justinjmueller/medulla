@@ -17,6 +17,7 @@ and the TOML defines each figure's tree and category `groups`, so there is no
 separate --tree/--groups flag.
 """
 import argparse
+import math
 import os
 import sys
 from pathlib import Path
@@ -103,6 +104,94 @@ def dry_run(args):
           'pandas (all rows). Check free memory before a real run.')
 
 
+_LATEX_SPECIAL = {'\\': r'\textbackslash{}', '&': r'\&', '%': r'\%', '$': r'\$', '#': r'\#',
+                  '_': r'\_', '{': r'\{', '}': r'\}', '~': r'\textasciitilde{}', '^': r'\^{}'}
+
+
+def latex_escape(text):
+    """Escape LaTeX special characters, leaving $...$ math segments untouched
+    (e.g. 'G4 $\\pi^{+}$ reinteraction' keeps its math)."""
+    parts = str(text).split('$')
+    if len(parts) % 2 == 0:  # unbalanced $: treat everything as text
+        parts = [str(text)]
+    out = []
+    for i, part in enumerate(parts):
+        if i % 2 == 1:
+            out.append(f'${part}$')
+        else:
+            out.append(''.join(_LATEX_SPECIAL.get(c, c) for c in part))
+    return ''.join(out)
+
+
+def latex_table(rows, total, key, header, caption, label, top=10):
+    """One two-column table (systematic, value in %), in the owner's format."""
+    ranked = sorted(rows, key=lambda r: -r[key] if math.isfinite(r[key]) else 0.0)[:top]
+    t = [r'\begin{table}[]', r'    \centering', r'    \begin{tabular}{l|c}', r'    \hline',
+         f'    Systematic & {header} (\\%) \\\\', r'    \hline']
+    for r in ranked:
+        t.append(f'    {latex_escape(r["label"])} & {100 * r[key]:.2f} \\\\')
+    if total is not None:
+        t += [r'    \hline', f'    Total & {100 * total[key]:.2f} \\\\']
+    t += [r'    \hline', r'    \end{tabular}', f'    \\caption{{{caption}}}', f'    \\label{{{label}}}',
+          r'\end{table}']
+    return '\n'.join(t)
+
+
+def write_systematics_tables(ana, name, stem, out, set_name=None, top=10):
+    """
+    For every SpineSystematics artist in figure `name` (anything with a
+    `ranking()` method), print the top `top` systematics and write
+      <out>/tables/<stem>_top<top>.txt   the printed tables
+      <out>/tables/<stem>_top<top>.tex   the same two rankings as LaTeX tables
+      <out>/tables/<stem>_ranking.csv     every systematic, sorted
+    Two rankings: integrated fractional uncertainty (on the total event count,
+    correlations included) and the RMS over bins of the per-bin uncertainty.
+    """
+    fig = getattr(ana, '_figures', {}).get(name)
+    artists = [a for a in getattr(fig, '_artists', []) if hasattr(a, 'ranking')]
+    if not artists:
+        return
+    tdir = out / 'tables'
+    tdir.mkdir(exist_ok=True)
+    lines, csv_rows, tex = [], ['artist,rank,name,label,integrated,max_bin,rms_bins'], []
+    set_label = set_name or 'toml systematics'
+    for k, art in enumerate(artists):
+        rows, total = art.ranking()
+        if not rows:
+            continue
+        title = getattr(art, '_title', None) or name
+        head = f'{name} [{set_label}]' + (f' artist {k}: {title}' if len(artists) > 1 else '')
+        tag = '-'.join(x for x in (name, set_name, str(k) if len(artists) > 1 else None) if x)
+        tag = ''.join(c if c.isalnum() or c in '-:' else '-' for c in tag)
+        for key, header, what in (('integrated', 'Integrated Uncertainty', 'integrated uncertainty on the total event count'),
+                                  ('rms_bins', 'RMS Uncertainty', 'RMS over bins of the per-bin uncertainty')):
+            caption = (f'Top {min(top, len(rows))} of {len(rows)} systematics ({latex_escape(set_label)}) '
+                       f'for {latex_escape(name)}, ranked by {what}.')
+            tex.append(latex_table(rows, total, key, header, caption, f'tab:{tag}-{key.replace("_", "-")}', top))
+        # Two rankings, two columns each: integrated (total event count, correlations
+        # included) and RMS over bins (per-bin size, so shape-only systematics show up).
+        for key, what in (('integrated', 'integrated uncertainty (total event count)'),
+                          ('rms_bins', 'RMS over bins of the per-bin uncertainty')):
+            ranked = sorted(rows, key=lambda r: -r[key] if math.isfinite(r[key]) else 0.0)
+            lines.append(f'Top {min(top, len(ranked))} of {len(rows)} systematics by {what} -- {head}')
+            lines.append(f'{"systematic":<40}{key.replace("_bins", " bins"):>12}')
+            for r in ranked[:top]:
+                lines.append(f'{str(r["label"])[:40]:<40}{r[key]:>11.2%}')
+            if total is not None:
+                lines.append(f'{"Total (all " + str(len(rows)) + ")":<40}{total[key]:>11.2%}')
+            lines.append('')
+        for i, r in enumerate(rows, 1):
+            label = str(r['label']).replace('"', "'")
+            csv_rows.append(f'{k},{i},{r["name"]},"{label}",{r["integrated"]:.6g},{r["max_bin"]:.6g},{r["rms_bins"]:.6g}')
+    if not lines:
+        return
+    text = '\n'.join(lines)
+    print(text, flush=True)
+    (tdir / f'{stem}_top{top}.txt').write_text(text + '\n')
+    (tdir / f'{stem}_top{top}.tex').write_text('\n\n'.join(tex) + '\n')
+    (tdir / f'{stem}_ranking.csv').write_text('\n'.join(csv_rows) + '\n')
+
+
 def run_figures(args):
     """Real run. Heavy imports are here so --dry-run / tests need no ROOT."""
     import pickle
@@ -156,6 +245,11 @@ def run_figures(args):
             plt.savefig(out / 'png' / f'{stem}.png', dpi=300, bbox_inches='tight')
             with open(out / 'pkl' / f'{stem}.pkl', 'wb') as f:
                 pickle.dump(fig, f)
+            # Top-10 systematics table(s) for SpineSystematics figures (no-op otherwise).
+            try:
+                write_systematics_tables(ana, name, stem, out, getattr(args, 'systematics_set', None))
+            except Exception as e:  # a table problem must not lose the figure
+                print(f'[WARN] -- ranking table for {name} failed: {type(e).__name__}: {e}', flush=True)
         except Exception as e:  # keep going so one bad figure does not lose the rest
             print(f'[ERROR] -- {name} failed: {type(e).__name__}: {e}', flush=True)
             failed.append(name)

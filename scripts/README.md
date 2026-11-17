@@ -32,7 +32,7 @@ Unless a script says otherwise:
 
 | File | What it does |
 |------|--------------|
-| `graft_tree.py` | Copies a big merged file and adds one TTree from a small file to the copy. Example: adding `events/NuMIFull/nc_sideband_variationTree` to make `merged_final_v31e_flux.root`, as in the "nc_sideband detector systematics" section of CLAUDE.md.<br>Before writing, it checks that:<br>• the tree is absent from `--base`;<br>• it has the same entry count as `--ref`;<br>• Run/Subrun/Evt match entry by entry.<br>It never writes to `--base` or `--extra`, refuses an existing `--output`, and writes `<output>.partial` first. Supports `--dry-run`. Needs PyROOT, so run it through `in_sl7.sh`. |
+| `graft_tree.py` | Copies a big merged file and adds TTrees from small files to the copy. Example: adding `events/NuMIFull/nc_sideband_variationTree` to make `merged_final_v31e_flux.root`, as in the "nc_sideband detector systematics" section of CLAUDE.md. One tree with `--extra/--tree/--ref`; several trees in one copy with a repeatable `--graft EXTRA TREE REF` (v32 shower-scale fix: 5 variation trees into `merged_final_v32c_flux.root`).<br>Before writing, it checks for every tree that:<br>• the tree is absent from `--base` (with `--replace`: present, with the same branches);<br>• it has the same entry count as its ref;<br>• Run/Subrun/Evt match entry by entry.<br>It never writes to `--base` or `--extra`, refuses an existing `--output`, and writes `<output>.partial` first. Supports `--dry-run`. Needs PyROOT, so run it through `in_sl7.sh`. |
 
 ## 3. Detector-variation (det-sys) studies
 

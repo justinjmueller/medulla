@@ -138,13 +138,13 @@ ismc = true
 tag = "detector_variation"
 disable = false # Optional: default = false
 
-# ICARUS var08 recombination
+# ICARUS var08 recombination (standard; recombination_residual comes from selection_nue_recomb_residual.toml)
 [[sample]]
 name = "recombination"
 path = "/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/Recomb_Model/*.flat.root"
 ismc = true
 tag = "detector_variation"
-disable = true # replaced by recombination_residual in selection_nue_recomb_residual.toml
+disable = false
 
 # ICARUS var09 null
 [[sample]]

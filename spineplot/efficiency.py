@@ -1,12 +1,107 @@
 import numpy as np
 from scipy.stats import binom, beta
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
 
 from artists import SpineArtist
 from style import Style
 from variable import Variable
 from utilities import mark_pot, mark_preliminary, draw_legend
+
+def fit_table(ax, table, fontsize=None, min_fontsize=6, width=0.98, height=0.98, max_row_height=2.4,
+              header_lines=2):
+    """
+    Size a matplotlib table so that it fills the axis with the largest
+    readable font. Matplotlib's own automatic font sizing shrinks the
+    text to fit the default (equal) column widths, which leaves a large
+    table with tiny text. Here the font is fixed, the columns are sized
+    to their contents, the font is reduced only until the table fits
+    the axis, and the rows/columns are then stretched to fill it.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        The axis holding the table (its current size is used, so set
+        the final figure size before drawing).
+    table : matplotlib.table.Table
+        The table to size. Row 0 is taken to be the header.
+    fontsize : float, optional
+        The starting (largest) font size in points. The default (None)
+        picks one from the axis height and the number of rows.
+    min_fontsize : float, optional
+        The smallest font size to fall back to. The default is 6.
+    width, height : float, optional
+        The fraction of the axis width/height to fill. Default 0.98.
+    max_row_height : float, optional
+        The tallest a body row may be stretched, in font heights. The
+        default is 2.4.
+    header_lines : int, optional
+        Number of text lines in the header row (it gets that many times
+        the height of a body row). The default is 2.
+
+    Returns
+    -------
+    float
+        The font size used.
+    """
+    fig = ax.figure
+    cells = table.get_celld()
+    nrows = 1 + max(r for r, _ in cells)
+    ncols = 1 + max(c for _, c in cells)
+    # Fix the font now. Otherwise the cells keep the generic 'sans-serif'
+    # family, which is resolved at draw time: the table is fitted while a
+    # spineplot Style is active (Arial-like fonts) but saved after it is
+    # reset (DejaVu Sans, wider), so the saved table overflows the page.
+    # DejaVu Sans is what the saved tables have always been drawn in.
+    fontname = FontProperties(family=matplotlib.rcParamsDefault['font.sans-serif']).get_name()
+    for (r, c), cell in cells.items():
+        cell.get_text().set_fontname(fontname)
+        if r == 0:
+            cell.set_height(cell.get_height() * header_lines)
+    table.auto_set_font_size(False)
+    # Keep constrained_layout from shrinking the axis around the table
+    # (it would collapse the axis to zero size while the font is fitted).
+    table.set_in_layout(False)
+
+    def extent():
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
+        tb = table.get_window_extent(renderer=renderer)
+        ab = ax.get_window_extent(renderer=renderer)
+        return tb.width / ab.width, tb.height / ab.height
+
+    if fontsize is None:
+        # Body rows plus the multi-line header; ~2.2 font heights per
+        # row leaves room for the super/subscript error bars.
+        ax_height_pt = ax.get_window_extent().height * 72.0 / fig.dpi
+        fontsize = min(16.0, ax_height_pt * height / (2.2 * (nrows - 1 + header_lines)))
+
+    fs = fontsize
+    while True:
+        table.set_fontsize(fs)
+        table.auto_set_column_width(list(range(ncols)))
+        w, h = extent()
+        if (w <= width and h <= height) or fs <= min_fontsize:
+            break
+        fs = max(min_fontsize, fs - 0.5)
+    if w > width or h > height:
+        print(f'Warning: efficiency table does not fit the axis even at font size {fs} '
+              f'({w:.2f} x {h:.2f} of the axis). Consider a larger figure.')
+
+    # Stretch to fill the axis (never shrink: the font no longer
+    # follows the cell size, so shrinking would make text overflow).
+    # The vertical stretch is capped so that a short table (few rows)
+    # keeps rows about `max_row_height` font heights tall instead of
+    # spreading out over the whole axis; it then sits at the top
+    # (create the table with loc='upper center').
+    sy = max(1.0, height / h)
+    ax_height_pt = ax.get_window_extent().height * 72.0 / fig.dpi
+    row_pt = h * ax_height_pt / (nrows - 1 + header_lines)
+    sy = min(sy, max(1.0, max_row_height * fs / row_pt))
+    table.scale(max(1.0, width / w), sy)
+    return fs
 
 class SpineEfficiency(SpineArtist):
     """
@@ -100,7 +195,8 @@ class SpineEfficiency(SpineArtist):
              show_unseqeff=True, show_purity=False, yrange=None, npts=1e6, style=None,
              logx=False, logy=False, colors=None,
              draw_error=None, show_syst_band=True, syst_alpha=0.25,
-             syst_color='gray', syst_label=None, show_legend=True):
+             syst_color='gray', syst_label=None, show_legend=True,
+             show_groups=None, table_fontsize=None):
         """
         Draw the artist on the given axis.
 
@@ -140,6 +236,14 @@ class SpineEfficiency(SpineArtist):
         logy : bool, optional
             A flag to indicate if the y-axis should be logarithmic.
             The default is False.
+        show_groups : list, optional
+            Table only: the groups (rows sections) to show, e.g.
+            ['Signal']. Purity is still computed from all groups of the
+            artist. The default (None) shows all groups.
+        table_fontsize : float, optional
+            Table only: the largest font size to use. The default
+            (None) picks one from the axis size; the font is reduced
+            if needed so the table fits.
 
         Returns
         -------
@@ -161,6 +265,12 @@ class SpineEfficiency(SpineArtist):
                 groups.append(category)
 
         if show_option == 'table':
+            if show_groups is not None:
+                missing = [g for g in show_groups if g not in groups]
+                if missing:
+                    raise ValueError(f'show_groups {missing} not among the groups {groups}.')
+                groups = [g for g in groups if g in show_groups]
+
             # Lambda formatter to round the values to two decimal
             # places, display as percentage (if toggled), and add super
             # and subscripts for the error values.
@@ -280,8 +390,7 @@ class SpineEfficiency(SpineArtist):
                 results.rename(columns={cumu_key : 'Efficiency [%]' if percentage else 'Efficiency'}, inplace=True)
             
             table_data = [results.columns.to_list()] + results.values.tolist()
-            table = ax.table(cellText=table_data, colLabels=None, loc='center', cellLoc='center', edges='T')
-            table.scale(1, 2.75)
+            table = ax.table(cellText=table_data, colLabels=None, loc='upper center', cellLoc='center', edges='T')
             for i in range(2, len(table_data)):
                 if i == len(table_data) - 1:
                     for j in range(len(table_data[i])):
@@ -292,25 +401,13 @@ class SpineEfficiency(SpineArtist):
                     if i in group_endpoint.values():
                         table[i, 0].visible_edges = 'B'
 
-            def calc_bbox_yext(obj):
-                figure = plt.gcf()
-                bbox = obj.get_window_extent(renderer=figure.canvas.get_renderer())
-                p0, p1 = figure.transFigure.inverted().transform(bbox)
-                return p1[1] - p0[1]
-
-            scale = 2.75
-            while calc_bbox_yext(table) > 0.92:
-                table.scale(1, 1/scale)
-                scale -= 0.05
-                table.scale(1, scale)
-            if scale < 2.0:
-                print(f'Warning: Table with title `{self._title}` is too large to fit on the figure (scale = {scale:.2f}). Consider extending the figure vertically.')
+            fit_table(ax, table, fontsize=table_fontsize)
 
             # Mark the POT and preliminary information on the plot.
             if style.mark_pot:
-                mark_pot(ax, self._exposure, style.mark_pot_horizontal, vadj=0.1)
+                mark_pot(ax, self._exposure, style.mark_pot_horizontal, vadj=0.0)
             if style.mark_preliminary is not None:
-                mark_preliminary(ax, style.mark_preliminary, vadj=0.1)
+                mark_preliminary(ax, style.mark_preliminary, vadj=0.0)
 
         elif show_option in ('differential', 'final_only'):
             # Lambda formatter to round the values to two decimal

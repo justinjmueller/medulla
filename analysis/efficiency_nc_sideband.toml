@@ -17,6 +17,7 @@ file = '/nashome/m/micarrig/icarus/nuESpine/medulla/analysis/systematic_recipes.
 
 [samples]
 [samples.NuMIFull]
+override_exposure = 7.095834e+20  # standard NuMIFull POT (as in nue_plots.toml), not the file value
 key = "NuMIFull"
 exposure_type = "pot"
 trees = ['all_nc']
@@ -40,6 +41,7 @@ branches = ["true_category",
 presel = "true_fiducial_cut == 1 and true_containment_cut == 1"
 
 [samples.NuMIFullNonSel]
+override_exposure = 7.095834e+20  # standard NuMIFull POT (as in nue_plots.toml), not the file value
 key = "NuMIFull"
 exposure_type = "pot"
 trees = ['all_nc_nonmatched']
@@ -108,7 +110,7 @@ xlabel = 'True Neutrino Energy [GeV]'
 name = 'selection_efficiency_table'
 type = 'SimpleFigure'
 style = 'basic_icarus'
-title = 'NC $\pi^0$ Sideband Selection Efficiency'
+figsize = [10.0, 5.0]  # one group of 8 cuts; the CLI crops the png to the table
 
 [[figure.artists]]
 type = 'SpineEfficiency'

@@ -7,7 +7,7 @@ Usage:
     python3 analysis/plotEfficiencyCLI.py --toml analysis/efficiency_analysis_allTree.toml \
         --input /exp/icarus/data/users/micarrig/merged_v30.root --output-dir plots_v30/efficiency_allTree
 
-Each figure is saved as <name>.png (300 dpi) and <name>.pkl in the output dir.
+Each figure is saved as png/<name>.png (300 dpi) and pkl/<name>.pkl in the output dir.
 Output file names match plotEfficiency.py (e.g. efficiency_vs_trueInvMass).
 --figures accepts any [[figure]] name defined in the TOML; the default is the
 8 main ones below.
@@ -46,6 +46,26 @@ FIGURES = {
 }
 
 
+def table_bbox(fig, pad=0.1):
+    """
+    Crop box (inches): full figure width, and vertically the tables and labels (ICARUS/POT)
+    of a table figure. The tables are left out of the layout, so
+    bbox_inches='tight' keeps the whole (partly empty) axis.
+    """
+    from matplotlib.transforms import Bbox
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    boxes = [a.get_window_extent(renderer=renderer)
+             for ax in fig.axes for a in (*ax.tables, *ax.texts) if a.get_visible()]
+    if not boxes:
+        return 'tight'
+    # Crop only vertically: the table's reported width can be narrower
+    # than what is drawn (auto column widths), so keep the full width.
+    b = Bbox.union(boxes)
+    width = fig.get_size_inches()[0]
+    return Bbox.from_extents(0, b.y0 / fig.dpi - pad, width, b.y1 / fig.dpi + pad)
+
+
 def stem_for(name):
     """Output file stem: the historical name for the main figures, else the figure name."""
     return FIGURES.get(name, name)
@@ -63,10 +83,10 @@ def dry_run(args, out):
         print(f"[DRY RUN] Sample {name}: key={smp.get('key')} trees={smp.get('trees')} "
               f"{len(smp.get('branches', []))} branches read, {len(smp.get('precompute', {}))} precomputed")
     print(f'[DRY RUN] Output dir: {out} ({"exists" if out.exists() else "would be created"})')
-    existing = [f for f in args.figures if (out / f'{stem_for(f)}.png').exists()]
+    existing = [f for f in args.figures if (out / 'png' / f'{stem_for(f)}.png').exists()]
     for f in args.figures:
         flag = ' (would OVERWRITE)' if f in existing else ''
-        print(f'[DRY RUN] Figure {f} -> {stem_for(f)}.png/.pkl{flag}')
+        print(f'[DRY RUN] Figure {f} -> png/{stem_for(f)}.png / pkl/{stem_for(f)}.pkl{flag}')
     print('[DRY RUN] Memory: each sample loads its tree(s) with the listed branches into pandas '
           '(all rows). Check the free memory on this node before a real run.')
 
@@ -95,20 +115,27 @@ def main():
         dry_run(args, out)
         return
     out.mkdir(parents=True, exist_ok=True)
+    (out / 'png').mkdir(exist_ok=True)
+    (out / 'pkl').mkdir(exist_ok=True)
 
     ana = Analysis(args.toml, args.input)
     failed = []
     for name in args.figures:
         stem = stem_for(name)
-        print(f'[INFO] -- Making {name} -> {out / stem}.png', flush=True)
+        print(f'[INFO] -- Making {name} -> {out / "png" / stem}.png', flush=True)
         try:
             fig = ana.run_interactively(name)
             # Same size and trimming as the other plot CLIs (plot_cli_common);
             # the legend and headroom are redone for the new size.
-            fig.set_size_inches(10, 8)
+            # The tables are fitted to their TOML figsize when drawn
+            # (fixed font), so they keep it instead of being resized.
+            is_table = name.startswith('selection_efficiency_table')
+            if not is_table:
+                fig.set_size_inches(10, 8)
             relayout_figure(fig)
-            plt.savefig(out / f'{stem}.png', dpi=300, bbox_inches='tight')
-            with open(out / f'{stem}.pkl', 'wb') as f:
+            plt.savefig(out / 'png' / f'{stem}.png', dpi=300,
+                        bbox_inches=table_bbox(fig) if is_table else 'tight')
+            with open(out / 'pkl' / f'{stem}.pkl', 'wb') as f:
                 pickle.dump(fig, f)
         except Exception as e:  # keep going so one bad figure does not lose the rest
             print(f'[ERROR] -- {name} failed: {type(e).__name__}: {e}', flush=True)
