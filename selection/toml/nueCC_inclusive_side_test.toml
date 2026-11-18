@@ -1003,10 +1003,11 @@ cut = [
     #{name = "valid_pi0_mass_cut", type = "reco", parameters = ["@pi0_mass_veto", 9999.9]}, 
     #{name = "pi0_invariant_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
     #{name = "two_photons",                type = "reco", parameters =["@photon_threshold"]},
+    #{ name = "single_photon", type = "reco", parameters = [ "@photon_threshold" ] },
     {name = "no_electrons",                type = "reco", parameters =[0]},
     { name = "photon_primary_softmax_cut",      type = "reco", parameters = [ 0.95,1.0] },
     { name = "leading_photon_energy_cut",    type = "reco", parameters = [ "@photon_threshold_1" ] },
-    { name = "single_photon", type = "reco", parameters = [ "@photon_threshold" ] },
+
 
 
 ]
