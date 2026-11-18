@@ -18,6 +18,7 @@
 #include "sbnanaobj/StandardRecord/SRVector3D.h"
 
 #include "framework.h"
+#include "ppfx_weights.h"
 
 /**
  * @namespace mctruth
@@ -152,6 +153,24 @@ namespace mctruth
         );
     }
     REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, off_axis_angle, off_axis_angle);
+
+    /**
+     * @brief Variable for the PPFX central-value flux weight.
+     * @details Looks up the PPFX CV weight of the neutrino's flavor in true
+     * energy bins (selection/include/ppfx_weights.h, generated from flux.root
+     * by scripts/make_ppfx_header.py; the same histograms that stage 5,
+     * systematics/add_numi_flux_sys.py, uses for its ppfx_cv_weight). The
+     * branch is written as true_ppfx_cv_weight. It is 1 for flavors other than
+     * numu/numubar/nue/nuebar and for energies outside the histogram range; it
+     * is NaN (as for every mctruth branch) where there is no true neutrino
+     * (data, cosmics, unmatched reco interactions): treat NaN as weight 1.
+     * @tparam T the type of the object to apply the variable on.
+     * @param obj the SRTrueInteraction to apply the variable on.
+     * @return the PPFX central-value weight.
+     */
+    template<typename T>
+        double ppfx_cv_weight(const T & obj) { return ppfx::cv_weight((int)obj.pdg, obj.E); }
+    REGISTER_VAR_SCOPE(RegistrationScope::MCTruth, ppfx_cv_weight, ppfx_cv_weight);
 
 } // namespace mctruth
 #endif

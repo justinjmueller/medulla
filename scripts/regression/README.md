@@ -12,6 +12,36 @@ Everything lives under `/exp/icarus/data/users/micarrig/regression/` (`--root`):
 | `inputs/` | pinned CAF files (copied once by `prepare`), the production spline files, `manifest.toml` |
 | `<sha>[-dirty][-suffix]/<tier>/` | one run: a dir per sample, `phase1/`, `phase2/`, `mergeB*/`, `stage6*_tmp/`, `stage7/`, `logs/`, `timings.toml` |
 | `src_<sha>/`, `build_<sha>/` | git worktree and build of a `--ref` (built once, reused) |
+| `reference/<tier>/current` | the approved reference run of the tier (symlink to a copy; older references kept next to it) |
+
+## Reference runs and the change log
+
+Check a change against the approved reference, not against an arbitrary old run:
+
+```bash
+scripts/in_sl7.sh 'python3 scripts/regression/run_chain.py run --ref WORKTREE --build /exp/icarus/data/users/micarrig/regression/build_worktree --tier full'
+python3 scripts/regression/compare.py \
+    /exp/icarus/data/users/micarrig/regression/reference/full/current \
+    /exp/icarus/data/users/micarrig/regression/<new>-dirty/full
+```
+
+If the diff shows only what the change was meant to do, show it to the owner.
+**Only after the owner says the differences are OK**, make the run the new
+reference:
+
+```bash
+python3 scripts/regression/run_chain.py accept <run_dir> --dry-run          # shows the diff, changes nothing
+python3 scripts/regression/run_chain.py accept <run_dir> --note "<what changed>; approved by owner <date>"
+```
+
+`accept` copies the run to `reference/<tier>/<time>_<label>/` (so `--force`
+reruns cannot change it), repoints `current`, and appends an entry to
+[`CHANGELOG.md`](CHANGELOG.md) (git-tracked): date, code commit plus whether
+there were uncommitted changes, the note, and the diff vs the previous
+reference, with repeated messages folded into counts. Every run stores its
+commit in `run_info.toml`; `--ref WORKTREE` runs also store `code.diff` and
+`code_untracked.txt`, so a reference made from uncommitted code says what that
+code was. Commit `CHANGELOG.md` with the change it describes.
 
 ## Use
 
@@ -23,6 +53,8 @@ scripts/in_sl7.sh 'python3 scripts/regression/run_chain.py prepare'
 scripts/in_sl7.sh 'python3 scripts/regression/run_chain.py run --ref 6cb6044 --tier full'
 # your change: this checkout and its build/ (rebuild build/ first)
 scripts/in_sl7.sh 'python3 scripts/regression/run_chain.py run --ref WORKTREE --tier full'
+# ... or compile this checkout into a sandbox build dir and leave build/ alone
+scripts/in_sl7.sh 'python3 scripts/regression/run_chain.py run --ref WORKTREE --build /exp/icarus/data/users/micarrig/regression/build_worktree --tier full'
 
 # diff (host python is enough); exit 0 = identical
 python3 scripts/regression/compare.py \
@@ -32,7 +64,9 @@ python3 scripts/regression/compare.py \
 
 `run` refuses an existing output dir (`--force` replaces it, `--suffix rep2`
 makes a second one). By default both refs run with THIS checkout's TOMLs, so
-only the code differs; `--configs-from-ref` uses the ref's own TOMLs.
+only the code differs; `--configs-from-ref` uses the ref's own TOMLs (needed
+when this checkout's TOMLs use a variable the ref does not have, e.g. a ref
+before `true_ppfx_cv_weight` fails with "Function ... is not registered").
 `compare.py --rtol 1e-12` allows rounding differences, `--ignore REGEX` skips
 objects or `tree/branch` paths.
 
@@ -65,4 +99,5 @@ Phase 1/2 are only reproducible with `[variations] seed` (added 2026-11-17).
 Refs older than that draw random universes, so their phase 2 / stage 6 syst
 trees differ from run to run: compare those with `--ignore` or use `quick`.
 
-Tests: `python3 -m pytest scripts/regression/ batch/test_phase_cfgs.py`.
+Tests: `python3 -m pytest scripts/regression/ batch/test_phase_cfgs.py` (compare.py,
+accept/CHANGELOG, and the phase 1/2 config builders).

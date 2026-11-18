@@ -24,12 +24,17 @@ import awkward as ak
 import numpy as np
 import uproot
 
-SKIP_DIRS = {'data', 'logs'}  # symlinked inputs and logs are not outputs
+def is_output(rel: Path):
+    """Not an output: the run's logs/ and each job's data/ dir of symlinked
+    inputs (<label>/data/...). A SAMPLE called data (<root>/data/output.root)
+    is an output."""
+    parts = rel.parts
+    return parts[0] != 'logs' and 'data' not in parts[1:-1]
 
 
 def outputs(run_dir: Path):
     return sorted(p.relative_to(run_dir) for p in run_dir.rglob('*.root')
-                  if not (set(p.relative_to(run_dir).parts) & SKIP_DIRS))
+                  if is_output(p.relative_to(run_dir)))
 
 
 def objects(f):

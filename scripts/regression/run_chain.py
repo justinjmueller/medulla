@@ -14,6 +14,8 @@ prepare  copies the pinned inputs (scripts/regression/inputs.toml) and the
          <root>/inputs/manifest.toml. Runs never read /pnfs.
 run      --ref WORKTREE uses this checkout and its build/ (uncommitted changes
          included; the output dir gets a -dirty suffix if there are any).
+         With --build DIR it compiles this checkout into DIR instead (make is
+         rerun every time, incrementally) and never touches build/.
          --ref <git ref> checks the ref out as a detached git worktree under
          <root>/src_<sha> and builds it in <root>/build_<sha> (once; reused).
          The C++ binaries and add_numi_flux_sys.py come from that tree. The
@@ -31,7 +33,16 @@ Output: <root>/<sha>[-dirty]/<tier>/ (refuses to overwrite; --force to replace
 a previous run of the same ref and tier). One log per step in logs/, and
 timings in timings.toml.
 
-It never submits jobs, never writes to /pnfs and never edits repo files.
+accept   RUN_DIR --note "..." makes a finished run the reference of its tier,
+         ONLY after the owner has approved its differences: copies it to
+         <root>/reference/<tier>/<time>_<label>/, points reference/<tier>/current
+         at it (old references are kept) and appends an entry with the note and
+         the diff vs the previous reference to scripts/regression/CHANGELOG.md.
+         --dry-run shows that diff and changes nothing. Check a new run with
+         compare.py <root>/reference/<tier>/current <run>.
+
+It never submits jobs and never writes to /pnfs; the only repo file it writes
+is CHANGELOG.md (accept).
 """
 import argparse
 import glob
@@ -138,9 +149,20 @@ def resolve_tree(a):
         sha = git('rev-parse', '--short=12', 'HEAD')
         dirty = bool(git('status', '--porcelain', '--untracked-files=no'))
         label = sha + ('-dirty' if dirty else '')
-        tree = Tree(REPO, REPO / 'build')
-        info(f'using this checkout ({label}) and {tree.build}; NOT rebuilding it')
-        return label, tree
+        if a.build is None:
+            tree = Tree(REPO, REPO / 'build')
+            info(f'using this checkout ({label}) and {tree.build}; NOT rebuilding it')
+            return label, tree
+        # --build: compile this checkout (uncommitted changes included) into a
+        # separate dir, leaving build/ alone. make is incremental, so it always runs.
+        build = a.build.resolve()
+        build.mkdir(parents=True, exist_ok=True)
+        info(f'building this checkout ({label}) in {build} (log {build}/build.log)')
+        with open(build / 'build.log', 'w') as log:
+            if not (build / 'CMakeCache.txt').exists():
+                subprocess.run(['cmake', '-S', str(REPO), '-B', str(build)], check=True, stdout=log, stderr=subprocess.STDOUT)
+            subprocess.run(['make', '-C', str(build), f'-j{a.jobs}'], check=True, stdout=log, stderr=subprocess.STDOUT)
+        return label, Tree(REPO, build)
     sha = git('rev-parse', '--short=12', a.ref + '^{commit}')
     src, build = a.root / f'src_{sha}', a.root / f'build_{sha}'
     if not src.exists():
@@ -160,7 +182,7 @@ def resolve_tree(a):
 
 class Chain:
     def __init__(self, a, label, tree, manifest):
-        self.a, self.tree, self.m = a, tree, manifest
+        self.a, self.tree, self.m, self.label = a, tree, manifest, label
         self.chain = manifest['chain']
         self.out = a.root / label / a.tier
         self.cfg_root = tree.src if a.configs_from_ref else REPO
@@ -308,9 +330,24 @@ class Chain:
         with open(self.out / 'timings.toml', 'w') as f:
             toml.dump(self.timings, f)
         with open(self.out / 'run_info.toml', 'w') as f:
-            toml.dump({'ref': self.a.ref, 'src': str(self.tree.src), 'build': str(self.tree.build),
-                       'configs_from': str(self.cfg_root), 'tier': self.a.tier}, f)
+            toml.dump(dict(self.code_state(), ref=self.a.ref, label=self.label, src=str(self.tree.src),
+                           build=str(self.tree.build), configs_from=str(self.cfg_root), tier=self.a.tier,
+                           finished=time.strftime('%Y-%m-%d %H:%M:%S')), f)
         info(f'done in {self.timings["total"]:.0f} s: {self.out}')
+
+    def code_state(self):
+        """Commit of the code tree; for WORKTREE also its uncommitted changes,
+        saved as code.diff (tracked files) and code_untracked.txt in the run
+        dir, so an accepted reference says exactly which code made it."""
+        src = self.tree.src
+        state = {'sha': git('rev-parse', 'HEAD', cwd=src)}
+        if self.a.ref == 'WORKTREE':
+            diff = git('diff', 'HEAD', cwd=src)
+            untracked = git('ls-files', '--others', '--exclude-standard', cwd=src)
+            (self.out / 'code.diff').write_text(diff + '\n' if diff else '')
+            (self.out / 'code_untracked.txt').write_text(untracked + '\n' if untracked else '')
+            state['dirty_files'] = git('diff', 'HEAD', '--name-only', cwd=src).splitlines()
+        return state
 
 
 def cmd_run(a):
@@ -330,6 +367,114 @@ def cmd_run(a):
     Chain(a, label + (f'-{a.suffix}' if a.suffix else ''), tree, manifest).go()
 
 
+# --------------------------------------------------------------------------- accept
+
+CHANGELOG = Path(__file__).with_name('CHANGELOG.md')
+MAX_LOGGED_DIFF_LINES = 40
+
+
+def condense(diff_lines):
+    """compare.py's '  DIFF <path>: <message>' lines, with a message that recurs
+    across paths (e.g. 'branch X only in B' in every tree) folded into one
+    '<n> x <message>' line; one-off differences are kept whole."""
+    groups = {}
+    for line in diff_lines:
+        path, _, msg = line[len('  DIFF '):].partition(': ')
+        groups.setdefault(msg or path, []).append(line.strip())
+    out = []
+    for msg, lines in groups.items():
+        out += [f'{len(lines)} x {msg}'] if len(lines) > 1 else lines
+    return out
+
+
+def reference_dir(root: Path, tier: str) -> Path:
+    return root / 'reference' / tier
+
+
+def cmd_accept(a):
+    """Make a finished run the reference of its tier, once the owner has
+    approved its differences. Copies the run (so later --force reruns cannot
+    change it), repoints reference/<tier>/current, and appends an entry with
+    the note and the diff against the previous reference to CHANGELOG.md.
+    Old references are kept."""
+    import contextlib
+    import io
+    sys.path.insert(0, str(Path(__file__).parent))
+    import compare
+
+    run_dir = a.run_dir.resolve()
+    info_path = run_dir / 'run_info.toml'
+    if not info_path.exists():
+        fail(f'{info_path} not found: not a finished run_chain.py run')
+    ref_root = (a.root / 'reference').resolve()
+    if ref_root in run_dir.parents:
+        fail(f'{run_dir} is already under {ref_root}')
+    rinfo = toml.load(info_path)
+    tier = rinfo['tier']
+    label = rinfo.get('label', run_dir.parent.name)
+    tdir = reference_dir(a.root, tier)
+    current = tdir / 'current'
+    prev = current.resolve() if current.exists() else None
+
+    if prev is None:
+        summary, diff_lines = 'none (first reference of this tier)', []
+    else:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = compare.main([str(prev), str(run_dir)])
+        out = buf.getvalue().splitlines()
+        summary = f'vs {prev.name}: ' + (out[-1].strip() if out else f'compare exit {rc}')
+        diff_lines = condense([l for l in out if l.startswith('  DIFF ')])
+
+    stamp = time.strftime('%Y%m%d-%H%M%S')
+    dest = tdir / f'{stamp}_{label}'
+    if a.dry_run:
+        info(f'[dry-run] would copy {run_dir} -> {dest}, point {current} at it, and log to {CHANGELOG}')
+        info(f'[dry-run] {summary}')
+        for l in diff_lines[:MAX_LOGGED_DIFF_LINES]:
+            print(l)
+        return
+    tdir.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(run_dir, dest, symlinks=True)
+    with open(dest / 'accepted.toml', 'w') as f:
+        toml.dump({'accepted': time.strftime('%Y-%m-%d %H:%M:%S'), 'from': str(run_dir),
+                   'note': a.note, 'previous': str(prev) if prev else '', 'summary': summary}, f)
+    tmp = tdir / f'.current.{os.getpid()}'
+    os.symlink(dest.name, tmp)
+    os.replace(tmp, current)
+
+    # runs from before 2026-11-18 have no sha; a git-ref run is still identified by its ref
+    sha = rinfo.get('sha') or (rinfo['ref'] if rinfo.get('ref') not in (None, 'WORKTREE') else '')
+    code = f'{sha[:12]}' if sha else '(not recorded)'
+    if rinfo.get('dirty_files'):
+        code += f' + uncommitted changes to {len(rinfo["dirty_files"])} files (code.diff, code_untracked.txt in the reference)'
+    entry = [f'\n## {time.strftime("%Y-%m-%d %H:%M")} | {tier} | {label}\n\n',
+             f'- Reference: `{dest}`\n',
+             f'- Code: {code}; configs from `{rinfo.get("configs_from", "?")}`\n',
+             f'- Approved: {a.note}\n',
+             f'- Diff {summary}\n']
+    if diff_lines:
+        shown = diff_lines[:MAX_LOGGED_DIFF_LINES]
+        more = len(diff_lines) - len(shown)
+        entry.append('\n```\n' + '\n'.join(shown) + (f'\n... {more} more lines' if more else '') + '\n```\n')
+    if not CHANGELOG.exists():
+        CHANGELOG.write_text(CHANGELOG_HEADER)
+    with open(CHANGELOG, 'a') as f:
+        f.writelines(entry)
+    info(f'accepted {run_dir} as the {tier} reference: {dest}')
+    info(f'logged to {CHANGELOG}')
+
+
+CHANGELOG_HEADER = """# Regression sandbox reference log
+
+One entry per accepted reference run (`run_chain.py accept`), newest last. A run
+is accepted only after the owner has looked at its differences from the previous
+reference and said they are intended. The reference itself is
+`/exp/icarus/data/users/micarrig/regression/reference/<tier>/current`; compare new
+runs against it with `compare.py`.
+"""
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--root', type=Path, default=DEFAULT_ROOT, help=f'sandbox root (default {DEFAULT_ROOT})')
@@ -341,13 +486,19 @@ def main():
     pr.add_argument('--ref', default='WORKTREE', help='git ref to build and run, or WORKTREE (default)')
     pr.add_argument('--tier', choices=['quick', 'full'], default='quick')
     pr.add_argument('--jobs', type=int, default=4, help='make -j for a ref build')
+    pr.add_argument('--build', type=Path,
+                    help='with --ref WORKTREE: compile this checkout into DIR (incremental) instead of using build/')
     pr.add_argument('--configs-from-ref', action='store_true',
                     help="use the ref's own selection/systematics TOMLs instead of this checkout's")
     pr.add_argument('--force', action='store_true', help='replace an existing run of the same ref and tier')
     pr.add_argument('--suffix', help='appended to the output label, e.g. "rep2" for a repeat run of the same ref')
+    pa = sub.add_parser('accept', help="make a run its tier's reference (only after the owner approves its diffs)")
+    pa.add_argument('run_dir', type=Path, help='finished run, e.g. <root>/<label>/full')
+    pa.add_argument('--note', required=True, help='what changed and who approved it (goes into CHANGELOG.md)')
+    pa.add_argument('--dry-run', action='store_true', help='show the diff vs the current reference, change nothing')
     a = p.parse_args()
     a.root = a.root.resolve()
-    {'prepare': cmd_prepare, 'run': cmd_run}[a.cmd](a)
+    {'prepare': cmd_prepare, 'run': cmd_run, 'accept': cmd_accept}[a.cmd](a)
 
 
 if __name__ == '__main__':

@@ -23,6 +23,10 @@ variable = ['reco_leading_electron_energy', 'reco_ele_beam_open_angle']
 bins = [[300, 390, 490, 600, 730, 870, 1030, 1240, 1500, 2000, 5000], [-1.0, -0.4, 0.0, 0.2, 0.35, 0.5, 0.625, 0.725, 0.8, 0.85, 0.9, 0.94, 0.97, 1.0]]
 nuniverses = 1000
 variable_length = false
+# PPFX CV weight per entry when filling the variation histograms (phase 1), computed from
+# true_pdg and true_neutrino_energy (selection/include/ppfx_weights.h; works on productions
+# without the true_ppfx_cv_weight branch). See CLAUDE.md, open items (2026-11-18).
+ppfx_from_truth = true
 # POT per variation from the CSV (column corrected_pot), not from the exposure trees.
 # recombination_residual reuses the Recomb files, shower_scale_* the cv files.
 pot_csv = '/exp/icarus/app/users/micarrig/nuESpine/medulla/plots_v31/pot/detsys_corrected_pot.csv'

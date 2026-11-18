@@ -288,6 +288,25 @@ def compute_weights(nu_df):
     }
 
 
+def check_selection_ppfx(nu_df, weights, tree_name):
+    """Cross-check against the selection's own true_ppfx_cv_weight branch
+    (selection/include/ppfx_weights.h, productions from 2026-11-18 on). Both
+    use the same flux.root histograms; NaN (no true neutrino) counts as 1 on
+    both sides, as in the ppfx_cv_weight branch written below. Only prints."""
+    if 'true_ppfx_cv_weight' not in nu_df.columns:
+        print(f"{tree_name}: no true_ppfx_cv_weight branch (older production); ppfx check skipped")
+        return
+    sel = np.nan_to_num(nu_df['true_ppfx_cv_weight'].to_numpy(dtype=float), nan=1.0)
+    ours = np.nan_to_num(np.asarray(weights['ppfx_cv_weight'], dtype=float), nan=1.0)
+    bad = np.nonzero(~np.isclose(sel, ours, rtol=1e-12, atol=0.0))[0]
+    if len(bad) == 0:
+        print(f"{tree_name}: ppfx_cv_weight agrees with the selection's true_ppfx_cv_weight ({len(sel)} entries)")
+    else:
+        ex = ', '.join(f'[{i}] {ours[i]!r} vs {sel[i]!r}' for i in bad[:5])
+        print(f"WARNING {tree_name}: ppfx_cv_weight differs from true_ppfx_cv_weight in {len(bad)} of {len(sel)} "
+              f"entries (stage 5 vs selection): {ex}")
+
+
 def ensure_dir(rootdir, path):
     cur = rootdir
     for part in path.strip("/").split("/"):
@@ -437,6 +456,7 @@ for treeName in tree_names:
     print(f"\n--- Processing tree: {treeName} ---")
     nu_df = file_nu[f'{numi_dir}/{treeName};1'].arrays(library='pd')
     weights = compute_weights(nu_df)
+    check_selection_ppfx(nu_df, weights, treeName)
     write_flux_tree(f, numi_dir, treeName, weights)
 
 f.Close()

@@ -115,6 +115,7 @@ branch = [
     { name = "pdg",                      type = "mctruth" },
     { name = 'parent_pdg',               type = "mctruth" },
     { name = "neutrino_energy",          type = "mctruth" },
+    { name = "ppfx_cv_weight",           type = "mctruth" },
     { name = "interaction_type",         type = "mctruth" },
     { name = "interaction_mode",         type = "mctruth" },
 
@@ -263,6 +264,7 @@ branch = [
     { name = "pdg",                      type = "mctruth" },
     { name = 'parent_pdg',               type = "mctruth" },
     { name = "neutrino_energy",          type = "mctruth" },
+    { name = "ppfx_cv_weight",           type = "mctruth" },
     { name = "interaction_type",         type = "mctruth" },
     { name = "interaction_mode",         type = "mctruth" },
 
@@ -415,6 +417,7 @@ branch = [
     { name = "pdg",                      type = "mctruth" },
     { name = 'parent_pdg',               type = "mctruth" },
     { name = "neutrino_energy",          type = "mctruth" },
+    { name = "ppfx_cv_weight",           type = "mctruth" },
     { name = "interaction_type",         type = "mctruth" },
     { name = "interaction_mode",         type = "mctruth" },
 

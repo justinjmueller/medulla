@@ -90,6 +90,28 @@ def test_extra_output_file_and_inputs_ignored(tmp_path, capsys):
     assert 'input.root' not in out  # data/ is skipped even though it differs
 
 
+def test_sample_called_data_is_compared(tmp_path, capsys):
+    # the on-beam sample's job dir is <run>/data/; only <run>/data/data/ holds inputs
+    for name, extra in (('a', 0), ('b', 1)):
+        d = tmp_path / name / 'data'
+        (d / 'data').mkdir(parents=True)
+        with uproot.recreate(d / 'output.root') as f:
+            f['t'] = {'x': np.arange(3) + extra}
+        with uproot.recreate(d / 'data' / 'input.root') as f:
+            f['t'] = {'x': np.arange(3) + extra}
+    assert run(tmp_path / 'a', tmp_path / 'b') == 1
+    out = capsys.readouterr().out
+    assert 'DIFF data/output.root' in out and 'input.root' not in out
+
+
+def test_is_output():
+    assert compare.is_output(Path('data/output.root'))
+    assert compare.is_output(Path('mergeB/merged_final.root'))
+    assert not compare.is_output(Path('data/data/x.flat.root'))
+    assert not compare.is_output(Path('NuMIFull/data/x.flat.root'))
+    assert not compare.is_output(Path('logs/x.root'))
+
+
 class FakeGraph:
     """Stands in for uproot's TGraph model: values() -> (x, y)."""
 

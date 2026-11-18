@@ -613,7 +613,11 @@ Notify on both success and failure. A silent failure is worse than a noisy one.
   `scripts/in_sl7.sh 'python3 scripts/regression/run_chain.py run --ref <sha>|WORKTREE --tier quick|full'`
   (quick ~2.5 min: selection + run_systematics; full ~6 min: + phase 1 check, phase 2 with the
   production splines, merge B, stages 5-7), then `python3 scripts/regression/compare.py <runA> <runB>`
-  (exit 0 = identical). Run it before and after C++/config/stage-script changes. It never submits,
+  (exit 0 = identical). Run it before and after C++/config/stage-script changes. Compare against
+  the approved reference `<root>/reference/<tier>/current`. Only after the owner approves the
+  differences, run `run_chain.py accept <run> --note "..."` (`--dry-run` first): it updates the
+  reference and appends to the git-tracked `scripts/regression/CHANGELOG.md`. Never `accept` on
+  your own. It never submits,
   never writes to /pnfs; a `--ref` is built in its own worktree (`src_<sha>`, `build_<sha>`). Phase
   1/2 are reproducible only with `[variations] seed` (refs from 2026-11-17 on). Pinned edge case:
   `nan_case` (the NaN-truth file of nue v32 job 49). Tests: `python3 -m pytest scripts/regression/
@@ -753,18 +757,25 @@ Notify on both success and failure. A silent failure is worse than a noisy one.
   phase 2 submits) requires the "Use job id ..." line and no "BAILING OUT", prints the jobsub output
   (plus a `klist`/`kinit` hint for condor_vault_storer), and sets `SUBMIT_FAILED`; `medulla.py` then
   exits 1. Dry runs and declined prompts still exit 0. Tests: `batch/test_jobsub_result.py`.
-- TODO (owner, 2026-11-17): add the PPFX reweights (`ppfx_cv_weight`) to the detector-variation
-  samples. Today only the merged main/g4 files get them, in stage 5 (`add_numi_flux_sys.py`), so the
-  variation samples (and the det-var CV) that phase 1 uses for the splines are not PPFX-weighted.
-  Plan (owner approved, for future productions, not v32; start after the dropped-events item):
-  (1) `scripts/make_ppfx_header.py` turns the four `ppfx_flux_weights/hweights_fhc_*` histograms of
-  `flux.root` into a generated `selection/include/ppfx_weights.h`; (2) MCTruth variable
-  `ppfx_cv_weight(pdg, E)` in `mctruth_variables.h` (1 for other flavors, out of range, no truth);
-  (3) a `[[branch]]` for it in every `[[tree]]` of the selection TOMLs; (4) optional
-  `[variations] weight = 'ppfx_cv_weight'` in `detsys.cc` phase 1 (fill weight/POT); (5) stage 5 keeps
-  only the flux-uncertainty trees (its ppfx branch becomes a check); (6) tests. Validate by running the
-  selection on one file locally and comparing the new branch with `add_numi_flux_sys.py`'s
-  `ppfx_cv_weight` entry by entry.
+- DONE 2026-11-18 (local; grid needs it pushed): PPFX CV weight in the selection, for every sample.
+  `scripts/make_ppfx_header.py` generates `selection/include/ppfx_weights.h` from `flux.root`'s
+  `ppfx_flux_weights/hweights_fhc_*` (rerun it if flux.root changes; `--check` says if stale). MCTruth
+  variable `ppfx_cv_weight` -> branch `true_ppfx_cv_weight` in every interaction tree of all 7
+  selection TOMLs: 1 for other flavors / out of range, NaN where there is no true neutrino (data,
+  cosmics, unmatched; treat as 1, as stage 5 does). Phase 1 (`detsys.cc`) can weight the variation
+  histograms: `[variations] weight = 'true_ppfx_cv_weight'` (new productions) or
+  `ppfx_from_truth = true` (computes the same weight from `true_pdg`/`true_neutrino_energy`, so it works on
+  v32 det-var outputs too, for the v32d rebuild); identical splines either way. ON (owner, 2026-11-18):
+  `ppfx_from_truth = true` in `NuMI_nue_gundam.toml`, `NuMI_nueEnhanced_gundam.toml` and
+  `NuMI_{nue,nueEnhanced}_sideband_phase1.toml`, so the nominal and nue splines (and the regression
+  sandbox's phase 1 check, which differs from refs before this) are PPFX-weighted. The phase 2 TOMLs
+  and the `_ncpi0_v31` archives do not fill histograms / are frozen. Stage 5 still writes `ppfx_cv_weight` (gundam/plots read
+  it) and now prints whether it agrees with `true_ppfx_cv_weight`. Validated: regression full tier vs
+  6b91c98 differs only by the new branch (239 diffs, all "true_ppfx_cv_weight only in B"); stage 5's
+  weight equals the selection's on all 33,264 `all` entries (NuMIFull, NuMI_nue, induction_high) and
+  284 NuMI_nue signal entries, max |diff| 0. Bins are [low, high); stage 5's searchsorted differs only
+  for an energy exactly on a bin edge, and it crashes above the top edge (selection gives 1).
+  Tests: `scripts/test_make_ppfx_header.py`.
 
 ## Where we left off (2026-10-09)
 
