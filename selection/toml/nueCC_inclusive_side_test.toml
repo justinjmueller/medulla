@@ -1,5 +1,5 @@
 [parameters]
-photon_threshold = 40 #40  #25.0
+photon_threshold = 300 #40  #25.0
 electron_threshold =300 #225.0
 muon_threshold = 100.0 
 pion_threshold = 25.0
@@ -19,7 +19,7 @@ pi0_mass_veto_high = 800
 pi0_mass_veto_low_selection = 110
 pi0_mass_veto_high_selection = 150
 photon_softmax = 0.95
-photon_threshold_1 = 400
+photon_threshold_1 = 300
 [general]
 output = "output_nueCCInclusive_side"
 primfn = "default_primary_classification"
