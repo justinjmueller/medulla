@@ -608,6 +608,16 @@ Notify on both success and failure. A silent failure is worse than a noisy one.
   `batch/test_dry_run.py` checks that `--dry-run` changes no file (project.db,
   project dir, cwd), never calls `jobsub_submit`, and beats `--yes`; each test has a
   control that does mutate. Rerun it after touching any prompt, delete, or submit path.
+- Regression sandbox (2026-11-17, `scripts/regression/README.md`): runs the chain locally on
+  pinned files under `/exp/icarus/data/users/micarrig/regression/` and diffs two code versions.
+  `scripts/in_sl7.sh 'python3 scripts/regression/run_chain.py run --ref <sha>|WORKTREE --tier quick|full'`
+  (quick ~2.5 min: selection + run_systematics; full ~6 min: + phase 1 check, phase 2 with the
+  production splines, merge B, stages 5-7), then `python3 scripts/regression/compare.py <runA> <runB>`
+  (exit 0 = identical). Run it before and after C++/config/stage-script changes. It never submits,
+  never writes to /pnfs; a `--ref` is built in its own worktree (`src_<sha>`, `build_<sha>`). Phase
+  1/2 are reproducible only with `[variations] seed` (refs from 2026-11-17 on). Pinned edge case:
+  `nan_case` (the NaN-truth file of nue v32 job 49). Tests: `python3 -m pytest scripts/regression/
+  batch/test_phase_cfgs.py` (compare.py, and the phase 1/2 config builders it shares with medulla.py).
 - C++ framework validation (needs a build): `MEDULLA_BUILD_DIR=<build>/selection
   python3 -m pytest selection/test/ -v`, or `make pytest` from the build dir.
 - Skipped without `MEDULLA_BUILD_DIR`, by design.

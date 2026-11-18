@@ -1,0 +1,116 @@
+# Pinned inputs for the regression sandbox (scripts/regression/run_chain.py).
+#
+# `run_chain.py prepare` takes the first `nfiles` files (sorted) of each sample's
+# glob in its selection TOML, copies them to <root>/inputs/<label>/ and writes
+# <root>/inputs/manifest.toml with the exact file names. Every later run reads
+# only the manifest, so the inputs never change unless `prepare` is rerun into a
+# new --root. Files are ~15 MB each.
+#
+# label:     directory name in the sandbox (unique)
+# toml:      selection TOML the sample comes from (repo-relative)
+# sample:    [[sample]] name in that TOML
+# nfiles:    files to pin
+# tiers:     which tiers process the sample ("quick" samples also run in "full")
+# role:      how the full chain uses it:
+#            main     -> NuMIFull: systematics, phase 2, merge B, stages 5/6
+#            nue      -> nue project nominal (selection + systematics only)
+#            merge    -> selection only, goes into merge B (data, beam-off, rock)
+#            spline   -> phase 1 spline check (one variation + the cv)
+#            g4       -> g4 project: systematics, stage 5 (events/g4 selected), stage 6
+
+[[input]]
+label = "NuMIFull"
+toml = "selection/toml/icarus_nueCC_inclusive_2026/selection.toml"
+sample = "NuMIFull"
+nfiles = 20
+tiers = ["quick", "full"]
+role = "main"
+
+[[input]]
+label = "data"
+toml = "selection/toml/icarus_nueCC_inclusive_2026/selection.toml"
+sample = "data"
+nfiles = 10
+tiers = ["quick", "full"]
+role = "merge"
+
+[[input]]
+label = "dataBeamOff"
+toml = "selection/toml/icarus_nueCC_inclusive_2026/selection.toml"
+sample = "dataBeamOff"
+nfiles = 10
+tiers = ["full"]
+role = "merge"
+
+[[input]]
+label = "rock"
+toml = "selection/toml/icarus_nueCC_inclusive_2026/selection.toml"
+sample = "rock"
+nfiles = 10
+tiers = ["full"]
+role = "merge"
+
+[[input]]
+label = "NuMI_nue"
+toml = "selection/toml/icarus_nueCC_inclusive_2026/selection_nue.toml"
+sample = "NuMI_nue"
+nfiles = 10
+# quick too: ~7 selected events per file, vs ~0.1 for NuMIFull
+tiers = ["quick", "full"]
+role = "nue"
+
+# Known edge case: the CAF file of nue v32 job 49 whose selected tree has an
+# entry with true_neutrino_id = NaN (reco interaction with no truth match).
+# Before the 2026-11-17 -Ofast fix run_systematics dropped it; now it must land
+# in selected_nonmatched (3 selected -> 2 + 1).
+[[input]]
+label = "nan_case"
+toml = "selection/toml/icarus_nueCC_inclusive_2026/selection_nue.toml"
+sample = "NuMI_nue"
+files = ["/pnfs/icarus/persistent/users/dcarber/spine/NuMI_Nue_det_sys_flat_cafs/CV_sample/larcv_mc_20250607_025144_871459-afac049b-ef69-477e-9eee-3211a0d65fe5.flat.root"]
+tiers = ["quick", "full"]
+role = "nue"
+
+# Phase 1 spline check: one variation and the cv of the main set. The [[sys]]
+# entry checked is the one in the main systematics TOML whose points use only
+# these two keys (spline_sys below).
+[[input]]
+label = "induction_high"
+toml = "selection/toml/icarus_nueCC_inclusive_2026/selection.toml"
+sample = "induction_high"
+nfiles = 10
+tiers = ["full"]
+role = "spline"
+
+[[input]]
+label = "cv"
+toml = "selection/toml/icarus_nueCC_inclusive_2026/selection.toml"
+sample = "cv"
+nfiles = 10
+tiers = ["full"]
+role = "spline"
+
+[[input]]
+label = "g4"
+toml = "selection/toml/icarus_nueCC_inclusive_2026/selection_g4.toml"
+sample = "g4"
+nfiles = 10
+tiers = ["full"]
+role = "g4"
+
+[chain]
+# Systematics TOMLs (repo-relative), as in the CLAUDE.md stage table.
+sys_main = "systematics/toml/NuMI_nue_gundam.toml"
+sys_nue = "systematics/toml/NuMI_nueEnhanced_gundam.toml"
+sys_g4 = "systematics/toml/NuMI_g4_gundam.toml"
+# Phase 1 check: [variations].keys and [[sys]] are cut to these.
+spline_keys = ["induction_high", "cv"]
+spline_sys = "induction_high"
+# Phase 2 uses the production splines (real statistics), copied by `prepare`.
+splines_main = "/pnfs/icarus/scratch/users/micarrig/nueCCInclusiveSpine32/variation_splines.root"
+splines_nue = "/pnfs/icarus/scratch/users/micarrig/nueCCInclusiveSpine_nue_32/variation_splines.root"
+# Fixed seed for the detector-variation universes ([variations] seed).
+seed = 12345
+# Stage 5 trees (CLAUDE.md stage table).
+flux_trees_main = ["all_signal", "selected", "true_signal", "nc_sideband", "photon_sideband"]
+flux_trees_g4 = ["selected"]

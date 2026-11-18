@@ -120,8 +120,6 @@ uint32_t sys::WeightReader::get_nwgt(Int_t i) const
 // Accessor method for the number of universes.
 uint32_t sys::WeightReader::get_nuniv(size_t idn) const
 {
-    std::cout << "idn: " << idn << ", idx: " << idx << std::endl;
-    std::cout << "nnu: " << this->get_nnu() << ", nwgt: " << this->get_nwgt(idn) << std::endl;
     if(idn >= get_nnu() || idx >= get_nwgt(idn))
         throw std::out_of_range("WeightReader: Index out of range in 'get_nuniv()'");
 

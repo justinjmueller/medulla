@@ -82,13 +82,23 @@ std::string sys::detsys::DetsysCalculator::make_spline_key(const std::string & d
     return detsys_name + "__" + variable_name;
 }
 
+// Random generator for the universe z-scores: seeded from [variations] seed
+// when the configuration sets it (reproducible output, e.g. for the regression
+// sandbox in scripts/regression/), otherwise from std::random_device as before.
+static std::mt19937 make_generator(cfg::ConfigurationTable & table)
+{
+    if(table.has_field("variations.seed"))
+        return std::mt19937((std::mt19937::result_type)table.get_int_field("variations.seed"));
+    std::random_device rd;
+    return std::mt19937(rd());
+}
+
 // Constructor for the DetsysCalculator class that initializes the class using
 // the configuration table, the output file, and the input file. 
 sys::detsys::DetsysCalculator::DetsysCalculator(cfg::ConfigurationTable & table, TFile * output, TFile * input)
 {
     // Roll random z-scores to create a set of universes for later.
-    std::random_device rd;
-    std::mt19937 gen(rd());
+    std::mt19937 gen = make_generator(table);
     std::normal_distribution<double> dist(0, 1);
     nuniverses = table.get_int_field("variations.nuniverses");
     for(size_t n(0); n < nuniverses; ++n)
@@ -333,8 +343,7 @@ void sys::detsys::DetsysCalculator::add_variable(SysVariable & variable)
 sys::detsys::DetsysCalculator::DetsysCalculator(cfg::ConfigurationTable & table, TFile * output, const std::string & splines_path)
 {
     // Pre-roll the same number of random z-scores as the original run.
-    std::random_device rd;
-    std::mt19937 gen(rd());
+    std::mt19937 gen = make_generator(table);
     std::normal_distribution<double> dist(0, 1);
     nuniverses = table.get_int_field("variations.nuniverses");
     for(size_t n(0); n < nuniverses; ++n)

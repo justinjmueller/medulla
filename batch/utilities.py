@@ -766,6 +766,57 @@ def launch_jobsub(
         print(f"{_CAMPAIGN} Submitted {njobs} job(s). Job ID: {job_id}")
     return True
 
+def make_phase1_cfg(variation_toml, variation_input: str,
+                    output_path: str = 'variation_splines.root') -> dict:
+    """
+    Phase 1 (spline building) run_systematics config from a variation TOML:
+    [input]/[output] paths rewritten, [[tree]] blocks and the phase 2
+    splines_file/splines_file_nue keys dropped. Shared by the interactive
+    phase 1 and scripts/regression/run_chain.py.
+    """
+    cfg = toml.load(str(variation_toml))
+    cfg['input']['path'] = variation_input
+    cfg['output']['path'] = output_path
+    cfg.pop('tree', None)
+    # Phase 1 builds splines. With splines_file set, run_systematics loads
+    # pre-built splines instead and writes an empty output. Phase 2 sets
+    # these keys itself, so drop them here.
+    for k in ('splines_file', 'splines_file_nue'):
+        cfg.get('variations', {}).pop(k, None)
+    return cfg
+
+
+def make_phase2_cfg(variation_toml, input_path: str = '__INPUT_FILE__',
+                    output_path: str = 'output_varsys.root',
+                    splines: str = '__SPLINES_FILE__',
+                    splines_nue: str = '__SPLINES_FILE_NUE__'):
+    """
+    Phase 2 (apply splines) run_systematics config from a variation TOML.
+    The defaults are the placeholders the grid job (submit_variation_phase2.sh)
+    substitutes. Copy trees are dropped and add_weights trees become
+    add_detsys_weights (variation tables only, no tree copy).
+
+    Returns (cfg, splines_nue_source): the latter is the TOML's original
+    splines_file_nue path (None if it has none), which the grid launcher ships.
+    """
+    cfg = toml.load(str(variation_toml))
+    cfg['input']['path'] = input_path
+    cfg['output']['path'] = output_path
+    splines_nue_source = None
+    if 'variations' in cfg:
+        cfg['variations']['splines_file'] = splines
+        if 'splines_file_nue' in cfg['variations']:
+            splines_nue_source = Path(cfg['variations']['splines_file_nue'])
+            cfg['variations']['splines_file_nue'] = splines_nue
+    cfg['tree'] = [tree for tree in cfg.get('tree', []) if tree.get('action') != 'copy']
+    for tree in cfg['tree']:
+        if tree.get('action') == 'add_weights':
+            tree['action'] = 'add_detsys_weights'
+            tree['write_tree'] = False
+            tree['table_types'] = ['variation']
+    return cfg, splines_nue_source
+
+
 def run_variation_phase1_interactive(
     project_dir: Path,
     variation_input: str,
@@ -804,15 +855,7 @@ def run_variation_phase1_interactive(
         print(f"{_ERROR} -- Variation systematics TOML not found: {variation_toml_path}")
         return False
 
-    cfg = toml.load(str(variation_toml_path))
-    cfg['input']['path'] = variation_input
-    cfg['output']['path'] = 'variation_splines.root'
-    cfg.pop('tree', None)
-    # Phase 1 builds splines. With splines_file set, run_systematics loads
-    # pre-built splines instead and writes an empty output. Phase 2 sets
-    # these keys itself, so drop them here.
-    for k in ('splines_file', 'splines_file_nue'):
-        cfg.get('variations', {}).pop(k, None)
+    cfg = make_phase1_cfg(variation_toml_path, variation_input)
 
     print(f"{_INFO} -- Running Phase 1 interactively:")
     print(f"{_INFO} --   TOML:   {variation_toml_path}")
@@ -1161,21 +1204,7 @@ def launch_variation_phase2_jobsub(
     # Build the Phase 2 TOML in Python so the grid job doesn't need awk
     # rewriting. The only substitution left for the grid is replacing the
     # input path placeholder with the per-job staged file name.
-    cfg = toml.load(str(variation_toml_path))
-    cfg['input']['path'] = '__INPUT_FILE__'
-    cfg['output']['path'] = 'output_varsys.root'
-    splines_nue_source = None
-    if 'variations' in cfg:
-        cfg['variations']['splines_file'] = '__SPLINES_FILE__'
-        if 'splines_file_nue' in cfg['variations']:
-            splines_nue_source = Path(cfg['variations']['splines_file_nue'])
-            cfg['variations']['splines_file_nue'] = '__SPLINES_FILE_NUE__'
-    cfg['tree'] = [tree for tree in cfg.get('tree', []) if tree.get('action') != 'copy']
-    for tree in cfg['tree']:
-        if tree.get('action') == 'add_weights':
-            tree['action'] = 'add_detsys_weights'
-            tree['write_tree'] = False
-            tree['table_types'] = ['variation']
+    cfg, splines_nue_source = make_phase2_cfg(variation_toml_path)
     if DRY_RUN:
         print(f"{_INFO} -- [DRY RUN] Would write {project_dir}/variation_systematics_phase2.toml and variation_phase2_manifest.txt ({njobs} job ids).")
     else:
