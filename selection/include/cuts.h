@@ -82,7 +82,7 @@ namespace cuts
 	template<class T>
 	bool veto_confident_electrons(const T & obj, std::vector<double> params={0.95})
 	{
-	    ddouble softmax_threshold = params[0];
+	    double softmax_threshold = params[0];
     
     for (const auto & p : obj.particles) {
         if (pvars::primary_classification(p) && pvars::pid(p) == 1) {
