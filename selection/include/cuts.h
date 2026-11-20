@@ -77,6 +77,26 @@ namespace cuts
         return count >= 2;
     }
     REGISTER_CUT_SCOPE(RegistrationScope::Both, two_photons, two_photons);
+
+
+	template<class T>
+	bool veto_confident_electrons(const T & obj, std::vector<double> params={0.95})
+	{
+	    double softmax_threshold = params[0];
+	    
+	    for (const auto & p : obj.particles) {
+	      
+	        if (pvars::primary_classification(p) && pvars::pid(p) == 1) {
+	           
+	            if (pvars::pid_score_electron(p) > softmax_threshold) {
+	                return false; 
+	            }
+	        }
+	    }
+	    return true; // El evento pasa si no hay electrones seguros
+	}
+	REGISTER_CUT_SCOPE(RegistrationScope::Both, veto_confident_electrons, veto_confident_electrons);
+	
     /**
      * @brief Apply pi0 mass cut.
      * @details This function applies a cut on the invariant diphoton mass
