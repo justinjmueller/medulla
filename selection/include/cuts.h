@@ -101,7 +101,7 @@ namespace cuts
     }
     return true;
 	}
-	REGISTER_CUT_SCOPE(RegistrationScope::Both, veto_confident_electrons, veto_confident_electrons);
+	REGISTER_CUT_SCOPE(RegistrationScope::Reco, veto_confident_electrons, veto_confident_electrons);
 	
     /**
      * @brief Apply pi0 mass cut.
