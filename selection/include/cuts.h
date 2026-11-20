@@ -82,18 +82,24 @@ namespace cuts
 	template<class T>
 	bool veto_confident_electrons(const T & obj, std::vector<double> params={0.95})
 	{
-	    double softmax_threshold = params[0];
-	    
-	    for (const auto & p : obj.particles) {
-	      
-	        if (pvars::primary_classification(p) && pvars::pid(p) == 1) {
-	           
-	            if (pvars::pid_score_electron(p) > softmax_threshold) {
-	                return false; 
-	            }
-	        }
-	    }
-	    return true; // El evento pasa si no hay electrones seguros
+	    ddouble softmax_threshold = params[0];
+    
+    for (const auto & p : obj.particles) {
+        if (pvars::primary_classification(p) && pvars::pid(p) == 1) {
+            double score = pvars::electron_softmax(p);
+            
+            // Si el score es NaN, ignora esta partícula y pasa a la siguiente
+            if (std::isnan(score)) {
+                continue;
+            }
+            
+            // Rechaza el evento si supera el umbral de confianza
+            if (score > softmax_threshold) {
+                return false; 
+            }
+        }
+    }
+    return true;
 	}
 	REGISTER_CUT_SCOPE(RegistrationScope::Both, veto_confident_electrons, veto_confident_electrons);
 	
