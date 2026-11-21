@@ -414,6 +414,47 @@ namespace bvars
     REGISTER_BIVAR_SCOPE(RegistrationScope::BothParticle, pi0_beam_costheta, pi0_beam_costheta);
 
     /**
+     * @brief x-component of the pi0 momentum in GeV.
+     * @details The pair momentum is the sum of the two photon momenta: the true
+     * particle momenta for truth, and the calorimetric kinetic energy along the
+     * vertex-to-shower-start direction for reco (see pi0_momentum_vec_impl). The
+     * three components give the pi0 direction, which with the muon or proton
+     * momentum yields the muon-pi0 opening angle and the meson-proton invariant
+     * mass.
+     */
+    template<class T>
+    double pi0_momentum_x(const T & p0, const T & p1)
+    {
+        auto * obj = context::current<T>();
+        return pi0_momentum_vec_impl(p0, p1, obj->vertex[0], obj->vertex[1], obj->vertex[2])[0] / 1000.0;
+    }
+    REGISTER_BIVAR_SCOPE(RegistrationScope::BothParticle, pi0_momentum_x, pi0_momentum_x);
+
+    /**
+     * @brief y-component of the pi0 momentum in GeV.
+     * @details See pi0_momentum_x.
+     */
+    template<class T>
+    double pi0_momentum_y(const T & p0, const T & p1)
+    {
+        auto * obj = context::current<T>();
+        return pi0_momentum_vec_impl(p0, p1, obj->vertex[0], obj->vertex[1], obj->vertex[2])[1] / 1000.0;
+    }
+    REGISTER_BIVAR_SCOPE(RegistrationScope::BothParticle, pi0_momentum_y, pi0_momentum_y);
+
+    /**
+     * @brief z-component (beam axis) of the pi0 momentum in GeV.
+     * @details See pi0_momentum_x.
+     */
+    template<class T>
+    double pi0_momentum_z(const T & p0, const T & p1)
+    {
+        auto * obj = context::current<T>();
+        return pi0_momentum_vec_impl(p0, p1, obj->vertex[0], obj->vertex[1], obj->vertex[2])[2] / 1000.0;
+    }
+    REGISTER_BIVAR_SCOPE(RegistrationScope::BothParticle, pi0_momentum_z, pi0_momentum_z);
+
+    /**
      * @brief SPINE particle index of the leading shower-like particle.
      * @details Dispatches to pvars::id<T>. The subleading particle p1 is not
      * used.
