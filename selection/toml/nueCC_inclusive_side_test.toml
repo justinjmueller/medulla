@@ -1362,7 +1362,7 @@ cut = [
     { name = "no_cut",                    type = "reco" },
     { name = "fiducial_cut",              type = "reco" },
     { name = "flash_cut",                 type = "reco", parameters = [ "@flash_low_t", "@flash_high_t" ] },
-    { name = "containment_cut",           type = "reco" },
+    #{ name = "containment_cut",           type = "reco" },
     #{ name = "vertex_distance_cut",       type = "reco", parameters = [ "@vertex_threshold" ] },
     #{ name = "has_particle_multiplicity", type = "reco", parameters = [1, 1] },
     #{ name = "no_muons",                  type = "reco", parameters = [ 0 ] },
@@ -1375,7 +1375,7 @@ cut = [
     #{ name = "single_photon", type = "reco", parameters = [ "@photon_threshold" ] },
     #{name = "no_electrons",                type = "reco", parameters =[0]},
     #{ name = "photon_primary_softmax_cut",      type = "reco", parameters = [ 0.95,1.0] },
-    { name = "leading_photon_energy_cut",    type = "reco", parameters = [ "@photon_threshold_1" ] },
+    #{ name = "leading_photon_energy_cut",    type = "reco", parameters = [ "@photon_threshold_1" ] },
     { name = "veto_confident_electrons", type = "reco", parameters = [ 0.95 ] },
 
 
