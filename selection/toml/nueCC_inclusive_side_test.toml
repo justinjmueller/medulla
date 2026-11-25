@@ -1365,7 +1365,7 @@ cut = [
     #{ name = "containment_cut",           type = "reco" },
     #{ name = "vertex_distance_cut",       type = "reco", parameters = [ "@vertex_threshold" ] },
     #{ name = "has_particle_multiplicity", type = "reco", parameters = [1, 1] },
-    #{ name = "no_muons",                  type = "reco", parameters = [ 0 ] },
+    { name = "no_muons",                  type = "reco", parameters = [ 0 ] },
     #{ name = "electron_softmax_cut",      type = "reco", parameters = [ "@electron_softmax", "@greater_than" ] },
     #{ name = "primary_softmax_cut",       type = "reco", parameters = [ "@primary_softmax", "@greater_than" ] },
     #{ name = "leading_ele_energy_cut",    type = "reco", parameters = [ "@electron_threshold" ] },
@@ -1373,10 +1373,10 @@ cut = [
     #{name = "pi0_invariant_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
     #{name = "two_photons",                type = "reco", parameters =["@photon_threshold"]},
     #{ name = "single_photon", type = "reco", parameters = [ "@photon_threshold" ] },
-    #{name = "no_electrons",                type = "reco", parameters =[0]},
+    {name = "no_electrons",                type = "reco", parameters =[0]},
     #{ name = "photon_primary_softmax_cut",      type = "reco", parameters = [ 0.95,1.0] },
     #{ name = "leading_photon_energy_cut",    type = "reco", parameters = [ "@photon_threshold_1" ] },
-    { name = "veto_confident_electrons", type = "reco", parameters = [ 0.60 ] },
+    #{ name = "veto_confident_electrons", type = "reco", parameters = [ 0.60 ] },
 
 
 
@@ -1537,7 +1537,7 @@ branch = [
 ]
 
 [[tree]]
-name = "sideband_veto_cc"
+name = "sideband_veto_wm"
 sim_only = false
 issignal = true
 isdata = false
@@ -1559,10 +1559,10 @@ cut = [
     #{name = "pi0_invariant_mass_cut", type = "reco", parameters = ["@pi0_mass_veto_low", "@pi0_mass_veto_high"]},
     #{name = "two_photons",                type = "reco", parameters =["@photon_threshold"]},
     #{ name = "single_photon", type = "reco", parameters = [ "@photon_threshold" ] },
-    #{name = "no_electrons",                type = "reco", parameters =[0]},
+    {name = "no_electrons",                type = "reco", parameters =[0]},
     #{ name = "photon_primary_softmax_cut",      type = "reco", parameters = [ 0.95,1.0] },
     #{ name = "leading_photon_energy_cut",    type = "reco", parameters = [ "@photon_threshold_1" ] },
-    { name = "veto_confident_electrons", type = "reco", parameters = [ 0.60 ] },
+    #{ name = "veto_confident_electrons", type = "reco", parameters = [ 0.60 ] },
 
 
 
